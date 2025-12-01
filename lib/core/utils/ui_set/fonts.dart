@@ -5,6 +5,6 @@ import 'colors.dart';
 // 제목
 final TextStyle titleFontStyle = TextStyle(
   color: blueColor,
-  fontSize: 32, // 40까지도
+  fontSize: 32,
   fontWeight: FontWeight.bold,
 );
