@@ -1,8 +1,8 @@
+import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:jm_in_the_back_alley/features/auth/viewmodel/auth_view_model.dart';
-import 'package:jm_in_the_back_alley/features/feed/ui/home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
