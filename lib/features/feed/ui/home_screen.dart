@@ -1,5 +1,5 @@
+import 'package:bidbird/core/utils/ui_set/icons.dart';
 import 'package:flutter/material.dart';
-import 'package:jm_in_the_back_alley/core/utils/ui_set/icons.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
