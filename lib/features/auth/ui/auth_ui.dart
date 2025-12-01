@@ -36,7 +36,7 @@ class LoginScreen extends StatelessWidget {
                       elevation: 0,
                     ),
                     onPressed: () {
-                      // TODO: 실제 구글 로그인 로직 연결
+                      // TODO: 로그인 로직 연결
                       context.go('/home');
                     },
                     icon: const Icon(Icons.g_mobiledata, size: 24),
