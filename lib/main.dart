@@ -1,5 +1,5 @@
+import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
-import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -44,18 +44,7 @@ class MyApp extends StatelessWidget {
 
     // final repo = context.read<MemoRepository>();
 
-    final _router = GoRouter(
-      initialLocation: '/home',
-      refreshListenable: authVM,
-      routes: [
-        GoRoute(
-          path: '/home',
-          pageBuilder: (context, state) {
-            return const NoTransitionPage(child: HomeScreen());
-          },
-        ),
-      ],
-    );
+    final _router = createAppRouter(context);
 
     return MaterialApp.router(
       title: title,
