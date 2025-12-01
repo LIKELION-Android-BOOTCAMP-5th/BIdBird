@@ -1,5 +1,5 @@
+import 'package:bidbird/core/utils/ui_set/icons.dart';
 import 'package:flutter/material.dart';
-import 'package:jm_in_the_back_alley/core/utils/ui_set/icons.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,9 +11,10 @@ class HomeScreen extends StatelessWidget {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              "홈",
-              style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
+            Image.asset(
+              'assets/logos/bidbird_text_logo.png',
+              width: 100,
+              height: 100,
             ),
             Row(
               spacing: 25,
