@@ -72,6 +72,9 @@ flutter:
   assets:
     - assets/icons/search_icon.png
     - assets/icons/alarm_icon.png
+    - assets/logos/bidbird_logo.png
+    - assets/logos/bidbird_text_logo.png
+    - assets/logos/bidbird_image_text_logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
