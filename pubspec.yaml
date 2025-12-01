@@ -70,8 +70,16 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
   assets:
+    - assets/icons/home_icon.png
+    - assets/icons/home_select_icon.png
     - assets/icons/search_icon.png
     - assets/icons/alarm_icon.png
+    - assets/icons/chat_icon.png
+    - assets/icons/chat_select_icon.png
+    - assets/icons/bid_icon.png
+    - assets/icons/bid_select_icon.png
+    - assets/icons/profile_icon.png
+    - assets/icons/profile_select_icon.png
     - assets/logos/bidbird_logo.png
     - assets/logos/bidbird_text_logo.png
     - assets/logos/bidbird_image_text_logo.png
