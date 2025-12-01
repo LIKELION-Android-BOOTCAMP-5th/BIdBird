@@ -21,13 +21,13 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Image.asset(
                   'assets/icons/search_icon.png',
-                  width: appbarIconSize.width,
-                  height: appbarIconSize.height,
+                  width: iconSize.width,
+                  height: iconSize.height,
                 ),
                 Image.asset(
                   'assets/icons/alarm_icon.png',
-                  width: appbarIconSize.width,
-                  height: appbarIconSize.height,
+                  width: iconSize.width,
+                  height: iconSize.height,
                 ),
               ],
             ),
