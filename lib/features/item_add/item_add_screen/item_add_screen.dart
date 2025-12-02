@@ -52,7 +52,7 @@ class ItemAddScreen extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(defaultRadius)),
       ),
       builder: (context) {
         return SafeArea(
@@ -161,7 +161,7 @@ class ItemAddScreen extends StatelessWidget {
                           height: 32,
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(defaultRadius),
                           ),
                           child: const Icon(
                             Icons.add,
@@ -181,7 +181,7 @@ class ItemAddScreen extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(defaultRadius),
                         ),
                         child: Text(
                           '${viewModel.selectedImages.length}/10',
@@ -368,7 +368,7 @@ class ItemAddScreen extends StatelessWidget {
                     },
                     activeColor: blueColor,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(defaultRadius),
                     ),
                   ),
                   const Expanded(
@@ -399,7 +399,7 @@ class ItemAddScreen extends StatelessWidget {
                 backgroundColor: blueColor,
                 disabledBackgroundColor: const Color(0xffD0D4DC),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(defaultRadius),
                 ),
               ),
               child: const Text(
