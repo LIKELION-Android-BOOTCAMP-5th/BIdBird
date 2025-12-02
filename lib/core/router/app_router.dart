@@ -12,6 +12,7 @@ import 'package:bidbird/features/item_registration/ui/item_registration_ui.dart'
 import 'package:bidbird/features/item_registration/viewmodel/item_registration_viewmodel.dart';
 import 'package:provider/provider.dart';
 import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
+import 'package:bidbird/features/profile/ui/my_page_screen.dart';
 import 'package:bidbird/features/profile/ui/profile_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
 import 'package:bidbird/features/user_profile/screen/user_profile_screen.dart';
@@ -130,7 +131,7 @@ GoRouter createAppRouter(BuildContext context) {
           GoRoute(
             path: '/my_page',
             pageBuilder: (context, state) {
-              return const NoTransitionPage(child: ProfileScreen());
+              return const NoTransitionPage(child: MyPageScreen());
             },
             routes: [
               GoRoute(
@@ -246,9 +247,7 @@ GoRouter createAppRouter(BuildContext context) {
         path: '/user/:userId',
         pageBuilder: (context, state) {
           final userId = state.pathParameters["userId"] ?? "";
-          return NoTransitionPage(
-            child: UserProfileScreen(userId: userId),
-          );
+          return NoTransitionPage(child: UserProfileScreen(userId: userId));
         },
         routes: [
           GoRoute(
