@@ -1,56 +1,43 @@
-import 'package:bidbird/core/supabase_client.dart';
+import 'dart:async';
+
+import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  bool isLoading = false;
+  bool _isLoggedIn = false;
+  bool get isLoggedIn => _isLoggedIn;
+  late StreamSubscription<AuthState> _subscription;
 
-  Future<void> signInWithGoogle(BuildContext context) async {
-    if (isLoading) return;
-
-    isLoading = true;
+  // 로그아웃 함수 (빠른 반응 + 백그라운드 처리)
+  Future<void> logout({VoidCallback? onLoggedOut}) async {
+    _isLoggedIn = false;
     notifyListeners();
 
+    onLoggedOut?.call();
+
+    unawaited(_performLogoutTasks());
+  }
+
+  Future<void> _performLogoutTasks() async {
     try {
-      final googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-        serverClientId:
-            '966757848850-cscnd3oli3ts6c8e6ch6p1ev485b9ej5.apps.googleusercontent.com',
-        
-      );
+      final googleSignIn = GoogleSignIn.instance;
 
-      final googleUser = await googleSignIn.signIn();
-
-      if (googleUser == null) {
-        return;
+      // Google 로그아웃 시도 (에러 무시)
+      try {
+        await googleSignIn.signOut();
+        await googleSignIn.disconnect();
+      } catch (e) {
+        debugPrint('⚠️ Google logout error: $e');
       }
 
-      final googleAuth = await googleUser.authentication;
-
-      if (googleAuth.idToken == null) {
-        throw Exception('구글 인증 토큰을 가져오지 못했습니다.');
-      }
-
-      final res = await supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: googleAuth.idToken!,
-        accessToken: googleAuth.accessToken,
-      );
-
-      if (res.user != null) {
-        if (context.mounted) {
-          context.go('/home');
-        }
-      }
+      // Supabase 세션 로그아웃
+      await SupabaseManager.shared.supabase.auth.signOut();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('로그인에 실패했습니다. 다시 시도해 주세요.')),
-      );
-    } finally {
-      isLoading = false;
-      notifyListeners();
+      debugPrint('⚠️ Logout failed: $e');
     }
+
+    debugPrint('✅ Background logout completed');
   }
 }
