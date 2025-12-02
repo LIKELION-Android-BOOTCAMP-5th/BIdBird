@@ -74,7 +74,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected ? blueColor : Colors.white,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(defaultRadius),
             border: Border.all(color: blueColor),
           ),
           child: Text(
@@ -196,8 +196,8 @@ class _HistoryCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(8.7),
-                  bottomLeft: Radius.circular(8.7),
+                  topLeft: Radius.circular(defaultRadius),
+                  bottomLeft: Radius.circular(defaultRadius),
                 ),
               ),
               child: Center(
@@ -206,7 +206,7 @@ class _HistoryCard extends StatelessWidget {
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(8.7),
+                      borderRadius: BorderRadius.circular(defaultRadius),
                     ),
                     // todo: 이미지 교체
                     child: const Icon(
@@ -262,7 +262,7 @@ class _HistoryCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8.7),
+                              borderRadius: defaultBorder,
                             ),
                             child: Text(
                               status,
@@ -332,7 +332,7 @@ final List<Map<String, String>> _saleHistory = [
     'title': '입찰 내역 2',
     'price': '530,000원',
     'date': '11월 18일 오후 06:30',
-    'status': '즉시 구매로',
+    'status': '즉시 구매',
   },
   {
     'title': '입찰 내역 3',
