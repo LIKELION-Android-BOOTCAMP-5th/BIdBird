@@ -53,22 +53,4 @@ class AuthViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  Future<void> signInWithKakao(BuildContext context) async {
-    if (isLoading) return;
-
-    isLoading = true;
-    notifyListeners();
-
-    try {
-      await supabase.auth.signInWithOAuth(OAuthProvider.kakao);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카카오 로그인에 실패했습니다. 다시 시도해 주세요.')),
-      );
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
 }
