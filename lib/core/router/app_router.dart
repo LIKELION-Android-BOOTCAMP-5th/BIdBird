@@ -2,7 +2,7 @@ import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/splash_screen.dart';
 import 'package:bidbird/features/auth/ui/auth_ui.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
-import 'package:bidbird/features/bid/ui/bid_screen.dart';
+import 'package:bidbird/features/trade/ui/current_trade_screen.dart';
 import 'package:bidbird/features/chat/ui/chat_screen.dart';
 import 'package:bidbird/features/chat/ui/chatting_room_screen.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
@@ -53,7 +53,7 @@ GoRouter createAppRouter(BuildContext context) {
           GoRoute(
             path: '/bid',
             pageBuilder: (context, state) {
-              return const NoTransitionPage(child: BidScreen());
+              return const NoTransitionPage(child: CurrentTradeScreen());
             },
           ),
           GoRoute(
