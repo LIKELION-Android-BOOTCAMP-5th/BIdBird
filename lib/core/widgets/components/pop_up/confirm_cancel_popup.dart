@@ -39,7 +39,11 @@ class ConfirmCancelPopup extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: titleFontStyle,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
             ),
             if (description != null) ...[
               const SizedBox(height: 8),

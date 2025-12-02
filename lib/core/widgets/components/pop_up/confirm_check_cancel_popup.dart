@@ -40,101 +40,110 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-              const SizedBox(height: 8),
-              Text(
-                widget.title,
-                textAlign: TextAlign.center,
-                style: titleFontStyle,
-              ),
-              if (widget.description != null) ...[
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
                 const SizedBox(height: 8),
                 Text(
-                  widget.description!,
+                  widget.title,
                   textAlign: TextAlign.center,
-                  style: contentFontStyle,
+                  style: titleFontStyle,
                 ),
-              ],
-              if (widget.checkLabel.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                if (widget.description != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.description!,
+                    textAlign: TextAlign.left,
+                    style: contentFontStyle,
+                  ),
+                ],
+                if (widget.checkLabel.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Checkbox(
+                        value: _checked,
+                        activeColor: blueColor,
+                        onChanged: (value) {
+                          setState(() {
+                            _checked = value ?? false;
+                          });
+                        },
+                      ),
+                      Text(
+                        widget.checkLabel,
+                        style: contentFontStyle,
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 16),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Checkbox(
-                      value: _checked,
-                      activeColor: blueColor,
-                      onChanged: (value) {
-                        setState(() {
-                          _checked = value ?? false;
-                        });
-                      },
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: FilledButton(
+                          style: ButtonStyle(
+                            backgroundColor:
+                                WidgetStateProperty.resolveWith(
+                              (states) {
+                                if (states.contains(WidgetState.disabled)) {
+                                  return Colors.grey.shade300;
+                                }
+                                return blueColor;
+                              },
+                            ),
+                          ),
+                          onPressed: _checked
+                              ? () {
+                                  Navigator.of(context).pop();
+                                  widget.onConfirm(_checked);
+                                }
+                              : null,
+                          child: Text(
+                            widget.confirmText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    Text(
-                      widget.checkLabel,
-                      style: contentFontStyle,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: FilledButton(
+                          style: ButtonStyle(
+                            backgroundColor:
+                                WidgetStateProperty.all<Color>(
+                                    Colors.grey.shade100),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            widget.onCancel();
+                          },
+                          child: Text(
+                            widget.cancelText,
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ],
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 44,
-                      child: FilledButton(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith(
-                            (states) {
-                              if (states.contains(WidgetState.disabled)) {
-                                return Colors.grey.shade300;
-                              }
-                              return blueColor;
-                            },
-                          ),
-                        ),
-                        onPressed: _checked
-                            ? () {
-                                Navigator.of(context).pop();
-                                widget.onConfirm(_checked);
-                              }
-                            : null,
-                        child: Text(
-                          widget.confirmText,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 44,
-                      child: FilledButton(
-                        style: ButtonStyle(
-                          backgroundColor:
-                              WidgetStateProperty.all<Color>(Colors.grey.shade100),
-                        ),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          widget.onCancel();
-                        },
-                        child: Text(
-                          widget.cancelText,
-                          style: const TextStyle(color: Colors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
+            ),
+          ),
         ),
       ),
     );

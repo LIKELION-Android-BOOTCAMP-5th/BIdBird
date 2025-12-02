@@ -231,7 +231,9 @@ class ItemAddViewModel extends ChangeNotifier {
       await supabase.from('items').insert(data.toJson(sellerId: user.id));
 
       messenger.showSnackBar(
-        const SnackBar(content: Text('매물이 등록되었습니다.')),
+        const SnackBar(
+          content: Text('매물이 저장되었습니다. 등록을 계속 진행해 주세요.'),
+        ),
       );
 
       Navigator.of(context).pop();
