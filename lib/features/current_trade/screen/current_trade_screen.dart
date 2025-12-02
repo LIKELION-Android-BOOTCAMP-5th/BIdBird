@@ -1,6 +1,10 @@
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/utils/ui_set/border_radius.dart';
+import '../../../core/utils/ui_set/icons.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
   const CurrentTradeScreen({super.key});
@@ -15,7 +19,19 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('현재 거래 내역')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('현재 거래 내역'),
+            Image.asset(
+              'assets/icons/alarm_icon.png',
+              width: iconSize.width,
+              height: iconSize.height,
+            ),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           _buildTabBar(),
@@ -64,8 +80,8 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontSize: buttonFontStyle.fontSize,
+              fontWeight: buttonFontStyle.fontWeight,
               color: isSelected ? Colors.white : blueColor,
             ),
           ),
@@ -164,7 +180,7 @@ class _HistoryCard extends StatelessWidget {
         height: 96,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8.7),
+          borderRadius: defaultBorder,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
