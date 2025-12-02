@@ -1,17 +1,36 @@
+import 'package:bidbird/core/firebase_manager.dart';
+import 'package:bidbird/core/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:event_bus/event_bus.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final SupabaseClient supabase = Supabase.instance.client;
-
 EventBus eventBus = EventBus();
 
+class SupabaseConfig {
+  static const String url = 'https://mdwelwjletorehxsptqa.supabase.co';
+  static const String anonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg';
+}
+
 void main() async {
-  await Supabase.initialize(url: '', anonKey: '');
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final notificationSettings = await FirebaseManager.shared.fcm
+      .requestPermission(provisional: true);
+  final fcmToken = await FirebaseManager.shared.getFcmToken();
+
+  print("fcm 토큰 : ${fcmToken}");
+
   runApp(
     MultiProvider(
       providers: [
@@ -65,19 +84,19 @@ class MyApp extends StatelessWidget {
 // 애니메이션 없이 페이지를 전환해주는 클래스
 class NoTransitionPage<T> extends CustomTransitionPage<T> {
   const NoTransitionPage({required super.child, super.key})
-      : super(
-    transitionDuration: Duration.zero, // 전환 시간 0
-    reverseTransitionDuration: Duration.zero, // 역전환 시간 0
-    transitionsBuilder: _noTransitionBuilder,
-  );
+    : super(
+        transitionDuration: Duration.zero, // 전환 시간 0
+        reverseTransitionDuration: Duration.zero, // 역전환 시간 0
+        transitionsBuilder: _noTransitionBuilder,
+      );
 }
 
 // 애니메이션 없이 child만 반환하는 빌더
 Widget _noTransitionBuilder(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-    ) {
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+  Widget child,
+) {
   return child;
 }
