@@ -1,5 +1,7 @@
+import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/icons.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -21,13 +23,13 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Image.asset(
                   'assets/icons/search_icon.png',
-                  width: appbarIconSize.width,
-                  height: appbarIconSize.height,
+                  width: iconSize.width,
+                  height: iconSize.height,
                 ),
                 Image.asset(
                   'assets/icons/alarm_icon.png',
-                  width: appbarIconSize.width,
-                  height: appbarIconSize.height,
+                  width: iconSize.width,
+                  height: iconSize.height,
                 ),
               ],
             ),
@@ -55,6 +57,17 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: 실제 매물 등록 화면으로 교체
+          context.push('/add_item');
+        },
+        backgroundColor: blueColor,
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
         ),
       ),
     );
