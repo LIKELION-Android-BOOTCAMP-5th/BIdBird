@@ -1,17 +1,16 @@
 import 'package:bidbird/core/router/app_router.dart';
+import 'package:bidbird/core/supabase_client.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-final SupabaseClient supabase = Supabase.instance.client;
 
 EventBus eventBus = EventBus();
 
 void main() async {
-  await Supabase.initialize(url: '', anonKey: '');
+  WidgetsFlutterBinding.ensureInitialized();
+  await initSupabase();
   runApp(
     MultiProvider(
       providers: [
