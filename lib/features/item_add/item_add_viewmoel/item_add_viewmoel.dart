@@ -144,6 +144,16 @@ class ItemAddViewModel extends ChangeNotifier {
     return null;
   }
 
+  void setSelectedKeywordTypeId(int? id) {
+    selectedKeywordTypeId = id;
+    notifyListeners();
+  }
+
+  void setSelectedDuration(String value) {
+    selectedDuration = value;
+    notifyListeners();
+  }
+
   Future<void> submit(BuildContext context) async {
     final String? error = validate();
     if (error != null) {
@@ -164,6 +174,7 @@ class ItemAddViewModel extends ChangeNotifier {
     notifyListeners();
 
     final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     try {
       final supabase = SupabaseManager.shared.supabase;
@@ -236,7 +247,7 @@ class ItemAddViewModel extends ChangeNotifier {
         ),
       );
 
-      Navigator.of(context).pop();
+      navigator.pop();
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('등록 중 오류가 발생했습니다: $e')),
