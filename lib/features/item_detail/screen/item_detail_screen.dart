@@ -3,6 +3,7 @@ import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
 import 'package:bidbird/features/price_Input/price_Input_screen/price_Input_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key});
@@ -290,13 +291,27 @@ class _ItemMainInfoSection extends StatelessWidget {
                     ],
                   ),
                 ),
-                TextButton(
-                  onPressed: () {},
+                OutlinedButton(
+                  onPressed: () {
+                    // TODO: 실제 sellerId로 교체
+                    context.push('/user/user_1');
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    side: BorderSide(color: Colors.grey[300]!),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    minimumSize: const Size(0, 0),
+                  ),
                   child: const Text(
                     '프로필 보기',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
+                      color: Colors.black87,
                     ),
                   ),
                 ),
