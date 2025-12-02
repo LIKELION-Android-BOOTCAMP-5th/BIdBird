@@ -59,7 +59,6 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   }
 
   String _formatBidUnit(int price) {
-    // 호가 단위는 1만원, 2만원처럼 N만원으로 표기
     if (price % 10000 == 0) {
       final unit = price ~/ 10000;
       return '$unit만원';

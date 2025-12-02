@@ -60,7 +60,7 @@ GoRouter createAppRouter(BuildContext context) {
       ];
       // 비로그인인데 publicRoutes 중 어떤 것도 아닌 경우 로그인 페이지로(지선생)
       final bool isPublic = publicRoutes.any(
-        (path) => currentRoute.startsWith(path),
+            (path) => currentRoute.startsWith(path),
       );
       if (!isLoggedIn && !isPublic) {
         return '/login';

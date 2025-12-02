@@ -29,7 +29,9 @@ class ItemRegistrationViewModel extends ChangeNotifier {
 
       final List<dynamic> data = await supabase
           .from('items')
-          .select('id, title, description, start_price, buy_now_price, thumbnail_image, locked, status')
+          .select(
+            'id, title, description, start_price, buy_now_price, thumbnail_image, keyword_type, locked, status',
+          )
           .eq('seller_id', user.id)
           .eq('locked', false);
 
@@ -42,6 +44,7 @@ class ItemRegistrationViewModel extends ChangeNotifier {
           startPrice: (map['start_price'] as num?)?.toInt() ?? 0,
           instantPrice: (map['buy_now_price'] as num?)?.toInt() ?? 0,
           thumbnailUrl: map['thumbnail_image'] as String?,
+          keywordTypeId: (map['keyword_type'] as num?)?.toInt(),
         );
       }).toList();
     } catch (e) {
@@ -78,7 +81,6 @@ class ItemRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
 
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
 
     try {
       final supabase = SupabaseManager.shared.supabase;
@@ -99,7 +101,7 @@ class ItemRegistrationViewModel extends ChangeNotifier {
 
       await fetchMyPendingItems();
 
-      navigator.pop();
+      Navigator.of(context).pop();
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('등록 중 오류가 발생했습니다: $e')),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
-import 'package:bidbird/features/price_Input/price_Input_screen/price_Input_screen.dart';
+import 'package:bidbird/features/price_Input/price_Input_screen/price_input_screen.dart';
 import 'package:go_router/go_router.dart';
 
 class ItemDetailScreen extends StatelessWidget {
