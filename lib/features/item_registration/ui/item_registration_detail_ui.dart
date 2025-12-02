@@ -30,10 +30,21 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
               final editViewModel = ItemAddViewModel();
               editViewModel.titleController.text = item.title;
               editViewModel.startPriceController.text =
-                  item.startPrice.toString();
-              editViewModel.instantPriceController.text =
-                  item.instantPrice.toString();
+                  editViewModel.formatNumber(item.startPrice.toString());
+
+              if (item.instantPrice > 0) {
+                editViewModel.instantPriceController.text =
+                    editViewModel.formatNumber(item.instantPrice.toString());
+                editViewModel.setUseInstantPrice(true);
+              }
+
               editViewModel.descriptionController.text = item.description;
+
+              // 카테고리(id)가 있다면 선택값으로 설정
+              editViewModel.selectedKeywordTypeId = item.keywordTypeId;
+
+              // 카테고리 목록을 불러오도록 초기화
+              editViewModel.init();
 
               Navigator.of(context).push(
                 PageRouteBuilder(
@@ -80,7 +91,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                   _ConfirmImageSection(thumbnailUrl: item.thumbnailUrl),
                   const SizedBox(height: 8),
                   _ConfirmMainInfoSection(item: item),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _ConfirmDescriptionSection(description: item.description),
                   const SizedBox(height: 24),
                 ],
@@ -175,7 +186,7 @@ class _ConfirmImageSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 280,
+      height: 240,
       child: Container(
         width: double.infinity,
         color: Colors.grey[200],
@@ -187,7 +198,7 @@ class _ConfirmImageSection extends StatelessWidget {
                 ),
               )
             : ClipRRect(
-                borderRadius: BorderRadius.circular(0),
+                borderRadius: BorderRadius.circular(defaultRadius),
                 child: Image.network(
                   thumbnailUrl!,
                   fit: BoxFit.cover,
@@ -227,7 +238,7 @@ class _ConfirmMainInfoSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -247,7 +258,7 @@ class _ConfirmMainInfoSection extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             '시작가 ₩${_formatPrice(item.startPrice)}',
             style: const TextStyle(
@@ -255,7 +266,7 @@ class _ConfirmMainInfoSection extends StatelessWidget {
               color: Colors.grey,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             '즉시 입찰가 ₩${_formatPrice(item.instantPrice)}',
             style: TextStyle(
@@ -278,7 +289,7 @@ class _ConfirmDescriptionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 8),
+      margin: const EdgeInsets.only(top: 4),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       color: Colors.white,
       child: Column(

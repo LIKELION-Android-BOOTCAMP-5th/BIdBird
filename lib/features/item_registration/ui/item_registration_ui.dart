@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
 import 'item_registration_detail_ui.dart';
@@ -22,7 +23,7 @@ class ItemRegistrationScreen extends StatelessWidget {
                   child: Text('등록할 매물이 없습니다.'),
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   itemBuilder: (context, index) {
                     final item = vm.items[index];
                     return InkWell(
@@ -43,72 +44,103 @@ class ItemRegistrationScreen extends StatelessWidget {
                           ),
                         );
                       },
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          item.thumbnailUrl != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    item.thumbnailUrl!,
-                                    width: 40,
-                                    height: 40,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const SizedBox(
-                                        width: 40,
-                                        height: 40,
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                )
-                              : const SizedBox(
-                                  width: 40,
-                                  height: 40,
-                                  child: DecoratedBox(
-                                    decoration:
-                                        BoxDecoration(color: Colors.grey),
-                                  ),
-                                ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.title,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '시작가 ${item.startPrice}원 · 즉시 ${item.instantPrice}원',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(defaultRadius),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x14000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: const Color(0xffF2F3F7),
+                                borderRadius: BorderRadius.circular(defaultRadius),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: item.thumbnailUrl != null
+                                  ? Image.network(
+                                      item.thumbnailUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return const DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            color: Color(0xffD1D4DD),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : const DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color: Color(0xffD1D4DD),
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.title,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '시작가 ${_formatPrice(item.startPrice)}원',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  if (item.instantPrice > 0)
+                                    Text(
+                                      '즉시 ${_formatPrice(item.instantPrice)}원',
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
-                  separatorBuilder: (_, __) => const Divider(height: 16),
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemCount: vm.items.length,
                 ),
     );
   }
 }
 
-
+String _formatPrice(int price) {
+  final buffer = StringBuffer();
+  final text = price.toString();
+  for (int i = 0; i < text.length; i++) {
+    final reverseIndex = text.length - i;
+    buffer.write(text[i]);
+    if (reverseIndex > 1 && reverseIndex % 3 == 1 && i != text.length - 1) {
+      buffer.write(',');
+    }
+  }
+  return buffer.toString();
+}

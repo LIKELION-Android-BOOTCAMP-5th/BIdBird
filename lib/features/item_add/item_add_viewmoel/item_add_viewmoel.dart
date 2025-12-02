@@ -27,6 +27,7 @@ class ItemAddViewModel extends ChangeNotifier {
   bool agreed = false;
   bool isLoadingKeywords = false;
   bool isSubmitting = false;
+  bool useInstantPrice = false;
 
   void disposeControllers() {
     titleController.dispose();
@@ -54,8 +55,7 @@ class ItemAddViewModel extends ChangeNotifier {
         ..clear()
         ..addAll(data.cast<Map<String, dynamic>>());
     } catch (e) {
-      // 에러는 화면에서 처리할 수 있도록 throw
-      throw Exception('키워드를 불러오는 중 오류가 발생했습니다: $e');
+      throw Exception('카테고리를 불러오는 중 오류가 발생했습니다: $e');
     } finally {
       isLoadingKeywords = false;
       notifyListeners();
@@ -121,12 +121,14 @@ class ItemAddViewModel extends ChangeNotifier {
       return '시작가는 1,000원 이상이어야 합니다.';
     }
 
-    if (instantPrice == null) {
-      return '즉시 입찰가를 숫자로 입력해주세요.';
-    }
+    if (useInstantPrice) {
+      if (instantPrice == null) {
+        return '즉시 입찰가를 숫자로 입력해주세요.';
+      }
 
-    if (instantPrice <= startPrice) {
-      return '즉시 입찰가는 시작가보다 높아야 합니다.';
+      if (instantPrice <= startPrice) {
+        return '즉시 입찰가는 시작가보다 높아야 합니다.';
+      }
     }
 
     if (selectedImages.isEmpty) {
@@ -154,6 +156,29 @@ class ItemAddViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setUseInstantPrice(bool value) {
+    useInstantPrice = value;
+    if (!value) {
+      instantPriceController.clear();
+    }
+    notifyListeners();
+  }
+
+  String formatNumber(String value) {
+    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return '';
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      final reverseIndex = digits.length - i;
+      buffer.write(digits[i]);
+      if (reverseIndex > 1 && reverseIndex % 3 == 1 && i != digits.length - 1) {
+        buffer.write(',');
+      }
+    }
+    return buffer.toString();
+  }
+
   Future<void> submit(BuildContext context) async {
     final String? error = validate();
     if (error != null) {
@@ -167,8 +192,9 @@ class ItemAddViewModel extends ChangeNotifier {
     final String description = descriptionController.text.trim();
     final int startPrice =
         int.parse(startPriceController.text.replaceAll(',', ''));
-    final int instantPrice =
-        int.parse(instantPriceController.text.replaceAll(',', ''));
+    final int instantPrice = useInstantPrice
+        ? int.parse(instantPriceController.text.replaceAll(',', ''))
+        : 0;
 
     isSubmitting = true;
     notifyListeners();
