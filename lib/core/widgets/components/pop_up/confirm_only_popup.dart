@@ -35,7 +35,7 @@ class ConfirmOnlyPopup extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: titleFontStyle,
+              style: contentFontStyle,
             ),
             if (description != null) ...[
               const SizedBox(height: 8),
