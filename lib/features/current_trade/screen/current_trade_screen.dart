@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:go_router/go_router.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
   const CurrentTradeScreen({super.key});
@@ -88,6 +89,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           price: item['price'] ?? '',
           date: item['date'] ?? '',
           status: item['status'] ?? '',
+          onTap: () {
+            // TODO: 실제 아이템 ID를 사용해서 상세 화면으로 이동하도록 수정
+            context.push('/item/item_1');
+          },
         );
       },
     );
@@ -106,6 +111,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           price: item['price'] ?? '',
           date: item['date'] ?? '',
           status: item['status'] ?? '',
+          onTap: () {
+            // TODO: 실제 아이템 ID를 사용해서 상세 화면으로 이동하도록 수정
+            context.push('/item/item_1');
+          },
         );
       },
     );
@@ -119,6 +128,7 @@ class _HistoryCard extends StatelessWidget {
     required this.price,
     required this.date,
     required this.status,
+    this.onTap,
   });
 
   final String title;
@@ -126,9 +136,10 @@ class _HistoryCard extends StatelessWidget {
   final String price;
   final String date;
   final String status;
+  final VoidCallback? onTap;
 
   Color _statusColor() {
-    if (status.contains('최고입찰 중') || status.contains('즉시 구매로') || status == '낙찰') {
+    if (status.contains('최고입찰 중') || status.contains('즉시 구매') || status == '낙찰') {
       return Colors.green;
     }
     if (status.contains('상위 입찰 발생')) {
@@ -145,111 +156,114 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 96,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.7),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 96,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(8.7),
-                bottomLeft: Radius.circular(8.7),
-              ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 96,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8.7),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(8.7),
-                  ),
-                  // todo: 이미지 교체
-                  child: const Icon(
-                    Icons.image,
-                    size: 32,
-                    color: Colors.grey,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 96,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8.7),
+                  bottomLeft: Radius.circular(8.7),
+                ),
+              ),
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(8.7),
+                    ),
+                    // todo: 이미지 교체
+                    child: const Icon(
+                      Icons.image,
+                      size: 32,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '$priceLabel: $price',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        date,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                    ),
+                    Text(
+                      '$priceLabel: $price',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          date,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8.7),
-                          ),
-                          child: Text(
-                            status,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: _statusColor(),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8.7),
+                            ),
+                            child: Text(
+                              status,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: _statusColor(),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

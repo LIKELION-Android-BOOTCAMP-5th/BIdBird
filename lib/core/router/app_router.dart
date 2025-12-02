@@ -2,12 +2,13 @@ import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/splash_screen.dart';
 import 'package:bidbird/features/auth/ui/auth_ui.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
-import 'package:bidbird/features/trade/ui/current_trade_screen.dart';
 import 'package:bidbird/features/chat/ui/chat_screen.dart';
 import 'package:bidbird/features/chat/ui/chatting_room_screen.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
+import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/profile/ui/profile_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
+import 'package:bidbird/features/current_trade/screen/current_trade_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -80,7 +81,7 @@ GoRouter createAppRouter(BuildContext context) {
             ],
           ),
           GoRoute(
-            path: '/profile',
+            path: '/my_page',
             pageBuilder: (context, state) {
               return const NoTransitionPage(child: ProfileScreen());
             },
@@ -160,7 +161,8 @@ GoRouter createAppRouter(BuildContext context) {
         path: '/item/:id',
         pageBuilder: (context, state) {
           final itemId = state.pathParameters["id"] ?? "";
-          return const NoTransitionPage(child: HomeScreen());
+          // TODO: itemId를 사용해 실제 상세 데이터를 로드하도록 연동
+          return const NoTransitionPage(child: ItemDetailScreen());
         },
       ),
       GoRoute(
