@@ -2,6 +2,10 @@ import 'package:bidbird/core/firebase_manager.dart';
 import 'package:bidbird/core/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+
+import 'package:bidbird/features/profile/data/profile_repository.dart';
+import 'package:bidbird/features/profile/viewmodel/profile_viewmodel.dart';
+
 import 'package:event_bus/event_bus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +41,11 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) {
             return AuthViewModel();
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (context) {
+            return ProfileViewModel(ProfileRepository());
           },
         ),
       ],
