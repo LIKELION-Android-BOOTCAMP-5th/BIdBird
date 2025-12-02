@@ -10,6 +10,8 @@ import 'package:bidbird/features/item_add/item_add_screen/item_add_screen.dart';
 import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/profile/ui/profile_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
+import 'package:bidbird/features/user_profile/screen/user_profile_screen.dart';
+import 'package:bidbird/features/user_profile/screen/user_trade_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -230,13 +232,18 @@ GoRouter createAppRouter(BuildContext context) {
         path: '/user/:userId',
         pageBuilder: (context, state) {
           final userId = state.pathParameters["userId"] ?? "";
-          return const NoTransitionPage(child: HomeScreen());
+          return NoTransitionPage(
+            child: UserProfileScreen(userId: userId),
+          );
         },
         routes: [
           GoRoute(
             path: '/trade',
             pageBuilder: (context, state) {
-              return const NoTransitionPage(child: HomeScreen());
+              final userId = state.pathParameters["userId"] ?? "";
+              return NoTransitionPage(
+                child: UserTradeHistoryScreen(userId: userId),
+              );
             },
           ),
         ],
