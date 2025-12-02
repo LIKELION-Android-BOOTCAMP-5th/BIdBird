@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class ItemDetail {
   ItemDetail({
     required this.itemId,
