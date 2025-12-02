@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'data/user_entity.dart';
+
 class SupabaseManager {
   // 이유 - 밖에서 shared를 null등 건드리지 못하게
   // 오 일단 생성이 되었다.
@@ -49,5 +51,18 @@ class SupabaseManager {
       idToken: idToken,
       accessToken: accessToken,
     );
+  }
+
+  Future<UserEntity?> fetchUser(String id) async {
+    final List<Map<String, dynamic>> data = await supabase
+        .from('users')
+        .select()
+        .eq('id', id);
+
+    if (data.length == 0) return null;
+    final List<UserEntity> results = data.map((json) {
+      return UserEntity.fromJson(json);
+    }).toList();
+    return results.first;
   }
 }
