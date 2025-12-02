@@ -1,6 +1,9 @@
+import 'package:bidbird/core/firebase_manager.dart';
+import 'package:bidbird/core/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:event_bus/event_bus.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +23,14 @@ void main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final notificationSettings = await FirebaseManager.shared.fcm
+      .requestPermission(provisional: true);
+  final fcmToken = await FirebaseManager.shared.getFcmToken();
+
+  print("fcm 토큰 : ${fcmToken}");
+
   runApp(
     MultiProvider(
       providers: [
