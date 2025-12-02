@@ -42,7 +42,7 @@ dependencies:
   dio: ^5.9.0
   shared_preferences: ^2.5.3
   modal_bottom_sheet: ^3.0.0
-  google_sign_in: ^6.2.1
+  google_sign_in: ^7.2.0
   firebase_core: ^4.2.1
   firebase_messaging: ^16.0.4
   flutter_local_notifications: ^18.0.1

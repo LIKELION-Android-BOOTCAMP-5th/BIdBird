@@ -8,3 +8,8 @@ final TextStyle titleFontStyle = TextStyle(
   fontSize: 32,
   fontWeight: FontWeight.bold,
 );
+
+const TextStyle contentFontStyle = TextStyle(
+  fontSize: 16,
+  fontWeight: FontWeight.normal,
+);
