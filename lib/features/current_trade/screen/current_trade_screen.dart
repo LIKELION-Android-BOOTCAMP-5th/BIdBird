@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
@@ -15,9 +15,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('현재 거래 내역'),
-      ),
+      appBar: AppBar(title: const Text('현재 거래 내역')),
       body: Column(
         children: [
           _buildTabBar(),
@@ -139,13 +137,17 @@ class _HistoryCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   Color _statusColor() {
-    if (status.contains('최고입찰 중') || status.contains('즉시 구매') || status == '낙찰') {
+    if (status.contains('최고입찰 중') ||
+        status.contains('즉시 구매') ||
+        status == '낙찰') {
       return Colors.green;
     }
     if (status.contains('상위 입찰 발생')) {
       return Colors.orange;
     }
-    if (status.contains('유찰') || status.contains('패찰') || status.contains('입찰 제한')) {
+    if (status.contains('유찰') ||
+        status.contains('패찰') ||
+        status.contains('입찰 제한')) {
       return Colors.redAccent;
     }
     if (status.contains('입찰 없음')) {

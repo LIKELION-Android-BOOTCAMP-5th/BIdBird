@@ -21,7 +21,7 @@ class SupabaseManager {
 
   Future<void> googleSignIn() async {
     const webClientId =
-        '966757848850-b37tt3fhagh5dhlmcu3uaka0se6ipc86.apps.googleusercontent.com';
+        '966757848850-cscnd3oli3ts6c8e6ch6p1ev485b9ej5.apps.googleusercontent.com';
 
     const iosClientId =
         '966757848850-1cj4f09hqn0nlfk1e2l3i0rbs82gqtos.apps.googleusercontent.com';
