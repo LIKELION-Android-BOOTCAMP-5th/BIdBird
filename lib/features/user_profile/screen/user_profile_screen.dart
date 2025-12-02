@@ -1,5 +1,4 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/user_profile/viewmodel/user_profile_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -41,7 +40,7 @@ class UserProfileScreen extends StatelessWidget {
                             borderRadius: defaultBorder,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
+                                color: Colors.black.withValues(alpha: 0.03),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -129,7 +128,7 @@ class UserProfileScreen extends StatelessWidget {
                               borderRadius: defaultBorder,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.02),
+                                  color: Colors.black.withValues(alpha: 0.02),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),

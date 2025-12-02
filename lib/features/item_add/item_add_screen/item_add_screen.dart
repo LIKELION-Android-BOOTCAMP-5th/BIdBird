@@ -162,7 +162,7 @@ class ItemAddScreen extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
+                            color: Colors.black.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(defaultRadius),
                           ),
                           child: const Icon(
@@ -182,7 +182,7 @@ class ItemAddScreen extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(defaultRadius),
                         ),
                         child: Text(
@@ -222,7 +222,7 @@ class ItemAddScreen extends StatelessWidget {
                       ),
                     )
                   : DropdownButtonFormField<int>(
-                      value: viewModel.selectedKeywordTypeId,
+                      initialValue: viewModel.selectedKeywordTypeId,
                       items: viewModel.keywordTypes
                           .map(
                             (e) => DropdownMenuItem<int>(
@@ -238,8 +238,7 @@ class ItemAddScreen extends StatelessWidget {
                           )
                           .toList(),
                       onChanged: (value) {
-                        viewModel.selectedKeywordTypeId = value;
-                        viewModel.notifyListeners();
+                        viewModel.setSelectedKeywordTypeId(value);
                       },
                       decoration: _inputDecoration('카테고리 선택'),
                       icon: const Icon(Icons.keyboard_arrow_down_rounded),
@@ -284,7 +283,7 @@ class ItemAddScreen extends StatelessWidget {
               const SizedBox(height: 20),
               _buildLabel('경매 기간(시간)'),
               DropdownButtonFormField<String>(
-                value: viewModel.selectedDuration,
+                initialValue: viewModel.selectedDuration,
                 items: viewModel.durations
                     .map(
                       (e) => DropdownMenuItem<String>(
@@ -301,8 +300,7 @@ class ItemAddScreen extends StatelessWidget {
                     .toList(),
                 onChanged: (value) {
                   if (value == null) return;
-                  viewModel.selectedDuration = value;
-                  viewModel.notifyListeners();
+                  viewModel.setSelectedDuration(value);
                 },
                 decoration: _inputDecoration('4시간'),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
