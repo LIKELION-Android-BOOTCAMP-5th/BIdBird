@@ -1,3 +1,5 @@
 import 'package:flutter/cupertino.dart';
 
-final BorderRadiusGeometry defaultBorder = BorderRadius.circular(8.7);
+const double defaultRadius = 8.7;
+
+final BorderRadiusGeometry defaultBorder = BorderRadius.circular(defaultRadius);

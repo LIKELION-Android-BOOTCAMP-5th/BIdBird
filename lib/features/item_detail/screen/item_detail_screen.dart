@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
+import 'package:bidbird/features/price_Input/price_Input_screen/price_Input_screen.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key});
@@ -122,8 +124,8 @@ class _ItemMainInfoSection extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(8.7),
-          topRight: Radius.circular(8.7),
+          topLeft: Radius.circular(defaultRadius),
+          topRight: Radius.circular(defaultRadius),
         ),
       ),
       child: Column(
@@ -173,7 +175,7 @@ class _ItemMainInfoSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8.7),
+              borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.03),
@@ -236,7 +238,7 @@ class _ItemMainInfoSection extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(8.7),
+              borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.02),
@@ -383,7 +385,20 @@ class _BottomActionBar extends StatelessWidget {
                       height: 44,
                       child: OutlinedButton(
                         onPressed: () {
-                          // TODO: 이후 바텀시트로 입찰 UI 연결
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.white,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(defaultRadius),
+                              ),
+                            ),
+                            builder: (context) {
+                              // TODO: 실제 itemId를 전달하도록 수정
+                              return const BidBottomSheet(itemId: 'item_1');
+                            },
+                          );
                         },
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: blueColor),
