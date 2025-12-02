@@ -4,15 +4,17 @@ import 'package:bidbird/features/auth/ui/auth_ui.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/chat/ui/chat_screen.dart';
 import 'package:bidbird/features/chat/ui/chatting_room_screen.dart';
+import 'package:bidbird/features/current_trade/screen/current_trade_screen.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
-import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/item_add/item_add_screen/item_add_screen.dart';
+import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/profile/ui/profile_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
-import 'package:bidbird/features/current_trade/screen/current_trade_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import '../data/user_entity.dart';
 
 GoRouter createAppRouter(BuildContext context) {
   final AuthViewModel authVM = context.read<AuthViewModel>();
@@ -20,6 +22,44 @@ GoRouter createAppRouter(BuildContext context) {
   return GoRouter(
     initialLocation: '/login',
     refreshListenable: authVM,
+    redirect: (BuildContext context, GoRouterState state) {
+      final bool isLoggedIn = authVM.isLoggedIn;
+      debugPrint("[리디렉트] isLoggedIn: ${isLoggedIn}");
+
+      final String currentRoute = state.uri.toString();
+      debugPrint("[리디렉트] currentRoute: ${currentRoute}");
+
+      final UserEntity? user = authVM.user;
+
+      //로그인 되면 홈화면으로 이동
+      if (isLoggedIn && currentRoute == '/login') {
+        return '/home';
+        // 밴 유저는 밴유저 페이지로
+      } else if (isLoggedIn && user?.is_banned == true) {
+        return '/blocked';
+        // 삭제한 유저는 삭제유저 페이지로
+      } else if (isLoggedIn && user?.unregister_at != null) {
+        return '/deleted_user';
+      }
+
+      //접근 가능한 화면
+      final List<String> publicRoutes = [
+        '/login',
+        '/splash',
+        '/home',
+        '/blocked',
+        '/deleted_user',
+        '/set_profile',
+      ];
+      // 비로그인인데 publicRoutes 중 어떤 것도 아닌 경우 로그인 페이지로(지선생)
+      final bool isPublic = publicRoutes.any(
+        (path) => currentRoute.startsWith(path),
+      );
+      if (!isLoggedIn && !isPublic) {
+        return '/login';
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/splash',

@@ -44,7 +44,7 @@ class ProfileScreen extends StatelessWidget {
                         Navigator.pop(dialogContext);
                         await context.read<AuthViewModel>().logout(
                           onLoggedOut: () {
-                            context.go('/home');
+                            context.go('/login');
                           },
                         );
                       },
