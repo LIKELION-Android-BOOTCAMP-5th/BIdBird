@@ -1,0 +1,3 @@
+class LoginEventBus {
+  LoginEventBus();
+}
