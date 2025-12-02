@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:bidbird/core/widgets/components/pop_up/confirm_cancel_popup.dart';
+import 'package:bidbird/core/widgets/components/pop_up/confirm_only_popup.dart';
 import 'package:provider/provider.dart';
 
 import '../item_add_viewmoel/item_add_viewmoel.dart';
@@ -317,68 +319,6 @@ class ItemAddScreen extends StatelessWidget {
                 maxLines: 5,
                 decoration: _inputDecoration('상품에 대한 상세한 설명을 입력하세요'),
               ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xffF5F6FA),
-                  borderRadius: defaultBorder,
-                  border: Border.all(color: const Color(0xffE0E3EB)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      '등록 약관',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '1. 판매자는 시작가와 즉시 구매가(선택 입력)를 정확하게 입력해야 합니다. 허위 정보 입력은 금지됩니다.\n'
-                      '2. 등록된 매물은 경매 시작 시점부터 경매 종료까지 임의 수정 또는 삭제가 제한될 수 있습니다.\n'
-                      '3. 경매 종료 후 낙찰자가 존재할 경우, 판매자는 해당 낙찰자에게 매물을 반드시 인도해야 합니다. 임의 취소는 허용되지 않습니다.\n'
-                      '4. 낙찰 금액 또는 즉시 구매 금액은 플랫폼 정책에 따라 결제·정산 절차가 진행됩니다. 판매자는 이에 동의한 것으로 간주됩니다.\n'
-                      '5. 매물 설명, 사진, 상태 정보 등 모든 기재 내용은 사실에 기반해야 합니다. 허위 또는 과장 기재로 인해 발생하는 문제는 판매자 책임입니다.\n'
-                      '6. 불법 물품, 타인의 권리를 침해하는 물품, 거래가 제한된 물품은 등록이 금지됩니다. 위반 시 매물 삭제 및 서비스 이용 제한이 적용될 수 있습니다.\n'
-                      '7. 거래 과정에서 분쟁이 발생할 경우, 플랫폼의 분쟁 처리 기준 및 검증 절차가 우선 적용됩니다. 판매자는 관련 자료 제출 요청에 협조해야 합니다.\n'
-                      '8. 매물 등록 시점부터 거래 종료까지 모든 기록은 운영 정책에 따라 보관·검토될 수 있습니다.\n'
-                      '9. 약관에 위배되는 행위가 확인될 경우, 플랫폼은 매물 삭제, 거래 중단, 계정 제재 등의 조치를 시행할 수 있습니다.\n'
-                      '10. 본 약관은 등록 시점 기준으로 적용되며, 운영 정책에 따라 변경될 수 있습니다.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.4,
-                        color: Color(0xff6E7485),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Checkbox(
-                    value: viewModel.agreed,
-                    onChanged: (value) {
-                      viewModel.agreed = value ?? false;
-                      viewModel.notifyListeners();
-                    },
-                    activeColor: blueColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(defaultRadius),
-                    ),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      '위 약관에 동의합니다.',
-                      style: TextStyle(fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 80),
             ],
           ),
@@ -386,15 +326,36 @@ class ItemAddScreen extends StatelessWidget {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
           child: SizedBox(
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed:
-                  viewModel.agreed && !viewModel.isSubmitting
-                      ? () => viewModel.submit(context)
-                      : null,
+              onPressed: viewModel.isSubmitting
+                  ? null
+                  : () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => ConfirmCancelPopup(
+                          title: '저장하시겠습니까?',
+                          onConfirm: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => ConfirmOnlyPopup(
+                                title: '알림',
+                                description:
+                                    '매물 등록하기로 이동하여 최종 등록을 진행해 주세요.',
+                                confirmText: '확인',
+                                onConfirm: () {
+                                  viewModel.submit(context);
+                                },
+                              ),
+                            );
+                          },
+                          onCancel: () {},
+                        ),
+                      );
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: blueColor,
                 disabledBackgroundColor: const Color(0xffD0D4DC),
@@ -403,7 +364,7 @@ class ItemAddScreen extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                '등록하기',
+                '저장하기',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
