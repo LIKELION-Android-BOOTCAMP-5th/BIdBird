@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "784088242608",
+    "project_id": "bidbird-5164d",
+    "storage_bucket": "bidbird-5164d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:784088242608:android:bb7443aabe3aad13c6de75",
+        "android_client_info": {
+          "package_name": "com.example.bidbird"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDts4NYB4_XEncwNF79CZKPI9yGzHiteMw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
