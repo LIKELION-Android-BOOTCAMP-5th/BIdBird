@@ -1,16 +1,25 @@
 import 'package:bidbird/core/router/app_router.dart';
-import 'package:bidbird/core/supabase_client.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 EventBus eventBus = EventBus();
 
+class SupabaseConfig {
+  static const String url = 'https://mdwelwjletorehxsptqa.supabase.co';
+  static const String anonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg';
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initSupabase();
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
   runApp(
     MultiProvider(
       providers: [

@@ -1,9 +1,8 @@
+import 'package:bidbird/core/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/fonts.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -37,9 +36,9 @@ class LoginScreen extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    onPressed: () {
-                      final authVM = context.read<AuthViewModel>();
-                      authVM.signInWithGoogle(context);
+                    onPressed: () async {
+                      SupabaseManager().googleSignIn();
+                      context.go('/home');
                     },
                     child: Text(
                       'Google 계정으로 계속하기',
