@@ -71,7 +71,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: trade.statusColor.withOpacity(0.1),
+                      color: trade.statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(

@@ -179,7 +179,7 @@ class _ItemMainInfoSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -242,7 +242,7 @@ class _ItemMainInfoSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),
@@ -462,52 +462,6 @@ class _BottomActionBar extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _RoundTextButton extends StatelessWidget {
-  const _RoundTextButton({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
-class _HeartButton extends StatelessWidget {
-  const _HeartButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(
-        Icons.favorite_border,
-        size: 20,
-        color: Colors.red,
       ),
     );
   }
