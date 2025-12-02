@@ -50,31 +50,6 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFEE500),
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.7),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      final authVM = context.read<AuthViewModel>();
-                      authVM.signInWithKakao(context);
-                    },
-                    child: Text(
-                      '카카오로 계속하기',
-                      style: titleFontStyle.copyWith(
-                        fontSize: 18,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24),
               ],
             ),
