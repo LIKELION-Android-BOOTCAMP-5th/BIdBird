@@ -81,6 +81,7 @@ class ItemRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
 
     final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     try {
       final supabase = SupabaseManager.shared.supabase;
@@ -101,7 +102,7 @@ class ItemRegistrationViewModel extends ChangeNotifier {
 
       await fetchMyPendingItems();
 
-      Navigator.of(context).pop();
+      navigator.pop();
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('등록 중 오류가 발생했습니다: $e')),
