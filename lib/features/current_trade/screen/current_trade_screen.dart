@@ -1,6 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/fonts.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/utils/ui_set/border_radius.dart';
+import '../../../core/utils/ui_set/icons.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
   const CurrentTradeScreen({super.key});
@@ -16,7 +20,17 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('현재 거래 내역'),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('현재 거래 내역'),
+            Image.asset(
+              'assets/icons/alarm_icon.png',
+              width: iconSize.width,
+              height: iconSize.height,
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -66,8 +80,8 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontSize: buttonFontStyle.fontSize,
+              fontWeight: buttonFontStyle.fontWeight,
               color: isSelected ? Colors.white : blueColor,
             ),
           ),
@@ -139,13 +153,17 @@ class _HistoryCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   Color _statusColor() {
-    if (status.contains('최고입찰 중') || status.contains('즉시 구매') || status == '낙찰') {
+    if (status.contains('최고입찰 중') ||
+        status.contains('즉시 구매') ||
+        status == '낙찰') {
       return Colors.green;
     }
     if (status.contains('상위 입찰 발생')) {
       return Colors.orange;
     }
-    if (status.contains('유찰') || status.contains('패찰') || status.contains('입찰 제한')) {
+    if (status.contains('유찰') ||
+        status.contains('패찰') ||
+        status.contains('입찰 제한')) {
       return Colors.redAccent;
     }
     if (status.contains('입찰 없음')) {
@@ -162,7 +180,7 @@ class _HistoryCard extends StatelessWidget {
         height: 96,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8.7),
+          borderRadius: defaultBorder,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
