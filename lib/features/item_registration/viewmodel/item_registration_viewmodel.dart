@@ -1,6 +1,5 @@
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
-
 import '../data/item_registration_data.dart';
 
 class ItemRegistrationViewModel extends ChangeNotifier {
@@ -85,6 +84,7 @@ class ItemRegistrationViewModel extends ChangeNotifier {
 
     try {
       final supabase = SupabaseManager.shared.supabase;
+      final user = supabase.auth.currentUser;
 
       await supabase
           .from('items')
@@ -95,6 +95,24 @@ class ItemRegistrationViewModel extends ChangeNotifier {
             'auction_stat': auctionStartAt.toIso8601String(),
           })
           .eq('id', itemId);
+
+      if (user != null) {
+        await supabase.from('status_history').insert(<String, dynamic>{
+          'item_id': itemId,
+          'prev_status': null,
+          'new_status': 'AUCTION_SCHEDULED',
+          'reason_code': null,
+          'created_at': auctionStartAt.toIso8601String(),
+          'user_id': user.id,
+        });
+
+        await supabase.from('bid_log').insert(<String, dynamic>{
+          'item_id': itemId,
+          'user_id': user.id,
+          'bid_price': 0,
+          'bid_time': auctionStartAt.toIso8601String(),
+        });
+      }
 
       messenger.showSnackBar(
         const SnackBar(content: Text('매물이 등록되었습니다.')),
