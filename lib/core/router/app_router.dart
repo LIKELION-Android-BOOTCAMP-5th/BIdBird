@@ -8,6 +8,8 @@ import 'package:bidbird/features/current_trade/screen/current_trade_screen.dart'
 import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item_add/item_add_screen/item_add_screen.dart';
 import 'package:bidbird/features/item_add/item_add_viewmoel/item_add_viewmoel.dart';
+import 'package:bidbird/features/item_registration/ui/item_registration_ui.dart';
+import 'package:bidbird/features/item_registration/viewmodel/item_registration_viewmodel.dart';
 import 'package:provider/provider.dart';
 import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/profile/ui/profile_screen.dart';
@@ -230,7 +232,12 @@ GoRouter createAppRouter(BuildContext context) {
           GoRoute(
             path: '/check',
             pageBuilder: (context, state) {
-              return const NoTransitionPage(child: HomeScreen());
+              return NoTransitionPage(
+                child: ChangeNotifierProvider<ItemRegistrationViewModel>(
+                  create: (_) => ItemRegistrationViewModel()..init(),
+                  child: const ItemRegistrationScreen(),
+                ),
+              );
             },
           ),
         ],
