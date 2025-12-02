@@ -59,10 +59,9 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   }
 
   String _formatBidUnit(int price) {
-    // 호가 단위는 1만원, 2만원처럼 N만원으로 표기
     if (price % 10000 == 0) {
       final unit = price ~/ 10000;
-      return '${unit}만원';
+      return '$unit만원';
     }
     return '${_formatPrice(price)}원';
   }
@@ -93,7 +92,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
               borderRadius: defaultBorder,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),

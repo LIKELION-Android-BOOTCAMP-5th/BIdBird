@@ -38,7 +38,7 @@ class ItemAddScreen extends StatelessWidget {
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
+      padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         text,
         style: const TextStyle(
@@ -162,7 +162,7 @@ class ItemAddScreen extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
+                            color: blueColor,
                             borderRadius: BorderRadius.circular(defaultRadius),
                           ),
                           child: const Icon(
@@ -177,19 +177,21 @@ class ItemAddScreen extends StatelessWidget {
                       left: 8,
                       bottom: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: blueColor,
                           borderRadius: BorderRadius.circular(defaultRadius),
                         ),
-                        child: Text(
-                          '${viewModel.selectedImages.length}/10',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
+                        alignment: Alignment.center,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '${viewModel.selectedImages.length}/10',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ),
@@ -222,7 +224,7 @@ class ItemAddScreen extends StatelessWidget {
                       ),
                     )
                   : DropdownButtonFormField<int>(
-                      value: viewModel.selectedKeywordTypeId,
+                      initialValue: viewModel.selectedKeywordTypeId,
                       items: viewModel.keywordTypes
                           .map(
                             (e) => DropdownMenuItem<int>(
@@ -238,8 +240,7 @@ class ItemAddScreen extends StatelessWidget {
                           )
                           .toList(),
                       onChanged: (value) {
-                        viewModel.selectedKeywordTypeId = value;
-                        viewModel.notifyListeners();
+                        viewModel.setSelectedKeywordTypeId(value);
                       },
                       decoration: _inputDecoration('카테고리 선택'),
                       icon: const Icon(Icons.keyboard_arrow_down_rounded),
@@ -256,11 +257,22 @@ class ItemAddScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel('시작가'),
+                        _buildLabel('시작가 (원)'),
                         TextField(
                           controller: viewModel.startPriceController,
                           keyboardType: TextInputType.number,
                           decoration: _inputDecoration('시작 가격 입력'),
+                          onChanged: (value) {
+                            final formatted = viewModel.formatNumber(value);
+                            if (formatted != value) {
+                              viewModel.startPriceController.value =
+                                  TextEditingValue(
+                                text: formatted,
+                                selection: TextSelection.collapsed(
+                                    offset: formatted.length),
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -270,11 +282,62 @@ class ItemAddScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildLabel('즉시 입찰가'),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4.0),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  '즉시 입찰가 (원)',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                              Checkbox(
+                                value: viewModel.useInstantPrice,
+                                activeColor: blueColor,
+                                checkColor: Colors.white,
+                                side: BorderSide(
+                                  color: viewModel.useInstantPrice
+                                      ? blueColor
+                                      : Colors.black,
+                                ),
+                                visualDensity:
+                                    VisualDensity(horizontal: -4, vertical: -4),
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  viewModel.setUseInstantPrice(value);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
                         TextField(
                           controller: viewModel.instantPriceController,
                           keyboardType: TextInputType.number,
-                          decoration: _inputDecoration('즉시 입찰가 입력'),
+                          enabled: viewModel.useInstantPrice,
+                          decoration:
+                              _inputDecoration('즉시 입찰가 입력').copyWith(
+                            fillColor: viewModel.useInstantPrice
+                                ? Colors.white
+                                : const Color(0xffF2F3F7),
+                          ),
+                          onChanged: (value) {
+                            final formatted = viewModel.formatNumber(value);
+                            if (formatted != value) {
+                              viewModel.instantPriceController.value =
+                                  TextEditingValue(
+                                text: formatted,
+                                selection: TextSelection.collapsed(
+                                    offset: formatted.length),
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),
@@ -284,7 +347,7 @@ class ItemAddScreen extends StatelessWidget {
               const SizedBox(height: 20),
               _buildLabel('경매 기간(시간)'),
               DropdownButtonFormField<String>(
-                value: viewModel.selectedDuration,
+                initialValue: viewModel.selectedDuration,
                 items: viewModel.durations
                     .map(
                       (e) => DropdownMenuItem<String>(
@@ -301,8 +364,7 @@ class ItemAddScreen extends StatelessWidget {
                     .toList(),
                 onChanged: (value) {
                   if (value == null) return;
-                  viewModel.selectedDuration = value;
-                  viewModel.notifyListeners();
+                  viewModel.setSelectedDuration(value);
                 },
                 decoration: _inputDecoration('4시간'),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
