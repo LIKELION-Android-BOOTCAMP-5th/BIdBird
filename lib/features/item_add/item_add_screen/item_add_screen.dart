@@ -1,42 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:provider/provider.dart';
 
-class ItemAddScreen extends StatefulWidget {
+import '../item_add_viewmoel/item_add_viewmoel.dart';
+
+class ItemAddScreen extends StatelessWidget {
   const ItemAddScreen({super.key});
-
-  @override
-  State<ItemAddScreen> createState() => _ItemAddScreenState();
-}
-
-class _ItemAddScreenState extends State<ItemAddScreen> {
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _startPriceController = TextEditingController();
-  final TextEditingController _instantPriceController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-
-  final List<String> _categories = <String>[
-    '카테고리 선택',
-    '전자기기',
-    '생활용품',
-    '의류/패션',
-    '기타',
-  ];
-
-  final List<String> _durations = <String>['1일', '3일', '5일', '7일'];
-
-  String? _selectedCategory;
-  String _selectedDuration = '1일';
-  bool _agreed = false;
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _startPriceController.dispose();
-    _instantPriceController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
 
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
@@ -77,77 +48,44 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     );
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+  void _showImageSourceSheet(BuildContext context, ItemAddViewModel viewModel) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('갤러리에서 선택'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await viewModel.pickImagesFromGallery();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined),
+                title: const Text('사진 찍기'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await viewModel.pickImageFromCamera();
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
-  }
-
-  void _onSubmit() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('매물이 등록되었습니다.')),
-    );
-  }
-
-  void _validateAndSubmit() {
-    final String title = _titleController.text.trim();
-    final String description = _descriptionController.text.trim();
-
-    if (title.isEmpty) {
-      _showError('제목을 입력해주세요.');
-      return;
-    }
-
-    if (title.length > 20) {
-      _showError('제목은 20자 이하로 입력해주세요.');
-      return;
-    }
-
-    if (_selectedCategory == null) {
-      _showError('카테고리를 선택해주세요.');
-      return;
-    }
-
-    final int? startPrice = int.tryParse(_startPriceController.text.replaceAll(',', ''));
-    final int? instantPrice = int.tryParse(_instantPriceController.text.replaceAll(',', ''));
-
-    if (startPrice == null) {
-      _showError('시작가를 숫자로 입력해주세요.');
-      return;
-    }
-
-    if (startPrice < 1000) {
-      _showError('시작가는 1,000원 이상이어야 합니다.');
-      return;
-    }
-
-    if (instantPrice == null) {
-      _showError('즉시 입찰가를 숫자로 입력해주세요.');
-      return;
-    }
-
-    if (instantPrice <= startPrice) {
-      _showError('즉시 입찰가는 시작가보다 높아야 합니다.');
-      return;
-    }
-
-    if (description.isEmpty) {
-      _showError('상품 설명을 입력해주세요.');
-      return;
-    }
-
-    if (description.length > 1000) {
-      _showError('상품 설명은 1000자 이하로 입력해주세요.');
-      return;
-    }
-
-    // TODO: 실제 이미지 업로드 기능을 연결했을 때, 업로드한 이미지 리스트 길이로 10장 제한 검사
-
-    _onSubmit();
   }
 
   @override
   Widget build(BuildContext context) {
+    final ItemAddViewModel viewModel = context.watch<ItemAddViewModel>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('매물 등록'),
@@ -160,75 +98,155 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildLabel('상품 이미지'),
-              GestureDetector(
-                onTap: () {
-                  // TODO: 이미지 업로드 기능 연결
-                },
-                child: Container(
-                  height: 160,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xffF8F8FA),
-                    borderRadius: defaultBorder,
-                    border: Border.all(color: const Color(0xffE5E5E5)),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.file_upload_outlined,
-                        color: iconColor,
-                        size: 32,
+              Container(
+                height: 160,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xffF8F8FA),
+                  borderRadius: defaultBorder,
+                  border: Border.all(color: const Color(0xffE5E5E5)),
+                ),
+                child: Stack(
+                  children: [
+                    if (viewModel.selectedImages.isEmpty)
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.file_upload_outlined,
+                              color: iconColor,
+                              size: 32,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              '이미지를 업로드하세요',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xffB0B3BC),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        itemBuilder: (context, index) {
+                          final image = viewModel.selectedImages[index];
+                          return ClipRRect(
+                            borderRadius: defaultBorder,
+                            child: Image.file(
+                              File(image.path),
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        },
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemCount: viewModel.selectedImages.length,
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '이미지를 업로드하세요',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xffB0B3BC),
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: GestureDetector(
+                        onTap: () => _showImageSourceSheet(context, viewModel),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    Positioned(
+                      left: 8,
+                      bottom: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${viewModel.selectedImages.length}/10',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
               _buildLabel('제목'),
               TextField(
-                controller: _titleController,
+                controller: viewModel.titleController,
                 decoration: _inputDecoration('상품 제목을 입력하세요'),
               ),
               const SizedBox(height: 20),
               _buildLabel('카테고리'),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                items: _categories
-                    .map(
-                      (e) => DropdownMenuItem<String>(
-                        value: e == '카테고리 선택' ? null : e,
-                        child: Text(
-                          e,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black87,
-                          ),
-                        ),
+              viewModel.isLoadingKeywords
+                  ? Container(
+                      height: 48,
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(defaultRadius),
+                        border: Border.all(color: const Color(0xffE5E5E5)),
+                      ),
+                      child: const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value;
-                  });
-                },
-                decoration: _inputDecoration('카테고리 선택'),
-                icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                dropdownColor: Colors.white,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black87,
-                ),
-              ),
+                  : DropdownButtonFormField<int>(
+                      value: viewModel.selectedKeywordTypeId,
+                      items: viewModel.keywordTypes
+                          .map(
+                            (e) => DropdownMenuItem<int>(
+                              value: e['id'] as int,
+                              child: Text(
+                                e['title']?.toString() ?? '',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        viewModel.selectedKeywordTypeId = value;
+                        viewModel.notifyListeners();
+                      },
+                      decoration: _inputDecoration('카테고리 선택'),
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                      dropdownColor: Colors.white,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                      ),
+                    ),
               const SizedBox(height: 20),
               Row(
                 children: [
@@ -238,7 +256,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                       children: [
                         _buildLabel('시작가'),
                         TextField(
-                          controller: _startPriceController,
+                          controller: viewModel.startPriceController,
                           keyboardType: TextInputType.number,
                           decoration: _inputDecoration('시작 가격 입력'),
                         ),
@@ -252,7 +270,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                       children: [
                         _buildLabel('즉시 입찰가'),
                         TextField(
-                          controller: _instantPriceController,
+                          controller: viewModel.instantPriceController,
                           keyboardType: TextInputType.number,
                           decoration: _inputDecoration('즉시 입찰가 입력'),
                         ),
@@ -262,10 +280,10 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              _buildLabel('경매 기간'),
+              _buildLabel('경매 기간(시간)'),
               DropdownButtonFormField<String>(
-                value: _selectedDuration,
-                items: _durations
+                value: viewModel.selectedDuration,
+                items: viewModel.durations
                     .map(
                       (e) => DropdownMenuItem<String>(
                         value: e,
@@ -281,11 +299,10 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                     .toList(),
                 onChanged: (value) {
                   if (value == null) return;
-                  setState(() {
-                    _selectedDuration = value;
-                  });
+                  viewModel.selectedDuration = value;
+                  viewModel.notifyListeners();
                 },
-                decoration: _inputDecoration('3일'),
+                decoration: _inputDecoration('4시간'),
                 icon: const Icon(Icons.keyboard_arrow_down_rounded),
                 dropdownColor: Colors.white,
                 style: const TextStyle(
@@ -296,7 +313,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
               const SizedBox(height: 20),
               _buildLabel('상품 설명'),
               TextField(
-                controller: _descriptionController,
+                controller: viewModel.descriptionController,
                 maxLines: 5,
                 decoration: _inputDecoration('상품에 대한 상세한 설명을 입력하세요'),
               ),
@@ -344,11 +361,10 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
               Row(
                 children: [
                   Checkbox(
-                    value: _agreed,
+                    value: viewModel.agreed,
                     onChanged: (value) {
-                      setState(() {
-                        _agreed = value ?? false;
-                      });
+                      viewModel.agreed = value ?? false;
+                      viewModel.notifyListeners();
                     },
                     activeColor: blueColor,
                     shape: RoundedRectangleBorder(
@@ -375,7 +391,10 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: _agreed ? _validateAndSubmit : null,
+              onPressed:
+                  viewModel.agreed && !viewModel.isSubmitting
+                      ? () => viewModel.submit(context)
+                      : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: blueColor,
                 disabledBackgroundColor: const Color(0xffD0D4DC),
