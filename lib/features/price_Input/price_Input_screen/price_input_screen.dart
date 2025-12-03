@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -34,21 +35,36 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   }
 
   void _increaseBid() {
+    debugPrint('[BidBottomSheet] _increaseBid called, bidUnit: ${widget.bidUnit}');
+    debugPrint('[BidBottomSheet] _increaseBid: before _bidAmount: $_bidAmount');
+    
     setState(() {
       final next = _bidAmount + widget.bidUnit;
-      // 즉시 구매가를 상한선으로 제한
-      if (next <= widget.buyNowPrice) {
+      debugPrint('[BidBottomSheet] _increaseBid: _bidAmount: $_bidAmount, next: $next, buyNowPrice: ${widget.buyNowPrice}');
+      
+      // 즉시 구매가가 설정되어 있는 경우(0보다 큼)에만 상한선으로 제한
+      if (widget.buyNowPrice > 0 && next > widget.buyNowPrice) {
+        debugPrint('[BidBottomSheet] _increaseBid: next > buyNowPrice, not updating');
+      } else {
         _bidAmount = next;
+        debugPrint('[BidBottomSheet] _increaseBid: updated _bidAmount to $_bidAmount');
       }
     });
+    
+    debugPrint('[BidBottomSheet] _increaseBid: after _bidAmount: $_bidAmount');
   }
 
   void _decreaseBid() {
+    debugPrint('[BidBottomSheet] _decreaseBid called, bidUnit: ${widget.bidUnit}');
     setState(() {
       final minBid = widget.currentPrice + widget.bidUnit;
       final next = _bidAmount - widget.bidUnit;
+      debugPrint('[BidBottomSheet] _decreaseBid: _bidAmount: $_bidAmount, next: $next, minBid: $minBid');
       if (next >= minBid) {
         _bidAmount = next;
+        debugPrint('[BidBottomSheet] _decreaseBid: updated _bidAmount to $_bidAmount');
+      } else {
+        debugPrint('[BidBottomSheet] _decreaseBid: next < minBid, not updating');
       }
     });
   }
@@ -259,14 +275,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             child: ElevatedButton(
               onPressed: viewModel.isSubmitting
                   ? null
-                  : () {
-                      final vm = context.read<PriceInputViewModel>();
-                      vm.placeBid(
-                        context,
-                        itemId: widget.itemId,
-                        bidPrice: _bidAmount,
-                      );
-                    },
+                  : () => _showConfirmDialog(context, viewModel),
               style: ElevatedButton.styleFrom(
                 backgroundColor: blueColor,
                 shape: RoundedRectangleBorder(
@@ -288,5 +297,82 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
         ),
       ),
     );
+  }
+
+  void _showConfirmDialog(BuildContext parentContext, PriceInputViewModel viewModel) {
+    showDialog(
+      context: parentContext,
+      builder: (dialogContext) => AskPopup(
+        content: '${_formatPrice(_bidAmount)}원에 입찰하시겠습니까?',
+        yesText: '확인',
+        noText: '취소',
+        yesLogic: () async {
+          Navigator.pop(dialogContext);
+          await _processBid(parentContext, viewModel);
+        },
+      ),
+    );
+  }
+
+  Future<void> _processBid(
+      BuildContext parentContext, PriceInputViewModel viewModel) async {
+
+    showDialog(
+      context: parentContext,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (_) => Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await viewModel.placeBid(
+        itemId: widget.itemId,
+        bidPrice: _bidAmount,
+      );
+
+      if (!parentContext.mounted) return;
+      Navigator.pop(parentContext);
+
+      if (!parentContext.mounted) return;
+      await showDialog(
+        context: parentContext,
+        barrierDismissible: false,
+        builder: (dialogContext) => AskPopup(
+          content: '입찰이 완료되었습니다.',
+          yesText: '확인',
+          yesLogic: () async {
+            Navigator.pop(dialogContext);
+            if (parentContext.mounted) {
+              Navigator.pop(parentContext);
+            }
+          },
+        ),
+      );
+    } catch (e) {
+      if (parentContext.mounted) {
+        Navigator.pop(parentContext);
+        
+        // 에러 팝업 표시
+        showDialog(
+          context: parentContext,
+          builder: (dialogContext) => AskPopup(
+            content: '오류가 발생했습니다.\n$e',
+            yesText: '확인',
+            yesLogic: () async {
+              Navigator.pop(dialogContext);
+            },
+          ),
+        );
+      }
+    }
   }
 }

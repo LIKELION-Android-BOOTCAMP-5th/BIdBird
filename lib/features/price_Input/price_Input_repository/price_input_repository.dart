@@ -16,6 +16,21 @@ class PriceInputRepository {
       'bid_price': request.bidPrice,
       'bid_time': DateTime.now().toIso8601String(),
     });
+
+    await supabase
+        .from('bid_status')
+        .update({
+          'text_code': 'BIDDING',
+        })
+        .eq('item_id', request.itemId)
+        .eq('user_id', user.id);
+
+    await supabase
+        .from('items')
+        .update({
+          'current_price': request.bidPrice,
+        })
+        .eq('id', request.itemId);
   }
 }
 
