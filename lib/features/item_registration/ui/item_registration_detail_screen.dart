@@ -12,10 +12,17 @@ import 'package:bidbird/features/item_add/item_add_viewmoel/item_add_viewmoel.da
 import '../data/item_registration_data.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
 
-class ItemRegistrationDetailScreen extends StatelessWidget {
+class ItemRegistrationDetailScreen extends StatefulWidget {
   const ItemRegistrationDetailScreen({super.key, required this.item});
 
   final ItemRegistrationData item;
+
+  @override
+  State<ItemRegistrationDetailScreen> createState() => _ItemRegistrationDetailScreenState();
+}
+
+class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScreen> {
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -29,27 +36,27 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           TextButton(
             onPressed: () {
               final editViewModel = ItemAddViewModel();
-              editViewModel.editingItemId = item.id;
-              editViewModel.titleController.text = item.title;
+              editViewModel.editingItemId = widget.item.id;
+              editViewModel.titleController.text = widget.item.title;
               editViewModel.startPriceController.text =
-                  editViewModel.formatNumber(item.startPrice.toString());
+                  editViewModel.formatNumber(widget.item.startPrice.toString());
 
-              if (item.instantPrice > 0) {
+              if (widget.item.instantPrice > 0) {
                 editViewModel.instantPriceController.text =
-                    editViewModel.formatNumber(item.instantPrice.toString());
+                    editViewModel.formatNumber(widget.item.instantPrice.toString());
                 editViewModel.setUseInstantPrice(true);
               }
 
-              editViewModel.descriptionController.text = item.description;
+              editViewModel.descriptionController.text = widget.item.description;
 
               // 카테고리(id)가 있다면 선택값으로 설정
-              editViewModel.selectedKeywordTypeId = item.keywordTypeId;
+              editViewModel.selectedKeywordTypeId = widget.item.keywordTypeId;
 
               // 카테고리 목록을 불러오도록 초기화
               editViewModel.init();
 
               // 기존 이미지 로딩
-              editViewModel.loadExistingImages(item.id);
+              editViewModel.loadExistingImages(widget.item.id);
 
               Navigator.of(context).push(
                 PageRouteBuilder(
@@ -94,19 +101,18 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _ConfirmImageSection(
-                    itemId: item.id,
-                    thumbnailUrl: item.thumbnailUrl,
+                    itemId: widget.item.id,
+                    thumbnailUrl: widget.item.thumbnailUrl,
                   ),
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _ConfirmMainInfoSection(item: item),
+                    child: _ConfirmMainInfoSection(item: widget.item),
                   ),
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child:
-                        _ConfirmDescriptionSection(description: item.description),
+                    child: _ConfirmDescriptionSection(description: widget.item.description),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -125,9 +131,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
               onPressed: vm.isRegistering
                   ? null
                   : () async {
-                      showDialog(
+                      await showDialog(
                         context: context,
-                        builder: (_) => ConfirmCheckCancelPopup(
+                        builder: (dialogContext) => ConfirmCheckCancelPopup(
                           title: '약관 동의',
                           description:
                               '1. 판매자는 시작가와 즉시 구매가(선택 입력)를 정확하게 입력해야 합니다. 허위 정보 입력은 금지됩니다.\n'
@@ -143,51 +149,12 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                           checkLabel: '동의합니다',
                           onConfirm: (checked) {
                             if (!checked) return;
-                            final DateTime auctionStartAt =
-                                vm.getNextAuctionStartTime();
-                            final String timeText =
-                                '${auctionStartAt.hour.toString().padLeft(2, '0')}시 ${auctionStartAt.minute.toString().padLeft(2, '0')}분';
-
-                            final navigator = Navigator.of(context);
-
-                            // 로딩 다이얼로그 표시
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (_) => const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-
-                            () async {
-                              final bool success = await vm.registerItem(
-                                context,
-                                item.id,
-                                auctionStartAt,
-                              );
-
-                              // 로딩 다이얼로그 닫기
-                              if (navigator.canPop()) {
-                                navigator.pop();
-                              }
-
-                              if (!success) return;
-
-                              // 서버 처리 완료 후 확인 팝업 표시
-                              showDialog(
-                                context: context,
-                                builder: (_) => AskPopup(
-                                  content: '매물은 $timeText에 등록됩니다.',
-                                  yesText: '확인',
-                                  yesLogic: () async {
-                                    Navigator.of(context).pop();
-                                    navigator.pop();
-                                  },
-                                ),
-                              );
-                            }();
+                            Navigator.of(dialogContext).pop();
+                            _handleRegistration(context, vm);
                           },
-                          onCancel: () {},
+                          onCancel: () {
+                            Navigator.of(dialogContext).pop();
+                          },
                         ),
                       );
                     },
@@ -211,6 +178,55 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _handleRegistration(
+      BuildContext context, ItemRegistrationViewModel vm) async {
+    if (_isLoading) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final DateTime auctionStartAt = vm.getNextAuctionStartTime();
+      final bool success = await vm.registerItem(
+        context,
+        widget.item.id,
+        auctionStartAt,
+      );
+
+      if (!mounted) return;
+
+      if (success) {
+        final String timeText =
+            '${auctionStartAt.hour.toString().padLeft(2, '0')}시 ${auctionStartAt.minute.toString().padLeft(2, '0')}분';
+            
+        await showDialog(
+          context: context,
+          builder: (_) => AskPopup(
+            content: '매물이 $timeText에 등록되었습니다.',
+            yesText: '확인',
+            yesLogic: () async {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop(true);
+            },
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('등록 중 오류가 발생했습니다.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }
 

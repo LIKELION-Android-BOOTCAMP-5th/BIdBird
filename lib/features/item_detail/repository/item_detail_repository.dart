@@ -1,0 +1,329 @@
+import 'package:flutter/material.dart';
+import 'package:bidbird/core/supabase_manager.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../data/item_detail_data.dart';
+
+class ItemDetailRepository {
+  final SupabaseClient _supabase = SupabaseManager.shared.supabase;
+
+  Future<ItemDetail?> fetchItemDetail(String itemId) async {
+    final List<dynamic> result = await _supabase
+        .from('items')
+        .select()
+        .eq('id', itemId)
+        .limit(1);
+
+    if (result.isEmpty) return null;
+
+    final Map<String, dynamic> row = result.first as Map<String, dynamic>;
+
+    // 종료 시각 계산
+    final createdAtRaw = row['created_at']?.toString();
+    final createdAt = createdAtRaw != null
+        ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+        : DateTime.now();
+    final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
+    final finishTime = createdAt.add(Duration(hours: durationHours));
+
+    // 판매자 정보
+    final String sellerId = row['seller_id']?.toString() ?? '';
+    String sellerTitle = await _fetchSellerName(sellerId, row);
+
+    // 이미지 로딩
+    final List<String> images = await _fetchImages(itemId);
+
+    // 입찰 수 조회
+    final int biddingCount = await _fetchBiddingCount(itemId, row);
+
+    final currentPrice = (row['current_price'] as int?) ?? 0;
+    final minBidStep = _calculateBidStep(currentPrice);
+
+    return ItemDetail(
+      itemId: row['id']?.toString() ?? itemId,
+      sellerId: sellerId,
+      itemTitle: row['title']?.toString() ?? '',
+      itemImages: images,
+      finishTime: finishTime,
+      sellerTitle: sellerTitle,
+      buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
+      biddingCount: biddingCount,
+      itemContent: row['description']?.toString() ?? '',
+      currentPrice: currentPrice,
+      bidPrice: minBidStep,
+      sellerRating: (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
+      sellerReviewCount: (row['seller_review_count'] as int?) ?? 0,
+    );
+  }
+
+  Future<String> _fetchSellerName(String sellerId, Map<String, dynamic> row) async {
+    String sellerTitle = row['seller_name']?.toString() ?? '';
+
+    if (sellerTitle.isEmpty && sellerId.isNotEmpty) {
+      try {
+        final userRow = await _supabase
+            .from('users')
+            .select('nickname, name')
+            .eq('id', sellerId)
+            .maybeSingle();
+
+        if (userRow is Map<String, dynamic>) {
+          sellerTitle = (userRow['nickname']?.toString() ?? '').isNotEmpty
+              ? userRow['nickname'].toString()
+              : (userRow['name']?.toString() ?? '');
+        }
+      } catch (e) {
+        debugPrint('[ItemDetailRepository] fetch seller name error: $e');
+      }
+    }
+
+    return sellerTitle;
+  }
+
+  Future<List<String>> _fetchImages(String itemId) async {
+    final List<String> images = [];
+
+    try {
+      final imageRows = await _supabase
+          .from('item_images')
+          .select('image_url')
+          .eq('item_id', itemId)
+          .order('sort_order', ascending: true);
+
+      for (final Map<String, dynamic> imgRow in imageRows) {
+        final imageUrl = imgRow['image_url']?.toString();
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          images.add(imageUrl);
+        }
+      }
+    } catch (e) {
+      debugPrint('[ItemDetailRepository] fetch images error: $e');
+    }
+
+    return images;
+  }
+
+  Future<int> _fetchBiddingCount(String itemId, Map<String, dynamic> row) async {
+    try {
+      final countResponse = await _supabase
+          .from('bid_log')
+          .select('id')
+          .eq('item_id', itemId)
+          .count(CountOption.exact);
+      return countResponse.count;
+    } catch (e) {
+      debugPrint('[ItemDetailRepository] fetch bidding count error: $e');
+      return (row['bidding_count'] as int?) ?? 0;
+    }
+  }
+
+  int _calculateBidStep(int currentPrice) {
+    if (currentPrice <= 100000) {
+      return 1000;
+    } else {
+      final priceStr = currentPrice.toString();
+      if (priceStr.length >= 3) {
+        return int.parse(priceStr.substring(0, priceStr.length - 2));
+      } else {
+        return 1000;
+      }
+    }
+  }
+
+  Future<bool> checkIsFavorite(String itemId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      final List<dynamic> rows = await _supabase
+          .from('favorites')
+          .select('id')
+          .eq('item_id', itemId)
+          .eq('user_id', user.id)
+          .limit(1);
+
+      return rows.isNotEmpty;
+    } catch (e) {
+      debugPrint('[ItemDetailRepository] check favorite error: $e');
+      return false;
+    }
+  }
+
+  Future<void> toggleFavorite(String itemId, bool currentState) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    if (currentState) {
+      await _supabase
+          .from('favorites')
+          .delete()
+          .eq('item_id', itemId)
+          .eq('user_id', user.id);
+    } else {
+      await _supabase.from('favorites').insert(<String, dynamic>{
+        'item_id': itemId,
+        'user_id': user.id,
+      });
+    }
+  }
+
+  Future<bool> checkIsTopBidder(String itemId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      final List<dynamic> rows = await _supabase
+          .from('bid_log')
+          .select('bid_user, bid_price')
+          .eq('item_id', itemId)
+          .order('bid_price', ascending: false)
+          .limit(1);
+
+      if (rows.isNotEmpty) {
+        final topBidUserId = rows[0]['bid_user']?.toString() ?? '';
+        return topBidUserId == user.id;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[ItemDetailRepository] check top bidder error: $e');
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchSellerProfile(String sellerId) async {
+    if (sellerId.isEmpty) return null;
+
+    try {
+      final userRow = await _supabase
+          .from('users')
+          .select('''
+            id,
+            name,
+            nickname,
+            profile_image_url,
+            email,
+            created_at
+          ''')
+          .eq('id', sellerId)
+          .maybeSingle();
+
+      if (userRow is Map<String, dynamic>) {
+        // 판매자 평점 및 리뷰 수 가져오기
+        final ratingData = await _fetchSellerRating(sellerId);
+        
+        return {
+          ...userRow,
+          'rating': ratingData['rating'] ?? 0.0,
+          'review_count': ratingData['review_count'] ?? 0,
+        };
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[ItemDetailRepository] fetch seller profile error: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchSellerRating(String sellerId) async {
+    try {
+      // bid_status 테이블에서 판매자의 완료된 거래 수 조회
+      final completedTrades = await _supabase
+          .from('bid_status')
+          .select('rating')
+          .eq('user_id', sellerId)
+          .eq('text_code', 'COMPLETED')
+          .not('rating', 'is', null);
+
+      if (completedTrades.isEmpty) {
+        return {'rating': 0.0, 'review_count': 0};
+      }
+
+      double totalRating = 0;
+      int reviewCount = completedTrades.length;
+
+      for (final trade in completedTrades) {
+        final rating = (trade['rating'] as num?)?.toDouble() ?? 0.0;
+        totalRating += rating;
+      }
+
+      final averageRating = reviewCount > 0 ? totalRating / reviewCount : 0.0;
+
+      return {
+        'rating': averageRating,
+        'review_count': reviewCount,
+      };
+    } catch (e) {
+      debugPrint('[ItemDetailRepository] fetch seller rating error: $e');
+      return {'rating': 0.0, 'review_count': 0};
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchBidHistory(String itemId) async {
+    try {
+      final List<dynamic> rows = await _supabase
+          .from('bid_log')
+          .select('''
+            bid_price,
+            bid_user,
+            created_at
+          ''')
+          .eq('item_id', itemId)
+          .order('created_at', ascending: false)
+          .limit(10);
+
+      List<Map<String, dynamic>> bidHistory = [];
+      
+      for (final row in rows) {
+        final Map<String, dynamic> bidRow = row as Map<String, dynamic>;
+        final userId = bidRow['bid_user']?.toString() ?? '';
+        
+        // 입찰자 정보 가져오기
+        Map<String, dynamic>? userInfo;
+        if (userId.isNotEmpty) {
+          userInfo = await _fetchUserInfo(userId);
+        }
+
+        bidHistory.add({
+          'price': _formatPrice(bidRow['bid_price'] as int? ?? 0),
+          'user_name': userInfo?['nickname'] ?? userInfo?['name'] ?? '알 수 없음',
+          'user_id': userId,
+          'created_at': bidRow['created_at']?.toString() ?? '',
+          'profile_image_url': userInfo?['profile_image_url'],
+        });
+      }
+
+      return bidHistory;
+    } catch (e) {
+      debugPrint('[ItemDetailRepository] fetch bid history error: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchUserInfo(String userId) async {
+    try {
+      final Map<String, dynamic>? userRow = await _supabase
+          .from('users')
+          .select('nickname, name, profile_image_url')
+          .eq('id', userId)
+          .maybeSingle();
+
+      return userRow;
+    } catch (e) {
+      debugPrint('[ItemDetailRepository] fetch user info error: $e');
+      return null;
+    }
+  }
+
+  String _formatPrice(int price) {
+    final buffer = StringBuffer();
+    final text = price.toString();
+    for (int i = 0; i < text.length; i++) {
+      final reverseIndex = text.length - i;
+      buffer.write(text[i]);
+      if (reverseIndex > 1 && reverseIndex % 3 == 1) {
+        buffer.write(',');
+      }
+    }
+    return buffer.toString();
+  }
+}
