@@ -9,10 +9,10 @@ import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item_add/item_add_screen/item_add_screen.dart';
 import 'package:bidbird/features/item_add/item_add_viewmoel/item_add_viewmoel.dart';
 import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
-import 'package:bidbird/features/item_registration/ui/item_registration_ui.dart';
+import 'package:bidbird/features/item_registration/ui/item_registration_screen.dart';
 import 'package:bidbird/features/item_registration/viewmodel/item_registration_viewmodel.dart';
-import 'package:bidbird/features/profile/ui/my_page_screen.dart';
-import 'package:bidbird/features/profile/ui/profile_screen.dart';
+import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
+import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
 import 'package:bidbird/features/user_profile/screen/user_profile_screen.dart';
 import 'package:bidbird/features/user_profile/screen/user_trade_history_screen.dart';
@@ -128,7 +128,7 @@ GoRouter createAppRouter(BuildContext context) {
             ],
           ),
           GoRoute(
-            path: '/my_page',
+            path: '/mypage',
             pageBuilder: (context, state) {
               return const NoTransitionPage(child: MyPageScreen());
             },
@@ -136,37 +136,37 @@ GoRouter createAppRouter(BuildContext context) {
               GoRoute(
                 path: '/update_info',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: ProfileScreen());
+                  return const NoTransitionPage(child: ProfileEditScreen());
                 },
               ),
               GoRoute(
                 path: '/favorite',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: ProfileScreen());
+                  return const NoTransitionPage(child: MyPageScreen());
                 },
               ),
               GoRoute(
                 path: '/trade',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: ProfileScreen());
+                  return const NoTransitionPage(child: MyPageScreen());
                 },
               ),
               GoRoute(
                 path: '/service_center',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: ProfileScreen());
+                  return const NoTransitionPage(child: MyPageScreen());
                 },
                 routes: [
                   GoRoute(
                     path: '/terms',
                     pageBuilder: (context, state) {
-                      return const NoTransitionPage(child: ProfileScreen());
+                      return const NoTransitionPage(child: MyPageScreen());
                     },
                   ),
                   GoRoute(
                     path: '/report_feedback',
                     pageBuilder: (context, state) {
-                      return const NoTransitionPage(child: ProfileScreen());
+                      return const NoTransitionPage(child: MyPageScreen());
                     },
                     routes: [
                       GoRoute(
@@ -174,7 +174,7 @@ GoRouter createAppRouter(BuildContext context) {
                         pageBuilder: (context, state) {
                           final feedbackId =
                               state.pathParameters["feedbackId"] ?? "";
-                          return const NoTransitionPage(child: ProfileScreen());
+                          return const NoTransitionPage(child: MyPageScreen());
                         },
                       ),
                     ],
@@ -184,13 +184,13 @@ GoRouter createAppRouter(BuildContext context) {
               GoRoute(
                 path: '/black_list',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: ProfileScreen());
+                  return const NoTransitionPage(child: MyPageScreen());
                 },
               ),
               GoRoute(
                 path: '/setting',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: ProfileScreen());
+                  return const NoTransitionPage(child: MyPageScreen());
                 },
               ),
             ],
