@@ -15,7 +15,7 @@ class BottomNavBar extends StatelessWidget {
     if (location.startsWith('/home')) currentIndex = 0;
     if (location.startsWith('/bid')) currentIndex = 1;
     if (location.startsWith('/chat')) currentIndex = 2;
-    if (location.startsWith('/my_page')) currentIndex = 3;
+    if (location.startsWith('/mypage')) currentIndex = 3;
 
     return BottomNavigationBar(
       showSelectedLabels: false,
@@ -36,7 +36,7 @@ class BottomNavBar extends StatelessWidget {
             context.go('/chat');
             break;
           case 3:
-            context.go('/my_page');
+            context.go('/mypage');
             break;
         }
       },

@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/fonts.dart';
 import 'package:bidbird/core/utils/ui_set/icons.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
@@ -7,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/utils/ui_set/fonts.dart';
 import '../viewmodel/profile_viewmodel.dart';
 
 class MyPageScreen extends StatelessWidget {
@@ -83,7 +83,6 @@ class _Profile extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: iconColor,
 
             backgroundImage:
                 (profile?.profileImageUrl != null &&
@@ -101,11 +100,11 @@ class _Profile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                name, //style추가//fontWeight
+                name, //style추가//TextStyle
               ),
               const SizedBox(height: 4),
               Text(
-                phoneNumber, //style추가//fontWeight
+                phoneNumber, //style추가//TextStyle
               ),
             ],
           ),
@@ -124,7 +123,7 @@ class _MyPageMenuList extends StatelessWidget {
           icon: Icons.edit,
           title: '정보 수정',
           onTap: () {
-            //context.go('/profile/edit');
+            context.go('/mypage/update_info');
           },
         ),
         _MenuItem(
@@ -224,7 +223,7 @@ class _MenuItem extends StatelessWidget {
           trailing: const Icon(Icons.chevron_right, color: iconColor),
           onTap: onTap,
         ),
-        const Divider(height: 1),
+        //const Divider(height: 0),
       ],
     );
   }
