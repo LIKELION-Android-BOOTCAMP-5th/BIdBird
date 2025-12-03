@@ -59,6 +59,8 @@ class ItemAddViewModel extends ChangeNotifier {
       keywordTypes
         ..clear()
         ..addAll(data.cast<Map<String, dynamic>>());
+    } on PostgrestException catch (e) {
+      throw Exception('카테고리를 불러오는 중 오류가 발생했습니다: ${e.message}');
     } catch (e) {
       throw Exception('카테고리를 불러오는 중 오류가 발생했습니다: $e');
     } finally {

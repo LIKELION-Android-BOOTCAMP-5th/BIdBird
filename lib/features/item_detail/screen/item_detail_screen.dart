@@ -34,6 +34,12 @@ class ItemDetailScreen extends StatelessWidget {
           item = snapshot.data!;
         }
 
+        // 현재 로그인 유저와 판매자 비교해서 내 매물 여부 판단
+        final supabase = SupabaseManager.shared.supabase;
+        final currentUser = supabase.auth.currentUser;
+        final bool isMyItem =
+            currentUser != null && currentUser.id == item.sellerId;
+
         return Scaffold(
           appBar: AppBar(
             // Todo: 나중에 공통 AppBar 컴포넌트로 교체 예정
@@ -56,7 +62,10 @@ class ItemDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              _BottomActionBar(itemId: item.itemId),
+              _BottomActionBar(
+                itemId: item.itemId,
+                isMyItem: isMyItem,
+              ),
             ],
           ),
         );
@@ -89,12 +98,36 @@ Future<ItemDetail> _loadItemDetail(String itemId) async {
   final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
   final finishTime = createdAt.add(Duration(hours: durationHours));
 
+  final String sellerId = row['seller_id']?.toString() ?? '';
+  String sellerTitle = row['seller_name']?.toString() ?? '';
+
+  // seller_name 이 비어 있고 sellerId 가 있으면 users 테이블에서 이름을 한 번 더 조회
+  if (sellerTitle.isEmpty && sellerId.isNotEmpty) {
+    try {
+      final userRow = await supabase
+          .from('users')
+          .select('nickname, name')
+          .eq('id', sellerId)
+          .maybeSingle();
+
+      if (userRow is Map<String, dynamic>) {
+        sellerTitle = (userRow['nickname']?.toString() ?? '')
+            .isNotEmpty
+            ? userRow['nickname'].toString()
+            : (userRow['name']?.toString() ?? '');
+      }
+    } catch (e, st) {
+      debugPrint('[ItemDetail] load seller name error: $e\n$st');
+    }
+  }
+
   return ItemDetail(
     itemId: row['id']?.toString() ?? itemId,
+    sellerId: sellerId,
     itemTitle: row['title']?.toString() ?? '',
     itemImages: const [],
     finishTime: finishTime,
-    sellerTitle: row['seller_name']?.toString() ?? '',
+    sellerTitle: sellerTitle,
     buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
     biddingCount: (row['bidding_count'] as int?) ?? 0,
     itemContent: row['description']?.toString() ?? '',
@@ -357,7 +390,8 @@ class _ItemMainInfoSection extends StatelessWidget {
                 OutlinedButton(
                   onPressed: () {
                     // TODO: 실제 sellerId로 교체
-                    context.push('/user/user_1');
+                    if (item.sellerId.isEmpty) return;
+                    context.push('/user/${item.sellerId}');
                   },
                   style: OutlinedButton.styleFrom(
                     padding:
@@ -396,7 +430,7 @@ class _ItemDescriptionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,9 +457,10 @@ class _ItemDescriptionSection extends StatelessWidget {
 }
 
 class _BottomActionBar extends StatefulWidget {
-  const _BottomActionBar({required this.itemId});
+  const _BottomActionBar({required this.itemId, required this.isMyItem});
 
   final String itemId;
+  final bool isMyItem;
 
   @override
   State<_BottomActionBar> createState() => _BottomActionBarState();
@@ -501,91 +536,90 @@ class _BottomActionBarState extends State<_BottomActionBar> {
             Expanded(
               child: Row(
                 children: [
-                  SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: OutlinedButton(
-                      onPressed: _toggleFavorite,
-                      style: OutlinedButton.styleFrom(
+                  if (!widget.isMyItem) ...[
+                    SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: IconButton(
+                        onPressed: _toggleFavorite,
                         padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        splashRadius: 24,
+                        icon: Icon(
+                          _isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          size: 24,
+                          color: Colors.red,
                         ),
-                        side: BorderSide(color: Colors.grey[300]!),
-                      ),
-                      child: Icon(
-                        _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        size: 20,
-                        color: Colors.red,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SizedBox(
-                      height: 44,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.white,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(defaultRadius),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.white,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(defaultRadius),
+                                ),
                               ),
+                              builder: (context) {
+                                // TODO: 실제 itemId를 전달하도록 수정
+                                return ChangeNotifierProvider<PriceInputViewModel>(
+                                  create: (_) => PriceInputViewModel(),
+                                  child: const BidBottomSheet(itemId: 'item_1'),
+                                );
+                              },
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: blueColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.7),
                             ),
-                            builder: (context) {
-                              // TODO: 실제 itemId를 전달하도록 수정
-                              return ChangeNotifierProvider<PriceInputViewModel>(
-                                create: (_) => PriceInputViewModel(),
-                                child: const BidBottomSheet(itemId: 'item_1'),
-                              );
-                            },
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: blueColor),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.7),
                           ),
-                        ),
-                        child: Text(
-                          '입찰하기',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: blueColor,
+                          child: Text(
+                            '입찰하기',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: blueColor,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SizedBox(
-                      height: 44,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: 즉시 구매 플로우 연결
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: blueColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.7),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // TODO: 즉시 구매 플로우 연결
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: blueColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.7),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          '바로 구매',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                          child: const Text(
+                            '바로 구매',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
