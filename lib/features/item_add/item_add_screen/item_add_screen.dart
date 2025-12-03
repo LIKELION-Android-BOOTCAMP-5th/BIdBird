@@ -402,18 +402,7 @@ class ItemAddScreen extends StatelessWidget {
                           noText: '취소',
                           yesLogic: () async {
                             Navigator.of(context).pop();
-                            showDialog(
-                              context: context,
-                              builder: (_) => AskPopup(
-                                content:
-                                    '매물 등록하기로 이동하여 최종 등록을 진행해 주세요.',
-                                yesText: '이동하기',
-                                yesLogic: () async {
-                                  Navigator.of(context).pop();
-                                  await viewModel.submit(context);
-                                },
-                              ),
-                            );
+                            await viewModel.submit(context);
                           },
                         ),
                       );
