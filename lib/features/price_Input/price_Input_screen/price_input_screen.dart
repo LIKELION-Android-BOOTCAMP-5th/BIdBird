@@ -2,6 +2,9 @@ import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../price_Input_viewmodel/price_input_viewmodel.dart';
 
 class BidBottomSheet extends StatefulWidget {
   const BidBottomSheet({super.key, required this.itemId});
@@ -68,6 +71,8 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<PriceInputViewModel>();
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Column(
@@ -246,10 +251,16 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: () {
-                // TODO: 실제 입찰 요청 API 연동
-                Navigator.of(context).pop();
-              },
+              onPressed: viewModel.isSubmitting
+                  ? null
+                  : () {
+                      final vm = context.read<PriceInputViewModel>();
+                      vm.placeBid(
+                        context,
+                        itemId: widget.itemId,
+                        bidPrice: _bidAmount,
+                      );
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: blueColor,
                 shape: RoundedRectangleBorder(
