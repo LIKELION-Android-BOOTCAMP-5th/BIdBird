@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/utils/ui_set/border_radius.dart';
 import '../../../core/utils/ui_set/icons.dart';
+import '../viewmodel/current_trade_viewmodel.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
   const CurrentTradeScreen({super.key});
@@ -20,12 +21,14 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
   late final SupabaseClient _supabase;
   late Future<List<Map<String, String>>> _saleHistoryFuture;
+  late Future<List<Map<String, String>>> _bidHistoryFuture;
 
   @override
   void initState() {
     super.initState();
     _supabase = SupabaseManager.shared.supabase;
     _saleHistoryFuture = _fetchMySaleHistory();
+    _bidHistoryFuture = _fetchMyBidHistory();
   }
 
   @override
@@ -49,9 +52,15 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           _buildTabBar(),
           const SizedBox(height: 8),
           Expanded(
-            child: _selectedTabIndex == 0
-                ? _buildSaleHistoryList()
-                : _buildBidHistoryList(),
+            child: RefreshIndicator(
+              color: Colors.blue,
+              backgroundColor: Colors.transparent,
+              strokeWidth: 2.5,
+              onRefresh: _onRefresh,
+              child: _selectedTabIndex == 0
+                  ? _buildSaleHistoryList()
+                  : _buildBidHistoryList(),
+            ),
           ),
         ],
       ),
@@ -103,31 +112,47 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   }
 
   Widget _buildBidHistoryList() {
-    // TODO: 추후 Supabase 연동 후 실제 입찰 내역 리스트로 교체
-    if (_bidHistory.isEmpty) {
-      return const Center(
-        child: Text('입찰 내역이 없습니다.'),
-      );
-    }
+    return FutureBuilder<List<Map<String, String>>>(
+      future: _bidHistoryFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _bidHistory.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final item = _bidHistory[index];
-        return _HistoryCard(
-          title: item['title'] ?? '',
-          priceLabel: '입찰가',
-          price: item['price'] ?? '',
-          date: item['date'] ?? '',
-          status: item['status'] ?? '',
-          onTap: () {
-            // TODO: _bidHistory에 item_id를 포함해 실제 상세 화면으로 이동하도록 수정
-            final itemId = item['item_id'] ?? '';
-            if (itemId.isNotEmpty) {
-              GoRouter.of(context).push('/item/$itemId');
-            }
+        if (snapshot.hasError) {
+          return const Center(
+            child: Text('입찰 내역을 불러오는 중 오류가 발생했습니다.'),
+          );
+        }
+
+        final data = snapshot.data ?? [];
+
+        if (data.isEmpty) {
+          return const Center(
+            child: Text('입찰 내역이 없습니다.'),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: data.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final item = data[index];
+            return _HistoryCard(
+              title: item['title'] ?? '',
+              priceLabel: '입찰가',
+              price: item['price'] ?? '',
+              thumbnailUrl: item['thumbnailUrl'],
+              date: item['date'] ?? '',
+              status: item['status'] ?? '',
+              onTap: () {
+                final itemId = item['item_id'] ?? '';
+                if (itemId.isNotEmpty) {
+                  GoRouter.of(context).push('/item/$itemId');
+                }
+              },
+            );
           },
         );
       },
@@ -224,7 +249,6 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
         return <String, String>{
           'item_id': itemId,
           'title': item['title']?.toString() ?? '',
-          // 판매 내역 카드에서는 금액을 표시하지 않음
           'price': '',
           'thumbnailUrl': item['thumbnail_image']?.toString() ?? '',
           'date': _formatDateTime(row['created_at']?.toString()),
@@ -236,6 +260,119 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       rethrow;
     }
   }
+
+  Future<void> _onRefresh() async {
+    setState(() {
+      _saleHistoryFuture = _fetchMySaleHistory();
+      _bidHistoryFuture = _fetchMyBidHistory();
+    });
+
+    await Future.wait([
+      _saleHistoryFuture,
+      _bidHistoryFuture,
+    ]);
+  }
+
+  Future<List<Map<String, String>>> _fetchMyBidHistory() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return [];
+
+    try {
+      final bidRows = await _supabase
+          .from('bid_log')
+          .select('item_id, bid_price, created_at, status, bid_user')
+          .eq('bid_user', user.id)
+          .order('created_at', ascending: false);
+
+      if (bidRows.isEmpty) {
+        return [];
+      }
+
+      final Map<String, Map<String, dynamic>> latestBidByItem = {};
+      for (final raw in bidRows) {
+        final row = raw as Map<String, dynamic>;
+        final itemId = row['item_id']?.toString();
+        if (itemId == null || itemId.isEmpty) continue;
+        if (!latestBidByItem.containsKey(itemId)) {
+          latestBidByItem[itemId] = row;
+        }
+      }
+
+      final List<Map<String, dynamic>> bids = latestBidByItem.values.toList();
+
+      final Set<String> itemIds = {};
+      for (final row in bids) {
+        final id = row['item_id']?.toString();
+        if (id != null && id.isNotEmpty) {
+          itemIds.add(id);
+        }
+      }
+
+      final Map<String, Map<String, dynamic>> itemsById = {};
+      final Map<String, String> statusByItemId = {};
+
+      if (itemIds.isNotEmpty) {
+        final itemRows = await _supabase
+            .from('items')
+            .select('id, title, thumbnail_image, current_price')
+            .inFilter('id', itemIds.toList());
+
+        for (final raw in itemRows) {
+          final row = raw as Map<String, dynamic>;
+          final id = row['id']?.toString();
+          if (id != null) {
+            itemsById[id] = row;
+          }
+        }
+
+        final statusRows = await _supabase
+            .from('bid_status')
+            .select('item_id, text_code')
+            .eq('user_id', user.id)
+            .inFilter('item_id', itemIds.toList());
+
+        for (final raw in statusRows) {
+          final row = raw as Map<String, dynamic>;
+          final id = row['item_id']?.toString();
+          if (id != null) {
+            statusByItemId[id] = row['text_code']?.toString() ?? '';
+          }
+        }
+      }
+
+      return bids.map<Map<String, String>>((row) {
+        final itemId = row['item_id']?.toString() ?? '';
+        final item = itemsById[itemId] ?? <String, dynamic>{};
+        final bidPrice = row['bid_price'] as int? ?? 0;
+
+        final currentPrice = item['current_price'] as int? ?? 0;
+        final rawStatus = statusByItemId[itemId] ?? '';
+
+        String displayStatus;
+        final bool isTopBidder = currentPrice > 0 && bidPrice == currentPrice;
+
+        if (rawStatus.contains('입찰 제한') || rawStatus.contains('거래정지')) {
+          displayStatus = '거래정지';
+        } else if (isTopBidder) {
+          displayStatus = '최고가 입찰';
+        } else {
+          displayStatus = '패찰';
+        }
+
+        return <String, String>{
+          'item_id': itemId,
+          'title': item['title']?.toString() ?? '',
+          'price': '',
+          'thumbnailUrl': item['thumbnail_image']?.toString() ?? '',
+          'date': '',
+          'status': displayStatus,
+        };
+      }).toList();
+    } catch (e, st) {
+      debugPrint('[_fetchMyBidHistory] error: $e\n$st');
+      rethrow;
+    }
+  }
 }
 
 String _formatDateTime(String? isoString) {
@@ -244,7 +381,6 @@ String _formatDateTime(String? isoString) {
     final dt = DateTime.tryParse(isoString);
     if (dt == null) return isoString;
 
-    // 예: 2025-12-03 20:11
     final y = dt.year.toString().padLeft(4, '0');
     final m = dt.month.toString().padLeft(2, '0');
     final d = dt.day.toString().padLeft(2, '0');
@@ -275,25 +411,6 @@ class _HistoryCard extends StatelessWidget {
   final String status;
   final VoidCallback? onTap;
 
-  Color _statusColor() {
-    if (status.contains('최고입찰 중') ||
-        status.contains('즉시 구매') ||
-        status == '낙찰') {
-      return Colors.green;
-    }
-    if (status.contains('상위 입찰 발생')) {
-      return Colors.orange;
-    }
-    if (status.contains('유찰') ||
-        status.contains('패찰') ||
-        status.contains('입찰 제한')) {
-      return Colors.redAccent;
-    }
-    if (status.contains('입찰 없음')) {
-      return Colors.grey;
-    }
-    return Colors.black54;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +420,7 @@ class _HistoryCard extends StatelessWidget {
         height: 96,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: defaultBorder,
+          borderRadius: BorderRadius.circular(8.0),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -374,38 +491,26 @@ class _HistoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                     ],
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          date,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: CurrentTradeViewModel.getStatusColor(status),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: defaultBorder,
-                            ),
-                            child: Text(
-                              status,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: _statusColor(),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -417,5 +522,3 @@ class _HistoryCard extends StatelessWidget {
     );
   }
 }
-
-final List<Map<String, String>> _bidHistory = [];
