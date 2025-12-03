@@ -48,6 +48,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
               // 카테고리 목록을 불러오도록 초기화
               editViewModel.init();
 
+              // 기존 이미지 로딩
+              editViewModel.loadExistingImages(item.id);
+
               Navigator.of(context).push(
                 PageRouteBuilder(
                   transitionDuration: Duration.zero,
