@@ -126,7 +126,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             // TODO: _bidHistory에 item_id를 포함해 실제 상세 화면으로 이동하도록 수정
             final itemId = item['item_id'] ?? '';
             if (itemId.isNotEmpty) {
-              context.push('/item/$itemId');
+              GoRouter.of(context).push('/item/$itemId');
             }
           },
         );
@@ -173,7 +173,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                 final itemId = item['item_id'] ?? '';
                 debugPrint('[CurrentTradeScreen] 카드 탭: item_id=$itemId');
                 if (itemId.isNotEmpty) {
-                  context.push('/item/$itemId');
+                  GoRouter.of(context).push('/item/$itemId');
                 } else {
                   debugPrint('[CurrentTradeScreen] item_id가 비어 있어서 이동하지 않습니다.');
                 }
