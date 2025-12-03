@@ -33,6 +33,12 @@ class ItemDetailViewModel extends ChangeNotifier {
   bool _isTopBidder = false;
   bool get isTopBidder => _isTopBidder;
 
+  Map<String, dynamic>? _sellerProfile;
+  Map<String, dynamic>? get sellerProfile => _sellerProfile;
+
+  List<Map<String, dynamic>> _bidHistory = [];
+  List<Map<String, dynamic>> get bidHistory => _bidHistory;
+
   RealtimeChannel? _bidStatusChannel;
   RealtimeChannel? _itemsChannel;
   RealtimeChannel? _bidLogChannel;
@@ -59,6 +65,8 @@ class ItemDetailViewModel extends ChangeNotifier {
       await Future.wait([
         _loadFavoriteState(),
         _checkTopBidder(),
+        _loadSellerProfile(),
+        _loadBidHistory(),
       ]);
     } catch (e) {
       _error = e.toString();
@@ -74,6 +82,18 @@ class ItemDetailViewModel extends ChangeNotifier {
 
   Future<void> _checkTopBidder() async {
     _isTopBidder = await _repository.checkIsTopBidder(itemId);
+    notifyListeners();
+  }
+
+  Future<void> _loadSellerProfile() async {
+    if (_itemDetail?.sellerId != null) {
+      _sellerProfile = await _repository.fetchSellerProfile(_itemDetail!.sellerId);
+      notifyListeners();
+    }
+  }
+
+  Future<void> _loadBidHistory() async {
+    _bidHistory = await _repository.fetchBidHistory(itemId);
     notifyListeners();
   }
 
