@@ -49,6 +49,7 @@ class ItemDetailScreen extends StatelessWidget {
             currentUser != null && currentUser.id == item.sellerId;
 
         return Scaffold(
+          backgroundColor: const Color(0xffF5F6FA),
           appBar: AppBar(
             // Todo: 나중에 공통 AppBar 컴포넌트로 교체 예정
             title: const Text('상세 보기'),
@@ -65,7 +66,6 @@ class ItemDetailScreen extends StatelessWidget {
                       _ItemMainInfoSection(item: item),
                       const SizedBox(height: 16),
                       _ItemDescriptionSection(item: item),
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -129,11 +129,34 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     }
   }
 
+  // item_images 테이블에서 이미지 URL 가져오기 (썸네일 제외)
+  final List<String> images = [];
+  
+  try {
+    final imageRows = await supabase
+        .from('item_images')
+        .select('image_url')
+        .eq('item_id', itemId)
+        .order('sort_order', ascending: true);
+    
+    if (imageRows is List) {
+      for (final raw in imageRows) {
+        final row = raw as Map<String, dynamic>;
+        final imageUrl = row['image_url']?.toString();
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          images.add(imageUrl);
+        }
+      }
+    }
+  } catch (e, st) {
+    debugPrint('[ItemDetail] load images error: $e\n$st');
+  }
+
   return ItemDetail(
     itemId: row['id']?.toString() ?? itemId,
     sellerId: sellerId,
     itemTitle: row['title']?.toString() ?? '',
-    itemImages: const [],
+    itemImages: images,
     finishTime: finishTime,
     sellerTitle: sellerTitle,
     buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
@@ -146,27 +169,75 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
   );
 }
 
-class _ItemImageSection extends StatelessWidget {
+class _ItemImageSection extends StatefulWidget {
   const _ItemImageSection({required this.item});
 
   final ItemDetail item;
 
   @override
+  State<_ItemImageSection> createState() => _ItemImageSectionState();
+}
+
+class _ItemImageSectionState extends State<_ItemImageSection> {
+  int _currentPage = 0;
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final hasImages = widget.item.itemImages.isNotEmpty;
+    final images = hasImages ? widget.item.itemImages : <String>[];
+
     return SizedBox(
       height: 280,
       child: Stack(
         children: [
-          Container(
-            width: double.infinity,
-            color: Colors.grey[200],
-            child: const Center(
-              child: Text(
-                '상품 사진',
-                style: TextStyle(color: Colors.grey),
+          if (hasImages && images.isNotEmpty)
+            PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+              itemCount: images.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  width: double.infinity,
+                  color: Colors.grey[200],
+                  child: Image.network(
+                    images[index],
+                    width: double.infinity,
+                    height: 280,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Text(
+                          '상품 사진',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            )
+          else
+            Container(
+              width: double.infinity,
+              color: Colors.grey[200],
+              child: const Center(
+                child: Text(
+                  '상품 사진',
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             ),
-          ),
           Positioned(
             top: 16,
             left: 16,
@@ -177,7 +248,7 @@ class _ItemImageSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '잔여 시간 ${_formatRemainingTime(item.finishTime)}',
+                '잔여 시간 ${_formatRemainingTime(widget.item.finishTime)}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -186,19 +257,19 @@ class _ItemImageSection extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildDot(isActive: true),
-                _buildDot(isActive: false),
-                _buildDot(isActive: false),
-              ],
+          if (hasImages && images.length > 1)
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  images.length,
+                  (index) => _buildDot(isActive: index == _currentPage),
+                ),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -453,9 +524,8 @@ class _ItemDescriptionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      color: const Color(0xffF5F6FA),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -554,7 +624,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: Colors.white,
+        color: const Color(0xffF5F6FA),
         child: Row(
           children: [
             Expanded(
