@@ -128,7 +128,7 @@ GoRouter createAppRouter(BuildContext context) {
             ],
           ),
           GoRoute(
-            path: '/my_page',
+            path: '/mypage',
             pageBuilder: (context, state) {
               return const NoTransitionPage(child: MyPageScreen());
             },
