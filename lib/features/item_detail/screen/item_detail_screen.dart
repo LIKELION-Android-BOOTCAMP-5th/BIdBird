@@ -1,305 +1,91 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
+import 'package:bidbird/features/item_detail/viewmodel/item_detail_viewmodel.dart';
 import 'package:bidbird/features/price_Input/price_Input_screen/price_input_screen.dart';
 import 'package:bidbird/features/price_Input/price_Input_viewmodel/price_input_viewmodel.dart';
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../report/ui/report_screen.dart';
 
-class ItemDetailScreen extends StatefulWidget {
+class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key, required this.itemId});
 
   final String itemId;
 
   @override
-  State<ItemDetailScreen> createState() => _ItemDetailScreenState();
-}
-
-class _ItemDetailScreenState extends State<ItemDetailScreen> {
-  late final SupabaseClient _supabase;
-  RealtimeChannel? _bidStatusChannel;
-  RealtimeChannel? _itemsChannel;
-  RealtimeChannel? _bidLogChannel;
-
-  @override
-  void initState() {
-    super.initState();
-    _supabase = SupabaseManager.shared.supabase;
-    _setupRealtimeSubscription();
-  }
-
-  @override
-  void dispose() {
-    if (_bidStatusChannel != null) _supabase.removeChannel(_bidStatusChannel!);
-    if (_itemsChannel != null) _supabase.removeChannel(_itemsChannel!);
-    if (_bidLogChannel != null) _supabase.removeChannel(_bidLogChannel!);
-    super.dispose();
-  }
-
-  void _setupRealtimeSubscription() {
-    // bid_status 테이블 실시간 구독
-    _bidStatusChannel = _supabase.channel('bid_status_${widget.itemId}');
-    _bidStatusChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'bid_status',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'item_id',
-            value: widget.itemId,
-          ),
-          callback: (payload) {
-            debugPrint('[ItemDetail] bid_status 변경 감지: $payload');
-            if (mounted) setState(() {});
-          },
-        )
-        .subscribe();
-
-    // items 테이블 실시간 구독 (현재가 변경 감지)
-    _itemsChannel = _supabase.channel('items_${widget.itemId}');
-    _itemsChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'items',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'id',
-            value: widget.itemId,
-          ),
-          callback: (payload) {
-            debugPrint('[ItemDetail] items 변경 감지: $payload');
-            if (mounted) setState(() {});
-          },
-        )
-        .subscribe();
-
-    // bid_log 테이블 실시간 구독 (참여 입찰 수 변경 감지)
-    _bidLogChannel = _supabase.channel('bid_log_${widget.itemId}');
-    _bidLogChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert, // 입찰은 insert만 발생
-          schema: 'public',
-          table: 'bid_log',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'item_id',
-            value: widget.itemId,
-          ),
-          callback: (payload) {
-            debugPrint('[ItemDetail] bid_log 추가 감지: $payload');
-            if (mounted) setState(() {});
-          },
-        )
-        .subscribe();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    debugPrint('[ItemDetailScreen] build 호출됨, itemId=${widget.itemId}');
-
-    return FutureBuilder<ItemDetail?>(
-      future: _loadItemDetail(widget.itemId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-          return const Scaffold(
-            body: Center(
-              child: Text(
-                '매물 정보를 불러올 수 없습니다.',
-                style: TextStyle(fontSize: 14),
-              ),
-            ),
-          );
-        }
-
-        final ItemDetail item = snapshot.data!;
-
-        // 현재 로그인 유저와 판매자 비교해서 내 매물 여부 판단
-        final supabase = SupabaseManager.shared.supabase;
-        final currentUser = supabase.auth.currentUser;
-        final bool isMyItem =
-            currentUser != null && currentUser.id == item.sellerId;
-
-        return Scaffold(
-          backgroundColor: const Color(0xffF5F6FA),
-          appBar: AppBar(
-            title: const Text('상세 보기'),
-          ),
-          body: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _ItemImageSection(item: item),
-                      const SizedBox(height: 8),
-                      _ItemMainInfoSection(item: item),
-                      const SizedBox(height: 16),
-                      _ItemDescriptionSection(item: item),
-                    ],
-                  ),
-                ),
-              ),
-              _BottomActionBar(
-                item: item,
-                isMyItem: isMyItem,
-              ),
-            ],
-          ),
-        );
-      },
+    return ChangeNotifierProvider(
+      create: (_) => ItemDetailViewModel(itemId: itemId)
+        ..loadItemDetail()
+        ..setupRealtimeSubscription(),
+      child: const _ItemDetailView(),
     );
   }
 }
 
-Future<ItemDetail?> _loadItemDetail(String itemId) async {
-  final supabase = SupabaseManager.shared.supabase;
+class _ItemDetailView extends StatelessWidget {
+  const _ItemDetailView();
 
-  final List<dynamic> result = await supabase
-      .from('items')
-      .select()
-      .eq('id', itemId)
-      .limit(1);
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.watch<ItemDetailViewModel>();
 
-  if (result.isEmpty) {
-    return null;
-  }
-
-  final Map<String, dynamic> row = result.first as Map<String, dynamic>;
-
-  // created_at + auction_duration_hours 로 종료 시각 계산
-  final createdAtRaw = row['created_at']?.toString();
-  final createdAt = createdAtRaw != null
-      ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
-      : DateTime.now();
-
-  final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
-  final finishTime = createdAt.add(Duration(hours: durationHours));
-
-  final String sellerId = row['seller_id']?.toString() ?? '';
-  String sellerTitle = row['seller_name']?.toString() ?? '';
-
-  // seller_name 이 비어 있고 sellerId 가 있으면 users 테이블에서 이름을 한 번 더 조회
-  if (sellerTitle.isEmpty && sellerId.isNotEmpty) {
-    try {
-      final userRow = await supabase
-          .from('users')
-          .select('nickname, name')
-          .eq('id', sellerId)
-          .maybeSingle();
-
-      if (userRow is Map<String, dynamic>) {
-        sellerTitle = (userRow['nickname']?.toString() ?? '')
-            .isNotEmpty
-            ? userRow['nickname'].toString()
-            : (userRow['name']?.toString() ?? '');
-      }
-    } catch (e, st) {
-      debugPrint('[ItemDetail] load seller name error: $e\n$st');
+    if (viewModel.isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xffF5F6FA),
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+          ),
+        ),
+      );
     }
-  }
 
-  // item_images 테이블에서 이미지 URL 가져오기 (썸네일 제외)
-  final List<String> images = [];
-  
-  try {
-    final imageRows = await supabase
-        .from('item_images')
-        .select('image_url')
-        .eq('item_id', itemId)
-        .order('sort_order', ascending: true);
-    
-    if (imageRows is List) {
-      for (final raw in imageRows) {
-        final row = raw as Map<String, dynamic>;
-        final imageUrl = row['image_url']?.toString();
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          images.add(imageUrl);
-        }
-      }
+    if (viewModel.error != null || viewModel.itemDetail == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xffF5F6FA),
+        appBar: AppBar(title: const Text('상세 보기')),
+        body: Center(
+          child: Text(
+            viewModel.error ?? '매물 정보를 불러올 수 없습니다.',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+      );
     }
-  } catch (e, st) {
-    debugPrint('[ItemDetail] load images error: $e\n$st');
-  }
 
-  // bid_log 테이블에서 참여 입찰 수 조회
-  int biddingCount = 0;
-  try {
-    final countResponse = await supabase
-        .from('bid_log')
-        .select('id') // 아무 컬럼이나 선택
-        .eq('item_id', itemId)
-        .count(CountOption.exact);
-    
-    // count() 메서드의 반환값 처리 방식은 버전에 따라 다를 수 있음
-    // postgrest 1.x: countResponse.count
-    // postgrest 2.x: countResponse.count (PostgrestResponse 객체 내)
-    // 여기서는 countResponse가 PostgrestResponse<List<Map<String, dynamic>>> 타입이라고 가정
-    biddingCount = countResponse.count;
-  } catch (e) {
-    // count 쿼리가 실패하면 기존 방식(items 테이블의 bidding_count) 사용하거나 0으로 설정
-    debugPrint('[ItemDetail] load bidding count error: $e');
-    biddingCount = (row['bidding_count'] as int?) ?? 0;
-  }
+    final item = viewModel.itemDetail!;
+    final currentUser = SupabaseManager.shared.supabase.auth.currentUser;
+    final isMyItem = currentUser != null && currentUser.id == item.sellerId;
 
-  // 입찰 최소 호가 규칙 적용
-  final currentPrice = (row['current_price'] as int?) ?? 0;
-  int minBidStep;
-  
-  if (currentPrice <= 100000) {
-    // 100,000원 이하일 경우 최소 호가는 1,000원으로 고정
-    minBidStep = 1000;
-  } else {
-    // 100,001원 이상일 경우 마지막 두 자리 제거 (절사 정책)
-    final priceStr = currentPrice.toString();
-    if (priceStr.length >= 3) {
-      minBidStep = int.parse(priceStr.substring(0, priceStr.length - 2));
-    } else {
-      minBidStep = 1000; // 최소값 보장
-    }
+    return Scaffold(
+      backgroundColor: const Color(0xffF5F6FA),
+      appBar: AppBar(title: const Text('상세 보기')),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _ItemImageSection(item: item),
+                  const SizedBox(height: 8),
+                  _ItemMainInfoSection(item: item),
+                  const SizedBox(height: 16),
+                  _ItemDescriptionSection(item: item),
+                ],
+              ),
+            ),
+          ),
+          _BottomActionBar(item: item, isMyItem: isMyItem),
+        ],
+      ),
+    );
   }
-  
-  // 결과 출력
-  final nextValidBid = currentPrice + minBidStep;
-  debugPrint('[ItemDetail] 입찰 호가 계산 결과:');
-  debugPrint('  currentPrice: $currentPrice');
-  debugPrint('  minBidStep: $minBidStep');
-  debugPrint('  nextValidBid: $nextValidBid');
-  
-  // 디버그: DB의 원래 bid_price 값 확인
-  final originalBidPrice = (row['bid_price'] as int?) ?? 0;
-  debugPrint('  originalBidPrice: $originalBidPrice (DB 값)');
-
-  return ItemDetail(
-    itemId: row['id']?.toString() ?? itemId,
-    sellerId: sellerId,
-    itemTitle: row['title']?.toString() ?? '',
-    itemImages: images,
-    finishTime: finishTime,
-    sellerTitle: sellerTitle,
-    buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
-    biddingCount: biddingCount,
-    itemContent: row['description']?.toString() ?? '',
-    currentPrice: currentPrice,
-    bidPrice: minBidStep, // 계산된 최소 호가 사용
-    sellerRating: (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
-    sellerReviewCount: (row['seller_review_count'] as int?) ?? 0,
-  );
 }
 
 class _ItemImageSection extends StatefulWidget {
@@ -620,7 +406,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                   onPressed: () {
                     // TODO: 실제 sellerId로 교체
                     if (item.sellerId.isEmpty) return;
-                    context.push('/user/${item.sellerId}');
+                    GoRouter.of(context).push('/user/${item.sellerId}');
                   },
                   style: OutlinedButton.styleFrom(
                     padding:
@@ -685,105 +471,16 @@ class _ItemDescriptionSection extends StatelessWidget {
   }
 }
 
-class _BottomActionBar extends StatefulWidget {
+class _BottomActionBar extends StatelessWidget {
   const _BottomActionBar({required this.item, required this.isMyItem});
 
   final ItemDetail item;
   final bool isMyItem;
 
   @override
-  State<_BottomActionBar> createState() => _BottomActionBarState();
-}
-
-class _BottomActionBarState extends State<_BottomActionBar> {
-  bool _isFavorite = false;
-  bool _isTopBidder = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFavoriteState();
-    _checkTopBidder();
-  }
-
-  Future<void> _loadFavoriteState() async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      final List<dynamic> rows = await supabase
-          .from('favorites')
-          .select('id')
-          .eq('item_id', widget.item.itemId)
-          .eq('user_id', user.id)
-          .limit(1);
-
-      if (!mounted) return;
-      setState(() {
-        _isFavorite = rows.isNotEmpty;
-      });
-    } catch (e, st) {
-      debugPrint('[Favorite] load error: $e\n$st');
-    }
-  }
-
-  Future<void> _checkTopBidder() async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      // 해당 아이템의 최고 입찰 기록 조회
-      final List<dynamic> rows = await supabase
-          .from('bid_log')
-          .select('bid_user, bid_price')
-          .eq('item_id', widget.item.itemId)
-          .order('bid_price', ascending: false)
-          .limit(1);
-
-      if (!mounted) return;
-      if (rows.isNotEmpty) {
-        final topBidUserId = rows[0]['bid_user']?.toString() ?? '';
-        setState(() {
-          _isTopBidder = topBidUserId == user.id;
-        });
-      }
-    } catch (e, st) {
-      debugPrint('[TopBidder] check error: $e\n$st');
-    }
-  }
-
-  Future<void> _toggleFavorite() async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      if (_isFavorite) {
-        await supabase
-            .from('favorites')
-            .delete()
-            .eq('item_id', widget.item.itemId)
-            .eq('user_id', user.id);
-      } else {
-        await supabase.from('favorites').insert(<String, dynamic>{
-          'item_id': widget.item.itemId,
-          'user_id': user.id,
-        });
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _isFavorite = !_isFavorite;
-      });
-    } catch (e, st) {
-      debugPrint('[Favorite] toggle error: $e\n$st');
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<ItemDetailViewModel>();
+
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -793,16 +490,16 @@ class _BottomActionBarState extends State<_BottomActionBar> {
             Expanded(
               child: Row(
                 children: [
-                  if (!widget.isMyItem) ...[
+                  if (!isMyItem) ...[
                     SizedBox(
                       width: 44,
                       height: 44,
                       child: IconButton(
-                        onPressed: _toggleFavorite,
+                        onPressed: () => viewModel.toggleFavorite(),
                         padding: EdgeInsets.zero,
                         splashRadius: 24,
                         icon: Icon(
-                          _isFavorite
+                          viewModel.isFavorite
                               ? Icons.favorite
                               : Icons.favorite_border,
                           size: 24,
@@ -815,7 +512,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                     Expanded(
                       child: SizedBox(
                         height: 44,
-                        child: _isTopBidder
+                        child: viewModel.isTopBidder
                             ? Container(
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade100,
@@ -848,10 +545,10 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                                       return ChangeNotifierProvider<PriceInputViewModel>(
                                         create: (_) => PriceInputViewModel(),
                                         child: BidBottomSheet(
-                                          itemId: widget.item.itemId,
-                                          currentPrice: widget.item.currentPrice,
-                                          bidUnit: widget.item.bidPrice,
-                                          buyNowPrice: widget.item.buyNowPrice,
+                                          itemId: item.itemId,
+                                          currentPrice: item.currentPrice,
+                                          bidUnit: item.bidPrice,
+                                          buyNowPrice: item.buyNowPrice,
                                         ),
                                       );
                                     },
@@ -876,7 +573,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                     ),
                     
                     // 즉시 구매 버튼 (즉시 구매가가 있을 때만 표시)
-                    if (widget.item.buyNowPrice > 0) ...[
+                    if (item.buyNowPrice > 0) ...[
                       const SizedBox(width: 8),
                       Expanded(
                         child: SizedBox(
