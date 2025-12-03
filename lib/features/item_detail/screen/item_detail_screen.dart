@@ -3,7 +3,9 @@ import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
 import 'package:bidbird/features/price_Input/price_Input_screen/price_input_screen.dart';
+import 'package:bidbird/features/price_Input/price_Input_viewmodel/price_input_viewmodel.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key});
@@ -411,7 +413,10 @@ class _BottomActionBar extends StatelessWidget {
                             ),
                             builder: (context) {
                               // TODO: 실제 itemId를 전달하도록 수정
-                              return const BidBottomSheet(itemId: 'item_1');
+                              return ChangeNotifierProvider<PriceInputViewModel>(
+                                create: (_) => PriceInputViewModel(),
+                                child: const BidBottomSheet(itemId: 'item_1'),
+                              );
                             },
                           );
                         },

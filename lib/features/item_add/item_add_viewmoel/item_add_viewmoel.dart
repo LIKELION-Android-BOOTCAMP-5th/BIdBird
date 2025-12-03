@@ -4,7 +4,12 @@ import 'dart:typed_data';
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:bidbird/features/item_registration/data/item_registration_data.dart';
+import 'package:bidbird/features/item_registration/viewmodel/item_registration_viewmodel.dart';
+import 'package:bidbird/features/item_registration/ui/item_registration_detail_ui.dart';
 
 import '../item_data/item_add_data.dart';
 
@@ -47,7 +52,7 @@ class ItemAddViewModel extends ChangeNotifier {
     try {
       final supabase = SupabaseManager.shared.supabase;
       final List<dynamic> data = await supabase
-          .from('keyword_type')
+          .from('code_keyword_type')
           .select('id, title')
           .order('id');
 
@@ -109,9 +114,9 @@ class ItemAddViewModel extends ChangeNotifier {
     }
 
     final int? startPrice =
-        int.tryParse(startPriceController.text.replaceAll(',', ''));
+    int.tryParse(startPriceController.text.replaceAll(',', ''));
     final int? instantPrice =
-        int.tryParse(instantPriceController.text.replaceAll(',', ''));
+    int.tryParse(instantPriceController.text.replaceAll(',', ''));
 
     if (startPrice == null) {
       return '시작가를 숫자로 입력해주세요.';
@@ -191,7 +196,7 @@ class ItemAddViewModel extends ChangeNotifier {
     final String title = titleController.text.trim();
     final String description = descriptionController.text.trim();
     final int startPrice =
-        int.parse(startPriceController.text.replaceAll(',', ''));
+    int.parse(startPriceController.text.replaceAll(',', ''));
     final int instantPrice = useInstantPrice
         ? int.parse(instantPriceController.text.replaceAll(',', ''))
         : 0;
@@ -265,7 +270,25 @@ class ItemAddViewModel extends ChangeNotifier {
         isAgree: agreed,
       );
 
-      await supabase.from('items').insert(data.toJson(sellerId: user.id));
+      final Map<String, dynamic> inserted = await supabase
+          .from('items')
+          .insert(data.toJson(sellerId: user.id))
+          .select(
+        'id, title, description, start_price, buy_now_price, thumbnail_image, keyword_type',
+      )
+          .single();
+
+      final ItemRegistrationData registrationItem = ItemRegistrationData(
+        id: inserted['id'].toString(),
+        title: inserted['title']?.toString() ?? title,
+        description: inserted['description']?.toString() ?? description,
+        startPrice: (inserted['start_price'] as num?)?.toInt() ?? startPrice,
+        instantPrice:
+        (inserted['buy_now_price'] as num?)?.toInt() ?? instantPrice,
+        thumbnailUrl: (inserted['thumbnail_image'] as String?) ??
+            (imageUrls.isNotEmpty ? imageUrls.first : null),
+        keywordTypeId: (inserted['keyword_type'] as num?)?.toInt(),
+      );
 
       messenger.showSnackBar(
         const SnackBar(
@@ -273,7 +296,20 @@ class ItemAddViewModel extends ChangeNotifier {
         ),
       );
 
-      navigator.pop();
+      navigator.pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (context, animation, secondaryAnimation) {
+            final vm = ItemRegistrationViewModel();
+            vm.items = <ItemRegistrationData>[registrationItem];
+            return ChangeNotifierProvider<ItemRegistrationViewModel>.value(
+              value: vm,
+              child: ItemRegistrationDetailScreen(item: registrationItem),
+            );
+          },
+        ),
+      );
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('등록 중 오류가 발생했습니다: $e')),
@@ -284,4 +320,5 @@ class ItemAddViewModel extends ChangeNotifier {
     }
   }
 }
+
 
