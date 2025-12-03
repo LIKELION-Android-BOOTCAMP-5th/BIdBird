@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:bidbird/core/cloudinary_manager.dart';
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,6 +28,7 @@ class ItemAddViewModel extends ChangeNotifier {
 
   final List<String> durations = <String>['4시간', '12시간', '24시간'];
 
+  String? editingItemId;
   int? selectedKeywordTypeId;
   String selectedDuration = '4시간';
   bool agreed = false;
@@ -237,27 +239,14 @@ class ItemAddViewModel extends ChangeNotifier {
       final DateTime auctionStartAt = now;
       final DateTime auctionEndAt = now.add(Duration(hours: auctionHours));
 
-      final StorageFileApi storage = supabase.storage.from('item-images');
-      final List<String> imageUrls = <String>[];
+      final List<String> imageUrls = await CloudinaryManager.shared
+          .uploadImageListToCloudinary(selectedImages);
 
-      for (int i = 0; i < selectedImages.length; i++) {
-        final XFile xfile = selectedImages[i];
-        final File file = File(xfile.path);
-        final Uint8List bytes = await file.readAsBytes();
-        final String path =
-            '${user.id}/${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
-
-        await storage.uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(
-            contentType: 'image/jpeg',
-            upsert: true,
-          ),
+      if (imageUrls.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('이미지 업로드에 실패했습니다. 다시 시도해주세요.')),
         );
-
-        final String publicUrl = storage.getPublicUrl(path);
-        imageUrls.add(publicUrl);
+        return;
       }
 
       final ItemAddData data = ItemAddData(
@@ -273,24 +262,86 @@ class ItemAddViewModel extends ChangeNotifier {
         isAgree: agreed,
       );
 
-      final Map<String, dynamic> inserted = await supabase
-          .from('items')
-          .insert(data.toJson(sellerId: user.id))
-          .select(
-        'id, title, description, start_price, buy_now_price, thumbnail_image, keyword_type',
-      )
-          .single();
+      Map<String, dynamic> row;
+
+      if (editingItemId == null) {
+        final Map<String, dynamic> inserted = await supabase
+            .from('items')
+            .insert(data.toJson(sellerId: user.id))
+            .select(
+          'id, title, description, start_price, buy_now_price, keyword_type',
+        )
+            .single();
+        row = inserted;
+      } else {
+        final Map<String, dynamic> updateJson =
+            data.toJson(sellerId: user.id)
+              ..remove('seller_id')
+              ..remove('current_price')
+              ..remove('bidding_count')
+              ..remove('status')
+              ..remove('locked');
+
+        final Map<String, dynamic> updated = await supabase
+            .from('items')
+            .update(updateJson)
+            .eq('id', editingItemId!)
+            .select(
+          'id, title, description, start_price, buy_now_price, keyword_type',
+        )
+            .single();
+        row = updated;
+      }
+
+      final String itemId = row['id'].toString();
+
+      if (editingItemId != null) {
+        await supabase
+            .from('item_images')
+            .delete()
+            .eq('item_id', itemId);
+      }
+
+      if (imageUrls.isNotEmpty) {
+        final List<Map<String, dynamic>> imageRows = <Map<String, dynamic>>[];
+        for (int i = 0; i < imageUrls.length && i < 10; i++) {
+          imageRows.add(<String, dynamic>{
+            'item_id': itemId,
+            'image_url': imageUrls[i],
+            'sort_order': i + 1,
+          });
+        }
+
+        if (imageRows.isNotEmpty) {
+          await supabase.from('item_images').insert(imageRows);
+        }
+      }
+
+      // Edge Function을 호출하여 썸네일용 작은 이미지를 생성/저장
+      try {
+        if (imageUrls.isNotEmpty) {
+          await supabase.functions.invoke(
+            'create-thumbnail',
+            body: <String, dynamic>{
+              'itemId': itemId,
+              'imageUrl': imageUrls.first,
+            },
+          );
+        }
+      } catch (e) {
+        debugPrint('create-thumbnail error: $e');
+      }
 
       final ItemRegistrationData registrationItem = ItemRegistrationData(
-        id: inserted['id'].toString(),
-        title: inserted['title']?.toString() ?? title,
-        description: inserted['description']?.toString() ?? description,
-        startPrice: (inserted['start_price'] as num?)?.toInt() ?? startPrice,
+        id: itemId,
+        title: row['title']?.toString() ?? title,
+        description: row['description']?.toString() ?? description,
+        startPrice: (row['start_price'] as num?)?.toInt() ?? startPrice,
         instantPrice:
-        (inserted['buy_now_price'] as num?)?.toInt() ?? instantPrice,
-        thumbnailUrl: (inserted['thumbnail_image'] as String?) ??
-            (imageUrls.isNotEmpty ? imageUrls.first : null),
-        keywordTypeId: (inserted['keyword_type'] as num?)?.toInt(),
+        (row['buy_now_price'] as num?)?.toInt() ?? instantPrice,
+        thumbnailUrl:
+            imageUrls.isNotEmpty ? imageUrls.first : null,
+        keywordTypeId: (row['keyword_type'] as num?)?.toInt(),
       );
 
       messenger.showSnackBar(
