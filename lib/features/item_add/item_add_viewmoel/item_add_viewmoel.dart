@@ -12,7 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bidbird/features/item_registration/data/item_registration_data.dart';
 import 'package:bidbird/features/item_registration/viewmodel/item_registration_viewmodel.dart';
-import 'package:bidbird/features/item_registration/ui/item_registration_detail_ui.dart';
+import 'package:bidbird/features/item_registration/ui/item_registration_detail_screen.dart';
 
 import '../item_data/item_add_data.dart';
 

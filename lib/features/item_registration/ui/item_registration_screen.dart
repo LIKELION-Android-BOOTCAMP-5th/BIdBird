@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
-import 'item_registration_detail_ui.dart';
+import 'item_registration_detail_screen.dart';
 
 class ItemRegistrationScreen extends StatelessWidget {
   const ItemRegistrationScreen({super.key});
