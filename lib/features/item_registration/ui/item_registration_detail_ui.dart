@@ -1,7 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
-import 'package:bidbird/core/widgets/components/pop_up/confirm_only_popup.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -136,12 +136,11 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
 
                             showDialog(
                               context: context,
-                              builder: (_) => ConfirmOnlyPopup(
-                                title: '알림',
-                                description:
-                                    '매물은 $timeText에 등록됩니다.',
-                                confirmText: '확인',
-                                onConfirm: () {
+                              builder: (_) => AskPopup(
+                                content: '매물은 $timeText에 등록됩니다.',
+                                yesText: '확인',
+                                yesLogic: () async {
+                                  Navigator.of(context).pop();
                                   vm.registerItem(
                                     context,
                                     item.id,

@@ -2,8 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/widgets/components/pop_up/confirm_cancel_popup.dart';
-import 'package:bidbird/core/widgets/components/pop_up/confirm_only_popup.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:provider/provider.dart';
 
 import '../item_add_viewmoel/item_add_viewmoel.dart';
@@ -398,23 +397,24 @@ class ItemAddScreen extends StatelessWidget {
                   : () {
                       showDialog(
                         context: context,
-                        builder: (_) => ConfirmCancelPopup(
-                          title: '저장하시겠습니까?',
-                          onConfirm: () {
+                        builder: (_) => AskPopup(
+                          content: '저장하시겠습니까?',
+                          noText: '취소',
+                          yesLogic: () async {
+                            Navigator.of(context).pop();
                             showDialog(
                               context: context,
-                              builder: (_) => ConfirmOnlyPopup(
-                                title: '알림',
-                                description:
+                              builder: (_) => AskPopup(
+                                content:
                                     '매물 등록하기로 이동하여 최종 등록을 진행해 주세요.',
-                                confirmText: '이동하기',
-                                onConfirm: () async {
+                                yesText: '이동하기',
+                                yesLogic: () async {
+                                  Navigator.of(context).pop();
                                   await viewModel.submit(context);
                                 },
                               ),
                             );
                           },
-                          onCancel: () {},
                         ),
                       );
                     },
