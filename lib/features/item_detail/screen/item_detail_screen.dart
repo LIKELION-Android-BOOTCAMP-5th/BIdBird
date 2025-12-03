@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
@@ -7,21 +9,106 @@ import 'package:bidbird/features/price_Input/price_Input_viewmodel/price_input_v
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../report/ui/report_screen.dart';
 
-class ItemDetailScreen extends StatelessWidget {
+class ItemDetailScreen extends StatefulWidget {
   const ItemDetailScreen({super.key, required this.itemId});
 
   final String itemId;
 
   @override
+  State<ItemDetailScreen> createState() => _ItemDetailScreenState();
+}
+
+class _ItemDetailScreenState extends State<ItemDetailScreen> {
+  late final SupabaseClient _supabase;
+  RealtimeChannel? _bidStatusChannel;
+  RealtimeChannel? _itemsChannel;
+  RealtimeChannel? _bidLogChannel;
+
+  @override
+  void initState() {
+    super.initState();
+    _supabase = SupabaseManager.shared.supabase;
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    if (_bidStatusChannel != null) _supabase.removeChannel(_bidStatusChannel!);
+    if (_itemsChannel != null) _supabase.removeChannel(_itemsChannel!);
+    if (_bidLogChannel != null) _supabase.removeChannel(_bidLogChannel!);
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    // bid_status 테이블 실시간 구독
+    _bidStatusChannel = _supabase.channel('bid_status_${widget.itemId}');
+    _bidStatusChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'bid_status',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: widget.itemId,
+          ),
+          callback: (payload) {
+            debugPrint('[ItemDetail] bid_status 변경 감지: $payload');
+            if (mounted) setState(() {});
+          },
+        )
+        .subscribe();
+
+    // items 테이블 실시간 구독 (현재가 변경 감지)
+    _itemsChannel = _supabase.channel('items_${widget.itemId}');
+    _itemsChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'items',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: widget.itemId,
+          ),
+          callback: (payload) {
+            debugPrint('[ItemDetail] items 변경 감지: $payload');
+            if (mounted) setState(() {});
+          },
+        )
+        .subscribe();
+
+    // bid_log 테이블 실시간 구독 (참여 입찰 수 변경 감지)
+    _bidLogChannel = _supabase.channel('bid_log_${widget.itemId}');
+    _bidLogChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert, // 입찰은 insert만 발생
+          schema: 'public',
+          table: 'bid_log',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: widget.itemId,
+          ),
+          callback: (payload) {
+            debugPrint('[ItemDetail] bid_log 추가 감지: $payload');
+            if (mounted) setState(() {});
+          },
+        )
+        .subscribe();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // TODO: 이후에는 실제 item 데이터를 인자로 받아서 사용
-    debugPrint('[ItemDetailScreen] build 호출됨, itemId=$itemId');
+    debugPrint('[ItemDetailScreen] build 호출됨, itemId=${widget.itemId}');
 
     return FutureBuilder<ItemDetail?>(
-      future: _loadItemDetail(itemId),
+      future: _loadItemDetail(widget.itemId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -152,6 +239,54 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     debugPrint('[ItemDetail] load images error: $e\n$st');
   }
 
+  // bid_log 테이블에서 참여 입찰 수 조회
+  int biddingCount = 0;
+  try {
+    final countResponse = await supabase
+        .from('bid_log')
+        .select('id') // 아무 컬럼이나 선택
+        .eq('item_id', itemId)
+        .count(CountOption.exact);
+    
+    // count() 메서드의 반환값 처리 방식은 버전에 따라 다를 수 있음
+    // postgrest 1.x: countResponse.count
+    // postgrest 2.x: countResponse.count (PostgrestResponse 객체 내)
+    // 여기서는 countResponse가 PostgrestResponse<List<Map<String, dynamic>>> 타입이라고 가정
+    biddingCount = countResponse.count;
+  } catch (e) {
+    // count 쿼리가 실패하면 기존 방식(items 테이블의 bidding_count) 사용하거나 0으로 설정
+    debugPrint('[ItemDetail] load bidding count error: $e');
+    biddingCount = (row['bidding_count'] as int?) ?? 0;
+  }
+
+  // 입찰 최소 호가 규칙 적용
+  final currentPrice = (row['current_price'] as int?) ?? 0;
+  int minBidStep;
+  
+  if (currentPrice <= 100000) {
+    // 100,000원 이하일 경우 최소 호가는 1,000원으로 고정
+    minBidStep = 1000;
+  } else {
+    // 100,001원 이상일 경우 마지막 두 자리 제거 (절사 정책)
+    final priceStr = currentPrice.toString();
+    if (priceStr.length >= 3) {
+      minBidStep = int.parse(priceStr.substring(0, priceStr.length - 2));
+    } else {
+      minBidStep = 1000; // 최소값 보장
+    }
+  }
+  
+  // 결과 출력
+  final nextValidBid = currentPrice + minBidStep;
+  debugPrint('[ItemDetail] 입찰 호가 계산 결과:');
+  debugPrint('  currentPrice: $currentPrice');
+  debugPrint('  minBidStep: $minBidStep');
+  debugPrint('  nextValidBid: $nextValidBid');
+  
+  // 디버그: DB의 원래 bid_price 값 확인
+  final originalBidPrice = (row['bid_price'] as int?) ?? 0;
+  debugPrint('  originalBidPrice: $originalBidPrice (DB 값)');
+
   return ItemDetail(
     itemId: row['id']?.toString() ?? itemId,
     sellerId: sellerId,
@@ -160,10 +295,10 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     finishTime: finishTime,
     sellerTitle: sellerTitle,
     buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
-    biddingCount: (row['bidding_count'] as int?) ?? 0,
+    biddingCount: biddingCount,
     itemContent: row['description']?.toString() ?? '',
-    currentPrice: (row['current_price'] as int?) ?? 0,
-    bidPrice: (row['bid_price'] as int?) ?? 0,
+    currentPrice: currentPrice,
+    bidPrice: minBidStep, // 계산된 최소 호가 사용
     sellerRating: (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
     sellerReviewCount: (row['seller_review_count'] as int?) ?? 0,
   );
@@ -325,11 +460,13 @@ class _ItemMainInfoSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '즉시 구매가 ₩${_formatPrice(item.buyNowPrice)}',
+                      item.buyNowPrice > 0
+                          ? '즉시 구매가 ₩${_formatPrice(item.buyNowPrice)}'
+                          : '즉시 구매 없음',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: blueColor,
+                        color: item.buyNowPrice > 0 ? blueColor : Colors.grey,
                       ),
                     ),
                   ],
@@ -648,6 +785,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    // 입찰하기 버튼
                     Expanded(
                       child: SizedBox(
                         height: 44,
@@ -692,31 +830,35 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SizedBox(
-                        height: 44,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // TODO: 즉시 구매 플로우 연결
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: blueColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.7),
+                    
+                    // 즉시 구매 버튼 (즉시 구매가가 있을 때만 표시)
+                    if (widget.item.buyNowPrice > 0) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // TODO: 즉시 구매 플로우 연결
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: blueColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.7),
+                              ),
                             ),
-                          ),
-                          child: const Text(
-                            '바로 구매',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                            child: const Text(
+                              '즉시 구매',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ],
               ),
