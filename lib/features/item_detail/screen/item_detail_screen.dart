@@ -104,7 +104,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: 이후에는 실제 item 데이터를 인자로 받아서 사용
     debugPrint('[ItemDetailScreen] build 호출됨, itemId=${widget.itemId}');
 
     return FutureBuilder<ItemDetail?>(
@@ -138,7 +137,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         return Scaffold(
           backgroundColor: const Color(0xffF5F6FA),
           appBar: AppBar(
-            // Todo: 나중에 공통 AppBar 컴포넌트로 교체 예정
             title: const Text('상세 보기'),
           ),
           body: Column(
@@ -699,11 +697,13 @@ class _BottomActionBar extends StatefulWidget {
 
 class _BottomActionBarState extends State<_BottomActionBar> {
   bool _isFavorite = false;
+  bool _isTopBidder = false;
 
   @override
   void initState() {
     super.initState();
     _loadFavoriteState();
+    _checkTopBidder();
   }
 
   Future<void> _loadFavoriteState() async {
@@ -725,6 +725,32 @@ class _BottomActionBarState extends State<_BottomActionBar> {
       });
     } catch (e, st) {
       debugPrint('[Favorite] load error: $e\n$st');
+    }
+  }
+
+  Future<void> _checkTopBidder() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // 해당 아이템의 최고 입찰 기록 조회
+      final List<dynamic> rows = await supabase
+          .from('bid_log')
+          .select('bid_user, bid_price')
+          .eq('item_id', widget.item.itemId)
+          .order('bid_price', ascending: false)
+          .limit(1);
+
+      if (!mounted) return;
+      if (rows.isNotEmpty) {
+        final topBidUserId = rows[0]['bid_user']?.toString() ?? '';
+        setState(() {
+          _isTopBidder = topBidUserId == user.id;
+        });
+      }
+    } catch (e, st) {
+      debugPrint('[TopBidder] check error: $e\n$st');
     }
   }
 
@@ -785,49 +811,67 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // 입찰하기 버튼
+                    // 입찰하기 버튼 또는 최고 입찰자 표시
                     Expanded(
                       child: SizedBox(
                         height: 44,
-                        child: OutlinedButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.white,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(defaultRadius),
+                        child: _isTopBidder
+                            ? Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(8.7),
+                                  border: Border.all(color: Colors.grey.shade400),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '최고 입찰자입니다',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : OutlinedButton(
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.white,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(defaultRadius),
+                                      ),
+                                    ),
+                                    builder: (context) {
+                                      return ChangeNotifierProvider<PriceInputViewModel>(
+                                        create: (_) => PriceInputViewModel(),
+                                        child: BidBottomSheet(
+                                          itemId: widget.item.itemId,
+                                          currentPrice: widget.item.currentPrice,
+                                          bidUnit: widget.item.bidPrice,
+                                          buyNowPrice: widget.item.buyNowPrice,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: blueColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.7),
+                                  ),
+                                ),
+                                child: Text(
+                                  '입찰하기',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: blueColor,
+                                  ),
                                 ),
                               ),
-                              builder: (context) {
-                                return ChangeNotifierProvider<PriceInputViewModel>(
-                                  create: (_) => PriceInputViewModel(),
-                                  child: BidBottomSheet(
-                                    itemId: widget.item.itemId,
-                                    currentPrice: widget.item.currentPrice,
-                                    bidUnit: widget.item.bidPrice,
-                                    buyNowPrice: widget.item.buyNowPrice,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: blueColor),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.7),
-                            ),
-                          ),
-                          child: Text(
-                            '입찰하기',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: blueColor,
-                            ),
-                          ),
-                        ),
                       ),
                     ),
                     
