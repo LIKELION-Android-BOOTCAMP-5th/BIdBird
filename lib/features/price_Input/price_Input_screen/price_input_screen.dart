@@ -1,38 +1,43 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../price_Input_viewmodel/price_input_viewmodel.dart';
 
 class BidBottomSheet extends StatefulWidget {
-  const BidBottomSheet({super.key, required this.itemId});
+  const BidBottomSheet({
+    super.key,
+    required this.itemId,
+    required this.currentPrice,
+    required this.bidUnit,
+    required this.buyNowPrice,
+  });
 
   final String itemId;
+  final int currentPrice;
+  final int bidUnit;
+  final int buyNowPrice;
 
   @override
   State<BidBottomSheet> createState() => _BidBottomSheetState();
 }
 
 class _BidBottomSheetState extends State<BidBottomSheet> {
-  // TODO: 실제 itemId를 기반으로 상세 데이터를 가져오도록 수정
-  late final ItemDetail _item = dummyItemDetail;
-
   late int _bidAmount;
 
   @override
   void initState() {
     super.initState();
     // 기본 입찰 금액: 현재 가격 + 1회 호가
-    _bidAmount = _item.currentPrice + _item.bidPrice;
+    _bidAmount = widget.currentPrice + widget.bidUnit;
   }
 
   void _increaseBid() {
     setState(() {
-      final next = _bidAmount + _item.bidPrice;
+      final next = _bidAmount + widget.bidUnit;
       // 즉시 구매가를 상한선으로 제한
-      if (next <= _item.buyNowPrice) {
+      if (next <= widget.buyNowPrice) {
         _bidAmount = next;
       }
     });
@@ -40,8 +45,8 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
 
   void _decreaseBid() {
     setState(() {
-      final minBid = _item.currentPrice + _item.bidPrice;
-      final next = _bidAmount - _item.bidPrice;
+      final minBid = widget.currentPrice + widget.bidUnit;
+      final next = _bidAmount - widget.bidUnit;
       if (next >= minBid) {
         _bidAmount = next;
       }
@@ -124,7 +129,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${_formatPrice(_item.currentPrice)}원',
+                          '${_formatPrice(widget.currentPrice)}원',
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
@@ -145,7 +150,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _formatBidUnit(_item.bidPrice),
+                          _formatBidUnit(widget.bidUnit),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,

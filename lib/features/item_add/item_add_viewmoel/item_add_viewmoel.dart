@@ -162,7 +162,6 @@ class ItemAddViewModel extends ChangeNotifier {
 
           files.add(XFile(file.path));
         } catch (_) {
-          // 개별 이미지 다운로드 실패는 무시
         }
       }
 
@@ -171,7 +170,6 @@ class ItemAddViewModel extends ChangeNotifier {
         notifyListeners();
       }
     } catch (_) {
-      // 전체 실패 시에는 그냥 이미지 없이 수정하도록 둡니다.
     }
   }
 
@@ -368,8 +366,7 @@ class ItemAddViewModel extends ChangeNotifier {
               ..remove('seller_id')
               ..remove('current_price')
               ..remove('bidding_count')
-              ..remove('status')
-              ..remove('locked');
+              ..remove('status');
 
         final Map<String, dynamic> updated = await supabase
             .from('items')
@@ -484,8 +481,7 @@ class ItemAddViewModel extends ChangeNotifier {
     } finally {
       isSubmitting = false;
       notifyListeners();
-
-      // 아직 로딩 다이얼로그가 열려 있다면 닫기
+      
       if (loadingDialogOpen && navigator.canPop()) {
         navigator.pop();
       }
