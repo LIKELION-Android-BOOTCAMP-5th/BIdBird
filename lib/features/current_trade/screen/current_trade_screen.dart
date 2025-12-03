@@ -123,8 +123,11 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           date: item['date'] ?? '',
           status: item['status'] ?? '',
           onTap: () {
-            // TODO: 실제 아이템 ID를 사용해서 상세 화면으로 이동하도록 수정
-            context.push('/item/item_1');
+            // TODO: _bidHistory에 item_id를 포함해 실제 상세 화면으로 이동하도록 수정
+            final itemId = item['item_id'] ?? '';
+            if (itemId.isNotEmpty) {
+              context.push('/item/$itemId');
+            }
           },
         );
       },
@@ -166,8 +169,13 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               date: item['date'] ?? '',
               status: item['status'] ?? '',
               onTap: () {
-                // TODO: 실제 아이템 ID를 사용해서 상세 화면으로 이동하도록 수정
-                context.push('/item/item_1');
+                final itemId = item['item_id'] ?? '';
+                debugPrint('[CurrentTradeScreen] 카드 탭: item_id=$itemId');
+                if (itemId.isNotEmpty) {
+                  context.push('/item/$itemId');
+                } else {
+                  debugPrint('[CurrentTradeScreen] item_id가 비어 있어서 이동하지 않습니다.');
+                }
               },
             );
           },
@@ -181,7 +189,6 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
     if (user == null) return [];
 
     try {
-      // 1) 모든 매물의 최신 입찰 상태 목록을 가져온다.
       final statusRows = await _supabase
           .from('bid_status')
           .select('item_id, text_code, created_at')
@@ -194,7 +201,6 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       final List<Map<String, dynamic>> statusList =
           statusRows.cast<Map<String, dynamic>>();
 
-      // 2) 현재 유저가 올린 모든 매물을 조회한다.
       final itemRows = await _supabase
           .from('items')
           .select('id, title, current_price')
@@ -211,7 +217,6 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
         }
       }
 
-      // 3) 상태 + 아이템 정보를 합쳐서 UI 에 필요한 형태로 변환.
       return statusList.map<Map<String, String>>((row) {
         final itemId = row['item_id']?.toString() ?? '';
         final item = itemsById[itemId] ?? <String, dynamic>{};

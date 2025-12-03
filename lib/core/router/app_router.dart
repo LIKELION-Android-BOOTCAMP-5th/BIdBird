@@ -208,8 +208,7 @@ GoRouter createAppRouter(BuildContext context) {
         path: '/item/:id',
         pageBuilder: (context, state) {
           final itemId = state.pathParameters["id"] ?? "";
-          // TODO: itemId를 사용해 실제 상세 데이터를 로드하도록 연동
-          return const NoTransitionPage(child: ItemDetailScreen());
+          return NoTransitionPage(child: ItemDetailScreen(itemId: itemId));
         },
       ),
       GoRoute(
