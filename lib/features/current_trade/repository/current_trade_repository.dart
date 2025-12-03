@@ -29,8 +29,7 @@ class CurrentTradeRepositoryImpl implements CurrentTradeRepository {
       if (bidRows.isEmpty) return [];
 
       final Map<String, Map<String, dynamic>> latestBidByItem = {};
-      for (final raw in bidRows) {
-        final row = raw as Map<String, dynamic>;
+      for (final row in bidRows) {
         final itemId = row['item_id']?.toString();
         if (itemId == null || itemId.isEmpty) continue;
         if (!latestBidByItem.containsKey(itemId)) {
@@ -56,7 +55,7 @@ class CurrentTradeRepositoryImpl implements CurrentTradeRepository {
       for (final row in itemRows) {
         final id = row['id']?.toString();
         if (id != null) {
-          itemsById[id] = row as Map<String, dynamic>;
+          itemsById[id] = row;
         }
       }
 
@@ -100,7 +99,7 @@ class CurrentTradeRepositoryImpl implements CurrentTradeRepository {
           status: displayStatus,
         );
       }).toList();
-    } catch (e, st) {
+    } catch (e) {
       if (kDebugMode) {
         debugPrint('Error fetching bid history: $e');
       }
@@ -134,7 +133,7 @@ class CurrentTradeRepositoryImpl implements CurrentTradeRepository {
       for (final row in itemRows) {
         final id = row['id']?.toString();
         if (id != null) {
-          itemsById[id] = row as Map<String, dynamic>;
+          itemsById[id] = row;
         }
       }
 
@@ -153,7 +152,7 @@ class CurrentTradeRepositoryImpl implements CurrentTradeRepository {
           date: _formatDateTime(createdAt),
         );
       }).toList();
-    } catch (e, st) {
+    } catch (e) {
       if (kDebugMode) {
         debugPrint('Error fetching sale history: $e');
       }

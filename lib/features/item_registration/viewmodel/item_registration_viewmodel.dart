@@ -87,7 +87,6 @@ class ItemRegistrationViewModel extends ChangeNotifier {
     notifyListeners();
 
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
 
     try {
       final supabase = SupabaseManager.shared.supabase;

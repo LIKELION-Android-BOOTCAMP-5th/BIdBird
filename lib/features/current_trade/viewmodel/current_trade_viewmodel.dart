@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../data/current_trade_data.dart';
@@ -26,8 +25,7 @@ class CurrentTradeViewModel extends ChangeNotifier {
     try {
       _setLoading(true);
       _error = null;
-      
-      // Load data in parallel
+
       final results = await Future.wait([
         _repository.fetchMyBidHistory(),
         _repository.fetchMySaleHistory(),
@@ -54,7 +52,6 @@ class CurrentTradeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Helper method to get status color
   static Color getStatusColor(String status) {
     if (status.contains('최고가 입찰') ||
         status.contains('즉시 구매') ||
