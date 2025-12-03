@@ -261,11 +261,16 @@ class ItemAddViewModel extends ChangeNotifier {
   }
 
   Future<void> submit(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     final String? error = validate();
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error)),
-      );
+      if (context.mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(error)),
+        );
+      }
       return;
     }
 
@@ -280,12 +285,8 @@ class ItemAddViewModel extends ChangeNotifier {
     isSubmitting = true;
     notifyListeners();
 
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-
     bool loadingDialogOpen = true;
 
-    // 전체 화면 로딩 다이얼로그 표시
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -303,9 +304,11 @@ class ItemAddViewModel extends ChangeNotifier {
       final user = supabase.auth.currentUser;
 
       if (user == null) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('로그인 정보가 없습니다. 다시 로그인 해주세요.')),
-        );
+        if (context.mounted) {
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(content: Text('로그인 정보가 없습니다. 다시 로그인 해주세요.')),
+          );
+        }
         return;
       }
 
@@ -330,9 +333,11 @@ class ItemAddViewModel extends ChangeNotifier {
           .uploadImageListToCloudinary(selectedImages);
 
       if (imageUrls.isEmpty) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('이미지 업로드에 실패했습니다. 다시 시도해주세요.')),
-        );
+        if (context.mounted) {
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(content: Text('이미지 업로드에 실패했습니다. 다시 시도해주세요.')),
+          );
+        }
         return;
       }
 
@@ -403,7 +408,6 @@ class ItemAddViewModel extends ChangeNotifier {
         }
       }
 
-      // Edge Function을 호출하여 썸네일용 작은 이미지를 생성/저장
       try {
         if (imageUrls.isNotEmpty) {
           int index = 0;
@@ -441,19 +445,20 @@ class ItemAddViewModel extends ChangeNotifier {
         keywordTypeId: (row['keyword_type'] as num?)?.toInt(),
       );
 
-      // 로딩 다이얼로그 먼저 닫기
       if (loadingDialogOpen && navigator.canPop()) {
         navigator.pop();
         loadingDialogOpen = false;
       }
 
-      showDialog(
+      if (!context.mounted) return;
+      await showDialog(
         context: context,
         builder: (_) => AskPopup(
           content: '매물 등록 확인 화면으로 이동하여 최종 등록을 진행해 주세요.',
           yesText: '이동하기',
           yesLogic: () async {
             navigator.pop();
+            if (!context.mounted) return;
             await navigator.pushReplacement(
               PageRouteBuilder(
                 transitionDuration: Duration.zero,
@@ -475,9 +480,11 @@ class ItemAddViewModel extends ChangeNotifier {
         ),
       );
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('등록 중 오류가 발생했습니다: $e')),
-      );
+      if (context.mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text('등록 중 오류가 발생했습니다: $e')),
+        );
+      }
     } finally {
       isSubmitting = false;
       notifyListeners();
