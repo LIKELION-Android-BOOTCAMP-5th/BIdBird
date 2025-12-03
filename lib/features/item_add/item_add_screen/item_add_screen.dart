@@ -409,11 +409,6 @@ class ItemAddScreen extends StatelessWidget {
                                     '매물 등록하기로 이동하여 최종 등록을 진행해 주세요.',
                                 confirmText: '이동하기',
                                 onConfirm: () async {
-                                  Navigator.of(context, rootNavigator: true)
-                                      .pop();
-                                  Navigator.of(context, rootNavigator: true)
-                                      .pop();
-
                                   await viewModel.submit(context);
                                 },
                               ),
