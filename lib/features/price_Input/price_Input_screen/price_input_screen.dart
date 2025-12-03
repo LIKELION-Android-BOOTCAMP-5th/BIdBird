@@ -73,9 +73,10 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<PriceInputViewModel>();
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      child: Column(
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -279,6 +280,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
           ),
           const SizedBox(height: 8),
         ],
+        ),
       ),
     );
   }
