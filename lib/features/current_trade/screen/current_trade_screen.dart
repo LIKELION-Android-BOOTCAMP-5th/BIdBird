@@ -234,8 +234,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           .eq('seller_id', user.id);
 
       final Map<String, Map<String, dynamic>> itemsById = {};
-      for (final raw in itemRows) {
-        final row = raw as Map<String, dynamic>;
+      for (final row in itemRows) {
         final id = row['id']?.toString();
         if (id != null) {
           itemsById[id] = row;
@@ -289,8 +288,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       }
 
       final Map<String, Map<String, dynamic>> latestBidByItem = {};
-      for (final raw in bidRows) {
-        final row = raw as Map<String, dynamic>;
+      for (final row in bidRows) {
         final itemId = row['item_id']?.toString();
         if (itemId == null || itemId.isEmpty) continue;
         if (!latestBidByItem.containsKey(itemId)) {
@@ -317,8 +315,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             .select('id, title, thumbnail_image, current_price')
             .inFilter('id', itemIds.toList());
 
-        for (final raw in itemRows) {
-          final row = raw as Map<String, dynamic>;
+        for (final row in itemRows) {
           final id = row['id']?.toString();
           if (id != null) {
             itemsById[id] = row;
@@ -331,8 +328,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             .eq('user_id', user.id)
             .inFilter('item_id', itemIds.toList());
 
-        for (final raw in statusRows) {
-          final row = raw as Map<String, dynamic>;
+        for (final row in statusRows) {
           final id = row['item_id']?.toString();
           if (id != null) {
             statusByItemId[id] = row['text_code']?.toString() ?? '';

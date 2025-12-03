@@ -1,5 +1,3 @@
-//예정
-
 class BidRequest {
   BidRequest({
     required this.itemId,
