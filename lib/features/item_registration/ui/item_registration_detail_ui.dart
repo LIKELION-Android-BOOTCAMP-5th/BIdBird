@@ -2,6 +2,7 @@ import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,6 +29,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           TextButton(
             onPressed: () {
               final editViewModel = ItemAddViewModel();
+              editViewModel.editingItemId = item.id;
               editViewModel.titleController.text = item.title;
               editViewModel.startPriceController.text =
                   editViewModel.formatNumber(item.startPrice.toString());
@@ -88,11 +90,21 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _ConfirmImageSection(thumbnailUrl: item.thumbnailUrl),
+                  _ConfirmImageSection(
+                    itemId: item.id,
+                    thumbnailUrl: item.thumbnailUrl,
+                  ),
                   const SizedBox(height: 8),
-                  _ConfirmMainInfoSection(item: item),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _ConfirmMainInfoSection(item: item),
+                  ),
                   const SizedBox(height: 8),
-                  _ConfirmDescriptionSection(description: item.description),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child:
+                        _ConfirmDescriptionSection(description: item.description),
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -177,40 +189,135 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
   }
 }
 
-class _ConfirmImageSection extends StatelessWidget {
-  const _ConfirmImageSection({required this.thumbnailUrl});
+class _ConfirmImageSection extends StatefulWidget {
+  const _ConfirmImageSection({
+    required this.itemId,
+    required this.thumbnailUrl,
+  });
 
+  final String itemId;
   final String? thumbnailUrl;
 
   @override
+  State<_ConfirmImageSection> createState() => _ConfirmImageSectionState();
+}
+
+class _ConfirmImageSectionState extends State<_ConfirmImageSection> {
+  late final PageController _pageController;
+  int _currentIndex = 0;
+  late Future<List<String>> _imagesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _imagesFuture = _loadImages();
+  }
+
+  Future<List<String>> _loadImages() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final List<dynamic> data = await supabase
+        .from('item_images')
+        .select('image_url, sort_order')
+        .eq('item_id', widget.itemId)
+        .order('sort_order');
+
+    return data
+        .map((dynamic row) => (row as Map<String, dynamic>)['image_url'] as String)
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 240,
-      child: Container(
-        width: double.infinity,
-        color: Colors.grey[200],
-        child: thumbnailUrl == null
-            ? const Center(
-                child: Text(
-                  '상품 사진',
-                  style: TextStyle(color: Colors.grey),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: SizedBox(
+        height: 240,
+        child: FutureBuilder<List<String>>(
+          future: _imagesFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              );
+            }
+
+            final images = snapshot.data ?? <String>[];
+
+            if (images.isEmpty) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(defaultRadius),
                 ),
-              )
-            : ClipRRect(
-                borderRadius: BorderRadius.circular(defaultRadius),
-                child: Image.network(
-                  thumbnailUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Text(
-                        '이미지를 불러올 수 없습니다.',
-                        style: TextStyle(color: Colors.grey),
+                child: const Center(
+                  child: Text(
+                    '상품 사진',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              );
+            }
+
+            return Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(defaultRadius),
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: images.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return Image.network(
+                        images[index],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Text(
+                              '이미지를 불러올 수 없습니다.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${_currentIndex + 1}/${images.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
-              ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
