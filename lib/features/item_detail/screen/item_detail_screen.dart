@@ -175,7 +175,7 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     return null;
   }
 
-  final Map<String, dynamic> row = result.first as Map<String, dynamic>;
+  final row = result.first;
 
   // created_at + auction_duration_hours 로 종료 시각 계산
   final createdAtRaw = row['created_at']?.toString();
@@ -214,7 +214,7 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
             .update({'seller_name': sellerTitle})
             .eq('id', itemId);
       } catch (e) {}
-    } catch (e, st) {
+    } catch (e) {
       // users 테이블 조회 실패 시 items 테이블의 seller_name 사용
       sellerTitle = row['seller_name']?.toString() ?? '미지정 사용자';
     }
@@ -232,16 +232,14 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
         .eq('item_id', itemId)
         .order('sort_order', ascending: true);
 
-    if (imageRows is List) {
-      for (final raw in imageRows) {
-        final row = raw as Map<String, dynamic>;
-        final imageUrl = row['image_url']?.toString();
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          images.add(imageUrl);
-        }
+    for (final raw in imageRows) {
+      final row = raw as Map<String, dynamic>;
+      final imageUrl = row['image_url']?.toString();
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        images.add(imageUrl);
       }
     }
-  } catch (e, st) {}
+  } catch (e) {}
 
   // bid_log 테이블에서 참여 입찰 수 조회
   int biddingCount = 0;
@@ -275,9 +273,9 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     }
   }
 
-  final nextValidBid = currentPrice + minBidStep;
-
-  final originalBidPrice = (row['bid_price'] as int?) ?? 0;
+  // These variables were declared but not used
+  // final nextValidBid = currentPrice + minBidStep;
+  // final originalBidPrice = (row['bid_price'] as int?) ?? 0;
 
   return ItemDetail(
     itemId: row['id']?.toString() ?? itemId,
@@ -710,7 +708,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
       setState(() {
         _isFavorite = rows.isNotEmpty;
       });
-    } catch (e, st) {}
+    } catch (e) {}
   }
 
   Future<void> _checkTopBidder() async {
@@ -734,7 +732,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
           _isTopBidder = topBidUserId == user.id;
         });
       }
-    } catch (e, st) {}
+    } catch (e) {}
   }
 
   Future<void> _toggleFavorite() async {
@@ -760,7 +758,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
       setState(() {
         _isFavorite = !_isFavorite;
       });
-    } catch (e, st) {}
+    } catch (e) {}
   }
 
   @override
@@ -861,7 +859,6 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                       ),
                     ),
 
-                    // 즉시 구매 버튼 (즉시 구매가가 있을 때만 표시)
                     if (widget.item.buyNowPrice > 0) ...[
                       const SizedBox(width: 8),
                       Expanded(
