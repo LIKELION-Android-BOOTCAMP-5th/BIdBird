@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bidbird/features/current_trade/viewmodel/current_trade_viewmodel.dart';
 import '../../../../core/utils/ui_set/border_radius.dart';
 
 class HistoryCard extends StatelessWidget {
@@ -16,26 +17,6 @@ class HistoryCard extends StatelessWidget {
   final String status;
   final String? date;
   final VoidCallback? onTap;
-
-  Color _statusColor() {
-    if (status.contains('최고입찰 중') ||
-        status.contains('즉시 구매') ||
-        status == '낙찰') {
-      return Colors.green;
-    }
-    if (status.contains('상위 입찰 발생')) {
-      return Colors.orange;
-    }
-    if (status.contains('유찰') ||
-        status.contains('패찰') ||
-        status.contains('입찰 제한')) {
-      return Colors.redAccent;
-    }
-    if (status.contains('입찰 없음')) {
-      return Colors.grey;
-    }
-    return Colors.black54;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +98,8 @@ class HistoryCard extends StatelessWidget {
                             Text(
                               status,
                               style: TextStyle(
-                                color: _statusColor(),
+                                color:
+                                    CurrentTradeViewModel.getStatusColor(status),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
