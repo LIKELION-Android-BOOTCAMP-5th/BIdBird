@@ -1,7 +1,9 @@
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/fonts.dart';
+import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/utils/ui_set/border_radius.dart';
 import '../../../core/utils/ui_set/icons.dart';
@@ -15,6 +17,16 @@ class CurrentTradeScreen extends StatefulWidget {
 
 class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   int _selectedTabIndex = 0;
+
+  late final SupabaseClient _supabase;
+  late Future<List<Map<String, String>>> _saleHistoryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _supabase = SupabaseManager.shared.supabase;
+    _saleHistoryFuture = _fetchMySaleHistory();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +103,13 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   }
 
   Widget _buildBidHistoryList() {
+    // TODO: 추후 Supabase 연동 후 실제 입찰 내역 리스트로 교체
+    if (_bidHistory.isEmpty) {
+      return const Center(
+        child: Text('입찰 내역이 없습니다.'),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _bidHistory.length,
@@ -113,25 +132,104 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   }
 
   Widget _buildSaleHistoryList() {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _saleHistory.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final item = _saleHistory[index];
-        return _HistoryCard(
-          title: item['title'] ?? '',
-          priceLabel: '최종 금액',
-          price: item['price'] ?? '',
-          date: item['date'] ?? '',
-          status: item['status'] ?? '',
-          onTap: () {
-            // TODO: 실제 아이템 ID를 사용해서 상세 화면으로 이동하도록 수정
-            context.push('/item/item_1');
+    return FutureBuilder<List<Map<String, String>>>(
+      future: _saleHistoryFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return const Center(
+            child: Text('판매 내역을 불러오는 중 오류가 발생했습니다.'),
+          );
+        }
+
+        final data = snapshot.data ?? [];
+
+        if (data.isEmpty) {
+          return const Center(
+            child: Text('판매 내역이 없습니다.'),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: data.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final item = data[index];
+            return _HistoryCard(
+              title: item['title'] ?? '',
+              priceLabel: '최종 금액',
+              price: item['price'] ?? '',
+              date: item['date'] ?? '',
+              status: item['status'] ?? '',
+              onTap: () {
+                // TODO: 실제 아이템 ID를 사용해서 상세 화면으로 이동하도록 수정
+                context.push('/item/item_1');
+              },
+            );
           },
         );
       },
     );
+  }
+
+  Future<List<Map<String, String>>> _fetchMySaleHistory() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return [];
+
+    try {
+      // 1) 모든 매물의 최신 입찰 상태 목록을 가져온다.
+      final statusRows = await _supabase
+          .from('bid_status')
+          .select('item_id, text_code, created_at')
+          .order('created_at', ascending: false);
+
+      if (statusRows is! List || statusRows.isEmpty) {
+        return [];
+      }
+
+      final List<Map<String, dynamic>> statusList =
+          statusRows.cast<Map<String, dynamic>>();
+
+      // 2) 현재 유저가 올린 모든 매물을 조회한다.
+      final itemRows = await _supabase
+          .from('items')
+          .select('id, title, current_price')
+          .eq('seller_id', user.id);
+
+      final Map<String, Map<String, dynamic>> itemsById = {};
+      if (itemRows is List) {
+        for (final raw in itemRows) {
+          final row = raw as Map<String, dynamic>;
+          final id = row['id']?.toString();
+          if (id != null) {
+            itemsById[id] = row;
+          }
+        }
+      }
+
+      // 3) 상태 + 아이템 정보를 합쳐서 UI 에 필요한 형태로 변환.
+      return statusList.map<Map<String, String>>((row) {
+        final itemId = row['item_id']?.toString() ?? '';
+        final item = itemsById[itemId] ?? <String, dynamic>{};
+
+        return <String, String>{
+          'item_id': itemId,
+          'title': item['title']?.toString() ?? '',
+          'price': item['current_price'] != null
+              ? '${item['current_price']}원'
+              : '',
+          'date': row['created_at']?.toString() ?? '',
+          'status': row['text_code']?.toString() ?? '',
+        };
+      }).toList();
+    } catch (e, st) {
+      debugPrint('[_fetchMySaleHistory] error: $e\n$st');
+      rethrow;
+    }
   }
 }
 
@@ -287,69 +385,5 @@ class _HistoryCard extends StatelessWidget {
   }
 }
 
-// TODO: 더미 데이터 (Supabase 연동 후 삭제 예정)
-final List<Map<String, String>> _bidHistory = [
-  {
-    'title': '판매 내역 1',
-    'price': '3,000,000원',
-    'date': '11월 25일 오후 01:07',
-    'status': '최고입찰 중',
-  },
-  {
-    'title': '판매 내역 2',
-    'price': '2,350,000원',
-    'date': '11월 25일 오전 11:05',
-    'status': '상위 입찰 발생',
-  },
-  {
-    'title': '판매 내역 3',
-    'price': '175,000원',
-    'date': '11월 25일 오전 08:05',
-    'status': '낙찰',
-  },
-  {
-    'title': '판매 내역 4',
-    'price': '95,000원',
-    'date': '11월 25일 오후 12:05',
-    'status': '패찰',
-  },
-  {
-    'title': '판매 내역 5',
-    'price': '350,000원',
-    'date': '11월 24일 오후 09:30',
-    'status': '입찰 제한',
-  },
-];
-
-final List<Map<String, String>> _saleHistory = [
-  {
-    'title': '입찰 내역 1',
-    'price': '1,150,000원',
-    'date': '11월 20일 오후 09:10',
-    'status': '낙찰',
-  },
-  {
-    'title': '입찰 내역 2',
-    'price': '530,000원',
-    'date': '11월 18일 오후 06:30',
-    'status': '즉시 구매',
-  },
-  {
-    'title': '입찰 내역 3',
-    'price': '210,000원',
-    'date': '11월 15일 오후 02:10',
-    'status': '입찰 없음',
-  },
-  {
-    'title': '입찰 내역 4',
-    'price': '95,000원',
-    'date': '11월 10일 오후 05:40',
-    'status': '유찰',
-  },
-  {
-    'title': '입찰 내역 5',
-    'price': '1,050,000원',
-    'date': '11월 08일 오후 08:20',
-    'status': '입찰 제한',
-  },
-];
+final List<Map<String, String>> _bidHistory = [];
+final List<Map<String, String>> _saleHistory = [];
