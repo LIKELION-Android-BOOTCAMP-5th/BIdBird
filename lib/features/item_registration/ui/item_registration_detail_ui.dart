@@ -143,27 +143,49 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                           checkLabel: '동의합니다',
                           onConfirm: (checked) {
                             if (!checked) return;
-
                             final DateTime auctionStartAt =
                                 vm.getNextAuctionStartTime();
                             final String timeText =
                                 '${auctionStartAt.hour.toString().padLeft(2, '0')}시 ${auctionStartAt.minute.toString().padLeft(2, '0')}분';
 
+                            final navigator = Navigator.of(context);
+
+                            // 로딩 다이얼로그 표시
                             showDialog(
                               context: context,
-                              builder: (_) => AskPopup(
-                                content: '매물은 $timeText에 등록됩니다.',
-                                yesText: '확인',
-                                yesLogic: () async {
-                                  Navigator.of(context).pop();
-                                  vm.registerItem(
-                                    context,
-                                    item.id,
-                                    auctionStartAt,
-                                  );
-                                },
+                              barrierDismissible: false,
+                              builder: (_) => const Center(
+                                child: CircularProgressIndicator(),
                               ),
                             );
+
+                            () async {
+                              final bool success = await vm.registerItem(
+                                context,
+                                item.id,
+                                auctionStartAt,
+                              );
+
+                              // 로딩 다이얼로그 닫기
+                              if (navigator.canPop()) {
+                                navigator.pop();
+                              }
+
+                              if (!success) return;
+
+                              // 서버 처리 완료 후 확인 팝업 표시
+                              showDialog(
+                                context: context,
+                                builder: (_) => AskPopup(
+                                  content: '매물은 $timeText에 등록됩니다.',
+                                  yesText: '확인',
+                                  yesLogic: () async {
+                                    Navigator.of(context).pop();
+                                    navigator.pop();
+                                  },
+                                ),
+                              );
+                            }();
                           },
                           onCancel: () {},
                         ),
