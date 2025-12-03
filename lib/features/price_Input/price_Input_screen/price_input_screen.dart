@@ -30,7 +30,6 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   @override
   void initState() {
     super.initState();
-    // 기본 입찰 금액: 현재 가격 + 1회 호가
     _bidAmount = widget.currentPrice + widget.bidUnit;
   }
 
@@ -41,8 +40,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     setState(() {
       final next = _bidAmount + widget.bidUnit;
       debugPrint('[BidBottomSheet] _increaseBid: _bidAmount: $_bidAmount, next: $next, buyNowPrice: ${widget.buyNowPrice}');
-      
-      // 즉시 구매가가 설정되어 있는 경우(0보다 큼)에만 상한선으로 제한
+
       if (widget.buyNowPrice > 0 && next > widget.buyNowPrice) {
         debugPrint('[BidBottomSheet] _increaseBid: next > buyNowPrice, not updating');
       } else {
@@ -178,7 +176,6 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                // 입찰 금액 표시 (좌우 끝까지)
                 SizedBox(
                   width: double.infinity,
                   child: Container(
@@ -360,8 +357,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     } catch (e) {
       if (parentContext.mounted) {
         Navigator.pop(parentContext);
-        
-        // 에러 팝업 표시
+
         showDialog(
           context: parentContext,
           builder: (dialogContext) => AskPopup(
