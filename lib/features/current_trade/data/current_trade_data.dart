@@ -1,75 +1,58 @@
-class BidHistoryItem {
-  final String itemId;
-  final String title;
-  final int price;
-  final String? thumbnailUrl;
-  final String status;
+import 'package:bidbird/core/supabase_manager.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-  BidHistoryItem({
-    required this.itemId,
-    required this.title,
-    required this.price,
-    this.thumbnailUrl,
-    required this.status,
-  });
+class TradeHistoryRepository {
+  final SupabaseClient _supabase;
 
-  Map<String, dynamic> toJson() {
-    return {
-      'item_id': itemId,
-      'title': title,
-      'price': price,
-      'thumbnailUrl': thumbnailUrl,
-      'status': status,
-    };
+  TradeHistoryRepository() : _supabase = SupabaseManager.shared.supabase;
+
+  Future<List<Map<String, String>>> fetchBidHistory() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return [];
+
+    try {
+      final bidLogs = await _supabase
+          .from('bid_log')
+          .select('*, items!inner(*)')
+          .eq('bid_user', user.id)
+          .order('bid_time', ascending: false);
+
+      if (bidLogs == null || bidLogs.isEmpty) {
+        return [];
+      }
+
+      return bidLogs.map<Map<String, String>>((log) {
+        final item = log['items'] as Map<String, dynamic>;
+        return {
+          'item_id': log['item_id']?.toString() ?? '',
+          'title': item['title']?.toString() ?? '제목 없음',
+          'price': '${log['bid_price']?.toString() ?? '0'}원',
+          'status': '입찰 중',
+          'date': _formatDateTime(log['bid_time']?.toString()),
+        };
+      }).toList();
+    } catch (e) {
+      print('Error fetching bid history: $e');
+      rethrow;
+    }
   }
 
-  factory BidHistoryItem.fromJson(Map<String, dynamic> json) {
-    return BidHistoryItem(
-      itemId: json['item_id'] ?? '',
-      title: json['title'] ?? '',
-      price: json['price'] as int? ?? 0,
-      thumbnailUrl: json['thumbnailUrl'],
-      status: json['status'] ?? '',
-    );
-  }
-}
-
-class SaleHistoryItem {
-  final String itemId;
-  final String title;
-  final int price;
-  final String? thumbnailUrl;
-  final String status;
-  final String date;
-
-  SaleHistoryItem({
-    required this.itemId,
-    required this.title,
-    required this.price,
-    this.thumbnailUrl,
-    required this.status,
-    required this.date,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'item_id': itemId,
-      'title': title,
-      'price': price,
-      'thumbnailUrl': thumbnailUrl,
-      'status': status,
-      'date': date,
-    };
+  String _formatDateTime(String? isoString) {
+    if (isoString == null) return '';
+    try {
+      final dateTime = DateTime.parse(isoString);
+      return '${dateTime.year}.${dateTime.month.toString().padLeft(2, '0')}.${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '';
+    }
   }
 
-  factory SaleHistoryItem.fromJson(Map<String, dynamic> json) {
-    return SaleHistoryItem(
-      itemId: json['item_id'] ?? '',
-      title: json['title'] ?? '',
-      price: json['price'] as int? ?? 0,
-      thumbnailUrl: json['thumbnailUrl'],
-      status: json['status'] ?? '',
-      date: json['date'] ?? '',
-    );
+  void updateSellerTitle(String? nickname) {
+    String sellerTitle = '';
+    if (nickname != null && nickname.isNotEmpty) {
+      sellerTitle = nickname;
+    } else {
+      sellerTitle = '미지정 사용자';
+    }
   }
 }

@@ -1,93 +1,299 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import '../data/item_detail_data.dart';
-import '../viewmodel/item_detail_viewmodel.dart';
-import '../../price_Input/price_Input_screen/price_input_screen.dart';
-import '../../price_Input/price_Input_viewmodel/price_input_viewmodel.dart';
-import '../../../core/supabase_manager.dart';
+import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
+import 'package:bidbird/features/price_Input/price_Input_screen/price_input_screen.dart';
+import 'package:bidbird/features/price_Input/price_Input_viewmodel/price_input_viewmodel.dart';
+import 'package:bidbird/core/supabase_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:bidbird/features/report/ui/report_screen.dart';
+import '../../report/ui/report_screen.dart';
 
-class ItemDetailScreen extends StatelessWidget {
+class ItemDetailScreen extends StatefulWidget {
   const ItemDetailScreen({super.key, required this.itemId});
 
   final String itemId;
 
   @override
+  State<ItemDetailScreen> createState() => _ItemDetailScreenState();
+}
+
+class _ItemDetailScreenState extends State<ItemDetailScreen> {
+  late final SupabaseClient _supabase;
+  RealtimeChannel? _bidStatusChannel;
+  RealtimeChannel? _itemsChannel;
+  RealtimeChannel? _bidLogChannel;
+
+  @override
+  void initState() {
+    super.initState();
+    _supabase = SupabaseManager.shared.supabase;
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    if (_bidStatusChannel != null) _supabase.removeChannel(_bidStatusChannel!);
+    if (_itemsChannel != null) _supabase.removeChannel(_itemsChannel!);
+    if (_bidLogChannel != null) _supabase.removeChannel(_bidLogChannel!);
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    // bid_status 테이블 실시간 구독
+    _bidStatusChannel = _supabase.channel('bid_status_${widget.itemId}');
+    _bidStatusChannel!
+        .onPostgresChanges(
+      event: PostgresChangeEvent.all,
+      schema: 'public',
+      table: 'bid_status',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'item_id',
+        value: widget.itemId,
+      ),
+      callback: (payload) {
+        if (mounted) setState(() {});
+      },
+    )
+        .subscribe();
+
+    // items 테이블 실시간 구독 (현재가 변경 감지)
+    _itemsChannel = _supabase.channel('items_${widget.itemId}');
+    _itemsChannel!
+        .onPostgresChanges(
+      event: PostgresChangeEvent.all,
+      schema: 'public',
+      table: 'items',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'id',
+        value: widget.itemId,
+      ),
+      callback: (payload) {
+        if (mounted) setState(() {});
+      },
+    )
+        .subscribe();
+
+    // bid_log 테이블 실시간 구독 (참여 입찰 수 변경 감지)
+    _bidLogChannel = _supabase.channel('bid_log_${widget.itemId}');
+    _bidLogChannel!
+        .onPostgresChanges(
+      event: PostgresChangeEvent.insert, // 입찰은 insert만 발생
+      schema: 'public',
+      table: 'bid_log',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'item_id',
+        value: widget.itemId,
+      ),
+      callback: (payload) {
+        if (mounted) setState(() {});
+      },
+    )
+        .subscribe();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ItemDetailViewModel(itemId: itemId)
-        ..loadItemDetail()
-        ..setupRealtimeSubscription(),
-      child: const _ItemDetailView(),
+    return FutureBuilder<ItemDetail?>(
+      future: _loadItemDetail(widget.itemId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+          return const Scaffold(
+            body: Center(
+              child: Text(
+                '매물 정보를 불러올 수 없습니다.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          );
+        }
+
+        final ItemDetail item = snapshot.data!;
+
+        // 현재 로그인 유저와 판매자 비교해서 내 매물 여부 판단
+        final supabase = SupabaseManager.shared.supabase;
+        final currentUser = supabase.auth.currentUser;
+        final bool isMyItem =
+            currentUser != null && currentUser.id == item.sellerId;
+
+        return Scaffold(
+          backgroundColor: const Color(0xffF5F6FA),
+          appBar: AppBar(
+            title: const Text('상세 보기'),
+          ),
+          body: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _ItemImageSection(item: item),
+                      const SizedBox(height: 8),
+                      _ItemMainInfoSection(item: item),
+                      const SizedBox(height: 16),
+                      _ItemDescriptionSection(item: item),
+                    ],
+                  ),
+                ),
+              ),
+              _BottomActionBar(
+                item: item,
+                isMyItem: isMyItem,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-class _ItemDetailView extends StatelessWidget {
-  const _ItemDetailView();
+Future<ItemDetail?> _loadItemDetail(String itemId) async {
+  final supabase = SupabaseManager.shared.supabase;
 
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = context.watch<ItemDetailViewModel>();
+  final List<dynamic> result = await supabase
+      .from('items')
+      .select()
+      .eq('id', itemId)
+      .limit(1);
 
-    if (viewModel.isLoading) {
-      return Scaffold(
-        backgroundColor: const Color(0xffF5F6FA),
-        body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
-          ),
-        ),
-      );
-    }
-
-    if (viewModel.error != null || viewModel.itemDetail == null) {
-      return Scaffold(
-        backgroundColor: const Color(0xffF5F6FA),
-        appBar: AppBar(title: const Text('상세 보기')),
-        body: Center(
-          child: Text(
-            viewModel.error ?? '매물 정보를 불러올 수 없습니다.',
-            style: const TextStyle(fontSize: 14),
-          ),
-        ),
-      );
-    }
-
-    final item = viewModel.itemDetail!;
-    final currentUser = SupabaseManager.shared.supabase.auth.currentUser;
-    final isMyItem = currentUser != null && currentUser.id == item.sellerId;
-
-    return Scaffold(
-      backgroundColor: const Color(0xffF5F6FA),
-      appBar: AppBar(title: const Text('상세 보기')),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _ItemImageSection(item: item),
-                  const SizedBox(height: 8),
-                  _ItemMainInfoSection(item: item),
-                  const SizedBox(height: 16),
-                  _ItemDescriptionSection(item: item),
-                  const SizedBox(height: 16),
-                  _BidHistorySection(item: item),
-                ],
-              ),
-            ),
-          ),
-          _BottomActionBar(item: item, isMyItem: isMyItem),
-        ],
-      ),
-    );
+  if (result.isEmpty) {
+    return null;
   }
+
+  final Map<String, dynamic> row = result.first as Map<String, dynamic>;
+
+  // created_at + auction_duration_hours 로 종료 시각 계산
+  final createdAtRaw = row['created_at']?.toString();
+  final createdAt = createdAtRaw != null
+      ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+      : DateTime.now();
+
+  final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
+  final finishTime = createdAt.add(Duration(hours: durationHours));
+
+  final String sellerId = row['seller_id']?.toString() ?? '';
+  String sellerTitle = '';
+
+  if (sellerId.isNotEmpty) {
+    try {
+      // users 테이블에서 모든 필드 조회
+      final userResponse = await supabase
+          .from('users')
+          .select()
+          .eq('id', sellerId)
+          .single();
+
+      // 닉네임 필드 확인
+      String? nickname = userResponse['nick_name']?.toString().trim();
+
+      if (nickname != null && nickname.isNotEmpty) {
+        sellerTitle = nickname;
+      } else {
+        sellerTitle = '미지정 사용자';
+      }
+
+      // items 테이블 업데이트
+      try {
+        await supabase
+            .from('items')
+            .update({'seller_name': sellerTitle})
+            .eq('id', itemId);
+      } catch (e) {}
+    } catch (e, st) {
+      // users 테이블 조회 실패 시 items 테이블의 seller_name 사용
+      sellerTitle = row['seller_name']?.toString() ?? '미지정 사용자';
+    }
+  } else {
+    sellerTitle = '알 수 없는 판매자';
+  }
+
+  // item_images 테이블에서 이미지 URL 가져오기 (썸네일 제외)
+  final List<String> images = [];
+
+  try {
+    final imageRows = await supabase
+        .from('item_images')
+        .select('image_url')
+        .eq('item_id', itemId)
+        .order('sort_order', ascending: true);
+
+    if (imageRows is List) {
+      for (final raw in imageRows) {
+        final row = raw as Map<String, dynamic>;
+        final imageUrl = row['image_url']?.toString();
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          images.add(imageUrl);
+        }
+      }
+    }
+  } catch (e, st) {}
+
+  // bid_log 테이블에서 참여 입찰 수 조회
+  int biddingCount = 0;
+  try {
+    final countResponse = await supabase
+        .from('bid_log')
+        .select('id')
+        .eq('item_id', itemId)
+        .count(CountOption.exact);
+
+    biddingCount = countResponse.count;
+  } catch (e) {
+    // count 쿼리가 실패하면 기존 방식(items 테이블의 bidding_count) 사용하거나 0으로 설정
+    biddingCount = (row['bidding_count'] as int?) ?? 0;
+  }
+
+  // 입찰 최소 호가 규칙 적용
+  final currentPrice = (row['current_price'] as int?) ?? 0;
+  int minBidStep;
+
+  if (currentPrice <= 100000) {
+    // 100,000원 이하일 경우 최소 호가는 1,000원으로 고정
+    minBidStep = 1000;
+  } else {
+    // 100,001원 이상일 경우 마지막 두 자리 제거
+    final priceStr = currentPrice.toString();
+    if (priceStr.length >= 3) {
+      minBidStep = int.parse(priceStr.substring(0, priceStr.length - 2));
+    } else {
+      minBidStep = 1000; // 최소값 보장
+    }
+  }
+
+  final nextValidBid = currentPrice + minBidStep;
+
+  final originalBidPrice = (row['bid_price'] as int?) ?? 0;
+
+  return ItemDetail(
+    itemId: row['id']?.toString() ?? itemId,
+    sellerId: sellerId,
+    itemTitle: row['title']?.toString() ?? '',
+    itemImages: images,
+    finishTime: finishTime,
+    sellerTitle: sellerTitle,
+    buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
+    biddingCount: biddingCount,
+    itemContent: row['description']?.toString() ?? '',
+    currentPrice: currentPrice,
+    bidPrice: minBidStep, // 계산된 최소 호가 사용
+    sellerRating: (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
+    sellerReviewCount: (row['seller_review_count'] as int?) ?? 0,
+  );
 }
 
 class _ItemImageSection extends StatefulWidget {
@@ -187,7 +393,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   images.length,
-                  (index) => _buildDot(isActive: index == _currentPage),
+                      (index) => _buildDot(isActive: index == _currentPage),
                 ),
               ),
             ),
@@ -216,7 +422,6 @@ class _ItemMainInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<ItemDetailViewModel>();
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: const BoxDecoration(
@@ -248,7 +453,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       item.buyNowPrice > 0
-                          ? '즉시 구매가 ₩${_formatPrice(item.buyNowPrice)}'
+                          ? '즉시 구매가 ${_formatPrice(item.buyNowPrice)}원'
                           : '즉시 구매 없음',
                       style: TextStyle(
                         fontSize: 13,
@@ -280,10 +485,7 @@ class _ItemMainInfoSection extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -312,7 +514,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₩${_formatPrice(item.currentPrice)}',
+                        '${_formatPrice(item.currentPrice)}원',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -334,7 +536,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${viewModel.bidHistory.length}건',
+                        '${item.biddingCount}건',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -346,9 +548,7 @@ class _ItemMainInfoSection extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 16),
-
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -364,18 +564,13 @@ class _ItemMainInfoSection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.orange,
-                  backgroundImage: viewModel.sellerProfile?['profile_image_url'] != null
-                      ? NetworkImage(viewModel.sellerProfile!['profile_image_url'])
-                      : null,
-                  child: viewModel.sellerProfile?['profile_image_url'] == null
-                      ? const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                        )
-                      : null,
+                  child: Icon(
+                    Icons.person,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -383,8 +578,6 @@ class _ItemMainInfoSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        viewModel.sellerProfile?['nickname'] ?? 
-                        viewModel.sellerProfile?['name'] ?? 
                         item.sellerTitle,
                         style: const TextStyle(
                           fontSize: 14,
@@ -401,7 +594,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${(viewModel.sellerProfile?['rating'] ?? item.sellerRating).toStringAsFixed(1)} (${viewModel.sellerProfile?['review_count'] ?? item.sellerReviewCount})',
+                            '${item.sellerRating.toStringAsFixed(1)} (${item.sellerReviewCount})',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.grey,
@@ -414,13 +607,12 @@ class _ItemMainInfoSection extends StatelessWidget {
                 ),
                 OutlinedButton(
                   onPressed: () {
-                    // TODO: 실제 sellerId로 교체
                     if (item.sellerId.isEmpty) return;
-                    GoRouter.of(context).push('/user/${item.sellerId}');
+                    context.push('/user/${item.sellerId}');
                   },
                   style: OutlinedButton.styleFrom(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     side: BorderSide(color: Colors.grey[300]!),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
@@ -445,7 +637,6 @@ class _ItemMainInfoSection extends StatelessWidget {
     );
   }
 }
-
 
 class _ItemDescriptionSection extends StatelessWidget {
   const _ItemDescriptionSection({required this.item});
@@ -481,16 +672,99 @@ class _ItemDescriptionSection extends StatelessWidget {
   }
 }
 
-class _BottomActionBar extends StatelessWidget {
+class _BottomActionBar extends StatefulWidget {
   const _BottomActionBar({required this.item, required this.isMyItem});
 
   final ItemDetail item;
   final bool isMyItem;
 
   @override
-  Widget build(BuildContext context) {
-    final viewModel = context.watch<ItemDetailViewModel>();
+  State<_BottomActionBar> createState() => _BottomActionBarState();
+}
 
+class _BottomActionBarState extends State<_BottomActionBar> {
+  bool _isFavorite = false;
+  bool _isTopBidder = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteState();
+    _checkTopBidder();
+  }
+
+  Future<void> _loadFavoriteState() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final List<dynamic> rows = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('item_id', widget.item.itemId)
+          .eq('user_id', user.id)
+          .limit(1);
+
+      if (!mounted) return;
+      setState(() {
+        _isFavorite = rows.isNotEmpty;
+      });
+    } catch (e, st) {}
+  }
+
+  Future<void> _checkTopBidder() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // 해당 아이템의 최고 입찰 기록 조회
+      final List<dynamic> rows = await supabase
+          .from('bid_log')
+          .select('bid_user, bid_price')
+          .eq('item_id', widget.item.itemId)
+          .order('bid_price', ascending: false)
+          .limit(1);
+
+      if (!mounted) return;
+      if (rows.isNotEmpty) {
+        final topBidUserId = rows[0]['bid_user']?.toString() ?? '';
+        setState(() {
+          _isTopBidder = topBidUserId == user.id;
+        });
+      }
+    } catch (e, st) {}
+  }
+
+  Future<void> _toggleFavorite() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      if (_isFavorite) {
+        await supabase
+            .from('favorites')
+            .delete()
+            .eq('item_id', widget.item.itemId)
+            .eq('user_id', user.id);
+      } else {
+        await supabase.from('favorites').insert(<String, dynamic>{
+          'item_id': widget.item.itemId,
+          'user_id': user.id,
+        });
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isFavorite = !_isFavorite;
+      });
+    } catch (e, st) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -500,16 +774,16 @@ class _BottomActionBar extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  if (!isMyItem) ...[
+                  if (!widget.isMyItem) ...[
                     SizedBox(
                       width: 44,
                       height: 44,
                       child: IconButton(
-                        onPressed: () => viewModel.toggleFavorite(),
+                        onPressed: _toggleFavorite,
                         padding: EdgeInsets.zero,
                         splashRadius: 24,
                         icon: Icon(
-                          viewModel.isFavorite
+                          _isFavorite
                               ? Icons.favorite
                               : Icons.favorite_border,
                           size: 24,
@@ -522,68 +796,73 @@ class _BottomActionBar extends StatelessWidget {
                     Expanded(
                       child: SizedBox(
                         height: 44,
-                        child: viewModel.isTopBidder
+                        child: _isTopBidder
                             ? Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(8.7),
-                                  border: Border.all(color: Colors.grey.shade400),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '최고 입찰자입니다',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ),
-                              )
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8.7),
+                            border: Border.all(
+                                color: Colors.grey.shade400),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '최고 입찰자입니다',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        )
                             : OutlinedButton(
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.white,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(defaultRadius),
-                                      ),
-                                    ),
-                                    builder: (context) {
-                                      return ChangeNotifierProvider<PriceInputViewModel>(
-                                        create: (_) => PriceInputViewModel(),
-                                        child: BidBottomSheet(
-                                          itemId: item.itemId,
-                                          currentPrice: item.currentPrice,
-                                          bidUnit: item.bidPrice,
-                                          buyNowPrice: item.buyNowPrice,
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: blueColor),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.7),
-                                  ),
-                                ),
-                                child: Text(
-                                  '입찰하기',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: blueColor,
-                                  ),
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.white,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(defaultRadius),
                                 ),
                               ),
+                              builder: (context) {
+                                return ChangeNotifierProvider<
+                                    PriceInputViewModel>(
+                                  create: (_) => PriceInputViewModel(),
+                                  child: BidBottomSheet(
+                                    itemId: widget.item.itemId,
+                                    currentPrice:
+                                    widget.item.currentPrice,
+                                    bidUnit: widget.item.bidPrice,
+                                    buyNowPrice:
+                                    widget.item.buyNowPrice,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: blueColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(8.7),
+                            ),
+                          ),
+                          child: Text(
+                            '입찰하기',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: blueColor,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    
+
                     // 즉시 구매 버튼 (즉시 구매가가 있을 때만 표시)
-                    if (item.buyNowPrice > 0) ...[
+                    if (widget.item.buyNowPrice > 0) ...[
                       const SizedBox(width: 8),
                       Expanded(
                         child: SizedBox(
@@ -621,136 +900,6 @@ class _BottomActionBar extends StatelessWidget {
   }
 }
 
-class _BidHistorySection extends StatelessWidget {
-  const _BidHistorySection({required this.item});
-
-  final ItemDetail item;
-
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = context.watch<ItemDetailViewModel>();
-    
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      color: const Color(0xffF5F6FA),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '입찰 내역',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (viewModel.bidHistory.isEmpty)
-            const Text(
-              '입찰 내역이 없습니다.',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey,
-              ),
-            )
-          else
-            ...viewModel.bidHistory.map((bid) => _BidHistoryItem(bid: bid)),
-        ],
-      ),
-    );
-  }
-}
-
-class _BidHistoryItem extends StatelessWidget {
-  const _BidHistoryItem({required this.bid});
-
-  final Map<String, dynamic> bid;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: Colors.grey[300],
-            backgroundImage: bid['profile_image_url'] != null
-                ? NetworkImage(bid['profile_image_url'])
-                : null,
-            child: bid['profile_image_url'] == null
-                ? const Icon(
-                    Icons.person,
-                    size: 16,
-                    color: Colors.white,
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bid['user_name'] ?? '알 수 없음',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _formatBidTime(bid['created_at']),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '${bid['price']}원',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Color(0xff1976D2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatBidTime(String? createdAt) {
-    if (createdAt == null || createdAt.isEmpty) return '';
-    
-    try {
-      final dateTime = DateTime.tryParse(createdAt);
-      if (dateTime == null) return '';
-      
-      final now = DateTime.now();
-      final diff = now.difference(dateTime);
-      
-      if (diff.inMinutes < 1) {
-        return '방금';
-      } else if (diff.inHours < 1) {
-        return '${diff.inMinutes}분 전';
-      } else if (diff.inDays < 1) {
-        return '${diff.inHours}시간 전';
-      } else {
-        return '${diff.inDays}일 전';
-      }
-    } catch (e) {
-      return '';
-    }
-  }
-}
-
 String _formatRemainingTime(DateTime finishTime) {
   final diff = finishTime.difference(DateTime.now());
   if (diff.isNegative) {
@@ -774,4 +923,3 @@ String _formatPrice(int price) {
   }
   return buffer.toString();
 }
-
