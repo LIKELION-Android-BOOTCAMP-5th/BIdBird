@@ -2,10 +2,10 @@ import 'package:bidbird/core/firebase_manager.dart';
 import 'package:bidbird/core/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
-
 import 'package:bidbird/features/profile/data/profile_repository.dart';
 import 'package:bidbird/features/profile/viewmodel/profile_viewmodel.dart';
-
+import 'package:cloudinary_flutter/cloudinary_context.dart';
+import 'package:cloudinary_url_gen/cloudinary.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +26,9 @@ void main() async {
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
+  );
+  CloudinaryContext.cloudinary = Cloudinary.fromCloudName(
+    cloudName: 'dn12so6sm',
   );
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
