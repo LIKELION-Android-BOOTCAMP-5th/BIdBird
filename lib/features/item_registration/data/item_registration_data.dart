@@ -17,5 +17,3 @@ class ItemRegistrationData {
   final String? thumbnailUrl;
   final int? keywordTypeId;
 }
-
-//

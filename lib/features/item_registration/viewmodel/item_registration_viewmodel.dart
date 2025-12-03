@@ -29,10 +29,10 @@ class ItemRegistrationViewModel extends ChangeNotifier {
       final List<dynamic> data = await supabase
           .from('items')
           .select(
-            'id, title, description, start_price, buy_now_price, thumbnail_image, keyword_type, locked, status',
+            'id, title, description, start_price, buy_now_price, thumbnail_image, keyword_type, status',
           )
           .eq('seller_id', user.id)
-          .eq('locked', false);
+          .eq('is_agree', false);
 
       items = data.map((dynamic row) {
         final map = row as Map<String, dynamic>;
@@ -79,9 +79,9 @@ class ItemRegistrationViewModel extends ChangeNotifier {
     );
   }
 
-  Future<void> registerItem(
+  Future<bool> registerItem(
       BuildContext context, String itemId, DateTime auctionStartAt) async {
-    if (isRegistering) return;
+    if (isRegistering) return false;
 
     isRegistering = true;
     notifyListeners();
@@ -104,41 +104,29 @@ class ItemRegistrationViewModel extends ChangeNotifier {
       await supabase
           .from('items')
           .update(<String, dynamic>{
-            'locked': true,
             'is_agree': true,
             'auction_start_at': normalizedAuctionStartAt.toIso8601String(),
             'auction_stat': normalizedAuctionStartAt.toIso8601String(),
+            'status_code': 1001, // 경매 대기
           })
           .eq('id', itemId);
 
       if (user != null) {
-        await supabase.from('status_history').insert(<String, dynamic>{
+        await supabase.from('bid_status').insert(<String, dynamic>{
           'item_id': itemId,
-          'prev_status': null,
-          'new_status': 'AUCTION_SCHEDULED',
-          'reason_code': null,
-          'created_at': normalizedAuctionStartAt.toIso8601String(),
           'user_id': user.id,
-        });
-
-        await supabase.from('bid_log').insert(<String, dynamic>{
-          'item_id': itemId,
-          'bid_price': 0,
-          'bid_time': normalizedAuctionStartAt.toIso8601String(),
+          'int_code': 1001,
+          'text_code': '경매 대기',
         });
       }
 
-      messenger.showSnackBar(
-        const SnackBar(content: Text('매물이 등록되었습니다.')),
-      );
-
       await fetchMyPendingItems();
-
-      navigator.pop();
+      return true;
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('등록 중 오류가 발생했습니다: $e')),
       );
+      return false;
     } finally {
       isRegistering = false;
       notifyListeners();

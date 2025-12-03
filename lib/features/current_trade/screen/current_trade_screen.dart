@@ -203,7 +203,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
       final itemRows = await _supabase
           .from('items')
-          .select('id, title, current_price')
+          .select('id, title, current_price, thumbnail_image')
           .eq('seller_id', user.id);
 
       final Map<String, Map<String, dynamic>> itemsById = {};
@@ -224,10 +224,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
         return <String, String>{
           'item_id': itemId,
           'title': item['title']?.toString() ?? '',
-          'price': item['current_price'] != null
-              ? '${item['current_price']}원'
-              : '',
-          'date': row['created_at']?.toString() ?? '',
+          // 판매 내역 카드에서는 금액을 표시하지 않음
+          'price': '',
+          'thumbnailUrl': item['thumbnail_image']?.toString() ?? '',
+          'date': _formatDateTime(row['created_at']?.toString()),
           'status': row['text_code']?.toString() ?? '',
         };
       }).toList();
@@ -238,11 +238,30 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   }
 }
 
+String _formatDateTime(String? isoString) {
+  if (isoString == null || isoString.isEmpty) return '';
+  try {
+    final dt = DateTime.tryParse(isoString);
+    if (dt == null) return isoString;
+
+    // 예: 2025-12-03 20:11
+    final y = dt.year.toString().padLeft(4, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    final h = dt.hour.toString().padLeft(2, '0');
+    final min = dt.minute.toString().padLeft(2, '0');
+    return '$y-$m-$d $h:$min';
+  } catch (_) {
+    return isoString;
+  }
+}
+
 class _HistoryCard extends StatelessWidget {
   const _HistoryCard({
     required this.title,
     required this.priceLabel,
     required this.price,
+    this.thumbnailUrl,
     required this.date,
     required this.status,
     this.onTap,
@@ -251,6 +270,7 @@ class _HistoryCard extends StatelessWidget {
   final String title;
   final String priceLabel;
   final String price;
+  final String? thumbnailUrl;
   final String date;
   final String status;
   final VoidCallback? onTap;
@@ -306,17 +326,21 @@ class _HistoryCard extends StatelessWidget {
               child: Center(
                 child: AspectRatio(
                   aspectRatio: 1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(defaultRadius),
-                    ),
-                    // todo: 이미지 교체
-                    child: const Icon(
-                      Icons.image,
-                      size: 32,
-                      color: Colors.grey,
-                    ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(defaultRadius),
+                    child: (thumbnailUrl != null && thumbnailUrl!.isNotEmpty)
+                        ? Image.network(
+                            thumbnailUrl!,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: Colors.grey[300],
+                            child: const Icon(
+                              Icons.image,
+                              size: 32,
+                              color: Colors.grey,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -334,18 +358,19 @@ class _HistoryCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Text(
-                      '$priceLabel: $price',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
+                    if (price.isNotEmpty)
+                      Text(
+                        '$priceLabel: $price',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
                       ),
-                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

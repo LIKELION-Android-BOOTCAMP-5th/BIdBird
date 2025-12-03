@@ -185,20 +185,19 @@ class ItemAddScreen extends StatelessWidget {
                                     child: Center(
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
+                                          horizontal: 8,
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.amber,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          color: blueColor,
+                                          borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: const Text(
                                           '대표 이미지',
                                           style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),

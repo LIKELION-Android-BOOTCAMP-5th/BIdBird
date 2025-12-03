@@ -71,7 +71,7 @@ class ItemDetailScreen extends StatelessWidget {
                 ),
               ),
               _BottomActionBar(
-                itemId: item.itemId,
+                item: item,
                 isMyItem: isMyItem,
               ),
             ],
@@ -85,9 +85,9 @@ class ItemDetailScreen extends StatelessWidget {
 Future<ItemDetail?> _loadItemDetail(String itemId) async {
   final supabase = SupabaseManager.shared.supabase;
 
-  final List<Map<String, dynamic>> result = await supabase
+  final List<dynamic> result = await supabase
       .from('items')
-      .select<Map<String, dynamic>>()
+      .select()
       .eq('id', itemId)
       .limit(1);
 
@@ -95,7 +95,7 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     return null;
   }
 
-  final Map<String, dynamic> row = result.first;
+  final Map<String, dynamic> row = result.first as Map<String, dynamic>;
 
   // created_at + auction_duration_hours 로 종료 시각 계산
   final createdAtRaw = row['created_at']?.toString();
@@ -481,9 +481,9 @@ class _ItemDescriptionSection extends StatelessWidget {
 }
 
 class _BottomActionBar extends StatefulWidget {
-  const _BottomActionBar({required this.itemId, required this.isMyItem});
+  const _BottomActionBar({required this.item, required this.isMyItem});
 
-  final String itemId;
+  final ItemDetail item;
   final bool isMyItem;
 
   @override
@@ -508,7 +508,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
       final List<dynamic> rows = await supabase
           .from('favorites')
           .select('id')
-          .eq('item_id', widget.itemId)
+          .eq('item_id', widget.item.itemId)
           .eq('user_id', user.id)
           .limit(1);
 
@@ -531,11 +531,11 @@ class _BottomActionBarState extends State<_BottomActionBar> {
         await supabase
             .from('favorites')
             .delete()
-            .eq('item_id', widget.itemId)
+            .eq('item_id', widget.item.itemId)
             .eq('user_id', user.id);
       } else {
         await supabase.from('favorites').insert(<String, dynamic>{
-          'item_id': widget.itemId,
+          'item_id': widget.item.itemId,
           'user_id': user.id,
         });
       }
@@ -593,10 +593,14 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                                 ),
                               ),
                               builder: (context) {
-                                // TODO: 실제 itemId를 전달하도록 수정
                                 return ChangeNotifierProvider<PriceInputViewModel>(
                                   create: (_) => PriceInputViewModel(),
-                                  child: const BidBottomSheet(itemId: 'item_1'),
+                                  child: BidBottomSheet(
+                                    itemId: widget.item.itemId,
+                                    currentPrice: widget.item.currentPrice,
+                                    bidUnit: widget.item.bidPrice,
+                                    buyNowPrice: widget.item.buyNowPrice,
+                                  ),
                                 );
                               },
                             );
