@@ -37,10 +37,7 @@ class ItemAddData {
       'auction_start_at': auctionStartAt.toIso8601String(),
       'auction_end_at': auctionEndAt.toIso8601String(),
       'auction_duration_hours': auctionDurationHours,
-      'locked': false,
       'is_agree': isAgree,
     };
   }
 }
-
-//
