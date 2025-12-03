@@ -268,8 +268,8 @@ class ItemDetailRepository {
             created_at
           ''')
           .eq('item_id', itemId)
-          .order('bid_price', ascending: false)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .limit(10);
 
       List<Map<String, dynamic>> bidHistory = [];
       
