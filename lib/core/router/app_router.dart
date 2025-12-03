@@ -5,6 +5,8 @@ import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/chat/ui/chat_screen.dart';
 import 'package:bidbird/features/chat/ui/chatting_room_screen.dart';
 import 'package:bidbird/features/current_trade/screen/current_trade_screen.dart';
+import 'package:bidbird/features/current_trade/repository/current_trade_repository.dart';
+import 'package:bidbird/features/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item_add/item_add_screen/item_add_screen.dart';
 import 'package:bidbird/features/item_add/item_add_viewmoel/item_add_viewmoel.dart';
@@ -101,7 +103,14 @@ GoRouter createAppRouter(BuildContext context) {
           GoRoute(
             path: '/bid',
             pageBuilder: (context, state) {
-              return const NoTransitionPage(child: CurrentTradeScreen());
+              return NoTransitionPage(
+                child: ChangeNotifierProvider<CurrentTradeViewModel>(
+                  create: (_) => CurrentTradeViewModel(
+                    repository: CurrentTradeRepositoryImpl(),
+                  )..loadData(),
+                  child: const CurrentTradeScreen(),
+                ),
+              );
             },
           ),
           GoRoute(
