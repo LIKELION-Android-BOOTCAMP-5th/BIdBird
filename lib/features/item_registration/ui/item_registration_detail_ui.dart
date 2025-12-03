@@ -48,6 +48,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
               // 카테고리 목록을 불러오도록 초기화
               editViewModel.init();
 
+              // 기존 이미지 로딩
+              editViewModel.loadExistingImages(item.id);
+
               Navigator.of(context).push(
                 PageRouteBuilder(
                   transitionDuration: Duration.zero,
@@ -374,11 +377,14 @@ class _ConfirmMainInfoSection extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            '즉시 입찰가 ₩${_formatPrice(item.instantPrice)}',
+            item.instantPrice > 0
+                ? '즉시 입찰가 ₩${_formatPrice(item.instantPrice)}'
+                : '즉시 입찰가: 없음',
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: blueColor,
+              fontWeight:
+                  item.instantPrice > 0 ? FontWeight.w600 : FontWeight.w400,
+              color: item.instantPrice > 0 ? blueColor : Colors.grey,
             ),
           ),
         ],

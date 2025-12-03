@@ -1,8 +1,10 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:bidbird/core/cloudinary_manager.dart';
 import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -35,6 +37,7 @@ class ItemAddViewModel extends ChangeNotifier {
   bool isLoadingKeywords = false;
   bool isSubmitting = false;
   bool useInstantPrice = false;
+  int primaryImageIndex = 0;
 
   void disposeControllers() {
     titleController.dispose();
@@ -99,6 +102,77 @@ class ItemAddViewModel extends ChangeNotifier {
 
     selectedImages = <XFile>[...selectedImages, image];
     notifyListeners();
+  }
+
+  void removeImageAt(int index) {
+    if (index < 0 || index >= selectedImages.length) return;
+    final List<XFile> list = List<XFile>.from(selectedImages);
+    list.removeAt(index);
+    selectedImages = list;
+
+    if (selectedImages.isEmpty) {
+      primaryImageIndex = 0;
+    } else {
+      if (primaryImageIndex == index) {
+        primaryImageIndex = 0;
+      } else if (index < primaryImageIndex) {
+        primaryImageIndex = primaryImageIndex - 1;
+      }
+    }
+    notifyListeners();
+  }
+
+  /// 대표 이미지는 selectedImages[0] 으로 간주합니다.
+  void setPrimaryImage(int index) {
+    if (index < 0 || index >= selectedImages.length) return;
+    primaryImageIndex = index;
+    notifyListeners();
+  }
+
+  /// 수정 모드에서 기존 이미지를 불러와 selectedImages에 채웁니다.
+  Future<void> loadExistingImages(String itemId) async {
+    try {
+      final supabase = SupabaseManager.shared.supabase;
+      final List<dynamic> data = await supabase
+          .from('item_images')
+          .select('image_url, sort_order')
+          .eq('item_id', itemId)
+          .order('sort_order');
+
+      if (data.isEmpty) return;
+
+      final dio = Dio();
+      final List<XFile> files = <XFile>[];
+
+      for (final dynamic row in data) {
+        final map = row as Map<String, dynamic>;
+        final String url = map['image_url'] as String;
+
+        try {
+          final response = await dio.get<List<int>>(
+            url,
+            options: Options(responseType: ResponseType.bytes),
+          );
+
+          final String fileName =
+              '${DateTime.now().millisecondsSinceEpoch}_${files.length}.jpg';
+          final String tempPath = '${Directory.systemTemp.path}/$fileName';
+          final file = File(tempPath);
+          await file.writeAsBytes(response.data ?? <int>[]);
+
+          files.add(XFile(file.path));
+        } catch (_) {
+          // 개별 이미지 다운로드 실패는 무시
+        }
+      }
+
+      if (files.isNotEmpty) {
+        selectedImages = files;
+        notifyListeners();
+      }
+    } catch (_) {
+      // 전체 실패 시에는 그냥 이미지 없이 수정하도록 둡니다.
+    }
   }
 
   String? validate() {
@@ -211,6 +285,21 @@ class ItemAddViewModel extends ChangeNotifier {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
+    bool loadingDialogOpen = true;
+
+    // 전체 화면 로딩 다이얼로그 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+          ),
+        );
+      },
+    );
+
     try {
       final supabase = SupabaseManager.shared.supabase;
       final user = supabase.auth.currentUser;
@@ -320,16 +409,27 @@ class ItemAddViewModel extends ChangeNotifier {
       // Edge Function을 호출하여 썸네일용 작은 이미지를 생성/저장
       try {
         if (imageUrls.isNotEmpty) {
+          int index = 0;
+          if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
+            index = primaryImageIndex;
+          }
           await supabase.functions.invoke(
             'create-thumbnail',
             body: <String, dynamic>{
               'itemId': itemId,
-              'imageUrl': imageUrls.first,
+              'imageUrl': imageUrls[index],
             },
           );
         }
       } catch (e) {
         debugPrint('create-thumbnail error: $e');
+      }
+
+      int thumbnailIndex = 0;
+      if (imageUrls.isNotEmpty) {
+        if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
+          thumbnailIndex = primaryImageIndex;
+        }
       }
 
       final ItemRegistrationData registrationItem = ItemRegistrationData(
@@ -340,26 +440,39 @@ class ItemAddViewModel extends ChangeNotifier {
         instantPrice:
         (row['buy_now_price'] as num?)?.toInt() ?? instantPrice,
         thumbnailUrl:
-            imageUrls.isNotEmpty ? imageUrls.first : null,
+            imageUrls.isNotEmpty ? imageUrls[thumbnailIndex] : null,
         keywordTypeId: (row['keyword_type'] as num?)?.toInt(),
       );
 
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('매물이 저장되었습니다. 등록을 계속 진행해 주세요.'),
-        ),
-      );
+      // 로딩 다이얼로그 먼저 닫기
+      if (loadingDialogOpen && navigator.canPop()) {
+        navigator.pop();
+        loadingDialogOpen = false;
+      }
 
-      navigator.pushReplacement(
-        PageRouteBuilder(
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-          pageBuilder: (context, animation, secondaryAnimation) {
-            final vm = ItemRegistrationViewModel();
-            vm.items = <ItemRegistrationData>[registrationItem];
-            return ChangeNotifierProvider<ItemRegistrationViewModel>.value(
-              value: vm,
-              child: ItemRegistrationDetailScreen(item: registrationItem),
+      showDialog(
+        context: context,
+        builder: (_) => AskPopup(
+          content: '매물 등록 확인 화면으로 이동하여 최종 등록을 진행해 주세요.',
+          yesText: '이동하기',
+          yesLogic: () async {
+            navigator.pop();
+            await navigator.pushReplacement(
+              PageRouteBuilder(
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+                pageBuilder:
+                    (context, animation, secondaryAnimation) {
+                  final vm = ItemRegistrationViewModel();
+                  vm.items = <ItemRegistrationData>[registrationItem];
+                  return ChangeNotifierProvider<
+                      ItemRegistrationViewModel>.value(
+                    value: vm,
+                    child:
+                        ItemRegistrationDetailScreen(item: registrationItem),
+                  );
+                },
+              ),
             );
           },
         ),
@@ -371,6 +484,11 @@ class ItemAddViewModel extends ChangeNotifier {
     } finally {
       isSubmitting = false;
       notifyListeners();
+
+      // 아직 로딩 다이얼로그가 열려 있다면 닫기
+      if (loadingDialogOpen && navigator.canPop()) {
+        navigator.pop();
+      }
     }
   }
 }
