@@ -1,14 +1,14 @@
+import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/core/utils/ui_set/fonts.dart';
 import 'package:bidbird/core/utils/ui_set/icons.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
-
-import '../viewmodel/profile_viewmodel.dart';
-
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/utils/ui_set/fonts.dart';
+import '../viewmodel/profile_viewmodel.dart';
 
 class MyPageScreen extends StatelessWidget {
   const MyPageScreen({super.key});
@@ -161,10 +161,10 @@ class _MyPageMenuList extends StatelessWidget {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red, width: 2),
+              side: const BorderSide(color: Colors.red),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.7), //표준맞추기
+                borderRadius: defaultBorder, //표준맞추기
               ),
             ),
             onPressed: () async {
@@ -179,7 +179,7 @@ class _MyPageMenuList extends StatelessWidget {
                       Navigator.pop(dialogContext);
                       await context.read<AuthViewModel>().logout(
                         onLoggedOut: () {
-                          context.go('/home');
+                          context.go('/login');
                         },
                       );
                     },
@@ -187,7 +187,14 @@ class _MyPageMenuList extends StatelessWidget {
                 },
               );
             },
-            child: const Text('로그아웃'),
+            child: Text(
+              '로그아웃',
+              style: TextStyle(
+                fontSize: buttonFontStyle.fontSize,
+                fontWeight: buttonFontStyle.fontWeight,
+                color: Colors.red,
+              ),
+            ),
           ),
         ),
         const Spacer(),

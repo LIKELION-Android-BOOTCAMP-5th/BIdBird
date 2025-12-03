@@ -8,10 +8,9 @@ import 'package:bidbird/features/current_trade/screen/current_trade_screen.dart'
 import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item_add/item_add_screen/item_add_screen.dart';
 import 'package:bidbird/features/item_add/item_add_viewmoel/item_add_viewmoel.dart';
+import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/item_registration/ui/item_registration_ui.dart';
 import 'package:bidbird/features/item_registration/viewmodel/item_registration_viewmodel.dart';
-import 'package:provider/provider.dart';
-import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/profile/ui/my_page_screen.dart';
 import 'package:bidbird/features/profile/ui/profile_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
@@ -269,4 +268,24 @@ GoRouter createAppRouter(BuildContext context) {
       ),
     ],
   );
+}
+
+// 애니메이션 없이 페이지를 전환해주는 클래스
+class NoTransitionPage<T> extends CustomTransitionPage<T> {
+  const NoTransitionPage({required super.child, super.key})
+    : super(
+        transitionDuration: Duration.zero, // 전환 시간 0
+        reverseTransitionDuration: Duration.zero, // 역전환 시간 0
+        transitionsBuilder: _noTransitionBuilder,
+      );
+}
+
+// 애니메이션 없이 child만 반환하는 빌더
+Widget _noTransitionBuilder(
+  BuildContext context,
+  Animation<double> animation,
+  Animation<double> secondaryAnimation,
+  Widget child,
+) {
+  return child;
 }
