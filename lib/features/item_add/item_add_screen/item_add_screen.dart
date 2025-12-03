@@ -139,13 +139,72 @@ class ItemAddScreen extends StatelessWidget {
                         ),
                         itemBuilder: (context, index) {
                           final image = viewModel.selectedImages[index];
-                          return ClipRRect(
-                            borderRadius: defaultBorder,
-                            child: Image.file(
-                              File(image.path),
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
+                          final bool isPrimary =
+                              index == viewModel.primaryImageIndex;
+                          return GestureDetector(
+                            onTap: () {
+                              viewModel.setPrimaryImage(index);
+                            },
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: defaultBorder,
+                                  child: Image.file(
+                                    File(image.path),
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      viewModel.removeImageAt(index);
+                                    },
+                                    child: Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        borderRadius:
+                                            BorderRadius.circular(10),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                if (isPrimary)
+                                  Positioned.fill(
+                                    child: Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: const Text(
+                                          '대표 이미지',
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           );
                         },
@@ -429,3 +488,4 @@ class ItemAddScreen extends StatelessWidget {
     );
   }
 }
+//
