@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bidbird/core/firebase_manager.dart';
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -43,6 +44,21 @@ class AuthViewModel extends ChangeNotifier {
         debugPrint('⚠️ Google logout error: $e');
       }
 
+      try {
+        final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+        print("useId  : $userId");
+        if (userId == null) {
+          return;
+        }
+
+        await SupabaseManager.shared.supabase
+            .from('users')
+            .update({'device_token': '', 'device_type': 'logOut'})
+            .eq('id', userId);
+      } catch (e) {
+        debugPrint('FCM 초기화: $e');
+      }
+
       // Supabase 세션 로그아웃
       await SupabaseManager.shared.supabase.auth.signOut();
     } catch (e) {
@@ -64,6 +80,7 @@ class AuthViewModel extends ChangeNotifier {
       if (_isLoggedIn && session != null) {
         // 인증 상태 변경 시 사용자 정보 가져오기
         _user = await SupabaseManager.shared.fetchUser(session.user.id);
+        await FirebaseManager.setupFCMTokenAtLogin();
       }
       eventBus.fire(LoginEventBus());
       notifyListeners();
