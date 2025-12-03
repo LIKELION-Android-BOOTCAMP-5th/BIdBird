@@ -56,7 +56,7 @@ class ItemDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const _BottomActionBar(),
+              _BottomActionBar(itemId: item.itemId),
             ],
           ),
         );
@@ -80,13 +80,14 @@ Future<ItemDetail> _loadItemDetail(String itemId) async {
 
   final row = result.first as Map<String, dynamic>;
 
-  final finishTimeRaw = row['finish_time']?.toString();
-  DateTime finishTime;
-  if (finishTimeRaw != null) {
-    finishTime = DateTime.tryParse(finishTimeRaw) ?? DateTime.now();
-  } else {
-    finishTime = DateTime.now();
-  }
+  // created_at + auction_duration_hours 로 종료 시각 계산
+  final createdAtRaw = row['created_at']?.toString();
+  final createdAt = createdAtRaw != null
+      ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+      : DateTime.now();
+
+  final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
+  final finishTime = createdAt.add(Duration(hours: durationHours));
 
   return ItemDetail(
     itemId: row['id']?.toString() ?? itemId,
@@ -421,8 +422,73 @@ class _ItemDescriptionSection extends StatelessWidget {
   }
 }
 
-class _BottomActionBar extends StatelessWidget {
-  const _BottomActionBar();
+class _BottomActionBar extends StatefulWidget {
+  const _BottomActionBar({required this.itemId});
+
+  final String itemId;
+
+  @override
+  State<_BottomActionBar> createState() => _BottomActionBarState();
+}
+
+class _BottomActionBarState extends State<_BottomActionBar> {
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteState();
+  }
+
+  Future<void> _loadFavoriteState() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final List<dynamic> rows = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('item_id', widget.itemId)
+          .eq('user_id', user.id)
+          .limit(1);
+
+      if (!mounted) return;
+      setState(() {
+        _isFavorite = rows.isNotEmpty;
+      });
+    } catch (e, st) {
+      debugPrint('[Favorite] load error: $e\n$st');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      if (_isFavorite) {
+        await supabase
+            .from('favorites')
+            .delete()
+            .eq('item_id', widget.itemId)
+            .eq('user_id', user.id);
+      } else {
+        await supabase.from('favorites').insert(<String, dynamic>{
+          'item_id': widget.itemId,
+          'user_id': user.id,
+        });
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isFavorite = !_isFavorite;
+      });
+    } catch (e, st) {
+      debugPrint('[Favorite] toggle error: $e\n$st');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -439,9 +505,7 @@ class _BottomActionBar extends StatelessWidget {
                     width: 44,
                     height: 44,
                     child: OutlinedButton(
-                      onPressed: () {
-                        // TODO: 찜(좋아요) 기능 연결
-                      },
+                      onPressed: _toggleFavorite,
                       style: OutlinedButton.styleFrom(
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
@@ -449,8 +513,8 @@ class _BottomActionBar extends StatelessWidget {
                         ),
                         side: BorderSide(color: Colors.grey[300]!),
                       ),
-                      child: const Icon(
-                        Icons.favorite_border,
+                      child: Icon(
+                        _isFavorite ? Icons.favorite : Icons.favorite_border,
                         size: 20,
                         color: Colors.red,
                       ),

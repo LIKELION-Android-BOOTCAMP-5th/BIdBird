@@ -266,6 +266,7 @@ class ItemAddViewModel extends ChangeNotifier {
         keywordTypeId: selectedKeywordTypeId!,
         auctionStartAt: auctionStartAt,
         auctionEndAt: auctionEndAt,
+        auctionDurationHours: auctionHours,
         imageUrls: imageUrls,
         isAgree: agreed,
       );

@@ -7,6 +7,7 @@ class ItemAddData {
     required this.keywordTypeId,
     required this.auctionStartAt,
     required this.auctionEndAt,
+    required this.auctionDurationHours,
     required this.imageUrls,
     required this.isAgree,
   });
@@ -18,6 +19,7 @@ class ItemAddData {
   final int keywordTypeId;
   final DateTime auctionStartAt;
   final DateTime auctionEndAt;
+  final int auctionDurationHours;
   final List<String> imageUrls;
   final bool isAgree;
 
@@ -35,6 +37,7 @@ class ItemAddData {
       'keyword_type': keywordTypeId,
       'auction_start_at': auctionStartAt.toIso8601String(),
       'auction_end_at': auctionEndAt.toIso8601String(),
+      'auction_duration_hours': auctionDurationHours,
       'locked': false,
       'is_agree': isAgree,
       'image1': imageUrls.length > 0 ? imageUrls[0] : null,
