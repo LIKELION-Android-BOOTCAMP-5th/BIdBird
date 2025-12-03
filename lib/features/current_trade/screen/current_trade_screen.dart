@@ -166,6 +166,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               title: item['title'] ?? '',
               priceLabel: '최종 금액',
               price: item['price'] ?? '',
+              thumbnailUrl: item['thumbnailUrl'],
               date: item['date'] ?? '',
               status: item['status'] ?? '',
               onTap: () {
@@ -194,12 +195,12 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           .select('item_id, text_code, created_at')
           .order('created_at', ascending: false);
 
-      if (statusRows is! List || statusRows.isEmpty) {
+      if (statusRows.isEmpty) {
         return [];
       }
 
       final List<Map<String, dynamic>> statusList =
-          statusRows.cast<Map<String, dynamic>>();
+          List<Map<String, dynamic>>.from(statusRows);
 
       final itemRows = await _supabase
           .from('items')
@@ -207,13 +208,11 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           .eq('seller_id', user.id);
 
       final Map<String, Map<String, dynamic>> itemsById = {};
-      if (itemRows is List) {
-        for (final raw in itemRows) {
-          final row = raw as Map<String, dynamic>;
-          final id = row['id']?.toString();
-          if (id != null) {
-            itemsById[id] = row;
-          }
+      for (final raw in itemRows) {
+        final row = raw as Map<String, dynamic>;
+        final id = row['id']?.toString();
+        if (id != null) {
+          itemsById[id] = row;
         }
       }
 
@@ -351,7 +350,7 @@ class _HistoryCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       title,
@@ -362,7 +361,8 @@ class _HistoryCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (price.isNotEmpty)
+                    const SizedBox(height: 4),
+                    if (price.isNotEmpty) ...[
                       Text(
                         '$priceLabel: $price',
                         style: const TextStyle(
@@ -371,6 +371,8 @@ class _HistoryCard extends StatelessWidget {
                           color: Colors.black,
                         ),
                       ),
+                      const SizedBox(height: 4),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -416,4 +418,3 @@ class _HistoryCard extends StatelessWidget {
 }
 
 final List<Map<String, String>> _bidHistory = [];
-final List<Map<String, String>> _saleHistory = [];
