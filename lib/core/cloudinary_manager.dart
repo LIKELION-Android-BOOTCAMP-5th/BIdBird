@@ -14,12 +14,16 @@ class CloudinaryManager {
 
     String cloudName = 'dn12so6sm';
     String uploadPreset = 'bidbird_upload_preset'; // Unsigned 프리셋 이름
-    String url = 'api.cloudinary.com';
+    String url = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 
     try {
+      final String fileName = "${DateTime.now().millisecondsSinceEpoch}";
       String filePath = image.path;
       FormData formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(filePath, filename: 'upload.jpg'),
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: '${fileName}.jpg',
+        ),
         'upload_preset': uploadPreset,
       });
 
@@ -49,7 +53,7 @@ class CloudinaryManager {
     List<String> imageUrlList = [];
     String cloudName = 'dn12so6sm';
     String uploadPreset = 'bidbird_upload_preset'; // Unsigned 프리셋 이름
-    String url = 'api.cloudinary.com';
+    String url = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 
     try {
       if (images.length != 0) {
