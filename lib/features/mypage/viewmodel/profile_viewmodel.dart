@@ -19,7 +19,7 @@ class Profile {
     return Profile(
       id: map['id'] as String,
       name: map['name'] as String?,
-      phoneNumber: map['phone'] as String?,
+      phoneNumber: map['phone_number'] as String?,
       profileImageUrl: map['profile_image'] as String?,
     );
   }
@@ -31,20 +31,23 @@ class ProfileViewModel extends ChangeNotifier {
   Profile? profile;
   bool isLoading = false;
 
-  String? lastErrorMessage; //나중에팝업으로쓸것
+  String? errorMessage; //나중에팝업으로쓸것
 
-  ProfileViewModel(this._repository);
+  ProfileViewModel(this._repository) {
+    loadProfile(); //쵸기로딩
+  }
 
   Future<void> loadProfile() async {
-    if (isLoading) return;
+    if (isLoading) return; //반복요청대비
 
     isLoading = true;
-    notifyListeners();
+    errorMessage = null; //다른곳에서참조할수도있으니확실하게지정해주는게좋음
+    notifyListeners(); //로딩인디케이터표시를위함
 
     try {
-      profile = await _repository.fetchCurrentProfile();
+      profile = await _repository.fetchProfile();
     } catch (e) {
-      lastErrorMessage = e.toString(); //e는String임
+      errorMessage = e.toString(); //e는String임
     } finally {
       isLoading = false;
       notifyListeners();
