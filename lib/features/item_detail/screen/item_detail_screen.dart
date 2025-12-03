@@ -20,7 +20,7 @@ class ItemDetailScreen extends StatelessWidget {
     // TODO: 이후에는 실제 item 데이터를 인자로 받아서 사용
     debugPrint('[ItemDetailScreen] build 호출됨, itemId=$itemId');
 
-    return FutureBuilder<ItemDetail>(
+    return FutureBuilder<ItemDetail?>(
       future: _loadItemDetail(itemId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -29,12 +29,18 @@ class ItemDetailScreen extends StatelessWidget {
           );
         }
 
-        ItemDetail item;
-        if (snapshot.hasError || !snapshot.hasData) {
-          item = dummyItemDetail;
-        } else {
-          item = snapshot.data!;
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+          return const Scaffold(
+            body: Center(
+              child: Text(
+                '매물 정보를 불러올 수 없습니다.',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          );
         }
+
+        final ItemDetail item = snapshot.data!;
 
         // 현재 로그인 유저와 판매자 비교해서 내 매물 여부 판단
         final supabase = SupabaseManager.shared.supabase;
@@ -76,20 +82,20 @@ class ItemDetailScreen extends StatelessWidget {
   }
 }
 
-Future<ItemDetail> _loadItemDetail(String itemId) async {
+Future<ItemDetail?> _loadItemDetail(String itemId) async {
   final supabase = SupabaseManager.shared.supabase;
 
-  final result = await supabase
+  final List<Map<String, dynamic>> result = await supabase
       .from('items')
-      .select()
+      .select<Map<String, dynamic>>()
       .eq('id', itemId)
       .limit(1);
 
-  if (result is! List || result.isEmpty) {
-    return dummyItemDetail;
+  if (result.isEmpty) {
+    return null;
   }
 
-  final row = result.first as Map<String, dynamic>;
+  final Map<String, dynamic> row = result.first;
 
   // created_at + auction_duration_hours 로 종료 시각 계산
   final createdAtRaw = row['created_at']?.toString();
