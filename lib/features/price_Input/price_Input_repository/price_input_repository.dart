@@ -13,6 +13,7 @@ class PriceInputRepository {
 
     await supabase.from('bid_log').insert(<String, dynamic>{
       'item_id': request.itemId,
+      'bid_user': user.id,
       'bid_price': request.bidPrice,
       'bid_time': DateTime.now().toIso8601String(),
     });
