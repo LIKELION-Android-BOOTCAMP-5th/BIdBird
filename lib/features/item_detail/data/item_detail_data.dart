@@ -1,6 +1,7 @@
 class ItemDetail {
   ItemDetail({
     required this.itemId,
+    required this.sellerId,
     required this.itemTitle,
     required this.itemImages,
     required this.finishTime,
@@ -15,6 +16,7 @@ class ItemDetail {
   });
 
   final String itemId;
+  final String sellerId;
   final String itemTitle;
   final List<String> itemImages; // image url list
   final DateTime finishTime; // 잔여 시간 계산용 종료 시각
@@ -31,6 +33,7 @@ class ItemDetail {
 // TODO: 더미데이터
 final dummyItemDetail = ItemDetail(
   itemId: 'item_1',
+  sellerId: 'seller_1',
   itemTitle: '123123',
   itemImages: [
     'https://via.placeholder.com/600x400',
