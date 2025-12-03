@@ -69,7 +69,14 @@ class ItemRegistrationViewModel extends ChangeNotifier {
     }
 
     final int addMinutes = 10 - (minute % 10);
-    return now.add(Duration(minutes: addMinutes));
+    final DateTime added = now.add(Duration(minutes: addMinutes));
+    return DateTime(
+      added.year,
+      added.month,
+      added.day,
+      added.hour,
+      added.minute,
+    );
   }
 
   Future<void> registerItem(
@@ -86,13 +93,21 @@ class ItemRegistrationViewModel extends ChangeNotifier {
       final supabase = SupabaseManager.shared.supabase;
       final user = supabase.auth.currentUser;
 
+      final DateTime normalizedAuctionStartAt = DateTime(
+        auctionStartAt.year,
+        auctionStartAt.month,
+        auctionStartAt.day,
+        auctionStartAt.hour,
+        auctionStartAt.minute,
+      );
+
       await supabase
           .from('items')
           .update(<String, dynamic>{
             'locked': true,
             'is_agree': true,
-            'auction_start_at': auctionStartAt.toIso8601String(),
-            'auction_stat': auctionStartAt.toIso8601String(),
+            'auction_start_at': normalizedAuctionStartAt.toIso8601String(),
+            'auction_stat': normalizedAuctionStartAt.toIso8601String(),
           })
           .eq('id', itemId);
 
@@ -102,7 +117,7 @@ class ItemRegistrationViewModel extends ChangeNotifier {
           'prev_status': null,
           'new_status': 'AUCTION_SCHEDULED',
           'reason_code': null,
-          'created_at': auctionStartAt.toIso8601String(),
+          'created_at': normalizedAuctionStartAt.toIso8601String(),
           'user_id': user.id,
         });
 
@@ -110,7 +125,7 @@ class ItemRegistrationViewModel extends ChangeNotifier {
           'item_id': itemId,
           'user_id': user.id,
           'bid_price': 0,
-          'bid_time': auctionStartAt.toIso8601String(),
+          'bid_time': normalizedAuctionStartAt.toIso8601String(),
         });
       }
 
