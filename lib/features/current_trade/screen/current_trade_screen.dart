@@ -193,6 +193,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       final statusRows = await _supabase
           .from('bid_status')
           .select('item_id, text_code, created_at')
+          .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
       if (statusRows.isEmpty) {

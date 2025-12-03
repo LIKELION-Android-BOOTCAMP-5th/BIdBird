@@ -11,8 +11,7 @@ class PriceInputViewModel extends ChangeNotifier {
 
   bool isSubmitting = false;
 
-  Future<void> placeBid(
-    BuildContext context, {
+  Future<void> placeBid({
     required String itemId,
     required int bidPrice,
   }) async {
@@ -21,21 +20,11 @@ class PriceInputViewModel extends ChangeNotifier {
     isSubmitting = true;
     notifyListeners();
 
-    final messenger = ScaffoldMessenger.of(context);
-
     try {
       final request = BidRequest(itemId: itemId, bidPrice: bidPrice);
       await _repository.placeBid(request);
-
-      messenger.showSnackBar(
-        const SnackBar(content: Text('입찰이 완료되었습니다.')),
-      );
-
-      Navigator.of(context).pop();
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('입찰 중 오류가 발생했습니다: $e')),
-      );
+      rethrow;
     } finally {
       isSubmitting = false;
       notifyListeners();
