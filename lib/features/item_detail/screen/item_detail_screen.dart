@@ -48,64 +48,59 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _bidStatusChannel = _supabase.channel('bid_status_${widget.itemId}');
     _bidStatusChannel!
         .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'bid_status',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'item_id',
-            value: widget.itemId,
-          ),
-          callback: (payload) {
-            debugPrint('[ItemDetail] bid_status 변경 감지: $payload');
-            if (mounted) setState(() {});
-          },
-        )
+      event: PostgresChangeEvent.all,
+      schema: 'public',
+      table: 'bid_status',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'item_id',
+        value: widget.itemId,
+      ),
+      callback: (payload) {
+        if (mounted) setState(() {});
+      },
+    )
         .subscribe();
 
     // items 테이블 실시간 구독 (현재가 변경 감지)
     _itemsChannel = _supabase.channel('items_${widget.itemId}');
     _itemsChannel!
         .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'items',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'id',
-            value: widget.itemId,
-          ),
-          callback: (payload) {
-            debugPrint('[ItemDetail] items 변경 감지: $payload');
-            if (mounted) setState(() {});
-          },
-        )
+      event: PostgresChangeEvent.all,
+      schema: 'public',
+      table: 'items',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'id',
+        value: widget.itemId,
+      ),
+      callback: (payload) {
+        if (mounted) setState(() {});
+      },
+    )
         .subscribe();
 
     // bid_log 테이블 실시간 구독 (참여 입찰 수 변경 감지)
     _bidLogChannel = _supabase.channel('bid_log_${widget.itemId}');
     _bidLogChannel!
         .onPostgresChanges(
-          event: PostgresChangeEvent.insert, // 입찰은 insert만 발생
-          schema: 'public',
-          table: 'bid_log',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'item_id',
-            value: widget.itemId,
-          ),
-          callback: (payload) {
-            debugPrint('[ItemDetail] bid_log 추가 감지: $payload');
-            if (mounted) setState(() {});
-          },
-        )
+      event: PostgresChangeEvent.insert, // 입찰은 insert만 발생
+      schema: 'public',
+      table: 'bid_log',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'item_id',
+        value: widget.itemId,
+      ),
+      callback: (payload) {
+        if (mounted) setState(() {});
+      },
+    )
         .subscribe();
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('[ItemDetailScreen] build 호출됨, itemId=${widget.itemId}');
-
     return FutureBuilder<ItemDetail?>(
       future: _loadItemDetail(widget.itemId),
       builder: (context, snapshot) {
@@ -192,38 +187,51 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
   final finishTime = createdAt.add(Duration(hours: durationHours));
 
   final String sellerId = row['seller_id']?.toString() ?? '';
-  String sellerTitle = row['seller_name']?.toString() ?? '';
+  String sellerTitle = '';
 
-  // seller_name 이 비어 있고 sellerId 가 있으면 users 테이블에서 이름을 한 번 더 조회
-  if (sellerTitle.isEmpty && sellerId.isNotEmpty) {
+  if (sellerId.isNotEmpty) {
     try {
-      final userRow = await supabase
+      // users 테이블에서 모든 필드 조회
+      final userResponse = await supabase
           .from('users')
-          .select('nickname, name')
+          .select()
           .eq('id', sellerId)
-          .maybeSingle();
+          .single();
 
-      if (userRow is Map<String, dynamic>) {
-        sellerTitle = (userRow['nickname']?.toString() ?? '')
-            .isNotEmpty
-            ? userRow['nickname'].toString()
-            : (userRow['name']?.toString() ?? '');
+      // 닉네임 필드 확인
+      String? nickname = userResponse['nick_name']?.toString().trim();
+
+      if (nickname != null && nickname.isNotEmpty) {
+        sellerTitle = nickname;
+      } else {
+        sellerTitle = '미지정 사용자';
       }
+
+      // items 테이블 업데이트
+      try {
+        await supabase
+            .from('items')
+            .update({'seller_name': sellerTitle})
+            .eq('id', itemId);
+      } catch (e) {}
     } catch (e, st) {
-      debugPrint('[ItemDetail] load seller name error: $e\n$st');
+      // users 테이블 조회 실패 시 items 테이블의 seller_name 사용
+      sellerTitle = row['seller_name']?.toString() ?? '미지정 사용자';
     }
+  } else {
+    sellerTitle = '알 수 없는 판매자';
   }
 
   // item_images 테이블에서 이미지 URL 가져오기 (썸네일 제외)
   final List<String> images = [];
-  
+
   try {
     final imageRows = await supabase
         .from('item_images')
         .select('image_url')
         .eq('item_id', itemId)
         .order('sort_order', ascending: true);
-    
+
     if (imageRows is List) {
       for (final raw in imageRows) {
         final row = raw as Map<String, dynamic>;
@@ -233,39 +241,32 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
         }
       }
     }
-  } catch (e, st) {
-    debugPrint('[ItemDetail] load images error: $e\n$st');
-  }
+  } catch (e, st) {}
 
   // bid_log 테이블에서 참여 입찰 수 조회
   int biddingCount = 0;
   try {
     final countResponse = await supabase
         .from('bid_log')
-        .select('id') // 아무 컬럼이나 선택
+        .select('id')
         .eq('item_id', itemId)
         .count(CountOption.exact);
-    
-    // count() 메서드의 반환값 처리 방식은 버전에 따라 다를 수 있음
-    // postgrest 1.x: countResponse.count
-    // postgrest 2.x: countResponse.count (PostgrestResponse 객체 내)
-    // 여기서는 countResponse가 PostgrestResponse<List<Map<String, dynamic>>> 타입이라고 가정
+
     biddingCount = countResponse.count;
   } catch (e) {
     // count 쿼리가 실패하면 기존 방식(items 테이블의 bidding_count) 사용하거나 0으로 설정
-    debugPrint('[ItemDetail] load bidding count error: $e');
     biddingCount = (row['bidding_count'] as int?) ?? 0;
   }
 
   // 입찰 최소 호가 규칙 적용
   final currentPrice = (row['current_price'] as int?) ?? 0;
   int minBidStep;
-  
+
   if (currentPrice <= 100000) {
     // 100,000원 이하일 경우 최소 호가는 1,000원으로 고정
     minBidStep = 1000;
   } else {
-    // 100,001원 이상일 경우 마지막 두 자리 제거 (절사 정책)
+    // 100,001원 이상일 경우 마지막 두 자리 제거
     final priceStr = currentPrice.toString();
     if (priceStr.length >= 3) {
       minBidStep = int.parse(priceStr.substring(0, priceStr.length - 2));
@@ -273,17 +274,10 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
       minBidStep = 1000; // 최소값 보장
     }
   }
-  
-  // 결과 출력
+
   final nextValidBid = currentPrice + minBidStep;
-  debugPrint('[ItemDetail] 입찰 호가 계산 결과:');
-  debugPrint('  currentPrice: $currentPrice');
-  debugPrint('  minBidStep: $minBidStep');
-  debugPrint('  nextValidBid: $nextValidBid');
-  
-  // 디버그: DB의 원래 bid_price 값 확인
+
   final originalBidPrice = (row['bid_price'] as int?) ?? 0;
-  debugPrint('  originalBidPrice: $originalBidPrice (DB 값)');
 
   return ItemDetail(
     itemId: row['id']?.toString() ?? itemId,
@@ -399,7 +393,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   images.length,
-                  (index) => _buildDot(isActive: index == _currentPage),
+                      (index) => _buildDot(isActive: index == _currentPage),
                 ),
               ),
             ),
@@ -459,7 +453,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       item.buyNowPrice > 0
-                          ? '즉시 구매가 ₩${_formatPrice(item.buyNowPrice)}'
+                          ? '즉시 구매가 ${_formatPrice(item.buyNowPrice)}원'
                           : '즉시 구매 없음',
                       style: TextStyle(
                         fontSize: 13,
@@ -491,10 +485,7 @@ class _ItemMainInfoSection extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 16),
-
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -523,7 +514,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '₩${_formatPrice(item.currentPrice)}',
+                        '${_formatPrice(item.currentPrice)}원',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -557,9 +548,7 @@ class _ItemMainInfoSection extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 16),
-
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -618,13 +607,12 @@ class _ItemMainInfoSection extends StatelessWidget {
                 ),
                 OutlinedButton(
                   onPressed: () {
-                    // TODO: 실제 sellerId로 교체
                     if (item.sellerId.isEmpty) return;
                     context.push('/user/${item.sellerId}');
                   },
                   style: OutlinedButton.styleFrom(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     side: BorderSide(color: Colors.grey[300]!),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
@@ -649,7 +637,6 @@ class _ItemMainInfoSection extends StatelessWidget {
     );
   }
 }
-
 
 class _ItemDescriptionSection extends StatelessWidget {
   const _ItemDescriptionSection({required this.item});
@@ -723,9 +710,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
       setState(() {
         _isFavorite = rows.isNotEmpty;
       });
-    } catch (e, st) {
-      debugPrint('[Favorite] load error: $e\n$st');
-    }
+    } catch (e, st) {}
   }
 
   Future<void> _checkTopBidder() async {
@@ -749,9 +734,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
           _isTopBidder = topBidUserId == user.id;
         });
       }
-    } catch (e, st) {
-      debugPrint('[TopBidder] check error: $e\n$st');
-    }
+    } catch (e, st) {}
   }
 
   Future<void> _toggleFavorite() async {
@@ -777,9 +760,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
       setState(() {
         _isFavorite = !_isFavorite;
       });
-    } catch (e, st) {
-      debugPrint('[Favorite] toggle error: $e\n$st');
-    }
+    } catch (e, st) {}
   }
 
   @override
@@ -817,64 +798,69 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                         height: 44,
                         child: _isTopBidder
                             ? Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(8.7),
-                                  border: Border.all(color: Colors.grey.shade400),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '최고 입찰자입니다',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ),
-                              )
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8.7),
+                            border: Border.all(
+                                color: Colors.grey.shade400),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '최고 입찰자입니다',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        )
                             : OutlinedButton(
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.white,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(defaultRadius),
-                                      ),
-                                    ),
-                                    builder: (context) {
-                                      return ChangeNotifierProvider<PriceInputViewModel>(
-                                        create: (_) => PriceInputViewModel(),
-                                        child: BidBottomSheet(
-                                          itemId: widget.item.itemId,
-                                          currentPrice: widget.item.currentPrice,
-                                          bidUnit: widget.item.bidPrice,
-                                          buyNowPrice: widget.item.buyNowPrice,
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: blueColor),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.7),
-                                  ),
-                                ),
-                                child: Text(
-                                  '입찰하기',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: blueColor,
-                                  ),
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.white,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(defaultRadius),
                                 ),
                               ),
+                              builder: (context) {
+                                return ChangeNotifierProvider<
+                                    PriceInputViewModel>(
+                                  create: (_) => PriceInputViewModel(),
+                                  child: BidBottomSheet(
+                                    itemId: widget.item.itemId,
+                                    currentPrice:
+                                    widget.item.currentPrice,
+                                    bidUnit: widget.item.bidPrice,
+                                    buyNowPrice:
+                                    widget.item.buyNowPrice,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: blueColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(8.7),
+                            ),
+                          ),
+                          child: Text(
+                            '입찰하기',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: blueColor,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    
+
                     // 즉시 구매 버튼 (즉시 구매가가 있을 때만 표시)
                     if (widget.item.buyNowPrice > 0) ...[
                       const SizedBox(width: 8),
@@ -937,4 +923,3 @@ String _formatPrice(int price) {
   }
   return buffer.toString();
 }
-
