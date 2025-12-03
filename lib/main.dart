@@ -9,7 +9,6 @@ import 'package:cloudinary_url_gen/cloudinary.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -91,24 +90,4 @@ class MyApp extends StatelessWidget {
       routerConfig: _router,
     );
   }
-}
-
-// 애니메이션 없이 페이지를 전환해주는 클래스
-class NoTransitionPage<T> extends CustomTransitionPage<T> {
-  const NoTransitionPage({required super.child, super.key})
-    : super(
-        transitionDuration: Duration.zero, // 전환 시간 0
-        reverseTransitionDuration: Duration.zero, // 역전환 시간 0
-        transitionsBuilder: _noTransitionBuilder,
-      );
-}
-
-// 애니메이션 없이 child만 반환하는 빌더
-Widget _noTransitionBuilder(
-  BuildContext context,
-  Animation<double> animation,
-  Animation<double> secondaryAnimation,
-  Widget child,
-) {
-  return child;
 }
