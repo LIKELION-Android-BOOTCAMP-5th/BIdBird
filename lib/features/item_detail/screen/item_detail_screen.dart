@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
-import 'package:bidbird/features/item_detail/viewmodel/item_detail_viewmodel.dart';
-import 'package:bidbird/features/price_Input/price_Input_screen/price_input_screen.dart';
-import 'package:bidbird/features/price_Input/price_Input_viewmodel/price_input_viewmodel.dart';
-import 'package:bidbird/core/supabase_manager.dart';
+import '../data/item_detail_data.dart';
+import '../viewmodel/item_detail_viewmodel.dart';
+import '../../price_Input/price_Input_screen/price_input_screen.dart';
+import '../../price_Input/price_Input_viewmodel/price_input_viewmodel.dart';
+import '../../../core/supabase_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../report/ui/report_screen.dart';
+import 'package:bidbird/features/report/ui/report_screen.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key, required this.itemId});
@@ -77,6 +77,8 @@ class _ItemDetailView extends StatelessWidget {
                   _ItemMainInfoSection(item: item),
                   const SizedBox(height: 16),
                   _ItemDescriptionSection(item: item),
+                  const SizedBox(height: 16),
+                  _BidHistorySection(item: item),
                 ],
               ),
             ),
@@ -214,6 +216,7 @@ class _ItemMainInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<ItemDetailViewModel>();
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: const BoxDecoration(
@@ -331,7 +334,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${item.biddingCount}건',
+                        '${viewModel.bidHistory.length}건',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -361,13 +364,18 @@ class _ItemMainInfoSection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.orange,
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.white,
-                  ),
+                  backgroundImage: viewModel.sellerProfile?['profile_image_url'] != null
+                      ? NetworkImage(viewModel.sellerProfile!['profile_image_url'])
+                      : null,
+                  child: viewModel.sellerProfile?['profile_image_url'] == null
+                      ? const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -375,6 +383,8 @@ class _ItemMainInfoSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        viewModel.sellerProfile?['nickname'] ?? 
+                        viewModel.sellerProfile?['name'] ?? 
                         item.sellerTitle,
                         style: const TextStyle(
                           fontSize: 14,
@@ -391,7 +401,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${item.sellerRating.toStringAsFixed(1)} (${item.sellerReviewCount})',
+                            '${(viewModel.sellerProfile?['rating'] ?? item.sellerRating).toStringAsFixed(1)} (${viewModel.sellerProfile?['review_count'] ?? item.sellerReviewCount})',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.grey,
@@ -608,6 +618,136 @@ class _BottomActionBar extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _BidHistorySection extends StatelessWidget {
+  const _BidHistorySection({required this.item});
+
+  final ItemDetail item;
+
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.watch<ItemDetailViewModel>();
+    
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      color: const Color(0xffF5F6FA),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '입찰 내역',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (viewModel.bidHistory.isEmpty)
+            const Text(
+              '입찰 내역이 없습니다.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+              ),
+            )
+          else
+            ...viewModel.bidHistory.map((bid) => _BidHistoryItem(bid: bid)),
+        ],
+      ),
+    );
+  }
+}
+
+class _BidHistoryItem extends StatelessWidget {
+  const _BidHistoryItem({required this.bid});
+
+  final Map<String, dynamic> bid;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: bid['profile_image_url'] != null
+                ? NetworkImage(bid['profile_image_url'])
+                : null,
+            child: bid['profile_image_url'] == null
+                ? const Icon(
+                    Icons.person,
+                    size: 16,
+                    color: Colors.white,
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  bid['user_name'] ?? '알 수 없음',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _formatBidTime(bid['created_at']),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${bid['price']}원',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Color(0xff1976D2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatBidTime(String? createdAt) {
+    if (createdAt == null || createdAt.isEmpty) return '';
+    
+    try {
+      final dateTime = DateTime.tryParse(createdAt);
+      if (dateTime == null) return '';
+      
+      final now = DateTime.now();
+      final diff = now.difference(dateTime);
+      
+      if (diff.inMinutes < 1) {
+        return '방금';
+      } else if (diff.inHours < 1) {
+        return '${diff.inMinutes}분 전';
+      } else if (diff.inDays < 1) {
+        return '${diff.inHours}시간 전';
+      } else {
+        return '${diff.inDays}일 전';
+      }
+    } catch (e) {
+      return '';
+    }
   }
 }
 
