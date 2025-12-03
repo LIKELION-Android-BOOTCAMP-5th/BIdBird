@@ -123,7 +123,6 @@ class ItemRegistrationViewModel extends ChangeNotifier {
 
         await supabase.from('bid_log').insert(<String, dynamic>{
           'item_id': itemId,
-          'user_id': user.id,
           'bid_price': 0,
           'bid_time': normalizedAuctionStartAt.toIso8601String(),
         });
