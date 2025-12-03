@@ -123,7 +123,7 @@ class _MyPageMenuList extends StatelessWidget {
           icon: Icons.edit,
           title: '정보 수정',
           onTap: () {
-            context.go('/my_page/update_info');
+            context.go('/mypage/update_info');
           },
         ),
         _MenuItem(
