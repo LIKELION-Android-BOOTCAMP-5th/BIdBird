@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:bidbird/core/cloudinary_manager.dart';
 import 'package:bidbird/core/supabase_manager.dart';
@@ -457,7 +456,7 @@ class ItemAddViewModel extends ChangeNotifier {
           content: '매물 등록 확인 화면으로 이동하여 최종 등록을 진행해 주세요.',
           yesText: '이동하기',
           yesLogic: () async {
-            Navigator.of(context).pop();
+            navigator.pop();
             await navigator.pushReplacement(
               PageRouteBuilder(
                 transitionDuration: Duration.zero,
