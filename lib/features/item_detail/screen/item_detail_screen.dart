@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
 
+import '../../report/ui/report_screen.dart';
+
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key});
 
@@ -158,17 +160,30 @@ class _ItemMainInfoSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '신고',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  decoration: TextDecoration.underline,
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ReportScreen(), // 신고 UI 이동
+                    ),
+                  );
+                },
+                child: Text(
+                  '신고',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 16),
+
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -231,7 +246,9 @@ class _ItemMainInfoSection extends StatelessWidget {
               ],
             ),
           ),
+
           const SizedBox(height: 16),
+
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -306,6 +323,7 @@ class _ItemMainInfoSection extends StatelessWidget {
     );
   }
 }
+
 
 class _ItemDescriptionSection extends StatelessWidget {
   const _ItemDescriptionSection({required this.item});
