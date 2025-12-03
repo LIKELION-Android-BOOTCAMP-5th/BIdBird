@@ -4,44 +4,104 @@ import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/features/item_detail/data/item_detail_data.dart';
 import 'package:bidbird/features/price_Input/price_Input_screen/price_input_screen.dart';
 import 'package:bidbird/features/price_Input/price_Input_viewmodel/price_input_viewmodel.dart';
+import 'package:bidbird/core/supabase_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class ItemDetailScreen extends StatelessWidget {
-  const ItemDetailScreen({super.key});
+  const ItemDetailScreen({super.key, required this.itemId});
+
+  final String itemId;
 
   @override
   Widget build(BuildContext context) {
     // TODO: 이후에는 실제 item 데이터를 인자로 받아서 사용
-    final item = dummyItemDetail;
+    debugPrint('[ItemDetailScreen] build 호출됨, itemId=$itemId');
 
-    return Scaffold(
-      appBar: AppBar(
-        // Todo: 나중에 공통 AppBar 컴포넌트로 교체 예정
-        title: const Text('상세 보기'),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _ItemImageSection(item: item),
-                  const SizedBox(height: 8),
-                  _ItemMainInfoSection(item: item),
-                  const SizedBox(height: 16),
-                  _ItemDescriptionSection(item: item),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
+    return FutureBuilder<ItemDetail>(
+      future: _loadItemDetail(itemId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        ItemDetail item;
+        if (snapshot.hasError || !snapshot.hasData) {
+          item = dummyItemDetail;
+        } else {
+          item = snapshot.data!;
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            // Todo: 나중에 공통 AppBar 컴포넌트로 교체 예정
+            title: const Text('상세 보기'),
           ),
-          const _BottomActionBar(),
-        ],
-      ),
+          body: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _ItemImageSection(item: item),
+                      const SizedBox(height: 8),
+                      _ItemMainInfoSection(item: item),
+                      const SizedBox(height: 16),
+                      _ItemDescriptionSection(item: item),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+              const _BottomActionBar(),
+            ],
+          ),
+        );
+      },
     );
   }
+}
+
+Future<ItemDetail> _loadItemDetail(String itemId) async {
+  final supabase = SupabaseManager.shared.supabase;
+
+  final result = await supabase
+      .from('items')
+      .select()
+      .eq('id', itemId)
+      .limit(1);
+
+  if (result is! List || result.isEmpty) {
+    return dummyItemDetail;
+  }
+
+  final row = result.first as Map<String, dynamic>;
+
+  final finishTimeRaw = row['finish_time']?.toString();
+  DateTime finishTime;
+  if (finishTimeRaw != null) {
+    finishTime = DateTime.tryParse(finishTimeRaw) ?? DateTime.now();
+  } else {
+    finishTime = DateTime.now();
+  }
+
+  return ItemDetail(
+    itemId: row['id']?.toString() ?? itemId,
+    itemTitle: row['title']?.toString() ?? '',
+    itemImages: const [],
+    finishTime: finishTime,
+    sellerTitle: row['seller_name']?.toString() ?? '',
+    buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
+    biddingCount: (row['bidding_count'] as int?) ?? 0,
+    itemContent: row['description']?.toString() ?? '',
+    currentPrice: (row['current_price'] as int?) ?? 0,
+    bidPrice: (row['bid_price'] as int?) ?? 0,
+    sellerRating: (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
+    sellerReviewCount: (row['seller_review_count'] as int?) ?? 0,
+  );
 }
 
 class _ItemImageSection extends StatelessWidget {
