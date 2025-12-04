@@ -9,10 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
-import 'package:bidbird/features/item_registration/data/item_registration_data.dart';
-import 'package:bidbird/features/item_registration/viewmodel/item_registration_viewmodel.dart';
-import 'package:bidbird/features/item_registration/ui/item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/registration/data/item_registration_data.dart';
+import 'package:bidbird/features/item/registration/viewmodel/item_registration_viewmodel.dart';
+import 'package:bidbird/features/item/add/item_add_screen/item_add_screen.dart';
 
 import '../item_data/item_add_data.dart';
 
@@ -459,23 +460,10 @@ class ItemAddViewModel extends ChangeNotifier {
           yesLogic: () async {
             navigator.pop();
             if (!context.mounted) return;
-            await navigator.pushReplacement(
-              PageRouteBuilder(
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-                pageBuilder:
-                    (context, animation, secondaryAnimation) {
-                  final vm = ItemRegistrationViewModel();
-                  vm.items = <ItemRegistrationData>[registrationItem];
-                  return ChangeNotifierProvider<
-                      ItemRegistrationViewModel>.value(
-                    value: vm,
-                    child:
-                        ItemRegistrationDetailScreen(item: registrationItem),
-                  );
-                },
-              ),
-            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted) return;
+              context.push('/add_item/detail', extra: registrationItem);
+            });
           },
         ),
       );
