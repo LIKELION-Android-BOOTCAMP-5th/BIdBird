@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/current_trade_viewmodel.dart';
 import '../widgets/history_card.dart';
-import '../../../core/utils/ui_set/border_radius.dart';
-import '../../../core/utils/ui_set/icons.dart';
+import '../../../../core/utils/ui_set/border_radius.dart';
+import '../../../../core/utils/ui_set/icons.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
   const CurrentTradeScreen({super.key});
