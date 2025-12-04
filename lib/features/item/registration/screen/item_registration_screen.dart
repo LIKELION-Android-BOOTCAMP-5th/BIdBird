@@ -3,14 +3,15 @@ import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
-import 'item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/registration_detail/viewmodel/item_registration_viewmodel.dart';
+import 'package:bidbird/features/item/registration_detail/screen/item_registration_detail_screen.dart';
 
 class ItemRegistrationScreen extends StatelessWidget {
   const ItemRegistrationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ItemRegistrationViewModel>();
+    final vm = context.watch<ItemRegistrationListViewModel>();
 
     return Scaffold(
       appBar: AppBar(
@@ -36,8 +37,8 @@ class ItemRegistrationScreen extends StatelessWidget {
                             pageBuilder:
                                 (context, animation, secondaryAnimation) {
                               return ChangeNotifierProvider<
-                                  ItemRegistrationViewModel>.value(
-                                value: vm,
+                                  ItemRegistrationDetailViewModel>(
+                                create: (_) => ItemRegistrationDetailViewModel(),
                                 child:
                                     ItemRegistrationDetailScreen(item: item),
                               );

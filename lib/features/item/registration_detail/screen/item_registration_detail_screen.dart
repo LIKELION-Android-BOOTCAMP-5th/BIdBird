@@ -25,7 +25,7 @@ class _ItemRegistrationDetailScreenState
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ItemRegistrationViewModel>();
+    final vm = context.watch<ItemRegistrationDetailViewModel>();
 
     return Scaffold(
       appBar: AppBar(
@@ -187,7 +187,7 @@ class _ItemRegistrationDetailScreenState
 
   Future<void> _handleRegistration(
     BuildContext context,
-    ItemRegistrationViewModel vm,
+    ItemRegistrationDetailViewModel vm,
   ) async {
     debugPrint('[ItemRegistrationDetail] _handleRegistration start');
     if (_isLoading) return;

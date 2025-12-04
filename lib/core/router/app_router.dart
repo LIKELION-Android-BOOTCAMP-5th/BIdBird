@@ -12,10 +12,11 @@ import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
-import 'package:bidbird/features/item/registration/screen/item_registration_detail_screen.dart';
 import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
 import 'package:bidbird/features/item/registration/screen/item_registration_screen.dart';
 import 'package:bidbird/features/item/registration/viewmodel/item_registration_viewmodel.dart';
+import 'package:bidbird/features/item/registration_detail/screen/item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/registration_detail/viewmodel/item_registration_viewmodel.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_trade_history_screen.dart';
 import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
@@ -244,8 +245,9 @@ GoRouter createAppRouter(BuildContext context) {
             path: '/check',
             pageBuilder: (context, state) {
               return NoTransitionPage(
-                child: ChangeNotifierProvider<ItemRegistrationViewModel>(
-                  create: (_) => ItemRegistrationViewModel()..init(),
+                child:
+                    ChangeNotifierProvider<ItemRegistrationListViewModel>(
+                  create: (_) => ItemRegistrationListViewModel()..init(),
                   child: const ItemRegistrationScreen(),
                 ),
               );
@@ -255,11 +257,10 @@ GoRouter createAppRouter(BuildContext context) {
             path: '/detail',
             pageBuilder: (context, state) {
               final item = state.extra as ItemRegistrationData;
-              final vm = ItemRegistrationViewModel();
-              vm.items = <ItemRegistrationData>[item];
               return NoTransitionPage(
-                child: ChangeNotifierProvider<ItemRegistrationViewModel>.value(
-                  value: vm,
+                child: ChangeNotifierProvider<
+                    ItemRegistrationDetailViewModel>(
+                  create: (_) => ItemRegistrationDetailViewModel(),
                   child: ItemRegistrationDetailScreen(item: item),
                 ),
               );
