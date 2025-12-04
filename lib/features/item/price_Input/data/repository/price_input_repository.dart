@@ -1,6 +1,6 @@
 import 'package:bidbird/core/supabase_manager.dart';
 
-import '../price_Input_data/price_input_data.dart';
+import '../datasource/price_input_data.dart';
 
 class PriceInputRepository {
   Future<void> placeBid(BidRequest request) async {

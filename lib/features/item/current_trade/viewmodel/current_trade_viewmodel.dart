@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../data/current_trade_data.dart';
-import '../repository/current_trade_repository.dart';
+import '../data/datasource/current_trade_data.dart';
+import '../data/repository/current_trade_repository.dart';
 
 class CurrentTradeViewModel extends ChangeNotifier {
   final CurrentTradeRepository _repository;

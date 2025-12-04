@@ -10,9 +10,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:bidbird/features/item/registration/data/item_registration_data.dart';
+import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
 
-import '../item_data/item_add_data.dart';
+import '../data/datasource/item_add_data.dart';
 
 class ItemAddViewModel extends ChangeNotifier {
   ItemAddViewModel();

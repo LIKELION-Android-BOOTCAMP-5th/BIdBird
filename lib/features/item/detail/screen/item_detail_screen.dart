@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/features/item/detail/data/item_detail_data.dart';
+import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
 import 'package:bidbird/features/item/price_Input/price_Input_screen/price_input_screen.dart';
 import 'package:bidbird/features/item/price_Input/price_Input_viewmodel/price_input_viewmodel.dart';
 import 'package:bidbird/core/supabase_manager.dart';
@@ -711,7 +711,9 @@ class _BottomActionBarState extends State<_BottomActionBar> {
       setState(() {
         _isFavorite = rows.isNotEmpty;
       });
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Failed to load favorite state for itemId=${widget.item.itemId}: $e');
+    }
   }
 
   Future<void> _checkTopBidder() async {
