@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +18,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
         title: const Text('거래내역'),
         centerTitle: true,
       ),
-      backgroundColor: const Color(0xffF5F6FA),
+      backgroundColor: itemUserProfileBackgroundColor,
       body: SafeArea(
         child: ListView.separated(
           padding: const EdgeInsets.all(16),
@@ -28,7 +29,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: itemUserProfileCardBackgroundColor,
                 borderRadius: defaultBorder,
               ),
               child: Row(
@@ -37,7 +38,8 @@ class UserTradeHistoryScreen extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: const Color(0xffF2F3F7),
+                      color:
+                          itemUserProfileHistoryThumbnailBackgroundColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -58,7 +60,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
                           '${trade.price}  ·  ${trade.date}',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: itemUserProfileHistoryDateTextColor,
                           ),
                         ),
                       ],

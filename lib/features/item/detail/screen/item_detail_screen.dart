@@ -127,7 +127,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             currentUser != null && currentUser.id == item.sellerId;
 
         return Scaffold(
-          backgroundColor: const Color(0xffF5F6FA),
+          backgroundColor: itemDetailBackgroundColor,
           appBar: AppBar(title: const Text('상세 보기')),
           body: Column(
             children: [
@@ -268,9 +268,6 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     }
   }
 
-  // These variables were declared but not used
-  // final nextValidBid = currentPrice + minBidStep;
-  // final originalBidPrice = (row['bid_price'] as int?) ?? 0;
 
   return ItemDetail(
     itemId: row['id']?.toString() ?? itemId,
@@ -329,7 +326,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
               itemBuilder: (context, index) {
                 return Container(
                   width: double.infinity,
-                  color: Colors.grey[200],
+                  color: itemDetailImageBackgroundColor,
                   child: Image.network(
                     images[index],
                     width: double.infinity,
@@ -350,9 +347,12 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
           else
             Container(
               width: double.infinity,
-              color: Colors.grey[200],
+              color: itemDetailImageBackgroundColor,
               child: const Center(
-                child: Text('상품 사진', style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  '상품 사진',
+                  style: TextStyle(color: itemDetailSecondaryTextColor),
+                ),
               ),
             ),
           Positioned(
@@ -361,7 +361,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.red,
+                color: itemDetailAccentRedColor,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -399,7 +399,8 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
       margin: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isActive ? Colors.black : Colors.grey[400],
+        color:
+            isActive ? itemDetailDotActiveColor : itemDetailDotInactiveColor,
       ),
     );
   }
@@ -415,7 +416,7 @@ class _ItemMainInfoSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: itemDetailBackgroundColor,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(defaultRadius),
           topRight: Radius.circular(defaultRadius),
@@ -448,7 +449,9 @@ class _ItemMainInfoSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: item.buyNowPrice > 0 ? blueColor : Colors.grey,
+                        color: item.buyNowPrice > 0
+                            ? itemDetailBuyNowPriceColor
+                            : itemDetailSecondaryTextColor,
                       ),
                     ),
                   ],
@@ -468,7 +471,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                   '신고',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: itemDetailReportTextColor,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -479,11 +482,11 @@ class _ItemMainInfoSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: itemDetailBackgroundColor,
               borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
+                  color: itemDetailShadowColor,
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -497,7 +500,10 @@ class _ItemMainInfoSection extends StatelessWidget {
                     children: [
                       const Text(
                         '현재 입찰가',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: itemDetailSecondaryTextColor,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -516,7 +522,10 @@ class _ItemMainInfoSection extends StatelessWidget {
                     children: [
                       const Text(
                         '참여 입찰',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: itemDetailSecondaryTextColor,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -536,11 +545,11 @@ class _ItemMainInfoSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: itemDetailBackgroundColor,
               borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
+                  color: itemDetailShadowColor,
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),
@@ -550,8 +559,8 @@ class _ItemMainInfoSection extends StatelessWidget {
               children: [
                 const CircleAvatar(
                   radius: 20,
-                  backgroundColor: Colors.orange,
-                  child: Icon(Icons.person, color: Colors.white),
+                  backgroundColor: itemDetailSellerAvatarBackgroundColor,
+                  child: Icon(Icons.person, color: itemDetailSellerAvatarIconColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -568,13 +577,17 @@ class _ItemMainInfoSection extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 14, color: Colors.amber),
+                          const Icon(
+                            Icons.star,
+                            size: 14,
+                            color: itemDetailSellerRatingStarColor,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${item.sellerRating.toStringAsFixed(1)} (${item.sellerReviewCount})',
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.grey,
+                              color: itemDetailSecondaryTextColor,
                             ),
                           ),
                         ],
@@ -588,11 +601,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                     context.push('/user/${item.sellerId}');
                   },
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    side: BorderSide(color: Colors.grey[300]!),
+                    side: BorderSide(color: itemDetailSellerProfileBorderColor),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -604,7 +613,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                      color: itemDetailSellerProfileTextColor,
                     ),
                   ),
                 ),
@@ -626,7 +635,7 @@ class _ItemDescriptionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      color: const Color(0xffF5F6FA),
+      color: itemDetailBackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -753,7 +762,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: const Color(0xffF5F6FA),
+        color: itemDetailBackgroundColor,
         child: Row(
           children: [
             Expanded(
@@ -770,7 +779,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                         icon: Icon(
                           _isFavorite ? Icons.favorite : Icons.favorite_border,
                           size: 24,
-                          color: Colors.red,
+                          color: itemDetailAccentRedColor,
                         ),
                       ),
                     ),
@@ -782,10 +791,10 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                         child: _isTopBidder
                             ? Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
+                                  color: itemDetailTopBidderBackgroundColor,
                                   borderRadius: BorderRadius.circular(8.7),
                                   border: Border.all(
-                                    color: Colors.grey.shade400,
+                                    color: itemDetailTopBidderBorderColor,
                                   ),
                                 ),
                                 child: Center(
@@ -794,7 +803,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.grey.shade600,
+                                      color: itemDetailTopBidderTextColor,
                                     ),
                                   ),
                                 ),
