@@ -7,13 +7,10 @@ import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:bidbird/features/item/registration/data/item_registration_data.dart';
-import 'package:bidbird/features/item/registration/viewmodel/item_registration_viewmodel.dart';
-import 'package:bidbird/features/item/add/item_add_screen/item_add_screen.dart';
 
 import '../item_data/item_add_data.dart';
 

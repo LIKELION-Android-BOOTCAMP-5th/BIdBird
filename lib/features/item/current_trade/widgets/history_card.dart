@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bidbird/features/current_trade/viewmodel/current_trade_viewmodel.dart';
+import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import '../../../../core/utils/ui_set/border_radius.dart';
 
 class HistoryCard extends StatelessWidget {
