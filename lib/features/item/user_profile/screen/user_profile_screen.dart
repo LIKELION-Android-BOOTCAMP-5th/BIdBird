@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item/user_profile/viewmodel/user_profile_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -22,7 +23,7 @@ class UserProfileScreen extends StatelessWidget {
             title: const Text('프로필'),
             centerTitle: true,
           ),
-          backgroundColor: const Color(0xffF5F6FA),
+          backgroundColor: itemUserProfileBackgroundColor,
           body: SafeArea(
             child: profile == null
                 ? const Center(child: CircularProgressIndicator())
@@ -36,11 +37,11 @@ class UserProfileScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 24),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: itemUserProfileCardBackgroundColor,
                             borderRadius: defaultBorder,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
+                                color: itemUserProfileCardShadowColor,
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -51,7 +52,8 @@ class UserProfileScreen extends StatelessWidget {
                             children: [
                               CircleAvatar(
                                 radius: 32,
-                                backgroundColor: const Color(0xffFFE1D6),
+                                backgroundColor:
+                                    itemUserProfileAvatarBackgroundColor,
                                 child: Text(
                                   profile.nickname.isNotEmpty
                                       ? profile.nickname[0]
@@ -89,8 +91,8 @@ class UserProfileScreen extends StatelessWidget {
                                       Icons.star,
                                       size: 16,
                                       color: filled
-                                          ? const Color(0xffF2C94C)
-                                          : const Color(0xffE0E0E0),
+                                          ? itemUserProfileStarFilledColor
+                                          : itemUserProfileStarEmptyColor,
                                     );
                                   }),
                                   const SizedBox(width: 4),
@@ -105,7 +107,7 @@ class UserProfileScreen extends StatelessWidget {
                                     '  (${profile.reviewCount})',
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey,
+                                      color: itemUserProfileSecondaryTextColor,
                                     ),
                                   ),
                                 ],
@@ -124,11 +126,11 @@ class UserProfileScreen extends StatelessWidget {
                               vertical: 14,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: itemUserProfileCardBackgroundColor,
                               borderRadius: defaultBorder,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.02),
+                                  color: itemUserProfileCardShadowColor,
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -148,7 +150,7 @@ class UserProfileScreen extends StatelessWidget {
                                 Icon(
                                   Icons.chevron_right,
                                   size: 20,
-                                  color: Colors.grey,
+                                  color: itemUserProfileChevronIconColor,
                                 ),
                               ],
                             ),

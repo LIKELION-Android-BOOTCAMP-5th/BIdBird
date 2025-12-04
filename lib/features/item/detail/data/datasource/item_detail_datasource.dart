@@ -35,7 +35,7 @@ class ItemDetailDatasource {
     final int biddingCount = await _fetchBiddingCount(itemId, row);
 
     final currentPrice = (row['current_price'] as int?) ?? 0;
-    final minBidStep = _calculateBidStep(currentPrice);
+    final minBidStep = ItemDetailPriceHelper.calculateBidStep(currentPrice);
 
     return ItemDetail(
       itemId: row['id']?.toString() ?? itemId,
@@ -121,18 +121,6 @@ class ItemDetailDatasource {
     }
   }
 
-  int _calculateBidStep(int currentPrice) {
-    if (currentPrice <= 100000) {
-      return 1000;
-    } else {
-      final priceStr = currentPrice.toString();
-      if (priceStr.length >= 3) {
-        return int.parse(priceStr.substring(0, priceStr.length - 2));
-      } else {
-        return 1000;
-      }
-    }
-  }
 
   Future<bool> checkIsFavorite(String itemId) async {
     final user = _supabase.auth.currentUser;
@@ -212,12 +200,12 @@ class ItemDetailDatasource {
           .maybeSingle();
 
       if (userRow is Map<String, dynamic>) {
-        final ratingData = await _fetchSellerRating(sellerId);
+        final ratingSummary = await _fetchSellerRating(sellerId);
 
         return {
           ...userRow,
-          'rating': ratingData['rating'] ?? 0.0,
-          'review_count': ratingData['review_count'] ?? 0,
+          'rating': ratingSummary.rating,
+          'review_count': ratingSummary.reviewCount,
         };
       }
       return null;
@@ -227,7 +215,7 @@ class ItemDetailDatasource {
     }
   }
 
-  Future<Map<String, dynamic>> _fetchSellerRating(String sellerId) async {
+  Future<SellerRatingSummary> _fetchSellerRating(String sellerId) async {
     try {
       final completedTrades = await _supabase
           .from('bid_status')
@@ -236,24 +224,10 @@ class ItemDetailDatasource {
           .eq('text_code', 'COMPLETED')
           .not('rating', 'is', null);
 
-      if (completedTrades.isEmpty) {
-        return {'rating': 0.0, 'review_count': 0};
-      }
-
-      double totalRating = 0;
-      int reviewCount = completedTrades.length;
-
-      for (final trade in completedTrades) {
-        final rating = (trade['rating'] as num?)?.toDouble() ?? 0.0;
-        totalRating += rating;
-      }
-
-      final averageRating = reviewCount > 0 ? totalRating / reviewCount : 0.0;
-
-      return {'rating': averageRating, 'review_count': reviewCount};
+      return SellerRatingSummary.fromCompletedTrades(completedTrades);
     } catch (e) {
       debugPrint('[ItemDetailDatasource] fetch seller rating error: $e');
-      return {'rating': 0.0, 'review_count': 0};
+      return SellerRatingSummary(rating: 0.0, reviewCount: 0);
     }
   }
 
@@ -282,7 +256,8 @@ class ItemDetailDatasource {
         }
 
         bidHistory.add({
-          'price': _formatPrice(bidRow['bid_price'] as int? ?? 0),
+          'price': ItemDetailPriceHelper
+              .formatPrice(bidRow['bid_price'] as int? ?? 0),
           'user_name': userInfo?['nickname'] ?? userInfo?['name'] ?? '알 수 없음',
           'user_id': userId,
           'created_at': bidRow['created_at']?.toString() ?? '',
@@ -312,16 +287,4 @@ class ItemDetailDatasource {
     }
   }
 
-  String _formatPrice(int price) {
-    final buffer = StringBuffer();
-    final text = price.toString();
-    for (int i = 0; i < text.length; i++) {
-      final reverseIndex = text.length - i;
-      buffer.write(text[i]);
-      if (reverseIndex > 1 && reverseIndex % 3 == 1) {
-        buffer.write(',');
-      }
-    }
-    return buffer.toString();
-  }
 }

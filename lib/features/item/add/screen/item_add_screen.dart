@@ -14,17 +14,17 @@ class ItemAddScreen extends StatelessWidget {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(
-        color: Color(0xffC4C4C4),
+        color: itemAddInputHintColor,
         fontSize: 13,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: const BorderSide(color: Color(0xffE5E5E5)),
+        borderSide: const BorderSide(color: itemAddInputBorderColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: const BorderSide(color: Color(0xffE5E5E5)),
+        borderSide: const BorderSide(color: itemAddInputBorderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(defaultRadius),
@@ -103,9 +103,9 @@ class ItemAddScreen extends StatelessWidget {
                 height: 160,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xffF8F8FA),
+                  color: itemAddImageAreaBackgroundColor,
                   borderRadius: defaultBorder,
-                  border: Border.all(color: const Color(0xffE5E5E5)),
+                  border: Border.all(color: itemAddInputBorderColor),
                 ),
                 child: Stack(
                   children: [
@@ -124,7 +124,7 @@ class ItemAddScreen extends StatelessWidget {
                               '이미지를 업로드하세요',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xffB0B3BC),
+                                color: itemAddImageSecondaryTextColor,
                               ),
                             ),
                           ],
@@ -260,7 +260,8 @@ class ItemAddScreen extends StatelessWidget {
               _buildLabel('제목'),
               TextField(
                 controller: viewModel.titleController,
-                decoration: _inputDecoration('상품 제목을 입력하세요'),
+                decoration: _inputDecoration('상품 제목을 입력하세요')
+                  .copyWith(fillColor: Colors.white),
               ),
               const SizedBox(height: 20),
               _buildLabel('카테고리'),
@@ -272,7 +273,7 @@ class ItemAddScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(defaultRadius),
-                        border: Border.all(color: const Color(0xffE5E5E5)),
+                        border: Border.all(color: itemAddInputBorderColor),
                       ),
                       child: const SizedBox(
                         height: 20,
@@ -382,7 +383,7 @@ class ItemAddScreen extends StatelessWidget {
                               _inputDecoration('즉시 입찰가 입력').copyWith(
                             fillColor: viewModel.useInstantPrice
                                 ? Colors.white
-                                : const Color(0xffF2F3F7),
+                                : itemAddDisabledFieldColor,
                           ),
                           onChanged: (value) {
                             final formatted = viewModel.formatNumber(value);
@@ -467,7 +468,7 @@ class ItemAddScreen extends StatelessWidget {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: blueColor,
-                disabledBackgroundColor: const Color(0xffD0D4DC),
+                disabledBackgroundColor: itemAddPrimaryDisabledColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(defaultRadius),
                 ),

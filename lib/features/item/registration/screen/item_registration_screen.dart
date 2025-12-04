@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
 import 'item_registration_detail_screen.dart';
@@ -46,11 +47,11 @@ class ItemRegistrationScreen extends StatelessWidget {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: itemRegistrationCardBackgroundColor,
                           borderRadius: BorderRadius.circular(defaultRadius),
                           boxShadow: const [
                             BoxShadow(
-                              color: Color(0x14000000),
+                              color: itemRegistrationCardShadowColor,
                               blurRadius: 8,
                               offset: Offset(0, 4),
                             ),
@@ -64,7 +65,7 @@ class ItemRegistrationScreen extends StatelessWidget {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: const Color(0xffF2F3F7),
+                                color: itemRegistrationThumbnailBackgroundColor,
                                 borderRadius: BorderRadius.circular(defaultRadius),
                               ),
                               clipBehavior: Clip.antiAlias,
@@ -83,7 +84,8 @@ class ItemRegistrationScreen extends StatelessWidget {
                                     )
                                   : const DecoratedBox(
                                       decoration: BoxDecoration(
-                                        color: Color(0xffD1D4DD),
+                                        color:
+                                            itemRegistrationThumbnailPlaceholderColor,
                                       ),
                                     ),
                             ),
@@ -106,7 +108,7 @@ class ItemRegistrationScreen extends StatelessWidget {
                                     '시작가 ${_formatPrice(item.startPrice)}원',
                                     style: const TextStyle(
                                       fontSize: 13,
-                                      color: Colors.black87,
+                                      color: itemRegistrationPriceTextColor,
                                     ),
                                   ),
                                   if (item.instantPrice > 0)
@@ -114,7 +116,7 @@ class ItemRegistrationScreen extends StatelessWidget {
                                       '즉시 ${_formatPrice(item.instantPrice)}원',
                                       style: const TextStyle(
                                         fontSize: 13,
-                                        color: Colors.black87,
+                                        color: itemRegistrationPriceTextColor,
                                       ),
                                     ),
                                 ],
