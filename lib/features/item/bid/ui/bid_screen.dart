@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/utils/ui_set/icons.dart';
+import '../../../../core/utils/ui_set/icons.dart';
 
 class BidScreen extends StatelessWidget {
   const BidScreen({super.key});
