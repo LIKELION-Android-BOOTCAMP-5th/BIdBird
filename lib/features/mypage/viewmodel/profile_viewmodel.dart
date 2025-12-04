@@ -4,13 +4,13 @@ import '../data/profile_repository.dart';
 
 class Profile {
   final String id;
-  final String? name;
+  final String? nickName;
   final String? phoneNumber;
   final String? profileImageUrl;
 
   Profile({
     required this.id,
-    this.name,
+    this.nickName,
     this.phoneNumber,
     this.profileImageUrl,
   });
@@ -18,7 +18,7 @@ class Profile {
   factory Profile.fromMap(Map<String, dynamic> map) {
     return Profile(
       id: map['id'] as String,
-      name: map['name'] as String?,
+      nickName: map['nick_name'] as String?,
       phoneNumber: map['phone_number'] as String?,
       profileImageUrl: map['profile_image'] as String?,
     );

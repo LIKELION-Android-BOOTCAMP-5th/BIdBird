@@ -70,7 +70,7 @@ class _Profile extends StatelessWidget {
     }
 
     final profile = viewModel.profile;
-    final name = profile?.name ?? '이름을 등록하세요';
+    final nickName = profile?.nickName ?? '닉네임을 등록하세요';
     final phoneNumber = profile?.phoneNumber ?? '전화번호를 등록하세요';
 
     return Container(
@@ -100,7 +100,7 @@ class _Profile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                name, //style추가//TextStyle
+                nickName, //style추가//TextStyle
               ),
               const SizedBox(height: 4),
               Text(
