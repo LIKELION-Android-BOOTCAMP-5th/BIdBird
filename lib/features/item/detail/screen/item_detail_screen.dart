@@ -127,7 +127,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             currentUser != null && currentUser.id == item.sellerId;
 
         return Scaffold(
-          backgroundColor: itemDetailBackgroundColor,
+          backgroundColor: BackgroundColor,
           appBar: AppBar(title: const Text('상세 보기')),
           body: Column(
             children: [
@@ -326,7 +326,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
               itemBuilder: (context, index) {
                 return Container(
                   width: double.infinity,
-                  color: itemDetailImageBackgroundColor,
+                  color: ImageBackgroundColor,
                   child: Image.network(
                     images[index],
                     width: double.infinity,
@@ -347,11 +347,11 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
           else
             Container(
               width: double.infinity,
-              color: itemDetailImageBackgroundColor,
+              color: ImageBackgroundColor,
               child: const Center(
                 child: Text(
                   '상품 사진',
-                  style: TextStyle(color: itemDetailSecondaryTextColor),
+                  style: TextStyle(color: iconColor),
                 ),
               ),
             ),
@@ -361,7 +361,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: itemDetailAccentRedColor,
+                color: RedColor,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -400,7 +400,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color:
-            isActive ? itemDetailDotActiveColor : itemDetailDotInactiveColor,
+            isActive ? textColor : textColor,
       ),
     );
   }
@@ -416,7 +416,7 @@ class _ItemMainInfoSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: const BoxDecoration(
-        color: itemDetailBackgroundColor,
+        color: BackgroundColor,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(defaultRadius),
           topRight: Radius.circular(defaultRadius),
@@ -450,8 +450,8 @@ class _ItemMainInfoSection extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: item.buyNowPrice > 0
-                            ? itemDetailBuyNowPriceColor
-                            : itemDetailSecondaryTextColor,
+                            ? blueColor
+                            : iconColor,
                       ),
                     ),
                   ],
@@ -471,7 +471,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                   '신고',
                   style: TextStyle(
                     fontSize: 12,
-                    color: itemDetailReportTextColor,
+                    color: iconColor,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -482,11 +482,11 @@ class _ItemMainInfoSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: itemDetailBackgroundColor,
+              color: BackgroundColor,
               borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: [
                 BoxShadow(
-                  color: itemDetailShadowColor,
+                  color: shadowHigh,
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -502,7 +502,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                         '현재 입찰가',
                         style: TextStyle(
                           fontSize: 12,
-                          color: itemDetailSecondaryTextColor,
+                          color: iconColor,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -524,7 +524,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                         '참여 입찰',
                         style: TextStyle(
                           fontSize: 12,
-                          color: itemDetailSecondaryTextColor,
+                          color: iconColor,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -545,11 +545,11 @@ class _ItemMainInfoSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: itemDetailBackgroundColor,
+              color: BackgroundColor,
               borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: [
                 BoxShadow(
-                  color: itemDetailShadowColor,
+                  color: shadowHigh,
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),
@@ -559,8 +559,8 @@ class _ItemMainInfoSection extends StatelessWidget {
               children: [
                 const CircleAvatar(
                   radius: 20,
-                  backgroundColor: itemDetailSellerAvatarBackgroundColor,
-                  child: Icon(Icons.person, color: itemDetailSellerAvatarIconColor),
+                  backgroundColor: yellowColor,
+                  child: Icon(Icons.person, color: BackgroundColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -580,14 +580,14 @@ class _ItemMainInfoSection extends StatelessWidget {
                           const Icon(
                             Icons.star,
                             size: 14,
-                            color: itemDetailSellerRatingStarColor,
+                            color: yellowColor,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${item.sellerRating.toStringAsFixed(1)} (${item.sellerReviewCount})',
                             style: const TextStyle(
                               fontSize: 12,
-                              color: itemDetailSecondaryTextColor,
+                              color: iconColor,
                             ),
                           ),
                         ],
@@ -601,7 +601,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                     context.push('/user/${item.sellerId}');
                   },
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: itemDetailSellerProfileBorderColor),
+                    side: BorderSide(color: ImageBackgroundColor),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -613,7 +613,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: itemDetailSellerProfileTextColor,
+                      color: textColor,
                     ),
                   ),
                 ),
@@ -635,7 +635,7 @@ class _ItemDescriptionSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      color: itemDetailBackgroundColor,
+      color: BackgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -762,7 +762,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        color: itemDetailBackgroundColor,
+        color: BackgroundColor,
         child: Row(
           children: [
             Expanded(
@@ -779,7 +779,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                         icon: Icon(
                           _isFavorite ? Icons.favorite : Icons.favorite_border,
                           size: 24,
-                          color: itemDetailAccentRedColor,
+                          color: RedColor,
                         ),
                       ),
                     ),
@@ -791,10 +791,10 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                         child: _isTopBidder
                             ? Container(
                                 decoration: BoxDecoration(
-                                  color: itemDetailTopBidderBackgroundColor,
+                                  color: BackgroundColor,
                                   borderRadius: BorderRadius.circular(8.7),
                                   border: Border.all(
-                                    color: itemDetailTopBidderBorderColor,
+                                    color: BorderColor,
                                   ),
                                 ),
                                 child: Center(
@@ -803,7 +803,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: itemDetailTopBidderTextColor,
+                                      color: TopBidderTextColor,
                                     ),
                                   ),
                                 ),
