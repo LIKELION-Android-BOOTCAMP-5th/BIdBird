@@ -4,9 +4,11 @@
 //
 
 //이것은 복붙용입니다. 혹시 몰라서 아직은 삭제하지 않으나 곧 삭제할 예정입니다.
+import 'package:bidbird/features/notification/data/repositories/notification_repository.dart';
 import 'package:flutter/material.dart';
 
 class EmptyViewModel extends ChangeNotifier {
+  NotificationRepository _repository = NotificationRepository()
   // int inputCount = 0;
 
   // final TextEditingController textEditingController = TextEditingController();
