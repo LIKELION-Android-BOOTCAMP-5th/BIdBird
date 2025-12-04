@@ -1,5 +1,3 @@
-import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
-
 import '../datasource/item_registration_data.dart';
 
 class ItemRegistrationRepository {
@@ -8,7 +6,7 @@ class ItemRegistrationRepository {
 
   final ItemRegistrationDatasource _datasource;
 
-  Future<List<ItemRegistrationData>> fetchMyPendingItems() {
-    return _datasource.fetchMyPendingItems();
+  Future<void> registerItem(String itemId, DateTime auctionStartAt) {
+    return _datasource.registerItem(itemId, auctionStartAt);
   }
 }
