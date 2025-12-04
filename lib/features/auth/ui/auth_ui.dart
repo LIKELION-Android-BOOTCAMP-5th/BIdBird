@@ -53,7 +53,6 @@ class LoginScreen extends StatelessWidget {
                         } catch (e) {
                           return;
                         }
-                        context.go('/home');
                       },
                       child: Text(
                         'Google 계정으로 계속하기',

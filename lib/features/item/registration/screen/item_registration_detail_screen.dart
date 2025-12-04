@@ -4,10 +4,11 @@ import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popu
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'package:bidbird/features/item_add/item_add_screen/item_add_screen.dart';
-import 'package:bidbird/features/item_add/item_add_viewmoel/item_add_viewmoel.dart';
+import 'package:bidbird/features/item/add/item_add_screen/item_add_screen.dart';
+import 'package:bidbird/features/item/add/item_add_viewmoel/item_add_viewmoel.dart';
 
 import '../data/item_registration_data.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
@@ -131,6 +132,7 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
               onPressed: vm.isRegistering
                   ? null
                   : () async {
+                      debugPrint('[ItemRegistrationDetail] onPressed 등록하기');
                       await showDialog(
                         context: context,
                         builder: (dialogContext) => ConfirmCheckCancelPopup(
@@ -148,6 +150,8 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
                               '10. 본 약관은 등록 시점 기준으로 적용되며, 운영 정책에 따라 변경될 수 있습니다.',
                           checkLabel: '동의합니다',
                           onConfirm: (checked) {
+                            debugPrint(
+                                '[ItemRegistrationDetail] onConfirm 호출, checked=$checked');
                             if (!checked) return;
                             Navigator.of(dialogContext).pop();
                             _handleRegistration(context, vm);
@@ -182,6 +186,7 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
 
   Future<void> _handleRegistration(
       BuildContext context, ItemRegistrationViewModel vm) async {
+    debugPrint('[ItemRegistrationDetail] _handleRegistration start');
     if (_isLoading) return;
     
     setState(() {
@@ -196,22 +201,24 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
         auctionStartAt,
       );
 
-      if (!mounted) return;
+      debugPrint('[ItemRegistrationDetail] registerItem success=$success');
 
       if (success) {
-        final String timeText =
-            '${auctionStartAt.hour.toString().padLeft(2, '0')}시 ${auctionStartAt.minute.toString().padLeft(2, '0')}분';
-            
-        await showDialog(
-          context: context,
-          builder: (_) => AskPopup(
-            content: '매물이 $timeText에 등록되었습니다.',
-            yesText: '확인',
-            yesLogic: () async {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(true);
-            },
-          ),
+        debugPrint('[ItemRegistrationDetail] pop detail & list screens');
+        if (!mounted) return;
+        // 현재 Navigator를 미리 캡처해 두고, 다음 프레임에서 두 번 pop
+        final navigator = Navigator.of(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // 디테일 화면 pop
+          navigator.pop();
+          // 리스트 화면도 함께 닫아서 이전 화면으로 돌아가기
+          if (navigator.canPop()) navigator.pop();
+        });
+      } else {
+        debugPrint('[ItemRegistrationDetail] registerItem failed');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('매물 등록에 실패했습니다. 다시 시도해 주세요.')),
         );
       }
     } catch (e) {
@@ -229,6 +236,8 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
     }
   }
 }
+
+Future<void> _noopAsync() async {}
 
 class _ConfirmImageSection extends StatefulWidget {
   const _ConfirmImageSection({
@@ -465,4 +474,3 @@ class _ConfirmDescriptionSection extends StatelessWidget {
     );
   }
 }
-

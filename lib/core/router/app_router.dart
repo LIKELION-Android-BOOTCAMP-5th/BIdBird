@@ -8,11 +8,13 @@ import 'package:bidbird/features/current_trade/screen/current_trade_screen.dart'
 import 'package:bidbird/features/current_trade/repository/current_trade_repository.dart';
 import 'package:bidbird/features/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
-import 'package:bidbird/features/item_add/item_add_screen/item_add_screen.dart';
-import 'package:bidbird/features/item_add/item_add_viewmoel/item_add_viewmoel.dart';
-import 'package:bidbird/features/item_detail/screen/item_detail_screen.dart';
-import 'package:bidbird/features/item_registration/ui/item_registration_screen.dart';
-import 'package:bidbird/features/item_registration/viewmodel/item_registration_viewmodel.dart';
+import 'package:bidbird/features/item/add/item_add_screen/item_add_screen.dart';
+import 'package:bidbird/features/item/add/item_add_viewmoel/item_add_viewmoel.dart';
+import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
+import 'package:bidbird/features/item/registration/screen/item_registration_screen.dart';
+import 'package:bidbird/features/item/registration/screen/item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/registration/viewmodel/item_registration_viewmodel.dart';
+import 'package:bidbird/features/item/registration/data/item_registration_data.dart';
 import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
 import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
@@ -244,6 +246,20 @@ GoRouter createAppRouter(BuildContext context) {
                 child: ChangeNotifierProvider<ItemRegistrationViewModel>(
                   create: (_) => ItemRegistrationViewModel()..init(),
                   child: const ItemRegistrationScreen(),
+                ),
+              );
+            },
+          ),
+          GoRoute(
+            path: '/detail',
+            pageBuilder: (context, state) {
+              final item = state.extra as ItemRegistrationData;
+              final vm = ItemRegistrationViewModel();
+              vm.items = <ItemRegistrationData>[item];
+              return NoTransitionPage(
+                child: ChangeNotifierProvider<ItemRegistrationViewModel>.value(
+                  value: vm,
+                  child: ItemRegistrationDetailScreen(item: item),
                 ),
               );
             },
