@@ -12,10 +12,15 @@ import 'package:go_router/go_router.dart';
 
 import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
 
-import '../data/datasource/item_add_data.dart';
+import '../model/item_add_entity.dart';
+import '../model/add_item_usecase.dart';
+import '../data/repository/item_add_repository_impl.dart';
 
 class ItemAddViewModel extends ChangeNotifier {
-  ItemAddViewModel();
+  ItemAddViewModel()
+      : _addItemUseCase = AddItemUseCase(ItemAddRepositoryImpl());
+
+  final AddItemUseCase _addItemUseCase;
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController startPriceController = TextEditingController();
@@ -339,7 +344,7 @@ class ItemAddViewModel extends ChangeNotifier {
         return;
       }
 
-      final ItemAddData data = ItemAddData(
+      final ItemAddEntity data = ItemAddEntity(
         title: title,
         description: description,
         startPrice: startPrice,
@@ -352,95 +357,11 @@ class ItemAddViewModel extends ChangeNotifier {
         isAgree: agreed,
       );
 
-      Map<String, dynamic> row;
-
-      if (editingItemId == null) {
-        final Map<String, dynamic> inserted = await supabase
-            .from('items')
-            .insert(data.toJson(sellerId: user.id))
-            .select(
-          'id, title, description, start_price, buy_now_price, keyword_type',
-        )
-            .single();
-        row = inserted;
-      } else {
-        final Map<String, dynamic> updateJson =
-            data.toJson(sellerId: user.id)
-              ..remove('seller_id')
-              ..remove('current_price')
-              ..remove('bidding_count')
-              ..remove('status');
-
-        final Map<String, dynamic> updated = await supabase
-            .from('items')
-            .update(updateJson)
-            .eq('id', editingItemId!)
-            .select(
-          'id, title, description, start_price, buy_now_price, keyword_type',
-        )
-            .single();
-        row = updated;
-      }
-
-      final String itemId = row['id'].toString();
-
-      if (editingItemId != null) {
-        await supabase
-            .from('item_images')
-            .delete()
-            .eq('item_id', itemId);
-      }
-
-      if (imageUrls.isNotEmpty) {
-        final List<Map<String, dynamic>> imageRows = <Map<String, dynamic>>[];
-        for (int i = 0; i < imageUrls.length && i < 10; i++) {
-          imageRows.add(<String, dynamic>{
-            'item_id': itemId,
-            'image_url': imageUrls[i],
-            'sort_order': i + 1,
-          });
-        }
-
-        if (imageRows.isNotEmpty) {
-          await supabase.from('item_images').insert(imageRows);
-        }
-      }
-
-      try {
-        if (imageUrls.isNotEmpty) {
-          int index = 0;
-          if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
-            index = primaryImageIndex;
-          }
-          await supabase.functions.invoke(
-            'create-thumbnail',
-            body: <String, dynamic>{
-              'itemId': itemId,
-              'imageUrl': imageUrls[index],
-            },
-          );
-        }
-      } catch (e) {
-        debugPrint('create-thumbnail error: $e');
-      }
-
-      int thumbnailIndex = 0;
-      if (imageUrls.isNotEmpty) {
-        if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
-          thumbnailIndex = primaryImageIndex;
-        }
-      }
-
-      final ItemRegistrationData registrationItem = ItemRegistrationData(
-        id: itemId,
-        title: row['title']?.toString() ?? title,
-        description: row['description']?.toString() ?? description,
-        startPrice: (row['start_price'] as num?)?.toInt() ?? startPrice,
-        instantPrice:
-        (row['buy_now_price'] as num?)?.toInt() ?? instantPrice,
-        thumbnailUrl:
-            imageUrls.isNotEmpty ? imageUrls[thumbnailIndex] : null,
-        keywordTypeId: (row['keyword_type'] as num?)?.toInt(),
+      final ItemRegistrationData registrationItem = await _addItemUseCase(
+        entity: data,
+        imageUrls: imageUrls,
+        primaryImageIndex: primaryImageIndex,
+        editingItemId: editingItemId,
       );
 
       if (loadingDialogOpen && navigator.canPop()) {
