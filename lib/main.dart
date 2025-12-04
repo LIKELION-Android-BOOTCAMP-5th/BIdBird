@@ -2,6 +2,7 @@ import 'package:bidbird/core/firebase_manager.dart';
 import 'package:bidbird/core/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/feed/repository/home_repository.dart';
 import 'package:bidbird/features/mypage/data/profile_repository.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 import 'package:cloudinary_flutter/cloudinary_context.dart';
@@ -57,6 +58,7 @@ void main() async {
             return ProfileViewModel(ProfileRepository());
           },
         ),
+        Provider(create: (context) => HomeRepository()),
       ],
       child: const MyApp(),
     ),
@@ -92,7 +94,12 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
 
         scaffoldBackgroundColor: Color(0xFFF5F5F5),
-        appBarTheme: AppBarTheme(backgroundColor: Color(0xFFF5F5F5)),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFFF5F5F5),
+          //아래 두 줄 스크롤 시 appBar 색 바뀌는 현상 해결
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+        ),
       ),
       routerConfig: _router,
     );
