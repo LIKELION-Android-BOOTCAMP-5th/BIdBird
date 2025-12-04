@@ -8,7 +8,7 @@ import 'package:bidbird/features/notification/data/repositories/notification_rep
 import 'package:flutter/material.dart';
 
 class EmptyViewModel extends ChangeNotifier {
-  NotificationRepository _repository = NotificationRepository()
+  NotificationRepository _repository = NotificationRepository();
   // int inputCount = 0;
 
   // final TextEditingController textEditingController = TextEditingController();
