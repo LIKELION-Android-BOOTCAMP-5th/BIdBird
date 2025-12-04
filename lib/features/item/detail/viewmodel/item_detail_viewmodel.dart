@@ -1,8 +1,8 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../data/datasource/item_detail_datasource.dart';
 import '../data/repository/item_detail_repository.dart';
 
 class ItemDetailViewModel extends ChangeNotifier {

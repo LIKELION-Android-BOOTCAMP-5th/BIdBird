@@ -1,5 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/features/item/user_profile/data/datasource/user_profile_data.dart';
+import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 import 'package:flutter/material.dart';
 
 class UserTradeHistoryScreen extends StatelessWidget {
