@@ -14,17 +14,17 @@ class ItemAddScreen extends StatelessWidget {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(
-        color: itemAddInputHintColor,
+        color: iconColor,
         fontSize: 13,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: const BorderSide(color: itemAddInputBorderColor),
+        borderSide: const BorderSide(color: BackgroundColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: const BorderSide(color: itemAddInputBorderColor),
+        borderSide: const BorderSide(color: BackgroundColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(defaultRadius),
@@ -43,7 +43,7 @@ class ItemAddScreen extends StatelessWidget {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: Colors.black,
+          color: textColor,
         ),
       ),
     );
@@ -103,9 +103,9 @@ class ItemAddScreen extends StatelessWidget {
                 height: 160,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: itemAddImageAreaBackgroundColor,
+                  color: BackgroundColor,
                   borderRadius: defaultBorder,
-                  border: Border.all(color: itemAddInputBorderColor),
+                  border: Border.all(color: BackgroundColor),
                 ),
                 child: Stack(
                   children: [
@@ -124,7 +124,7 @@ class ItemAddScreen extends StatelessWidget {
                               '이미지를 업로드하세요',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: itemAddImageSecondaryTextColor,
+                                color: iconColor,
                               ),
                             ),
                           ],
@@ -273,7 +273,7 @@ class ItemAddScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(defaultRadius),
-                        border: Border.all(color: itemAddInputBorderColor),
+                        border: Border.all(color: BackgroundColor),
                       ),
                       child: const SizedBox(
                         height: 20,
@@ -350,7 +350,7 @@ class ItemAddScreen extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black,
+                                    color: textColor,
                                   ),
                                 ),
                               ),
@@ -364,7 +364,7 @@ class ItemAddScreen extends StatelessWidget {
                                       : Colors.black,
                                 ),
                                 visualDensity:
-                                    VisualDensity(horizontal: -4, vertical: -4),
+                                    const VisualDensity(horizontal: -4, vertical: -4),
                                 materialTapTargetSize:
                                     MaterialTapTargetSize.shrinkWrap,
                                 onChanged: (value) {
@@ -382,8 +382,8 @@ class ItemAddScreen extends StatelessWidget {
                           decoration:
                               _inputDecoration('즉시 입찰가 입력').copyWith(
                             fillColor: viewModel.useInstantPrice
-                                ? Colors.white
-                                : itemAddDisabledFieldColor,
+                                ? BackgroundColor
+                                : BackgroundColor,
                           ),
                           onChanged: (value) {
                             final formatted = viewModel.formatNumber(value);
@@ -414,7 +414,7 @@ class ItemAddScreen extends StatelessWidget {
                           e,
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Colors.black87,
+                            color: textColor,
                           ),
                         ),
                       ),
@@ -468,7 +468,7 @@ class ItemAddScreen extends StatelessWidget {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: blueColor,
-                disabledBackgroundColor: itemAddPrimaryDisabledColor,
+                disabledBackgroundColor: BorderColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(defaultRadius),
                 ),

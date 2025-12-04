@@ -113,11 +113,11 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: itemPriceInputPanelBackgroundColor,
+              color: BackgroundColor,
               borderRadius: defaultBorder,
               boxShadow: [
                 BoxShadow(
-                  color: itemPriceInputPanelShadowColor,
+                  color: shadowLow,
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -138,7 +138,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                           '현재 가격',
                           style: TextStyle(
                             fontSize: 13,
-                            color: itemPriceInputLabelTextColor,
+                            color: textColor,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -159,7 +159,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                           '호가',
                           style: TextStyle(
                             fontSize: 13,
-                            color: itemPriceInputLabelTextColor,
+                            color: textColor,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -168,7 +168,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: itemPriceInputBidUnitTextColor,
+                            color: RedColor,
                           ),
                         ),
                       ],
@@ -195,7 +195,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                           '입찰 금액',
                           style: TextStyle(
                             fontSize: 12,
-                            color: itemPriceInputLabelTextColor,
+                            color: BackgroundColor,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -220,10 +220,11 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                         onTap: _decreaseBid,
                         borderRadius: BorderRadius.circular(defaultRadius),
                         child: Container(
-                          height: 48,
+                          width: 32,
+                          height: 32,
                           decoration: BoxDecoration(
-                            color: itemPriceInputStepButtonBackgroundColor,
-                            borderRadius: BorderRadius.circular(defaultRadius),
+                            color: BackgroundColor,
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Center(
                             child: Text(
@@ -245,7 +246,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                         child: Container(
                           height: 48,
                           decoration: BoxDecoration(
-                            color: itemPriceInputStepButtonBackgroundColor,
+                            color: BackgroundColor,
                             borderRadius: BorderRadius.circular(defaultRadius),
                           ),
                           child: const Center(
