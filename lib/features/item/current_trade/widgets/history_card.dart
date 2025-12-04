@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import '../../../../core/utils/ui_set/border_radius.dart';
 
@@ -24,11 +25,11 @@ class HistoryCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: itemCurrentTradeCardBackgroundColor,
           borderRadius: defaultBorder,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: itemCurrentTradeCardShadowColor,
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -40,7 +41,7 @@ class HistoryCard extends StatelessWidget {
               width: 96,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: itemCurrentTradeThumbnailBackgroundColor,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(defaultRadius),
                     bottomLeft: Radius.circular(defaultRadius),
@@ -53,17 +54,18 @@ class HistoryCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(defaultRadius),
                       child: (thumbnailUrl != null && thumbnailUrl!.isNotEmpty)
                           ? Image.network(
-                        thumbnailUrl!,
-                        fit: BoxFit.cover,
-                      )
+                              thumbnailUrl!,
+                              fit: BoxFit.cover,
+                            )
                           : Container(
-                        color: Colors.grey[300],
-                        child: const Icon(
-                          Icons.image,
-                          size: 32,
-                          color: Colors.grey,
-                        ),
-                      ),
+                              color:
+                                  itemCurrentTradeThumbnailPlaceholderColor,
+                              child: const Icon(
+                                Icons.image,
+                                size: 32,
+                                color: itemCurrentTradeThumbnailIconColor,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -109,7 +111,7 @@ class HistoryCard extends StatelessWidget {
                               Text(
                                 date!,
                                 style: const TextStyle(
-                                  color: Colors.grey,
+                                  color: itemCurrentTradeDateTextColor,
                                   fontSize: 10,
                                 ),
                               ),
