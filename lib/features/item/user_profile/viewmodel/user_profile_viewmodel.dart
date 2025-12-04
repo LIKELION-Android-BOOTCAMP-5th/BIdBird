@@ -1,4 +1,4 @@
-import 'package:bidbird/features/user_profile/data/user_profile_data.dart';
+import 'package:bidbird/features/item/user_profile/data/user_profile_data.dart';
 import 'package:flutter/material.dart';
 
 class UserProfileViewModel extends ChangeNotifier {
