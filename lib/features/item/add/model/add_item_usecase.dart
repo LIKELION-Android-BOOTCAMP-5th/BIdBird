@@ -1,6 +1,6 @@
 import 'package:bidbird/features/item/add/model/item_add_entity.dart';
-import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
 import 'package:bidbird/features/item/add/data/repository/item_add_repository_impl.dart';
+import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
 
 class AddItemUseCase {
   AddItemUseCase(this._repository);
