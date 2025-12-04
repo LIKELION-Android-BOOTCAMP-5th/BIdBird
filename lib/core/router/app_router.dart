@@ -13,6 +13,7 @@ import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_view
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
 import 'package:bidbird/features/item/registration/screen/item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
 import 'package:bidbird/features/item/registration/screen/item_registration_screen.dart';
 import 'package:bidbird/features/item/registration/viewmodel/item_registration_viewmodel.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';

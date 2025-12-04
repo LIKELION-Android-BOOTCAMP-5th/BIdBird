@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../data/datasource/price_input_data.dart';
 import '../data/repository/price_input_repository.dart';
+import '../model/price_input_entity.dart';
 
 class PriceInputViewModel extends ChangeNotifier {
   PriceInputViewModel({PriceInputRepository? repository})

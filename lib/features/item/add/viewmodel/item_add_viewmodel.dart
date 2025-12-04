@@ -4,7 +4,7 @@ import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
+import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

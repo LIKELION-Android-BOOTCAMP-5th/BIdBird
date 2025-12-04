@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../data/datasource/item_registration_data.dart';
+
 import '../data/repository/item_registration_repository.dart';
+import '../model/item_registration_entity.dart';
 
 class ItemRegistrationViewModel extends ChangeNotifier {
   ItemRegistrationViewModel({ItemRegistrationRepository? repository})
