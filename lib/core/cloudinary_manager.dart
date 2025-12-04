@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 class CloudinaryManager {
   static final CloudinaryManager _shared = CloudinaryManager();
   static CloudinaryManager get shared => _shared;
-
+  //이미지 하나 짜리
   Future<String?> uploadImageToCloudinary(XFile inputImage) async {
     // Future<String?> uploadImageToCloudinary() async {
 
