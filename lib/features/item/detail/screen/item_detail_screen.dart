@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
 import 'package:bidbird/features/item/price_Input/screen/price_input_screen.dart';
 import 'package:bidbird/features/item/price_Input/viewmodel/price_input_viewmodel.dart';
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -48,54 +48,54 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _bidStatusChannel = _supabase.channel('bid_status_${widget.itemId}');
     _bidStatusChannel!
         .onPostgresChanges(
-      event: PostgresChangeEvent.all,
-      schema: 'public',
-      table: 'bid_status',
-      filter: PostgresChangeFilter(
-        type: PostgresChangeFilterType.eq,
-        column: 'item_id',
-        value: widget.itemId,
-      ),
-      callback: (payload) {
-        if (mounted) setState(() {});
-      },
-    )
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'bid_status',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: widget.itemId,
+          ),
+          callback: (payload) {
+            if (mounted) setState(() {});
+          },
+        )
         .subscribe();
 
     // items 테이블 실시간 구독 (현재가 변경 감지)
     _itemsChannel = _supabase.channel('items_${widget.itemId}');
     _itemsChannel!
         .onPostgresChanges(
-      event: PostgresChangeEvent.all,
-      schema: 'public',
-      table: 'items',
-      filter: PostgresChangeFilter(
-        type: PostgresChangeFilterType.eq,
-        column: 'id',
-        value: widget.itemId,
-      ),
-      callback: (payload) {
-        if (mounted) setState(() {});
-      },
-    )
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'items',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: widget.itemId,
+          ),
+          callback: (payload) {
+            if (mounted) setState(() {});
+          },
+        )
         .subscribe();
 
     // bid_log 테이블 실시간 구독 (참여 입찰 수 변경 감지)
     _bidLogChannel = _supabase.channel('bid_log_${widget.itemId}');
     _bidLogChannel!
         .onPostgresChanges(
-      event: PostgresChangeEvent.insert, // 입찰은 insert만 발생
-      schema: 'public',
-      table: 'bid_log',
-      filter: PostgresChangeFilter(
-        type: PostgresChangeFilterType.eq,
-        column: 'item_id',
-        value: widget.itemId,
-      ),
-      callback: (payload) {
-        if (mounted) setState(() {});
-      },
-    )
+          event: PostgresChangeEvent.insert, // 입찰은 insert만 발생
+          schema: 'public',
+          table: 'bid_log',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: widget.itemId,
+          ),
+          callback: (payload) {
+            if (mounted) setState(() {});
+          },
+        )
         .subscribe();
   }
 
@@ -113,10 +113,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
           return const Scaffold(
             body: Center(
-              child: Text(
-                '매물 정보를 불러올 수 없습니다.',
-                style: TextStyle(fontSize: 14),
-              ),
+              child: Text('매물 정보를 불러올 수 없습니다.', style: TextStyle(fontSize: 14)),
             ),
           );
         }
@@ -131,9 +128,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xffF5F6FA),
-          appBar: AppBar(
-            title: const Text('상세 보기'),
-          ),
+          appBar: AppBar(title: const Text('상세 보기')),
           body: Column(
             children: [
               Expanded(
@@ -150,10 +145,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   ),
                 ),
               ),
-              _BottomActionBar(
-                item: item,
-                isMyItem: isMyItem,
-              ),
+              _BottomActionBar(item: item, isMyItem: isMyItem),
             ],
           ),
         );
@@ -360,10 +352,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
               width: double.infinity,
               color: Colors.grey[200],
               child: const Center(
-                child: Text(
-                  '상품 사진',
-                  style: TextStyle(color: Colors.grey),
-                ),
+                child: Text('상품 사진', style: TextStyle(color: Colors.grey)),
               ),
             ),
           Positioned(
@@ -394,7 +383,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   images.length,
-                      (index) => _buildDot(isActive: index == _currentPage),
+                  (index) => _buildDot(isActive: index == _currentPage),
                 ),
               ),
             ),
@@ -508,10 +497,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                     children: [
                       const Text(
                         '현재 입찰가',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -530,10 +516,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                     children: [
                       const Text(
                         '참여 입찰',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -568,10 +551,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                 const CircleAvatar(
                   radius: 20,
                   backgroundColor: Colors.orange,
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.white,
-                  ),
+                  child: Icon(Icons.person, color: Colors.white),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -588,11 +568,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.star,
-                            size: 14,
-                            color: Colors.amber,
-                          ),
+                          const Icon(Icons.star, size: 14, color: Colors.amber),
                           const SizedBox(width: 4),
                           Text(
                             '${item.sellerRating.toStringAsFixed(1)} (${item.sellerReviewCount})',
@@ -612,8 +588,10 @@ class _ItemMainInfoSection extends StatelessWidget {
                     context.push('/user/${item.sellerId}');
                   },
                   style: OutlinedButton.styleFrom(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     side: BorderSide(color: Colors.grey[300]!),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
@@ -654,18 +632,12 @@ class _ItemDescriptionSection extends StatelessWidget {
         children: [
           const Text(
             '상품 설명',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
             item.itemContent,
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.4,
-            ),
+            style: const TextStyle(fontSize: 13, height: 1.4),
           ),
         ],
       ),
@@ -712,7 +684,9 @@ class _BottomActionBarState extends State<_BottomActionBar> {
         _isFavorite = rows.isNotEmpty;
       });
     } catch (e) {
-      debugPrint('Failed to load favorite state for itemId=${widget.item.itemId}: $e');
+      debugPrint(
+        'Failed to load favorite state for itemId=${widget.item.itemId}: $e',
+      );
     }
   }
 
@@ -738,7 +712,9 @@ class _BottomActionBarState extends State<_BottomActionBar> {
         });
       }
     } catch (e) {
-      debugPrint('Failed to check top bidder for itemId=${widget.item.itemId}: $e');
+      debugPrint(
+        'Failed to check top bidder for itemId=${widget.item.itemId}: $e',
+      );
     }
   }
 
@@ -766,7 +742,9 @@ class _BottomActionBarState extends State<_BottomActionBar> {
         _isFavorite = !_isFavorite;
       });
     } catch (e) {
-      debugPrint('Failed to toggle favorite for itemId=${widget.item.itemId}: $e');
+      debugPrint(
+        'Failed to toggle favorite for itemId=${widget.item.itemId}: $e',
+      );
     }
   }
 
@@ -790,9 +768,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                         padding: EdgeInsets.zero,
                         splashRadius: 24,
                         icon: Icon(
-                          _isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
+                          _isFavorite ? Icons.favorite : Icons.favorite_border,
                           size: 24,
                           color: Colors.red,
                         ),
@@ -805,66 +781,66 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                         height: 44,
                         child: _isTopBidder
                             ? Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(8.7),
-                            border: Border.all(
-                                color: Colors.grey.shade400),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '최고 입찰자입니다',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ),
-                        )
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(8.7),
+                                  border: Border.all(
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '최고 입찰자입니다',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ),
+                              )
                             : OutlinedButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.white,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(defaultRadius),
+                                onPressed: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.white,
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(defaultRadius),
+                                      ),
+                                    ),
+                                    builder: (context) {
+                                      return ChangeNotifierProvider<
+                                        PriceInputViewModel
+                                      >(
+                                        create: (_) => PriceInputViewModel(),
+                                        child: BidBottomSheet(
+                                          itemId: widget.item.itemId,
+                                          currentPrice:
+                                              widget.item.currentPrice,
+                                          bidUnit: widget.item.bidPrice,
+                                          buyNowPrice: widget.item.buyNowPrice,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: blueColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.7),
+                                  ),
+                                ),
+                                child: Text(
+                                  '입찰하기',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: blueColor,
+                                  ),
                                 ),
                               ),
-                              builder: (context) {
-                                return ChangeNotifierProvider<
-                                    PriceInputViewModel>(
-                                  create: (_) => PriceInputViewModel(),
-                                  child: BidBottomSheet(
-                                    itemId: widget.item.itemId,
-                                    currentPrice:
-                                    widget.item.currentPrice,
-                                    bidUnit: widget.item.bidPrice,
-                                    buyNowPrice:
-                                    widget.item.buyNowPrice,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: blueColor),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.circular(8.7),
-                            ),
-                          ),
-                          child: Text(
-                            '입찰하기',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: blueColor,
-                            ),
-                          ),
-                        ),
                       ),
                     ),
 

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';

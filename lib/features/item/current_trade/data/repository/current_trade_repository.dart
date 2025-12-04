@@ -1,6 +1,7 @@
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:bidbird/core/supabase_manager.dart';
+
 import '../datasource/current_trade_data.dart';
 
 abstract class CurrentTradeRepository {
@@ -11,8 +12,8 @@ abstract class CurrentTradeRepository {
 class CurrentTradeRepositoryImpl implements CurrentTradeRepository {
   final SupabaseClient _supabase;
 
-  CurrentTradeRepositoryImpl({SupabaseClient? supabase}) 
-      : _supabase = supabase ?? SupabaseManager.shared.supabase;
+  CurrentTradeRepositoryImpl({SupabaseClient? supabase})
+    : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   @override
   Future<List<BidHistoryItem>> fetchMyBidHistory() async {

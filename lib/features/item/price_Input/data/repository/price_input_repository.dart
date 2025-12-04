@@ -1,4 +1,4 @@
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 
 import '../datasource/price_input_data.dart';
 
@@ -20,18 +20,13 @@ class PriceInputRepository {
 
     await supabase
         .from('bid_status')
-        .update({
-          'text_code': 'BIDDING',
-        })
+        .update({'text_code': 'BIDDING'})
         .eq('item_id', request.itemId)
         .eq('user_id', user.id);
 
     await supabase
         .from('items')
-        .update({
-          'current_price': request.bidPrice,
-        })
+        .update({'current_price': request.bidPrice})
         .eq('id', request.itemId);
   }
 }
-

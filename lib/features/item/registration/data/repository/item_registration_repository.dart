@@ -1,4 +1,4 @@
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../datasource/item_registration_data.dart';
