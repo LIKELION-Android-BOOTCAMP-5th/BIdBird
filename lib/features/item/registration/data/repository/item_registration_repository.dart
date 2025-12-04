@@ -1,7 +1,7 @@
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../data/item_registration_data.dart';
+import '../datasource/item_registration_data.dart';
 
 class ItemRegistrationRepository {
   ItemRegistrationRepository();
