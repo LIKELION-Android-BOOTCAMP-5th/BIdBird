@@ -47,11 +47,11 @@ class ItemRegistrationScreen extends StatelessWidget {
                       },
                       child: Container(
                         decoration: BoxDecoration(
-                          color: itemRegistrationCardBackgroundColor,
+                          color: BackgroundColor,
                           borderRadius: BorderRadius.circular(defaultRadius),
                           boxShadow: const [
                             BoxShadow(
-                              color: itemRegistrationCardShadowColor,
+                              color: shadowHigh,
                               blurRadius: 8,
                               offset: Offset(0, 4),
                             ),
@@ -65,7 +65,7 @@ class ItemRegistrationScreen extends StatelessWidget {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                color: itemRegistrationThumbnailBackgroundColor,
+                                color: BackgroundColor,
                                 borderRadius: BorderRadius.circular(defaultRadius),
                               ),
                               clipBehavior: Clip.antiAlias,
@@ -85,7 +85,7 @@ class ItemRegistrationScreen extends StatelessWidget {
                                   : const DecoratedBox(
                                       decoration: BoxDecoration(
                                         color:
-                                            itemRegistrationThumbnailPlaceholderColor,
+                                        BackgroundColor,
                                       ),
                                     ),
                             ),
@@ -108,7 +108,7 @@ class ItemRegistrationScreen extends StatelessWidget {
                                     '시작가 ${_formatPrice(item.startPrice)}원',
                                     style: const TextStyle(
                                       fontSize: 13,
-                                      color: itemRegistrationPriceTextColor,
+                                      color: textColor,
                                     ),
                                   ),
                                   if (item.instantPrice > 0)
@@ -116,7 +116,7 @@ class ItemRegistrationScreen extends StatelessWidget {
                                       '즉시 ${_formatPrice(item.instantPrice)}원',
                                       style: const TextStyle(
                                         fontSize: 13,
-                                        color: itemRegistrationPriceTextColor,
+                                        color: textColor,
                                       ),
                                     ),
                                 ],

@@ -23,7 +23,7 @@ class UserProfileScreen extends StatelessWidget {
             title: const Text('프로필'),
             centerTitle: true,
           ),
-          backgroundColor: itemUserProfileBackgroundColor,
+          backgroundColor: BackgroundColor,
           body: SafeArea(
             child: profile == null
                 ? const Center(child: CircularProgressIndicator())
@@ -37,11 +37,11 @@ class UserProfileScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 24),
                           decoration: BoxDecoration(
-                            color: itemUserProfileCardBackgroundColor,
+                            color: BackgroundColor,
                             borderRadius: defaultBorder,
                             boxShadow: [
                               BoxShadow(
-                                color: itemUserProfileCardShadowColor,
+                                color: shadowLow,
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -53,7 +53,7 @@ class UserProfileScreen extends StatelessWidget {
                               CircleAvatar(
                                 radius: 32,
                                 backgroundColor:
-                                    itemUserProfileAvatarBackgroundColor,
+                                yellowColor,
                                 child: Text(
                                   profile.nickname.isNotEmpty
                                       ? profile.nickname[0]
@@ -81,7 +81,7 @@ class UserProfileScreen extends StatelessWidget {
                                     '평점 ',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.black87,
+                                      color: textColor,
                                     ),
                                   ),
                                   ...List.generate(5, (index) {
@@ -91,8 +91,8 @@ class UserProfileScreen extends StatelessWidget {
                                       Icons.star,
                                       size: 16,
                                       color: filled
-                                          ? itemUserProfileStarFilledColor
-                                          : itemUserProfileStarEmptyColor,
+                                          ? BorderColor
+                                          : BorderColor,
                                     );
                                   }),
                                   const SizedBox(width: 4),
@@ -107,7 +107,7 @@ class UserProfileScreen extends StatelessWidget {
                                     '  (${profile.reviewCount})',
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      color: itemUserProfileSecondaryTextColor,
+                                      color: BorderColor,
                                     ),
                                   ),
                                 ],
@@ -126,11 +126,11 @@ class UserProfileScreen extends StatelessWidget {
                               vertical: 14,
                             ),
                             decoration: BoxDecoration(
-                              color: itemUserProfileCardBackgroundColor,
+                              color: BackgroundColor,
                               borderRadius: defaultBorder,
                               boxShadow: [
                                 BoxShadow(
-                                  color: itemUserProfileCardShadowColor,
+                                  color: shadowLow,
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -150,7 +150,7 @@ class UserProfileScreen extends StatelessWidget {
                                 Icon(
                                   Icons.chevron_right,
                                   size: 20,
-                                  color: itemUserProfileChevronIconColor,
+                                  color: BorderColor,
                                 ),
                               ],
                             ),

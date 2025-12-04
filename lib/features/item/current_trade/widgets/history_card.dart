@@ -25,11 +25,11 @@ class HistoryCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: itemCurrentTradeCardBackgroundColor,
+          color: BackgroundColor,
           borderRadius: defaultBorder,
           boxShadow: [
             BoxShadow(
-              color: itemCurrentTradeCardShadowColor,
+              color: BackgroundColor,
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -41,7 +41,7 @@ class HistoryCard extends StatelessWidget {
               width: 96,
               child: Container(
                 decoration: BoxDecoration(
-                  color: itemCurrentTradeThumbnailBackgroundColor,
+                  color: BackgroundColor,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(defaultRadius),
                     bottomLeft: Radius.circular(defaultRadius),
@@ -59,11 +59,11 @@ class HistoryCard extends StatelessWidget {
                             )
                           : Container(
                               color:
-                                  itemCurrentTradeThumbnailPlaceholderColor,
+                              BackgroundColor,
                               child: const Icon(
                                 Icons.image,
                                 size: 32,
-                                color: itemCurrentTradeThumbnailIconColor,
+                                color: iconColor,
                               ),
                             ),
                     ),
@@ -111,7 +111,7 @@ class HistoryCard extends StatelessWidget {
                               Text(
                                 date!,
                                 style: const TextStyle(
-                                  color: itemCurrentTradeDateTextColor,
+                                  color: iconColor,
                                   fontSize: 10,
                                 ),
                               ),
