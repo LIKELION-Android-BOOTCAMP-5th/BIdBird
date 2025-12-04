@@ -213,7 +213,9 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
             .from('items')
             .update({'seller_name': sellerTitle})
             .eq('id', itemId);
-      } catch (e) {}
+      } catch (e) {
+        debugPrint('Failed to update seller_name for itemId=$itemId: $e');
+      }
     } catch (e) {
       // users 테이블 조회 실패 시 items 테이블의 seller_name 사용
       sellerTitle = row['seller_name']?.toString() ?? '미지정 사용자';
@@ -232,14 +234,15 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
         .eq('item_id', itemId)
         .order('sort_order', ascending: true);
 
-    for (final raw in imageRows) {
-      final row = raw as Map<String, dynamic>;
+    for (final Map<String, dynamic> row in imageRows) {
       final imageUrl = row['image_url']?.toString();
       if (imageUrl != null && imageUrl.isNotEmpty) {
         images.add(imageUrl);
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    debugPrint('Failed to load item images for itemId=$itemId: $e');
+  }
 
   // bid_log 테이블에서 참여 입찰 수 조회
   int biddingCount = 0;
@@ -732,7 +735,9 @@ class _BottomActionBarState extends State<_BottomActionBar> {
           _isTopBidder = topBidUserId == user.id;
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Failed to check top bidder for itemId=${widget.item.itemId}: $e');
+    }
   }
 
   Future<void> _toggleFavorite() async {
@@ -758,7 +763,9 @@ class _BottomActionBarState extends State<_BottomActionBar> {
       setState(() {
         _isFavorite = !_isFavorite;
       });
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Failed to toggle favorite for itemId=${widget.item.itemId}: $e');
+    }
   }
 
   @override

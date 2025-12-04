@@ -1,10 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:bidbird/features/item/add/item_add_screen/item_add_screen.dart';
@@ -188,7 +186,10 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
       BuildContext context, ItemRegistrationViewModel vm) async {
     debugPrint('[ItemRegistrationDetail] _handleRegistration start');
     if (_isLoading) return;
-    
+
+    final navigator = Navigator.of(context);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     setState(() {
       _isLoading = true;
     });
@@ -206,8 +207,6 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
       if (success) {
         debugPrint('[ItemRegistrationDetail] pop detail & list screens');
         if (!mounted) return;
-        // 현재 Navigator를 미리 캡처해 두고, 다음 프레임에서 두 번 pop
-        final navigator = Navigator.of(context);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           // 디테일 화면 pop
           navigator.pop();
@@ -217,13 +216,13 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
       } else {
         debugPrint('[ItemRegistrationDetail] registerItem failed');
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('매물 등록에 실패했습니다. 다시 시도해 주세요.')),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('등록 중 오류가 발생했습니다.')),
         );
       }
@@ -236,8 +235,6 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
     }
   }
 }
-
-Future<void> _noopAsync() async {}
 
 class _ConfirmImageSection extends StatefulWidget {
   const _ConfirmImageSection({
