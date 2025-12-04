@@ -165,7 +165,7 @@ class _ItemRegistrationDetailScreenState
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: blueColor,
-                disabledBackgroundColor: const Color(0xffD0D4DC),
+                disabledBackgroundColor: itemRegistrationButtonDisabledColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(defaultRadius),
                 ),
@@ -307,7 +307,7 @@ class _ConfirmImageSectionState extends State<_ConfirmImageSection> {
             if (images.isEmpty) {
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: itemRegistrationImageBackgroundColor,
                   borderRadius: BorderRadius.circular(defaultRadius),
                 ),
                 child: const Center(
