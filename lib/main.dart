@@ -29,7 +29,7 @@ void main() async {
   CloudinaryContext.cloudinary = Cloudinary.fromCloudName(
     cloudName: 'dn12so6sm',
   );
-
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final notificationSettings = await FirebaseManager.shared.fcm
       .requestPermission(provisional: true);
