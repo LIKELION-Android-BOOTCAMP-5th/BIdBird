@@ -1,5 +1,5 @@
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:bidbird/core/supabase_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/datasource/item_detail_datasource.dart';
@@ -8,28 +8,26 @@ import '../data/repository/item_detail_repository.dart';
 class ItemDetailViewModel extends ChangeNotifier {
   final String itemId;
   final ItemDetailRepository _repository;
-  
-  ItemDetailViewModel({
-    required this.itemId,
-    ItemDetailRepository? repository,
-  }) : _repository = repository ?? ItemDetailRepository() {
+
+  ItemDetailViewModel({required this.itemId, ItemDetailRepository? repository})
+    : _repository = repository ?? ItemDetailRepository() {
     _supabase = SupabaseManager.shared.supabase;
   }
 
   late final SupabaseClient _supabase;
-  
+
   ItemDetail? _itemDetail;
   ItemDetail? get itemDetail => _itemDetail;
-  
+
   bool _isLoading = true;
   bool get isLoading => _isLoading;
-  
+
   String? _error;
   String? get error => _error;
-  
+
   bool _isFavorite = false;
   bool get isFavorite => _isFavorite;
-  
+
   bool _isTopBidder = false;
   bool get isTopBidder => _isTopBidder;
 
@@ -87,7 +85,9 @@ class ItemDetailViewModel extends ChangeNotifier {
 
   Future<void> _loadSellerProfile() async {
     if (_itemDetail?.sellerId != null) {
-      _sellerProfile = await _repository.fetchSellerProfile(_itemDetail!.sellerId);
+      _sellerProfile = await _repository.fetchSellerProfile(
+        _itemDetail!.sellerId,
+      );
       notifyListeners();
     }
   }

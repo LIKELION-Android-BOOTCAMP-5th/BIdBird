@@ -1,5 +1,5 @@
-import 'package:bidbird/core/firebase_manager.dart';
-import 'package:bidbird/core/firebase_options.dart';
+import 'package:bidbird/core/managers/firebase_manager.dart';
+import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/repository/home_repository.dart';

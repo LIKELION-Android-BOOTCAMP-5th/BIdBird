@@ -1,24 +1,23 @@
 import 'dart:io';
 
-import 'package:bidbird/core/cloudinary_manager.dart';
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/managers/cloudinary_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:go_router/go_router.dart';
 
-import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
-
-import '../model/item_add_entity.dart';
-import '../model/add_item_usecase.dart';
 import '../data/repository/item_add_repository_impl.dart';
+import '../model/add_item_usecase.dart';
+import '../model/item_add_entity.dart';
 
 class ItemAddViewModel extends ChangeNotifier {
   ItemAddViewModel()
-      : _addItemUseCase = AddItemUseCase(ItemAddRepositoryImpl());
+    : _addItemUseCase = AddItemUseCase(ItemAddRepositoryImpl());
 
   final AddItemUseCase _addItemUseCase;
 
@@ -164,16 +163,14 @@ class ItemAddViewModel extends ChangeNotifier {
           await file.writeAsBytes(response.data ?? <int>[]);
 
           files.add(XFile(file.path));
-        } catch (_) {
-        }
+        } catch (_) {}
       }
 
       if (files.isNotEmpty) {
         selectedImages = files;
         notifyListeners();
       }
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   String? validate() {
@@ -192,10 +189,12 @@ class ItemAddViewModel extends ChangeNotifier {
       return '카테고리를 선택해주세요.';
     }
 
-    final int? startPrice =
-    int.tryParse(startPriceController.text.replaceAll(',', ''));
-    final int? instantPrice =
-    int.tryParse(instantPriceController.text.replaceAll(',', ''));
+    final int? startPrice = int.tryParse(
+      startPriceController.text.replaceAll(',', ''),
+    );
+    final int? instantPrice = int.tryParse(
+      instantPriceController.text.replaceAll(',', ''),
+    );
 
     if (startPrice == null) {
       return '시작가를 숫자로 입력해주세요.';
@@ -266,21 +265,20 @@ class ItemAddViewModel extends ChangeNotifier {
   Future<void> submit(BuildContext context) async {
     final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
+
     final String? error = validate();
     if (error != null) {
       if (context.mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(error)),
-        );
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text(error)));
       }
       return;
     }
 
     final String title = titleController.text.trim();
     final String description = descriptionController.text.trim();
-    final int startPrice =
-    int.parse(startPriceController.text.replaceAll(',', ''));
+    final int startPrice = int.parse(
+      startPriceController.text.replaceAll(',', ''),
+    );
     final int instantPrice = useInstantPrice
         ? int.parse(instantPriceController.text.replaceAll(',', ''))
         : 0;
@@ -394,12 +392,10 @@ class ItemAddViewModel extends ChangeNotifier {
     } finally {
       isSubmitting = false;
       notifyListeners();
-      
+
       if (loadingDialogOpen && navigator.canPop()) {
         navigator.pop();
       }
     }
   }
 }
-
-

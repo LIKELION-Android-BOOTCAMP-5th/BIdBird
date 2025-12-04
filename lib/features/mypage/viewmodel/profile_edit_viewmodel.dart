@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/cloudinary_manager.dart';
+import '../../../core/managers/cloudinary_manager.dart';
 import '../data/profile_repository.dart';
 import 'profile_viewmodel.dart';
 
