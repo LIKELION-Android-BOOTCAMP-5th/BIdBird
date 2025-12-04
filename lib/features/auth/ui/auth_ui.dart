@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/fonts.dart';
 import 'package:flutter/foundation.dart';

@@ -1,5 +1,5 @@
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:bidbird/core/supabase_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../datasource/item_detail_datasource.dart';
@@ -56,7 +56,10 @@ class ItemDetailRepository {
     );
   }
 
-  Future<String> _fetchSellerName(String sellerId, Map<String, dynamic> row) async {
+  Future<String> _fetchSellerName(
+    String sellerId,
+    Map<String, dynamic> row,
+  ) async {
     String sellerTitle = row['seller_name']?.toString() ?? '';
 
     if (sellerTitle.isEmpty && sellerId.isNotEmpty) {
@@ -103,7 +106,10 @@ class ItemDetailRepository {
     return images;
   }
 
-  Future<int> _fetchBiddingCount(String itemId, Map<String, dynamic> row) async {
+  Future<int> _fetchBiddingCount(
+    String itemId,
+    Map<String, dynamic> row,
+  ) async {
     try {
       final countResponse = await _supabase
           .from('bid_log')
@@ -210,7 +216,7 @@ class ItemDetailRepository {
       if (userRow is Map<String, dynamic>) {
         // 판매자 평점 및 리뷰 수 가져오기
         final ratingData = await _fetchSellerRating(sellerId);
-        
+
         return {
           ...userRow,
           'rating': ratingData['rating'] ?? 0.0,
@@ -248,10 +254,7 @@ class ItemDetailRepository {
 
       final averageRating = reviewCount > 0 ? totalRating / reviewCount : 0.0;
 
-      return {
-        'rating': averageRating,
-        'review_count': reviewCount,
-      };
+      return {'rating': averageRating, 'review_count': reviewCount};
     } catch (e) {
       debugPrint('[ItemDetailRepository] fetch seller rating error: $e');
       return {'rating': 0.0, 'review_count': 0};
@@ -272,11 +275,11 @@ class ItemDetailRepository {
           .limit(10);
 
       List<Map<String, dynamic>> bidHistory = [];
-      
+
       for (final row in rows) {
         final Map<String, dynamic> bidRow = row as Map<String, dynamic>;
         final userId = bidRow['bid_user']?.toString() ?? '';
-        
+
         // 입찰자 정보 가져오기
         Map<String, dynamic>? userInfo;
         if (userId.isNotEmpty) {

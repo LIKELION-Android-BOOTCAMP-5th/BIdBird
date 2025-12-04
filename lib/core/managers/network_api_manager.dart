@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../features/feed/model/home_data.dart';
+import '../../features/feed/model/home_data.dart';
 
 class NetworkApiManager {
   static final NetworkApiManager _shared = NetworkApiManager();

@@ -1,12 +1,11 @@
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
-import 'package:bidbird/core/supabase_manager.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
 import 'package:bidbird/features/item/add/screen/item_add_screen.dart';
 import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../data/datasource/item_registration_data.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
@@ -17,10 +16,12 @@ class ItemRegistrationDetailScreen extends StatefulWidget {
   final ItemRegistrationData item;
 
   @override
-  State<ItemRegistrationDetailScreen> createState() => _ItemRegistrationDetailScreenState();
+  State<ItemRegistrationDetailScreen> createState() =>
+      _ItemRegistrationDetailScreenState();
 }
 
-class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScreen> {
+class _ItemRegistrationDetailScreenState
+    extends State<ItemRegistrationDetailScreen> {
   bool _isLoading = false;
 
   @override
@@ -37,16 +38,17 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
               final editViewModel = ItemAddViewModel();
               editViewModel.editingItemId = widget.item.id;
               editViewModel.titleController.text = widget.item.title;
-              editViewModel.startPriceController.text =
-                  editViewModel.formatNumber(widget.item.startPrice.toString());
+              editViewModel.startPriceController.text = editViewModel
+                  .formatNumber(widget.item.startPrice.toString());
 
               if (widget.item.instantPrice > 0) {
-                editViewModel.instantPriceController.text =
-                    editViewModel.formatNumber(widget.item.instantPrice.toString());
+                editViewModel.instantPriceController.text = editViewModel
+                    .formatNumber(widget.item.instantPrice.toString());
                 editViewModel.setUseInstantPrice(true);
               }
 
-              editViewModel.descriptionController.text = widget.item.description;
+              editViewModel.descriptionController.text =
+                  widget.item.description;
 
               // 카테고리(id)가 있다면 선택값으로 설정
               editViewModel.selectedKeywordTypeId = widget.item.keywordTypeId;
@@ -61,8 +63,7 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
                 PageRouteBuilder(
                   transitionDuration: Duration.zero,
                   reverseTransitionDuration: Duration.zero,
-                  pageBuilder:
-                      (context, animation, secondaryAnimation) {
+                  pageBuilder: (context, animation, secondaryAnimation) {
                     return ChangeNotifierProvider<ItemAddViewModel>.value(
                       value: editViewModel,
                       child: const ItemAddScreen(),
@@ -111,7 +112,9 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
                   const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _ConfirmDescriptionSection(description: widget.item.description),
+                    child: _ConfirmDescriptionSection(
+                      description: widget.item.description,
+                    ),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -149,7 +152,8 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
                           checkLabel: '동의합니다',
                           onConfirm: (checked) {
                             debugPrint(
-                                '[ItemRegistrationDetail] onConfirm 호출, checked=$checked');
+                              '[ItemRegistrationDetail] onConfirm 호출, checked=$checked',
+                            );
                             if (!checked) return;
                             Navigator.of(dialogContext).pop();
                             _handleRegistration(context, vm);
@@ -183,7 +187,9 @@ class _ItemRegistrationDetailScreenState extends State<ItemRegistrationDetailScr
   }
 
   Future<void> _handleRegistration(
-      BuildContext context, ItemRegistrationViewModel vm) async {
+    BuildContext context,
+    ItemRegistrationViewModel vm,
+  ) async {
     debugPrint('[ItemRegistrationDetail] _handleRegistration start');
     if (_isLoading) return;
 
@@ -270,7 +276,9 @@ class _ConfirmImageSectionState extends State<_ConfirmImageSection> {
         .order('sort_order');
 
     return data
-        .map((dynamic row) => (row as Map<String, dynamic>)['image_url'] as String)
+        .map(
+          (dynamic row) => (row as Map<String, dynamic>)['image_url'] as String,
+        )
         .toList();
   }
 
@@ -304,10 +312,7 @@ class _ConfirmImageSectionState extends State<_ConfirmImageSection> {
                   borderRadius: BorderRadius.circular(defaultRadius),
                 ),
                 child: const Center(
-                  child: Text(
-                    '상품 사진',
-                    style: TextStyle(color: Colors.grey),
-                  ),
+                  child: Text('상품 사진', style: TextStyle(color: Colors.grey)),
                 ),
               );
             }
@@ -345,8 +350,10 @@ class _ConfirmImageSectionState extends State<_ConfirmImageSection> {
                   right: 8,
                   bottom: 8,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(12),
@@ -406,18 +413,12 @@ class _ConfirmMainInfoSection extends StatelessWidget {
             item.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             '시작가 ₩${_formatPrice(item.startPrice)}',
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
           ),
           const SizedBox(height: 2),
           Text(
@@ -426,8 +427,9 @@ class _ConfirmMainInfoSection extends StatelessWidget {
                 : '즉시 입찰가: 없음',
             style: TextStyle(
               fontSize: 13,
-              fontWeight:
-                  item.instantPrice > 0 ? FontWeight.w600 : FontWeight.w400,
+              fontWeight: item.instantPrice > 0
+                  ? FontWeight.w600
+                  : FontWeight.w400,
               color: item.instantPrice > 0 ? blueColor : Colors.grey,
             ),
           ),
@@ -453,19 +455,10 @@ class _ConfirmDescriptionSection extends StatelessWidget {
         children: [
           const Text(
             '상품 설명',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 13,
-              height: 1.4,
-            ),
-          ),
+          Text(description, style: const TextStyle(fontSize: 13, height: 1.4)),
         ],
       ),
     );

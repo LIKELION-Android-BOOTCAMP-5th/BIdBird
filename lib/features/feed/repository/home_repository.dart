@@ -1,4 +1,4 @@
-import '../../../core/network_api_manager.dart';
+import '../../../core/managers/network_api_manager.dart';
 import '../model/home_data.dart';
 
 class HomeRepository {

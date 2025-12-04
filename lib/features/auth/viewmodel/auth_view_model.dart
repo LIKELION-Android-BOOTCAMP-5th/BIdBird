@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:bidbird/core/firebase_manager.dart';
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/managers/firebase_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/data/user_entity.dart';
-import '../../../core/models/event_bus/login_event_bus.dart';
+import '../../../core/models/user_entity.dart';
 import '../../../main.dart';
 
 class AuthViewModel extends ChangeNotifier {
