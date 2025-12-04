@@ -18,8 +18,8 @@ import 'package:bidbird/features/item/registration/data/item_registration_data.d
 import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
 import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
-import 'package:bidbird/features/user_profile/screen/user_profile_screen.dart';
-import 'package:bidbird/features/user_profile/screen/user_trade_history_screen.dart';
+import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
+import 'package:bidbird/features/item/user_profile/screen/user_trade_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
