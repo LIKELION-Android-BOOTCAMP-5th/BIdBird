@@ -4,27 +4,27 @@ import 'package:bidbird/features/auth/ui/auth_ui.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/chat/ui/chat_screen.dart';
 import 'package:bidbird/features/chat/ui/chatting_room_screen.dart';
-import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
-import 'package:bidbird/features/item/current_trade/data/repository/current_trade_repository.dart';
-import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item/add/screen/item_add_screen.dart';
 import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
+import 'package:bidbird/features/item/current_trade/data/repository/current_trade_repository.dart';
+import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
+import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
-import 'package:bidbird/features/item/registration/screen/item_registration_screen.dart';
-import 'package:bidbird/features/item/registration/screen/item_registration_detail_screen.dart';
-import 'package:bidbird/features/item/registration/viewmodel/item_registration_viewmodel.dart';
 import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
+import 'package:bidbird/features/item/registration/screen/item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/registration/screen/item_registration_screen.dart';
+import 'package:bidbird/features/item/registration/viewmodel/item_registration_viewmodel.dart';
+import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
+import 'package:bidbird/features/item/user_profile/screen/user_trade_history_screen.dart';
 import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
 import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
-import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
-import 'package:bidbird/features/item/user_profile/screen/user_trade_history_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../data/user_entity.dart';
+import '../models/user_entity.dart';
 
 GoRouter createAppRouter(BuildContext context) {
   final AuthViewModel authVM = context.read<AuthViewModel>();

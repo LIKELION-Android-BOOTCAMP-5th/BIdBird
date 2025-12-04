@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'data/user_entity.dart';
+import '../models/user_entity.dart';
 
 class SupabaseManager {
   // 이유 - 밖에서 shared를 null등 건드리지 못하게

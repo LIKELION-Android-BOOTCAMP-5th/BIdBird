@@ -1,12 +1,12 @@
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item/add/model/item_add_entity.dart';
 import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ItemAddRepositoryImpl {
   ItemAddRepositoryImpl({SupabaseClient? supabase})
-      : _supabase = supabase ?? SupabaseManager.shared.supabase;
+    : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   final SupabaseClient _supabase;
 
@@ -34,12 +34,11 @@ class ItemAddRepositoryImpl {
           .single();
       row = inserted;
     } else {
-      final Map<String, dynamic> updateJson =
-          entity.toJson(sellerId: user.id)
-            ..remove('seller_id')
-            ..remove('current_price')
-            ..remove('bidding_count')
-            ..remove('status');
+      final Map<String, dynamic> updateJson = entity.toJson(sellerId: user.id)
+        ..remove('seller_id')
+        ..remove('current_price')
+        ..remove('bidding_count')
+        ..remove('status');
 
       final Map<String, dynamic> updated = await _supabase
           .from('items')
@@ -55,10 +54,7 @@ class ItemAddRepositoryImpl {
     final String itemId = row['id'].toString();
 
     if (editingItemId != null) {
-      await _supabase
-          .from('item_images')
-          .delete()
-          .eq('item_id', itemId);
+      await _supabase.from('item_images').delete().eq('item_id', itemId);
     }
 
     if (imageUrls.isNotEmpty) {
@@ -106,8 +102,7 @@ class ItemAddRepositoryImpl {
       startPrice: (row['start_price'] as num?)?.toInt() ?? entity.startPrice,
       instantPrice:
           (row['buy_now_price'] as num?)?.toInt() ?? entity.instantPrice,
-      thumbnailUrl:
-          imageUrls.isNotEmpty ? imageUrls[thumbnailIndex] : null,
+      thumbnailUrl: imageUrls.isNotEmpty ? imageUrls[thumbnailIndex] : null,
       keywordTypeId: (row['keyword_type'] as num?)?.toInt(),
     );
   }

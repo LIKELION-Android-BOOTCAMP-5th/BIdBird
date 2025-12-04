@@ -1,5 +1,4 @@
-import '../../../core/supabase_manager.dart';
-
+import '../../../core/managers/supabase_manager.dart';
 import '../viewmodel/profile_viewmodel.dart';
 
 class ProfileRepository {
