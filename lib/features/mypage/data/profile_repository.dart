@@ -32,7 +32,7 @@ class ProfileRepository {
   }
 
   Future<void> updateProfile({
-    String? name,
+    String? nickName,
     String? phoneNumber,
     String? profileImageUrl,
   }) async {
@@ -44,11 +44,8 @@ class ProfileRepository {
 
     final Map<String, dynamic> updateData = {};
 
-    if (updateData.isEmpty) {
-      return;
-    }
-    if (name != null) {
-      updateData['name'] = name;
+    if (nickName != null) {
+      updateData['nick_name'] = nickName;
     }
     if (phoneNumber != null) {
       updateData['phone_number'] = phoneNumber;
@@ -57,12 +54,18 @@ class ProfileRepository {
       updateData['profile_image'] = profileImageUrl;
     }
 
+    if (updateData.isEmpty) {
+      return;
+    }
+
     try {
       await _client.from('users').update(updateData).eq('id', user.id);
     } catch (e) {
       throw Exception('Failed updateProfile: $e'); //나중에팝업으로쓸것
     }
   }
+
+  //delete만들기
 
   Future<void> unregisterUser() async {
     final user = _client.auth.currentUser;
