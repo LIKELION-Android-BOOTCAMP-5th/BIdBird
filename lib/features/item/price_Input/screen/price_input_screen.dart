@@ -4,7 +4,7 @@ import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../price_Input_viewmodel/price_input_viewmodel.dart';
+import '../viewmodel/price_input_viewmodel.dart';
 
 class BidBottomSheet extends StatefulWidget {
   const BidBottomSheet({
