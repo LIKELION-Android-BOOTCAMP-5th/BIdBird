@@ -4,10 +4,9 @@ import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/features/item/add/screen/item_add_screen.dart';
 import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
+import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../data/datasource/item_registration_data.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
 
 class ItemRegistrationDetailScreen extends StatefulWidget {
