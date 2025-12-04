@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ReportScreen extends StatefulWidget {
-
-  final String itemTitle;
-  final String targetNickname; // 피신고인
-  final String sellerNickname; // 판매자
+  final String itemId;
+  final String targetUserId;
+  final String targetUserNickname;
 
   const ReportScreen({
     super.key,
-    this.itemTitle = '상품명',
-    this.targetNickname = '홍길동',
-    this.sellerNickname = '김판매',
+    required this.itemId,
+    required this.targetUserId,
+    required this.targetUserNickname,
   });
 
   @override
@@ -19,9 +19,10 @@ class ReportScreen extends StatefulWidget {
 
 class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _contentController = TextEditingController();
+  final SupabaseClient _client = Supabase.instance.client;
+
   String? _selectedReason;
-  bool get _canSubmit =>
-      _selectedReason != null && _contentController.text.trim().length >= 10;
+  bool isLoading = false;
 
   final List<String> _reasonOptions = [
     '사기 / 안전거래 위반',
@@ -37,224 +38,180 @@ class _ReportScreenState extends State<ReportScreen> {
     super.dispose();
   }
 
-  void _onSubmit() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('신고 완료'),
-        content: const Text('신고가 접수되었습니다.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop();
-            },
-            child: const Text('확인'),
+  /// 신고 사유 → code_report_type.id 매핑
+  int _mapReasonToTypeId(String reason) {
+    switch (reason) {
+      case "사기 / 안전거래 위반":
+        return 1;
+      case "욕설 / 비매너":
+        return 2;
+      case "광고 / 스팸":
+        return 3;
+      case "부적절한 내용":
+        return 4;
+      default:
+        return 99;
+    }
+  }
+
+  Future<void> _onSubmit() async {
+    final user = _client.auth.currentUser;
+    if (user == null) return;
+
+    setState(() => isLoading = true);
+
+    try {
+      final result = await _client.from("reports").insert({
+        "item_id": widget.itemId,
+        "target_user_id": widget.targetUserId,
+        "target_user_nickname": widget.targetUserNickname,
+        "user_id": user.id,
+        "report_type_id": _mapReasonToTypeId(_selectedReason!),
+        "report_content": _contentController.text.trim(),
+      }).select("*");
+
+      print(" 신고 성공: $result");
+
+      setState(() => isLoading = false);
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("신고 완료"),
+          content: const Text("신고가 성공적으로 접수되었습니다."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              child: const Text("확인"),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print(" 신고 오류: $e");
+
+      setState(() => isLoading = false);
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("오류 발생"),
+          content: const Text("신고 처리 중 오류가 발생했습니다."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("확인"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  bool get _canSubmit =>
+      _selectedReason != null && _contentController.text.trim().length >= 10;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("신고하기")),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _infoBox(now),
+                  const SizedBox(height: 20),
+                  _formBox(),
+                ],
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            width: double.infinity,
+            child: SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: isLoading || !_canSubmit ? null : _onSubmit,
+                child: isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("신고하기"),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final dateString =
-        '${now.year}년 ${now.month}월 ${now.day}일';
+  Widget _infoBox(DateTime now) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: _boxDeco(),
+    child: Column(
+      children: [
+        _infoRow("신청일", "${now.year}.${now.month}.${now.day}"),
+        _infoRow("상품ID", widget.itemId),
+        _infoRow("피신고자", widget.targetUserNickname),
+      ],
+    ),
+  );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('신고하기'),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 상단 정보 영역
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border:
-                        Border.all(color: Colors.grey.withOpacity(0.2)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _infoRow('신청 일자', dateString),
-                          const SizedBox(height: 8),
-                          _infoRow('상품명', widget.itemTitle),
-                          const SizedBox(height: 8),
-                          _infoRow('피신고인', widget.targetNickname),
-                          const SizedBox(height: 8),
-                          _infoRow('판매자', widget.sellerNickname),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 신고 사유 / 상세 내용
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border:
-                        Border.all(color: Colors.grey.withOpacity(0.2)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '상세 내용을 작성해주세요',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            '신고 사유 선택',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 10),
-                            ),
-                            hint: const Text('신고 사유를 선택해주세요'),
-                            value: _selectedReason,
-                            items: _reasonOptions
-                                .map(
-                                  (e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e),
-                              ),
-                            )
-                                .toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedReason = value;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            '어떤 상황 또는 이유로 이 사용자를 신고하시나요?',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 160,
-                            child: TextField(
-                              controller: _contentController,
-                              maxLines: null,
-                              expands: true,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: '최소 10자 이상 입력해주세요',
-                                alignLabelWithHint: true,
-                              ),
-                              onChanged: (_) => setState(() {}),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              '${_contentController.text.length} / 1000',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '허위 신고 시 서비스 이용이 제한될 수 있습니다.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // 하단 버튼
-            Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 4,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _canSubmit ? _onSubmit : null,
-                  child: const Text('신고하기'),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _infoRow(String label, String value) {
-    return Row(
+  Widget _formBox() => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: _boxDeco(),
+    child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 70,
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
+        const Text("신고 사유", style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+          hint: const Text("신고 사유를 선택해주세요"),
+          value: _selectedReason,
+          items: _reasonOptions
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
+          onChanged: (value) => setState(() => _selectedReason = value),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
+        const SizedBox(height: 12),
+        const Text("상세 내용 (10자 이상)"),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _contentController,
+          maxLines: 8,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: "최소 10자 이상 입력해주세요",
           ),
-        ),
+          onChanged: (_) => setState(() {}),
+        )
       ],
-    );
-  }
+    ),
+  );
+
+  Widget _infoRow(String key, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        SizedBox(width: 80, child: Text(key)),
+        Expanded(child: Text(value)),
+      ],
+    ),
+  );
+
+  BoxDecoration _boxDeco() => BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: Colors.grey.shade300),
+  );
 }

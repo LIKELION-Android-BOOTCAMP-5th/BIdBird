@@ -127,14 +127,6 @@ GoRouter createAppRouter(BuildContext context) {
                   final roomId = state.pathParameters["roomId"] ?? "";
                   return const NoTransitionPage(child: ChattingRoomScreen());
                 },
-                routes: [
-                  GoRoute(
-                    path: '/trade_report',
-                    pageBuilder: (context, state) {
-                      return const NoTransitionPage(child: ReportScreen());
-                    },
-                  ),
-                ],
               ),
             ],
           ),
@@ -288,6 +280,24 @@ GoRouter createAppRouter(BuildContext context) {
         path: '/blocked',
         pageBuilder: (context, state) {
           return const NoTransitionPage(child: HomeScreen());
+        },
+      ),
+
+
+      GoRoute(
+        path: '/report',
+        pageBuilder: (context, state) {
+          final itemId = state.uri.queryParameters['itemId'] ?? 'unknown';
+          final targetUserId = state.uri.queryParameters['targetUserId'] ?? 'unknown';
+          final targetNickname = state.uri.queryParameters['targetNickname'] ?? '알 수 없음';
+
+          return NoTransitionPage(
+            child: ReportScreen(
+              itemId: itemId,
+              targetUserId: targetUserId,
+              targetUserNickname: targetNickname,
+            ),
+          );
         },
       ),
     ],

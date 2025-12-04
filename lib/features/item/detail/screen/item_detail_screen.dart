@@ -471,7 +471,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const ReportScreen(), // 신고 UI 이동
+                      builder: (_) => ReportScreen(), // 신고 UI 이동
                     ),
                   );
                 },
