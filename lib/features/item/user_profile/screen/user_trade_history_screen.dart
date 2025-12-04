@@ -18,7 +18,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
         title: const Text('거래내역'),
         centerTitle: true,
       ),
-      backgroundColor: itemUserProfileBackgroundColor,
+      backgroundColor: BackgroundColor,
       body: SafeArea(
         child: ListView.separated(
           padding: const EdgeInsets.all(16),
@@ -29,7 +29,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: itemUserProfileCardBackgroundColor,
+                color: BackgroundColor,
                 borderRadius: defaultBorder,
               ),
               child: Row(
@@ -38,8 +38,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color:
-                          itemUserProfileHistoryThumbnailBackgroundColor,
+                      color: BackgroundColor,
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -60,7 +59,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
                           '${trade.price}  ·  ${trade.date}',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: itemUserProfileHistoryDateTextColor,
+                            color: BorderColor,
                           ),
                         ),
                       ],

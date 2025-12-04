@@ -96,8 +96,8 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected
-                ? itemCurrentTradeTabSelectedBackgroundColor
-                : itemCurrentTradeTabUnselectedBackgroundColor,
+                ? blueColor
+                : BackgroundColor,
             borderRadius: BorderRadius.circular(defaultRadius),
             border: Border.all(color: blueColor),
           ),
@@ -107,8 +107,8 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               fontSize: buttonFontStyle.fontSize,
               fontWeight: buttonFontStyle.fontWeight,
               color: isSelected
-                  ? itemCurrentTradeTabSelectedTextColor
-                  : itemCurrentTradeTabUnselectedTextColor,
+                  ? BackgroundColor
+                  : blueColor,
             ),
           ),
         ),
