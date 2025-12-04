@@ -5,10 +5,10 @@ import 'package:bidbird/core/supabase_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:bidbird/features/item/add/item_add_screen/item_add_screen.dart';
-import 'package:bidbird/features/item/add/item_add_viewmoel/item_add_viewmoel.dart';
+import 'package:bidbird/features/item/add/screen/item_add_screen.dart';
+import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
 
-import '../data/item_registration_data.dart';
+import '../data/datasource/item_registration_data.dart';
 import '../viewmodel/item_registration_viewmodel.dart';
 
 class ItemRegistrationDetailScreen extends StatefulWidget {

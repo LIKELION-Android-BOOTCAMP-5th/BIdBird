@@ -5,7 +5,7 @@ import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:provider/provider.dart';
 
-import '../item_add_viewmoel/item_add_viewmoel.dart';
+import '../viewmodel/item_add_viewmodel.dart';
 
 class ItemAddScreen extends StatelessWidget {
   const ItemAddScreen({super.key});
