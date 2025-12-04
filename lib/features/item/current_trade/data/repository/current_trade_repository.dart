@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/supabase_manager.dart';
-import '../data/current_trade_data.dart';
+import 'package:bidbird/core/supabase_manager.dart';
+import '../datasource/current_trade_data.dart';
 
 abstract class CurrentTradeRepository {
   Future<List<BidHistoryItem>> fetchMyBidHistory();
