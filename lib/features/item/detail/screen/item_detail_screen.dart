@@ -143,7 +143,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                       children: [
                         _ItemImageSection(item: item),
                         const SizedBox(height: 8),
-                        _ItemMainInfoSection(item: item),
+                        _ItemMainInfoSection(item: item, isMyItem: isMyItem),
                         const SizedBox(height: 16),
                         _ItemDescriptionSection(item: item),
                       ],
@@ -316,8 +316,8 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
     final hasImages = widget.item.itemImages.isNotEmpty;
     final images = hasImages ? widget.item.itemImages : <String>[];
 
-    return SizedBox(
-      height: 280,
+    return AspectRatio(
+      aspectRatio: 1,
       child: Stack(
         children: [
           if (hasImages && images.isNotEmpty)
@@ -336,7 +336,6 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
                   child: Image.network(
                     images[index],
                     width: double.infinity,
-                    height: 280,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return const Center(
@@ -371,7 +370,7 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '잔여 시간 ${_formatRemainingTime(widget.item.finishTime)}',
+                '${_formatRemainingTime(widget.item.finishTime)} 남음',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -413,9 +412,10 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
 }
 
 class _ItemMainInfoSection extends StatelessWidget {
-  const _ItemMainInfoSection({required this.item});
+  const _ItemMainInfoSection({required this.item, required this.isMyItem});
 
   final ItemDetail item;
+  final bool isMyItem;
 
   @override
   Widget build(BuildContext context) {
@@ -464,24 +464,25 @@ class _ItemMainInfoSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ReportScreen(), // 신고 UI 이동
+              if (!isMyItem)
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ReportScreen(), // 신고 UI 이동
+                      ),
+                    );
+                  },
+                  child: Text(
+                    '신고',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: iconColor,
+                      decoration: TextDecoration.underline,
                     ),
-                  );
-                },
-                child: Text(
-                  '신고',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: iconColor,
-                    decoration: TextDecoration.underline,
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -515,12 +516,17 @@ class _ItemMainInfoSection extends StatelessWidget {
                       Text(
                         '${_formatPrice(item.currentPrice)}원',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
+                ),
+                Container(
+                  width: 1,
+                  height: 36,
+                  color: BorderColor.withOpacity(0.5),
                 ),
                 Expanded(
                   child: Column(
@@ -537,7 +543,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                       Text(
                         '${item.biddingCount}건',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -601,26 +607,34 @@ class _ItemMainInfoSection extends StatelessWidget {
                     ],
                   ),
                 ),
-                OutlinedButton(
+                TextButton(
                   onPressed: () {
                     if (item.sellerId.isEmpty) return;
                     context.push('/user/${item.sellerId}');
                   },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: ImageBackgroundColor),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     minimumSize: const Size(0, 0),
                   ),
-                  child: const Text(
-                    '프로필 보기',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        '프로필 보기',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: blueColor,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: blueColor,
+                      ),
+                    ],
                   ),
                 ),
               ],
