@@ -131,7 +131,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             currentUser != null && currentUser.id == item.sellerId;
 
         return Scaffold(
-          backgroundColor: BackgroundColor,
+          backgroundColor: Colors.white,
           appBar: AppBar(title: const Text('상세 보기')),
           body: SafeArea(
             child: Column(
@@ -422,7 +422,7 @@ class _ItemMainInfoSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: const BoxDecoration(
-        color: BackgroundColor,
+        color: Colors.white,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(defaultRadius),
           topRight: Radius.circular(defaultRadius),
@@ -489,15 +489,9 @@ class _ItemMainInfoSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: BackgroundColor,
+              color: BorderColor.withOpacity(0.3),
               borderRadius: BorderRadius.circular(defaultRadius),
-              boxShadow: [
-                BoxShadow(
-                  color: shadowHigh,
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              boxShadow: const [],
             ),
             child: Row(
               children: [
@@ -557,15 +551,9 @@ class _ItemMainInfoSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: BackgroundColor,
+              color: BorderColor.withOpacity(0.3),
               borderRadius: BorderRadius.circular(defaultRadius),
-              boxShadow: [
-                BoxShadow(
-                  color: shadowHigh,
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+              boxShadow: const [],
             ),
             child: Row(
               children: [
@@ -653,22 +641,29 @@ class _ItemDescriptionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      color: BackgroundColor,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '상품 설명',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            item.itemContent,
-            style: const TextStyle(fontSize: 13, height: 1.4),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: BorderColor.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(defaultRadius),
+          boxShadow: const [],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '상품 설명',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.itemContent,
+              style: const TextStyle(fontSize: 13, height: 1.4),
+            ),
+          ],
+        ),
       ),
     );
   }
