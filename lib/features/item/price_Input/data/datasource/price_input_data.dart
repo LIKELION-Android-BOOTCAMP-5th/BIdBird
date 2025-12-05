@@ -15,22 +15,26 @@ class PriceInputDatasource {
       throw Exception('로그인 정보가 없습니다. 다시 로그인 해주세요.');
     }
 
-    await _supabase.from('bid_log').insert(<String, dynamic>{
-      'item_id': request.itemId,
-      'bid_user': user.id,
-      'bid_price': request.bidPrice,
-      'bid_time': DateTime.now().toIso8601String(),
-    });
+    final response = await _supabase.functions.invoke(
+      'place-bid',
+      body: <String, dynamic>{
+        'itemId': request.itemId,
+        'bidPrice': request.bidPrice,
+        'isInstant': request.isInstant,
+      },
+    );
 
-    await _supabase
-        .from('bid_status')
-        .update({'text_code': 'BIDDING'})
-        .eq('item_id', request.itemId)
-        .eq('user_id', user.id);
+    final data = response.data;
 
-    await _supabase
-        .from('items')
-        .update({'current_price': request.bidPrice})
-        .eq('id', request.itemId);
+    if (data is! Map) {
+      throw Exception('입찰 처리에 실패했습니다. 다시 시도해주세요.');
+    }
+
+    final resultCode = data['result_code'] as String?;
+    final message = data['message'] as String? ?? '입찰 처리에 실패했습니다.';
+
+    if (resultCode != 'SUCCESS' && resultCode != 'INSTANT_BUY_TRIGGER') {
+      throw Exception(message);
+    }
   }
 }

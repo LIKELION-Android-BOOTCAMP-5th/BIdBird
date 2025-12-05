@@ -56,7 +56,7 @@ class CurrentTradeDatasource {
       final statusRows = await _supabase
           .from('bid_status')
           .select('item_id, text_code')
-          .eq('user_id', user.id)
+          .eq('seller_id', user.id)
           .inFilter('item_id', itemIds);
 
       final Map<String, String> statusByItemId = {};
@@ -108,9 +108,9 @@ class CurrentTradeDatasource {
     try {
       final statusRows = await _supabase
           .from('bid_status')
-          .select('item_id, text_code, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', ascending: false);
+          .select('item_id, text_code, updated_at')
+          .eq('seller_id', user.id)
+          .order('updated_at', ascending: false);
 
       if (statusRows.isEmpty) return [];
 
@@ -134,7 +134,7 @@ class CurrentTradeDatasource {
         final itemId = row['item_id']?.toString() ?? '';
         final item = itemsById[itemId] ?? <String, dynamic>{};
         final status = row['text_code']?.toString() ?? '';
-        final createdAt = row['created_at']?.toString() ?? '';
+        final createdAt = row['updated_at']?.toString() ?? '';
 
         return SaleHistoryItem(
           itemId: itemId,
