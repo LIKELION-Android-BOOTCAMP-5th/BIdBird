@@ -239,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               setState(() {
                                 _fabMenuOpen = false;
                               });
-                              context.push('/add_item/check');
+                              context.push('/add_item/item_registration_list');
                             },
                           ),
                           const SizedBox(height: 16),

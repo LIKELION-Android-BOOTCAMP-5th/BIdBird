@@ -1,10 +1,10 @@
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/fonts.dart';
+import 'package:bidbird/features/item/widgets/history_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../viewmodel/current_trade_viewmodel.dart';
-import '../widgets/history_card.dart';
 import '../../../../core/utils/ui_set/border_radius.dart';
 import '../../../../core/utils/ui_set/icons.dart';
 

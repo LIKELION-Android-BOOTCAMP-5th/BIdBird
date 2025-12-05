@@ -1,11 +1,11 @@
-class ItemRegistrationData {
-  ItemRegistrationData({
+class ItemRegistrationDetail {
+  ItemRegistrationDetail({
     required this.id,
     required this.title,
     required this.description,
     required this.startPrice,
     required this.instantPrice,
-    required this.thumbnailUrl,
+    this.thumbnailUrl,
     this.keywordTypeId,
   });
 
