@@ -41,29 +41,31 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          _buildTabBar(),
-          const SizedBox(height: 8),
-          if (viewModel.isLoading)
-            const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTabBar(),
+            const SizedBox(height: 8),
+            if (viewModel.isLoading)
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (viewModel.error != null)
+              Expanded(
+                child: Center(
+                  child: Text(viewModel.error ?? '오류가 발생했습니다.'),
+                ),
+              )
+            else
+              Expanded(
+                child: _selectedTabIndex == 0
+                    ? _buildSaleHistoryList(viewModel)
+                    : _buildBidHistoryList(viewModel),
               ),
-            )
-          else if (viewModel.error != null)
-            Expanded(
-              child: Center(
-                child: Text(viewModel.error ?? '오류가 발생했습니다.'),
-              ),
-            )
-          else
-            Expanded(
-              child: _selectedTabIndex == 0
-                  ? _buildSaleHistoryList(viewModel)
-                  : _buildBidHistoryList(viewModel),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
