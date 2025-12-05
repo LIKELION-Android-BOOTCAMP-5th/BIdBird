@@ -106,14 +106,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: SafeArea(
+              child: Center(child: CircularProgressIndicator()),
+            ),
           );
         }
 
         if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
           return const Scaffold(
-            body: Center(
-              child: Text('매물 정보를 불러올 수 없습니다.', style: TextStyle(fontSize: 14)),
+            body: SafeArea(
+              child: Center(
+                child: Text('매물 정보를 불러올 수 없습니다.', style: TextStyle(fontSize: 14)),
+              ),
             ),
           );
         }
@@ -129,24 +133,26 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         return Scaffold(
           backgroundColor: BackgroundColor,
           appBar: AppBar(title: const Text('상세 보기')),
-          body: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _ItemImageSection(item: item),
-                      const SizedBox(height: 8),
-                      _ItemMainInfoSection(item: item),
-                      const SizedBox(height: 16),
-                      _ItemDescriptionSection(item: item),
-                    ],
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _ItemImageSection(item: item),
+                        const SizedBox(height: 8),
+                        _ItemMainInfoSection(item: item),
+                        const SizedBox(height: 16),
+                        _ItemDescriptionSection(item: item),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              _BottomActionBar(item: item, isMyItem: isMyItem),
-            ],
+                _BottomActionBar(item: item, isMyItem: isMyItem),
+              ],
+            ),
           ),
         );
       },
