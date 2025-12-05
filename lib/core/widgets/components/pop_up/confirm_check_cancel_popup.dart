@@ -32,19 +32,22 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: defaultBorder,
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
-          ),
-          child: SingleChildScrollView(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: SafeArea(
+        minimum: const EdgeInsets.all(0),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: mediaQuery.size.height * 0.6,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -57,10 +60,14 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                 ),
                 if (widget.description != null) ...[
                   const SizedBox(height: 8),
-                  Text(
-                    widget.description!,
-                    textAlign: TextAlign.left,
-                    style: contentFontStyle,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Text(
+                        widget.description!,
+                        textAlign: TextAlign.left,
+                        style: contentFontStyle,
+                      ),
+                    ),
                   ),
                 ],
                 if (widget.checkLabel.isNotEmpty) ...[
