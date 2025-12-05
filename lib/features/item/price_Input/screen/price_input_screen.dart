@@ -99,21 +99,33 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Center(
-            child: Text(
-              '입찰하기',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '입찰하기',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(
+                  Icons.close,
+                  size: 20,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: BackgroundColor,
+              color: Colors.white,
               borderRadius: defaultBorder,
               boxShadow: [
                 BoxShadow(
@@ -126,54 +138,63 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '현재 가격',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: textColor,
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: defaultBorder,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '현재 가격',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textColor,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_formatPrice(widget.currentPrice)}원',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_formatPrice(widget.currentPrice)}원',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          '호가',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: textColor,
+                        ],
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text(
+                            '호가',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textColor,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatBidUnit(widget.bidUnit),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: RedColor,
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatBidUnit(widget.bidUnit),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: RedColor,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -195,7 +216,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                           '입찰 금액',
                           style: TextStyle(
                             fontSize: 12,
-                            color: BackgroundColor,
+                            color: blueColor,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -212,55 +233,11 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // 아래쪽 전체 폭 네모 버튼 (- / +)
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: _decreaseBid,
-                        borderRadius: BorderRadius.circular(defaultRadius),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: BackgroundColor,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              '-',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: InkWell(
-                        onTap: _increaseBid,
-                        borderRadius: BorderRadius.circular(defaultRadius),
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: BackgroundColor,
-                            borderRadius: BorderRadius.circular(defaultRadius),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              '+',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildRoundBidButton('-', _decreaseBid),
+                    _buildRoundBidButton('+', _increaseBid),
                   ],
                 ),
               ],
@@ -281,7 +258,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                 ),
               ),
               child: const Text(
-                '입찰 확정',
+                '입찰 확인',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -292,6 +269,34 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
           ),
           const SizedBox(height: 8),
         ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoundBidButton(String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(
+            color: Colors.grey.shade300,
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );
@@ -346,6 +351,83 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
         barrierDismissible: false,
         builder: (dialogContext) => AskPopup(
           content: '입찰이 완료되었습니다.',
+          yesText: '확인',
+          yesLogic: () async {
+            Navigator.pop(dialogContext);
+            if (parentContext.mounted) {
+              Navigator.pop(parentContext);
+            }
+          },
+        ),
+      );
+    } catch (e) {
+      if (parentContext.mounted) {
+        Navigator.pop(parentContext);
+
+        showDialog(
+          context: parentContext,
+          builder: (dialogContext) => AskPopup(
+            content: '오류가 발생했습니다.\n$e',
+            yesText: '확인',
+            yesLogic: () async {
+              Navigator.pop(dialogContext);
+            },
+          ),
+        );
+      }
+    }
+  }
+
+  void _showInstantBuyDialog(
+      BuildContext parentContext, PriceInputViewModel viewModel) {
+    showDialog(
+      context: parentContext,
+      builder: (dialogContext) => AskPopup(
+        content: '${_formatPrice(widget.buyNowPrice)}원에 즉시구매 하시겠습니까?',
+        yesText: '확인',
+        noText: '취소',
+        yesLogic: () async {
+          Navigator.pop(dialogContext);
+          await _processInstantBuy(parentContext, viewModel);
+        },
+      ),
+    );
+  }
+
+  Future<void> _processInstantBuy(
+      BuildContext parentContext, PriceInputViewModel viewModel) async {
+    showDialog(
+      context: parentContext,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (_) => Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await viewModel.placeBid(
+        itemId: widget.itemId,
+        bidPrice: widget.buyNowPrice,
+        isInstant: true,
+      );
+
+      if (!parentContext.mounted) return;
+      Navigator.pop(parentContext);
+
+      if (!parentContext.mounted) return;
+      await showDialog(
+        context: parentContext,
+        barrierDismissible: false,
+        builder: (dialogContext) => AskPopup(
+          content: '즉시구매가 요청되었습니다.',
           yesText: '확인',
           yesLogic: () async {
             Navigator.pop(dialogContext);

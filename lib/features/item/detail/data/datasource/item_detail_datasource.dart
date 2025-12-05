@@ -220,7 +220,7 @@ class ItemDetailDatasource {
       final completedTrades = await _supabase
           .from('bid_status')
           .select('rating')
-          .eq('user_id', sellerId)
+          .eq('seller_id', sellerId)
           .eq('text_code', 'COMPLETED')
           .not('rating', 'is', null);
 

@@ -14,6 +14,7 @@ class PriceInputViewModel extends ChangeNotifier {
   Future<void> placeBid({
     required String itemId,
     required int bidPrice,
+    bool isInstant = false,
   }) async {
     if (isSubmitting) return;
 
@@ -21,7 +22,11 @@ class PriceInputViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final request = BidRequest(itemId: itemId, bidPrice: bidPrice);
+      final request = BidRequest(
+        itemId: itemId,
+        bidPrice: bidPrice,
+        isInstant: isInstant,
+      );
       await _repository.placeBid(request);
     } catch (e) {
       rethrow;
