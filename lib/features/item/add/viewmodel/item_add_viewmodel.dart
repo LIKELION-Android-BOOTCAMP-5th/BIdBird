@@ -4,14 +4,14 @@ import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
+import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../data/repository/item_add_repository_impl.dart';
+import '../data/repository/item_add_repository.dart';
 import '../model/add_item_usecase.dart';
 import '../model/item_add_entity.dart';
 
@@ -378,7 +378,7 @@ class ItemAddViewModel extends ChangeNotifier {
             if (!context.mounted) return;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!context.mounted) return;
-              context.push('/add_item/detail', extra: registrationItem);
+              context.push('/add_item/item_registration_list');
             });
           },
         ),

@@ -7,16 +7,13 @@ import 'package:bidbird/features/chat/ui/chatting_room_screen.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item/add/screen/item_add_screen.dart';
 import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
+import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
+import 'package:bidbird/features/item/item_registration_detail/screen/item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/item_registration_list/screen/item_registration_list_screen.dart';
 import 'package:bidbird/features/item/current_trade/data/repository/current_trade_repository.dart';
 import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
-import 'package:bidbird/features/item/registration/data/datasource/item_registration_data.dart';
-import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
-import 'package:bidbird/features/item/registration/screen/item_registration_screen.dart';
-import 'package:bidbird/features/item/registration/viewmodel/item_registration_viewmodel.dart';
-import 'package:bidbird/features/item/registration_detail/screen/item_registration_detail_screen.dart';
-import 'package:bidbird/features/item/registration_detail/viewmodel/item_registration_viewmodel.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_trade_history_screen.dart';
 import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
@@ -240,33 +237,26 @@ GoRouter createAppRouter(BuildContext context) {
             ),
           );
         },
-        routes: [
-          GoRoute(
-            path: '/check',
-            pageBuilder: (context, state) {
-              return NoTransitionPage(
-                child:
-                    ChangeNotifierProvider<ItemRegistrationListViewModel>(
-                  create: (_) => ItemRegistrationListViewModel()..init(),
-                  child: const ItemRegistrationScreen(),
-                ),
-              );
-            },
-          ),
-          GoRoute(
-            path: '/detail',
-            pageBuilder: (context, state) {
-              final item = state.extra as ItemRegistrationData;
-              return NoTransitionPage(
-                child: ChangeNotifierProvider<
-                    ItemRegistrationDetailViewModel>(
-                  create: (_) => ItemRegistrationDetailViewModel(),
-                  child: ItemRegistrationDetailScreen(item: item),
-                ),
-              );
-            },
-          ),
-        ],
+      ),
+      GoRoute(
+        path: '/add_item/item_registration_list',
+        pageBuilder: (context, state) {
+          return const NoTransitionPage(child: RegistrationScreen());
+        },
+      ),
+      GoRoute(
+        path: '/add_item/item_registration_detail',
+        pageBuilder: (context, state) {
+          final extra = state.extra;
+          final item = extra is ItemRegistrationData ? extra : null;
+
+          if (item == null) {
+            return const NoTransitionPage(child: HomeScreen());
+          }
+          return NoTransitionPage(
+            child: ItemRegistrationDetailScreen(item: item),
+          );
+        },
       ),
       GoRoute(
         path: '/user/:userId',
