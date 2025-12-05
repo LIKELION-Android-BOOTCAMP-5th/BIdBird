@@ -382,8 +382,8 @@ class ItemAddScreen extends StatelessWidget {
                           decoration:
                               _inputDecoration('즉시 입찰가 입력').copyWith(
                             fillColor: viewModel.useInstantPrice
-                                ? BackgroundColor
-                                : BackgroundColor,
+                                ? Colors.white
+                                : BorderColor.withOpacity(0.2),
                           ),
                           onChanged: (value) {
                             final formatted = viewModel.formatNumber(value);
