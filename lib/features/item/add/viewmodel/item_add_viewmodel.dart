@@ -131,6 +131,57 @@ class ItemAddViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 기존 매물을 수정하기 위해 items / item_images 데이터를 폼에 채웁니다.
+  Future<void> startEdit(String itemId) async {
+    editingItemId = itemId;
+
+    final supabase = SupabaseManager.shared.supabase;
+    try {
+      final Map<String, dynamic> row = await supabase
+          .from('items')
+          .select(
+            'title, description, start_price, buy_now_price, keyword_type, auction_duration_hours',
+          )
+          .eq('id', itemId)
+          .single();
+
+      titleController.text = (row['title'] ?? '').toString();
+      descriptionController.text = (row['description'] ?? '').toString();
+
+      final int? startPrice = (row['start_price'] as num?)?.toInt();
+      if (startPrice != null) {
+        startPriceController.text = formatNumber(startPrice.toString());
+      }
+
+      final int? buyNowPrice = (row['buy_now_price'] as num?)?.toInt();
+      if (buyNowPrice != null && buyNowPrice > 0) {
+        useInstantPrice = true;
+        instantPriceController.text = formatNumber(buyNowPrice.toString());
+      } else {
+        useInstantPrice = false;
+        instantPriceController.clear();
+      }
+
+      selectedKeywordTypeId = (row['keyword_type'] as num?)?.toInt();
+
+      final int durationHours =
+          (row['auction_duration_hours'] as num?)?.toInt() ?? 4;
+      if (durationHours == 12) {
+        selectedDuration = '12시간';
+      } else if (durationHours == 24) {
+        selectedDuration = '24시간';
+      } else {
+        selectedDuration = '4시간';
+      }
+
+      notifyListeners();
+
+      await loadExistingImages(itemId);
+    } catch (_) {
+      // 실패해도 새로 작성할 수 있도록 조용히 무시
+    }
+  }
+
   /// 수정 모드에서 기존 이미지를 불러와 selectedImages에 채웁니다.
   Future<void> loadExistingImages(String itemId) async {
     try {

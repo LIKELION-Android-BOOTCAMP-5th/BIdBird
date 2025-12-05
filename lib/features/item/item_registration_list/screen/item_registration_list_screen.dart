@@ -60,8 +60,14 @@ class RegistrationScreen extends StatelessWidget {
           thumbnailUrl: item.thumbnailUrl,
           status: '등록 대기',
           date: null,
-          onTap: () {
-            context.push('/add_item/item_registration_detail', extra: item);
+          onTap: () async {
+            final result = await context.push(
+              '/add_item/item_registration_detail',
+              extra: item,
+            );
+            if (result == true) {
+              viewModel.loadPendingItems();
+            }
           },
         );
       },

@@ -13,6 +13,8 @@ class ItemRegistrationDetailRepository {
   Future<DateTime> confirmRegistration(String itemId) {
     return _datasource.confirmRegistration(itemId);
   }
-}
 
-// TODO: implement ItemRegistrationDetailRepository here
+  Future<void> deleteItem(String itemId) {
+    return _datasource.deleteItem(itemId);
+  }
+}
