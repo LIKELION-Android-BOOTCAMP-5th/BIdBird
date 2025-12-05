@@ -81,4 +81,38 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> deleteItem(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) {
+          return AskPopup(
+            content: '해당 매물을 삭제하시겠습니까?',
+            yesText: '삭제하기',
+            noText: '취소',
+            yesLogic: () async {
+              Navigator.of(dialogContext).pop();
+              await _repository.deleteItem(_item.id);
+              if (context.mounted) {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('매물이 삭제되었습니다.')),
+                );
+                Navigator.of(context).pop(true);
+              }
+            },
+          );
+        },
+      );
+    } catch (e) {
+      if (context.mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('삭제 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
+  }
 }
