@@ -1,6 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item/add/model/item_add_entity.dart';
-import 'package:bidbird/features/item/registration/model/item_registration_entity.dart';
+import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

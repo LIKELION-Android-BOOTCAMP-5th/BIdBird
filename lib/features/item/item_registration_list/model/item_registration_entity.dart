@@ -1,3 +1,5 @@
+// TODO: implement ItemRegistrationData model here
+
 class ItemRegistrationData {
   ItemRegistrationData({
     required this.id,
@@ -5,7 +7,7 @@ class ItemRegistrationData {
     required this.description,
     required this.startPrice,
     required this.instantPrice,
-    required this.thumbnailUrl,
+    this.thumbnailUrl,
     this.keywordTypeId,
   });
 
