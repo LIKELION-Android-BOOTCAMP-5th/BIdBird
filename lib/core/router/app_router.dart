@@ -230,9 +230,19 @@ GoRouter createAppRouter(BuildContext context) {
       GoRoute(
         path: '/add_item',
         pageBuilder: (context, state) {
+          final extra = state.extra;
+          final String? editingItemId = extra is String ? extra : null;
           return NoTransitionPage(
             child: ChangeNotifierProvider<ItemAddViewModel>(
-              create: (_) => ItemAddViewModel()..init(),
+              create: (_) {
+                final vm = ItemAddViewModel();
+                if (editingItemId != null) {
+                  vm.startEdit(editingItemId);
+                } else {
+                  vm.init();
+                }
+                return vm;
+              },
               child: const ItemAddScreen(),
             ),
           );

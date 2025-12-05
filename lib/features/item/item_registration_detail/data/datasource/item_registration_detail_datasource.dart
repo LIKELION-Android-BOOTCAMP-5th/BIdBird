@@ -26,8 +26,6 @@ class ItemRegistrationDetailDatasource {
     }
   }
 
-  /// Edge Function 을 통해 실제 등록 시간을 10분 단위로 계산/등록한다.
-  /// 반환값은 최종 등록 예정 시각.
   Future<DateTime> confirmRegistration(String itemId) async {
     try {
       final user = _supabase.auth.currentUser;
@@ -57,6 +55,17 @@ class ItemRegistrationDetailDatasource {
       rethrow;
     }
   }
-}
 
-// TODO: implement ItemRegistrationDetailDatasource here
+  Future<void> deleteItem(String itemId) async {
+    try {
+      await _supabase.from('item_images').delete().eq('item_id', itemId);
+      await _supabase.from('items').delete().eq('id', itemId);
+    } on PostgrestException catch (e) {
+      debugPrint('[ItemRegistrationDetailDatasource] deleteItem PostgrestException: ${e.message}');
+      rethrow;
+    } catch (e) {
+      debugPrint('[ItemRegistrationDetailDatasource] deleteItem error: $e');
+      rethrow;
+    }
+  }
+}
