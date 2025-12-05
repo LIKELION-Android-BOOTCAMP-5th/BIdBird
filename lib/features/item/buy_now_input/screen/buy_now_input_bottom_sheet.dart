@@ -1,0 +1,251 @@
+import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
+import 'package:bidbird/features/item/price_Input/viewmodel/price_input_viewmodel.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class BuyNowInputBottomSheet extends StatelessWidget {
+  const BuyNowInputBottomSheet({
+    super.key,
+    required this.itemId,
+    required this.buyNowPrice,
+  });
+
+  final String itemId;
+  final int buyNowPrice;
+
+  String _formatPrice(int price) {
+    final buffer = StringBuffer();
+    final text = price.toString();
+    for (int i = 0; i < text.length; i++) {
+      final reverseIndex = text.length - i;
+      buffer.write(text[i]);
+      if (reverseIndex > 1 && reverseIndex % 3 == 1 && i != text.length - 1) {
+        buffer.write(',');
+      }
+    }
+    return buffer.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.watch<PriceInputViewModel>();
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '즉시 입찰하기',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(
+                    Icons.close,
+                    size: 20,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: defaultBorder,
+                boxShadow: [
+                  BoxShadow(
+                    color: shadowLow,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: defaultBorder,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '즉시 입찰가',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_formatPrice(buyNowPrice)}원',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: blueColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: viewModel.isSubmitting
+                    ? null
+                    : () => _showTermsDialog(context, viewModel),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: blueColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(defaultRadius),
+                  ),
+                ),
+                child: const Text(
+                  '즉시 입찰하기',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTermsDialog(
+      BuildContext parentContext, PriceInputViewModel viewModel) {
+    const terms =
+        '"즉시 입찰"이란 회원이 경매 화면에서 회사가 제시하는 금액(예: 현재 입찰가에 일정 입찰 단위를 더한 금액 등)을 단일 조작으로 입력하여 곧바로 입찰을 완료하는 기능을 말합니다.\n\n'
+        '즉시 입찰은 회사 서버에 해당 입찰 정보가 도달하여 시스템에 정상적으로 저장된 시점을 기준으로 유효하게 성립하며, 화면 표시 지연·네트워크 장애 등으로 인한 시간 차이는 인정하지 않습니다.\n\n'
+        '동일 금액에 대한 즉시 입찰이 복수 존재하는 경우, 회사 시스템에 먼저 접수·기록된 입찰을 우선하는 것으로 합니다.\n\n'
+        '회원이 즉시 입찰을 통해 제출한 입찰 금액, 수량, 조건 등은 관련 법령에서 정한 취소 사유가 있는 경우를 제외하고 경매 종료 전 임의 변경 또는 취소가 불가능합니다.\n\n'
+        '즉시 입찰로 최고 입찰자가 된 회원은 경매 종료 시점에 낙찰자로 확정될 수 있으며, 이 경우 서비스 내 고지된 결제 기한, 방식 및 절차에 따라 결제 의무를 부담합니다. 정당한 사유 없이 결제를 이행하지 아니한 경우, 회사는 경매 참여 제한, 이용 정지, 손해배상 청구 등 약관 및 운영정책에서 정한 제재를 할 수 있습니다.\n\n'
+        '회사는 다음 각 호의 어느 하나에 해당하는 경우 즉시 입찰을 사전 통지 없이 취소 또는 무효화할 수 있으며, 필요 시 해당 회원의 경매 참여를 제한할 수 있습니다.\n\n'
+        '1) 시스템 오류, 통신 장애 등으로 정상적인 입찰 처리가 이루어지지 않은 경우\n'
+        '2) 타인의 계정 도용, 비정상적인 프로그램·매크로 이용 등 부정한 방법으로 즉시 입찰이 이루어진 경우\n'
+        '3) 기타 관련 법령, 본 약관 또는 운영정책을 중대한 위반한 사실이 인정되는 경우\n\n'
+        '즉시 입찰과 관련하여 회사가 고의 또는 중대한 과실 없이 제공한 정보의 지연, 오류, 누락, 시스템 장애 등으로 인해 회원 또는 제3자에게 발생한 손해에 대하여 회사는 관련 법령에서 달리 정하지 않는 한 책임을 지지 않습니다.';
+
+    showDialog(
+      context: parentContext,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return ConfirmCheckCancelPopup(
+          title: '즉시 입찰 약관',
+          description: terms,
+          checkLabel: '위 내용을 모두 확인했고 동의합니다.',
+          confirmText: '동의',
+          cancelText: '취소',
+          onConfirm: (checked) {
+            if (!checked) return;
+            _showConfirmDialog(parentContext, viewModel);
+          },
+          onCancel: () {},
+        );
+      },
+    );
+  }
+
+  void _showConfirmDialog(
+      BuildContext parentContext, PriceInputViewModel viewModel) {
+    showDialog(
+      context: parentContext,
+      builder: (dialogContext) => AskPopup(
+        content: '${_formatPrice(buyNowPrice)}원에 즉시 입찰하시겠습니까?',
+        yesText: '확인',
+        noText: '취소',
+        yesLogic: () async {
+          Navigator.pop(dialogContext);
+          await _processInstantBid(parentContext, viewModel);
+        },
+      ),
+    );
+  }
+
+  Future<void> _processInstantBid(
+      BuildContext parentContext, PriceInputViewModel viewModel) async {
+    showDialog(
+      context: parentContext,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (_) => Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await viewModel.placeBid(
+        itemId: itemId,
+        bidPrice: buyNowPrice,
+        isInstant: true,
+      );
+
+      if (!parentContext.mounted) return;
+      Navigator.pop(parentContext);
+
+      if (!parentContext.mounted) return;
+      await showDialog(
+        context: parentContext,
+        barrierDismissible: false,
+        builder: (dialogContext) => AskPopup(
+          content: '즉시 입찰이 완료되었습니다.',
+          yesText: '확인',
+          yesLogic: () async {
+            Navigator.pop(dialogContext);
+            if (parentContext.mounted) {
+              Navigator.pop(parentContext);
+            }
+          },
+        ),
+      );
+    } catch (e) {
+      if (parentContext.mounted) {
+        Navigator.pop(parentContext);
+
+        showDialog(
+          context: parentContext,
+          builder: (dialogContext) => AskPopup(
+            content: '오류가 발생했습니다.\n$e',
+            yesText: '확인',
+            yesLogic: () async {
+              Navigator.pop(dialogContext);
+            },
+          ),
+        );
+      }
+    }
+  }
+}

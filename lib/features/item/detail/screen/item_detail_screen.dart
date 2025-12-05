@@ -6,6 +6,7 @@ import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:bidbird/features/item/price_Input/screen/price_input_screen.dart';
 import 'package:bidbird/features/item/price_Input/viewmodel/price_input_viewmodel.dart';
+import 'package:bidbird/features/item/buy_now_input/screen/buy_now_input_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -875,7 +876,27 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                           height: 44,
                           child: ElevatedButton(
                             onPressed: () {
-                              // TODO: 즉시 구매 플로우 연결
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.white,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(defaultRadius),
+                                  ),
+                                ),
+                                builder: (context) {
+                                  return ChangeNotifierProvider<
+                                    PriceInputViewModel
+                                  >(
+                                    create: (_) => PriceInputViewModel(),
+                                    child: BuyNowInputBottomSheet(
+                                      itemId: widget.item.itemId,
+                                      buyNowPrice: widget.item.buyNowPrice,
+                                    ),
+                                  );
+                                },
+                              );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: blueColor,
@@ -884,7 +905,7 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                               ),
                             ),
                             child: const Text(
-                              '즉시 구매',
+                              '즉시 입찰하기',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
