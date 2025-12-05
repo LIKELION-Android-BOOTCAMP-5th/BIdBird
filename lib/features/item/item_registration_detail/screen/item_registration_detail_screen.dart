@@ -3,6 +3,7 @@ import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popu
 import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:bidbird/features/item/item_registration_detail/viewmodel/item_registration_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class ItemRegistrationDetailScreen extends StatelessWidget {
@@ -39,18 +40,18 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
               title: const Text('매물 등록 확인'),
               centerTitle: true,
               actions: [
-                TextButton(
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: blueColor),
+                  onPressed: () {
+                    viewModel.deleteItem(context);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, color: blueColor),
                   onPressed: () {
                     Navigator.of(context).pop();
+                    context.push('/add_item', extra: item.id);
                   },
-                  child: const Text(
-                    '수정',
-                    style: TextStyle(
-                      color: blueColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
                 ),
               ],
             ),
