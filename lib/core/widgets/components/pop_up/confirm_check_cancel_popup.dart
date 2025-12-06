@@ -33,6 +33,7 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final bool requireCheck = widget.checkLabel.isNotEmpty;
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -109,12 +110,17 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                               },
                             ),
                           ),
-                          onPressed: _checked
-                              ? () {
+                          onPressed: requireCheck
+                              ? (_checked
+                                  ? () {
+                                      Navigator.of(context).pop();
+                                      widget.onConfirm(_checked);
+                                    }
+                                  : null)
+                              : () {
                                   Navigator.of(context).pop();
-                                  widget.onConfirm(_checked);
-                                }
-                              : null,
+                                  widget.onConfirm(true);
+                                },
                           child: Text(
                             widget.confirmText,
                             style: const TextStyle(

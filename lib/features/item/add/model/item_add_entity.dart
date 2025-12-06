@@ -34,8 +34,6 @@ class ItemAddEntity {
       'bidding_count': 0,
       'status': 'READY',
       'keyword_type': keywordTypeId,
-      'auction_start_at': auctionStartAt.toIso8601String(),
-      'auction_end_at': auctionEndAt.toIso8601String(),
       'auction_duration_hours': auctionDurationHours,
       'is_agree': isAgree,
     };
