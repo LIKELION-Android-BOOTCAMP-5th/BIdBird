@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:bidbird/features/item/price_Input/screen/price_input_screen.dart';
 import 'package:bidbird/features/item/price_Input/viewmodel/price_input_viewmodel.dart';
@@ -133,7 +134,40 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
         return Scaffold(
           backgroundColor: Colors.white,
-          appBar: AppBar(title: const Text('상세 보기')),
+          appBar: AppBar(
+            title: const Text('상세 보기'),
+            actions: [
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ReportScreen(),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.only(right: 12, left: 4),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(
+                  Icons.report_gmailerrorred_outlined,
+                  color: Colors.red,
+                  size: 18,
+                ),
+                label: const Text(
+                  '신고',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          ),
           body: SafeArea(
             child: Column(
               children: [
@@ -158,6 +192,31 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         );
       },
     );
+  }
+}
+
+String _formatRelativeTime(String? isoString) {
+  if (isoString == null || isoString.isEmpty) return '';
+  DateTime? time;
+  try {
+    time = DateTime.tryParse(isoString);
+  } catch (_) {
+    time = null;
+  }
+  if (time == null) return '';
+
+  final now = DateTime.now();
+  final diff = now.difference(time);
+
+  if (diff.inSeconds < 60) {
+    return '방금 전';
+  } else if (diff.inMinutes < 60) {
+    return '${diff.inMinutes}분 전';
+  } else if (diff.inHours < 24) {
+    return '${diff.inHours}시간 전';
+  } else {
+    final days = diff.inDays;
+    return '${days}일 전';
   }
 }
 
@@ -349,84 +408,86 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
     final hasImages = widget.item.itemImages.isNotEmpty;
     final images = hasImages ? widget.item.itemImages : <String>[];
 
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Stack(
-        children: [
-          if (hasImages && images.isNotEmpty)
-            PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
-              itemCount: images.length,
-              itemBuilder: (context, index) {
-                return Container(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AspectRatio(
+          aspectRatio: 1,
+          child: Stack(
+            children: [
+              if (hasImages && images.isNotEmpty)
+                PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
+                  },
+                  itemCount: images.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      width: double.infinity,
+                      color: ImageBackgroundColor,
+                      child: Image.network(
+                        images[index],
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Text(
+                              '상품 사진',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                )
+              else
+                Container(
                   width: double.infinity,
                   color: ImageBackgroundColor,
-                  child: Image.network(
-                    images[index],
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child: Text(
-                          '상품 사진',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      );
-                    },
+                  child: const Center(
+                    child: Text(
+                      '상품 사진',
+                      style: TextStyle(color: iconColor),
+                    ),
                   ),
-                );
-              },
-            )
-          else
-            Container(
-              width: double.infinity,
-              color: ImageBackgroundColor,
-              child: const Center(
-                child: Text(
-                  '상품 사진',
-                  style: TextStyle(color: iconColor),
+                ),
+              Positioned(
+                top: 16,
+                left: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: RedColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${_formatRemainingTime(widget.item.finishTime)} 남음',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          Positioned(
-            top: 16,
-            left: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: RedColor,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '${_formatRemainingTime(widget.item.finishTime)} 남음',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            ],
+          ),
+        ),
+        if (hasImages && images.length > 1) ...[
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              images.length,
+              (index) => _buildDot(isActive: index == _currentPage),
             ),
           ),
-          if (hasImages && images.length > 1)
-            Positioned(
-              bottom: 16,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  images.length,
-                  (index) => _buildDot(isActive: index == _currentPage),
-                ),
-              ),
-            ),
         ],
-      ),
+      ],
     );
   }
 
@@ -437,8 +498,12 @@ class _ItemImageSectionState extends State<_ItemImageSection> {
       margin: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color:
-            isActive ? textColor : textColor,
+        // 현재 사진: 안쪽은 검은색, 나머지는 투명
+        color: isActive ? Colors.black : Colors.transparent,
+        border: Border.all(
+          color: isActive ? Colors.black : const Color(0xFFBDBDBD),
+          width: isActive ? 1.5 : 1,
+        ),
       ),
     );
   }
@@ -498,21 +563,26 @@ class _ItemMainInfoSection extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               if (!isMyItem)
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ReportScreen(), // 신고 UI 이동
-                      ),
-                    );
+                TextButton.icon(
+                  onPressed: () {
+                    // TODO: 판매자 연락 기능 연동 (채팅 등)
                   },
-                  child: Text(
-                    '신고',
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  icon: const Icon(
+                    Icons.chat_bubble_outline,
+                    size: 18,
+                    color: blueColor,
+                  ),
+                  label: const Text(
+                    '판매자 연락',
                     style: TextStyle(
                       fontSize: 12,
-                      color: iconColor,
-                      decoration: TextDecoration.underline,
+                      fontWeight: FontWeight.w500,
+                      color: blueColor,
                     ),
                   ),
                 ),
@@ -593,111 +663,201 @@ class _ItemDescriptionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        decoration: BoxDecoration(
-          color: BorderColor.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(defaultRadius),
-          boxShadow: const [],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 판매자 프로필 영역
-            Row(
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            decoration: BoxDecoration(
+              color: BorderColor.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(defaultRadius),
+              boxShadow: const [],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(
-                  radius: 20,
-                  backgroundColor: yellowColor,
-                  child: Icon(Icons.person, color: BackgroundColor),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.sellerTitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
+                // 판매자 프로필 영역
+                Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 20,
+                      backgroundColor: yellowColor,
+                      child: Icon(Icons.person, color: BackgroundColor),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.star,
-                            size: 14,
-                            color: yellowColor,
-                          ),
-                          const SizedBox(width: 4),
                           Text(
-                            '${item.sellerRating.toStringAsFixed(1)} (${item.sellerReviewCount})',
+                            item.sellerTitle,
                             style: const TextStyle(
-                              fontSize: 12,
-                              color: iconColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
                             ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                size: 14,
+                                color: yellowColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${item.sellerRating.toStringAsFixed(1)} (${item.sellerReviewCount})',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: iconColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        if (item.sellerId.isEmpty) return;
+                        context.push('/user/${item.sellerId}');
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        minimumSize: const Size(0, 0),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Text(
+                            '프로필 보기',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: blueColor,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: blueColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                TextButton(
-                  onPressed: () {
-                    if (item.sellerId.isEmpty) return;
-                    context.push('/user/${item.sellerId}');
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    minimumSize: const Size(0, 0),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        '프로필 보기',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: blueColor,
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 16,
-                        color: blueColor,
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 12),
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: BorderColor,
+                ),
+                const SizedBox(height: 12),
+                // 상품 설명 영역
+                const Text(
+                  '상품 설명',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  item.itemContent,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            const Divider(
-              height: 1,
-              thickness: 1,
-              color: BorderColor,
-            ),
-            const SizedBox(height: 12),
-            // 상품 설명 영역
-            const Text(
-              '상품 설명',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              item.itemContent,
-              style: const TextStyle(fontSize: 13, height: 1.4),
-            ),
-          ],
+          ),
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            decoration: BoxDecoration(
+              color: BorderColor.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(defaultRadius),
+              boxShadow: const [],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '현재 입찰 내역',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                FutureBuilder<List<Map<String, dynamic>>>(
+                  future: ItemDetailDatasource().fetchBidHistory(item.itemId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return const Text(
+                        '입찰 내역을 불러올 수 없습니다.',
+                        style: TextStyle(fontSize: 12, color: iconColor),
+                      );
+                    }
+
+                    final bids = snapshot.data ?? [];
+                    if (bids.isEmpty) {
+                      return const Text(
+                        '아직 입찰 내역이 없습니다.',
+                        style: TextStyle(fontSize: 12, color: iconColor),
+                      );
+                    }
+
+                    final limited = bids.take(10).toList();
+
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: limited.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemBuilder: (context, index) {
+                        final bid = limited[index];
+                        final price = bid['price']?.toString() ?? '';
+                        final createdAtRaw = bid['created_at']?.toString();
+                        final relative = _formatRelativeTime(createdAtRaw);
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${index + 1}. $price원',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              relative,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: iconColor,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
