@@ -716,31 +716,10 @@ class _BottomActionBarState extends State<_BottomActionBar> {
   }
 
   Future<void> _checkTopBidder() async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      // 해당 아이템의 최고 입찰 기록 조회
-      final List<dynamic> rows = await supabase
-          .from('bid_log')
-          .select('bid_user, bid_price')
-          .eq('item_id', widget.item.itemId)
-          .order('bid_price', ascending: false)
-          .limit(1);
-
-      if (!mounted) return;
-      if (rows.isNotEmpty) {
-        final topBidUserId = rows[0]['bid_user']?.toString() ?? '';
-        setState(() {
-          _isTopBidder = topBidUserId == user.id;
-        });
-      }
-    } catch (e) {
-      debugPrint(
-        'Failed to check top bidder for itemId=${widget.item.itemId}: $e',
-      );
-    }
+    // TODO: 서버 스키마 확정 후 최고 입찰자 체크 로직 복구
+    // 현재는 bid_log 테이블에 bid_user 컬럼이 없어 쿼리 에러가 발생하므로
+    // 기능을 임시로 비활성화한다.
+    return;
   }
 
   Future<void> _toggleFavorite() async {

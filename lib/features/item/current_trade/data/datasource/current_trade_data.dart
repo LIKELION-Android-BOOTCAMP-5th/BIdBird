@@ -14,10 +14,29 @@ class CurrentTradeDatasource {
     if (user == null) return [];
 
     try {
+      // 내가 참여한 아이템 id 목록을 bid_status에서 먼저 조회 (bid_user 기준)
+      final statusRows = await _supabase
+          .from('bid_status')
+          .select('item_id')
+          .eq('bid_user', user.id);
+
+      if (statusRows.isEmpty) return [];
+
+      final Set<String> joinedItemIds = {};
+      for (final row in statusRows) {
+        final itemId = row['item_id']?.toString();
+        if (itemId != null && itemId.isNotEmpty) {
+          joinedItemIds.add(itemId);
+        }
+      }
+
+      if (joinedItemIds.isEmpty) return [];
+
+      // 해당 아이템들에 대한 입찰 로그에서 가장 최근 입찰만 사용
       final bidRows = await _supabase
           .from('bid_log')
-          .select('item_id, bid_price, created_at, status, bid_user')
-          .eq('bid_user', user.id)
+          .select('item_id, bid_price, created_at, status')
+          .inFilter('item_id', joinedItemIds.toList())
           .order('created_at', ascending: false);
 
       if (bidRows.isEmpty) return [];
@@ -53,14 +72,14 @@ class CurrentTradeDatasource {
         }
       }
 
-      final statusRows = await _supabase
+      final statusRowsForItems = await _supabase
           .from('bid_status')
           .select('item_id, text_code')
           .eq('seller_id', user.id)
           .inFilter('item_id', itemIds);
 
       final Map<String, String> statusByItemId = {};
-      for (final row in statusRows) {
+      for (final row in statusRowsForItems) {
         final id = row['item_id']?.toString();
         if (id != null) {
           statusByItemId[id] = row['text_code']?.toString() ?? '';
@@ -108,9 +127,10 @@ class CurrentTradeDatasource {
     try {
       final statusRows = await _supabase
           .from('bid_status')
-          .select('item_id, text_code, updated_at')
+          .select('item_id, text_code, int_code, update_at')
           .eq('seller_id', user.id)
-          .order('updated_at', ascending: false);
+          .inFilter('int_code', [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008])
+          .order('update_at', ascending: false);
 
       if (statusRows.isEmpty) return [];
 
@@ -134,7 +154,7 @@ class CurrentTradeDatasource {
         final itemId = row['item_id']?.toString() ?? '';
         final item = itemsById[itemId] ?? <String, dynamic>{};
         final status = row['text_code']?.toString() ?? '';
-        final createdAt = row['updated_at']?.toString() ?? '';
+        final createdAt = row['update_at']?.toString() ?? '';
 
         return SaleHistoryItem(
           itemId: itemId,
