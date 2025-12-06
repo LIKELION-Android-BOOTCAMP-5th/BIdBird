@@ -7,6 +7,7 @@ class UserTradeSummary {
     required this.date,
     required this.statusLabel,
     required this.statusColor,
+    this.thumbnailUrl,
   });
 
   final String title;
@@ -14,6 +15,7 @@ class UserTradeSummary {
   final String date;
   final String statusLabel;
   final Color statusColor;
+  final String? thumbnailUrl;
 }
 
 class UserReview {
