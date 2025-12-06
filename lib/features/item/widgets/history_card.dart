@@ -26,7 +26,7 @@ class HistoryCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: BackgroundColor,
-          border: Border.all(color: iconColor.withOpacity(0.2), width: 1),
+          border: Border.all(color: iconColor.withValues(alpha: 0.2), width: 1),
           borderRadius: defaultBorder,
           boxShadow: const [
             BoxShadow(

@@ -1,7 +1,6 @@
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/item/item_registration_detail/data/repository/item_registration_detail_repository.dart';
 import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
-import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,7 +13,7 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
 
   final ItemRegistrationDetailRepository _repository;
 
-  ItemRegistrationData _item;
+  final ItemRegistrationData _item;
   ItemRegistrationData get item => _item;
 
   bool _isSubmitting = false;
@@ -37,7 +36,7 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     final String day = dt.day.toString().padLeft(2, '0');
     final String hour = dt.hour.toString().padLeft(2, '0');
     final String minute = dt.minute.toString().padLeft(2, '0');
-    return '${month}월 ${day}일 ${hour}시 ${minute}분';
+    return '$month월 $day일 $hour시 $minute분';
   }
 
   Future<void> confirmRegistration(BuildContext context) async {

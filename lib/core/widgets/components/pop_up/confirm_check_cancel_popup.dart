@@ -121,9 +121,9 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                         child: FilledButton(
                           style: ButtonStyle(
                             backgroundColor:
-                                WidgetStateProperty.resolveWith(
+                                MaterialStateProperty.resolveWith<Color?>(
                               (states) {
-                                if (states.contains(WidgetState.disabled)) {
+                                if (states.contains(MaterialState.disabled)) {
                                   return Colors.grey.shade300;
                                 }
                                 return blueColor;
@@ -158,7 +158,7 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                         child: FilledButton(
                           style: ButtonStyle(
                             backgroundColor:
-                                WidgetStateProperty.all<Color>(
+                                MaterialStateProperty.all<Color>(
                                     Colors.grey.shade100),
                           ),
                           onPressed: () {
