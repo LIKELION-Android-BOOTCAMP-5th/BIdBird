@@ -15,7 +15,7 @@ const Color itemRegistrationCardShadowColor = shadowHigh;
 const Color ImageBackgroundColor = Color(0xffE0E0E0);
 const Color TopBidderTextColor = Color(0xff757575);
 
-// Trade status colors
+// trade_status_chip 컬러
 const Color tradeBidPendingColor = Color(0xffF2994A); // 입찰 중
 const Color tradePurchaseDoneColor = Color(0xff4C6FFF); // 구매 완료
 const Color tradeSaleDoneColor = Color(0xff27AE60); // 판매 완료

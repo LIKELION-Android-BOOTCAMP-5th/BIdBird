@@ -145,7 +145,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         _ItemImageSection(item: item),
                         const SizedBox(height: 8),
                         _ItemMainInfoSection(item: item, isMyItem: isMyItem),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 0),
                         _ItemDescriptionSection(item: item),
                       ],
                     ),
@@ -187,6 +187,8 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
 
   final String sellerId = row['seller_id']?.toString() ?? '';
   String sellerTitle = '';
+  double sellerRating = 0.0;
+  int sellerReviewCount = 0;
 
   if (sellerId.isNotEmpty) {
     try {
@@ -221,6 +223,35 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     }
   } else {
     sellerTitle = '알 수 없는 판매자';
+  }
+
+  // sellerId 기준으로 user_review에서 평점/리뷰 수 계산
+  if (sellerId.isNotEmpty) {
+    try {
+      final reviews = await supabase
+          .from('user_review')
+          .select('rating')
+          .eq('to_user_id', sellerId)
+          .not('rating', 'is', null);
+
+      if (reviews is List) {
+        double total = 0;
+        int count = 0;
+        for (final row in reviews) {
+          final value = (row['rating'] as num?)?.toDouble();
+          if (value != null) {
+            total += value;
+            count += 1;
+          }
+        }
+        sellerReviewCount = count;
+        sellerRating = count > 0 ? total / count : 0.0;
+      }
+    } catch (e) {
+      debugPrint('Failed to load seller rating in _loadItemDetail: $e');
+      sellerRating = 0.0;
+      sellerReviewCount = 0;
+    }
   }
 
   // item_images 테이블에서 이미지 URL 가져오기 (썸네일 제외)
@@ -288,8 +319,9 @@ Future<ItemDetail?> _loadItemDetail(String itemId) async {
     itemContent: row['description']?.toString() ?? '',
     currentPrice: currentPrice,
     bidPrice: minBidStep, // 계산된 최소 호가 사용
-    sellerRating: (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
-    sellerReviewCount: (row['seller_review_count'] as int?) ?? 0,
+    sellerRating: sellerRating,
+    sellerReviewCount: sellerReviewCount,
+    statusCode: (row['status_code'] as int?) ?? 0,
   );
 }
 
@@ -486,7 +518,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -548,15 +580,33 @@ class _ItemMainInfoSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: BorderColor.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(defaultRadius),
-              boxShadow: const [],
-            ),
-            child: Row(
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemDescriptionSection extends StatelessWidget {
+  const _ItemDescriptionSection({required this.item});
+
+  final ItemDetail item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        decoration: BoxDecoration(
+          color: BorderColor.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(defaultRadius),
+          boxShadow: const [],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 판매자 프로필 영역
+            Row(
               children: [
                 const CircleAvatar(
                   radius: 20,
@@ -628,32 +678,14 @@ class _ItemMainInfoSection extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ItemDescriptionSection extends StatelessWidget {
-  const _ItemDescriptionSection({required this.item});
-
-  final ItemDetail item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: BorderColor.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(defaultRadius),
-          boxShadow: const [],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+            const SizedBox(height: 12),
+            const Divider(
+              height: 1,
+              thickness: 1,
+              color: BorderColor,
+            ),
+            const SizedBox(height: 12),
+            // 상품 설명 영역
             const Text(
               '상품 설명',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -683,10 +715,12 @@ class _BottomActionBar extends StatefulWidget {
 class _BottomActionBarState extends State<_BottomActionBar> {
   bool _isFavorite = false;
   bool _isTopBidder = false;
+  int? _statusCode; // bid_status.int_code 기반 현재 상태 코드
 
   @override
   void initState() {
     super.initState();
+    _statusCode = widget.item.statusCode;
     _loadFavoriteState();
     _checkTopBidder();
   }
@@ -716,10 +750,34 @@ class _BottomActionBarState extends State<_BottomActionBar> {
   }
 
   Future<void> _checkTopBidder() async {
-    // TODO: 서버 스키마 확정 후 최고 입찰자 체크 로직 복구
-    // 현재는 bid_log 테이블에 bid_user 컬럼이 없어 쿼리 에러가 발생하므로
-    // 기능을 임시로 비활성화한다.
-    return;
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final row = await supabase
+          .from('bid_status')
+          .select('current_highest_bidder, int_code')
+          .eq('item_id', widget.item.itemId)
+          .maybeSingle();
+
+      if (!mounted || row == null) return;
+
+      final String? currentHighest =
+          row['current_highest_bidder']?.toString();
+      final int? intCode = row['int_code'] as int?;
+
+      setState(() {
+        _isTopBidder = currentHighest != null && currentHighest == user.id;
+        if (intCode != null) {
+          _statusCode = intCode;
+        }
+      });
+    } catch (e) {
+      debugPrint(
+        'Failed to check top bidder for itemId=${widget.item.itemId}: $e',
+      );
+    }
   }
 
   Future<void> _toggleFavorite() async {
@@ -754,6 +812,16 @@ class _BottomActionBarState extends State<_BottomActionBar> {
 
   @override
   Widget build(BuildContext context) {
+    // status_code 기준 즉시 구매 상태
+    final int statusCode = _statusCode ?? widget.item.statusCode;
+    final bool isBuyNowPending = statusCode == 1006; // 즉시 구매 대기
+    final bool isBuyNowCompleted = statusCode == 1007; // 즉시 구매 완료
+
+    final bool showBidButton =
+        !_isTopBidder && !isBuyNowPending && !isBuyNowCompleted;
+    final bool showBuyNowButton = widget.item.buyNowPrice > 0 &&
+        !isBuyNowPending && !isBuyNowCompleted;
+
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -779,119 +847,25 @@ class _BottomActionBarState extends State<_BottomActionBar> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // 입찰하기 버튼 또는 최고 입찰자 표시
+
+                    // 입찰하기 / 상태 텍스트
                     Expanded(
                       child: SizedBox(
                         height: 44,
-                        child: _isTopBidder
-                            ? Container(
-                                decoration: BoxDecoration(
-                                  color: BackgroundColor,
-                                  borderRadius: BorderRadius.circular(8.7),
-                                  border: Border.all(
-                                    color: BorderColor,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '최고 입찰자입니다',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: TopBidderTextColor,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : OutlinedButton(
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.white,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(defaultRadius),
-                                      ),
-                                    ),
-                                    builder: (context) {
-                                      return ChangeNotifierProvider<
-                                        PriceInputViewModel
-                                      >(
-                                        create: (_) => PriceInputViewModel(),
-                                        child: BidBottomSheet(
-                                          itemId: widget.item.itemId,
-                                          currentPrice:
-                                              widget.item.currentPrice,
-                                          bidUnit: widget.item.bidPrice,
-                                          buyNowPrice: widget.item.buyNowPrice,
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(color: blueColor),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.7),
-                                  ),
-                                ),
-                                child: Text(
-                                  '입찰하기',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: blueColor,
-                                  ),
-                                ),
-                              ),
+                        child: _buildBidOrStatusContent(
+                          isBuyNowPending: isBuyNowPending,
+                          isBuyNowCompleted: isBuyNowCompleted,
+                          showBidButton: showBidButton,
+                        ),
                       ),
                     ),
 
-                    if (widget.item.buyNowPrice > 0) ...[
+                    if (showBuyNowButton) ...[
                       const SizedBox(width: 8),
                       Expanded(
                         child: SizedBox(
                           height: 44,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.white,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(defaultRadius),
-                                  ),
-                                ),
-                                builder: (context) {
-                                  return ChangeNotifierProvider<
-                                    PriceInputViewModel
-                                  >(
-                                    create: (_) => PriceInputViewModel(),
-                                    child: BuyNowInputBottomSheet(
-                                      itemId: widget.item.itemId,
-                                      buyNowPrice: widget.item.buyNowPrice,
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: blueColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.7),
-                              ),
-                            ),
-                            child: const Text(
-                              '즉시 입찰하기',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                          child: _buildBuyNowButton(),
                         ),
                       ),
                     ],
@@ -900,6 +874,161 @@ class _BottomActionBarState extends State<_BottomActionBar> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBidOrStatusContent({
+    required bool isBuyNowPending,
+    required bool isBuyNowCompleted,
+    required bool showBidButton,
+  }) {
+    // 1) 내가 최고 입찰자인 경우
+    if (_isTopBidder) {
+      return Container(
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
+        ),
+        child: Center(
+          child: Text(
+            '최고 입찰자입니다',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 2) 즉시 구매 진행 중
+    if (isBuyNowPending) {
+      return Container(
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
+        ),
+        child: const Center(
+          child: Text(
+            '즉시 구매 중입니다',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 3) 즉시 구매 완료
+    if (isBuyNowCompleted) {
+      return Container(
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
+        ),
+        child: const Center(
+          child: Text(
+            '즉시 구매되었습니다',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 4) 그 외에는 입찰하기 버튼 표시
+    if (showBidButton) {
+      return OutlinedButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.white,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(defaultRadius),
+              ),
+            ),
+            builder: (context) {
+              return ChangeNotifierProvider<PriceInputViewModel>(
+                create: (_) => PriceInputViewModel(),
+                child: BidBottomSheet(
+                  itemId: widget.item.itemId,
+                  currentPrice: widget.item.currentPrice,
+                  bidUnit: widget.item.bidPrice,
+                  buyNowPrice: widget.item.buyNowPrice,
+                ),
+              );
+            },
+          );
+        },
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: blueColor),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.7),
+          ),
+        ),
+        child: Text(
+          '입찰하기',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: blueColor,
+          ),
+        ),
+      );
+    }
+
+    // 방어 코드: 이론상 여기 안 옴
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildBuyNowButton() {
+    return ElevatedButton(
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(defaultRadius),
+            ),
+          ),
+          builder: (context) {
+            return ChangeNotifierProvider<PriceInputViewModel>(
+              create: (_) => PriceInputViewModel(),
+              child: BuyNowInputBottomSheet(
+                itemId: widget.item.itemId,
+                buyNowPrice: widget.item.buyNowPrice,
+              ),
+            );
+          },
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: blueColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.7),
+        ),
+      ),
+      child: const Text(
+        '즉시 구매하기',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
         ),
       ),
     );
