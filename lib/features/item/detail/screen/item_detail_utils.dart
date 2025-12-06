@@ -42,6 +42,6 @@ String formatRelativeTime(String? isoString) {
     return '${diff.inHours}시간 전';
   } else {
     final days = diff.inDays;
-    return '${days}일 전';
+    return '$days일 전';
   }
 }
