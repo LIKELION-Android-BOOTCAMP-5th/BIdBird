@@ -1,4 +1,3 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:flutter/material.dart';
 
 class TradeStatusChip extends StatelessWidget {
