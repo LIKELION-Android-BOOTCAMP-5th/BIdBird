@@ -1,5 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserProfileDatasource {
@@ -134,8 +135,87 @@ class UserProfileDatasource {
   }
 
   Future<List<UserTradeSummary>> fetchUserTrades(String userId) async {
-    // TODO: 실제 userId 별 거래내역 조회로 교체
-    await Future.delayed(const Duration(milliseconds: 200));
-    return dummyUserProfile.trades;
+    if (userId.isEmpty) return [];
+
+    try {
+      final rows = await _supabase
+          .from('items')
+          .select('title, thumbnail_image, current_price, created_at, status_code')
+          .eq('seller_id', userId)
+          .order('created_at', ascending: false);
+
+      if (rows is! List) return [];
+
+      return rows.map<UserTradeSummary>((row) {
+        final String title = row['title']?.toString() ?? '';
+        final String? thumbnailUrl = row['thumbnail_image']?.toString();
+        final int priceValue = (row['current_price'] as int?) ?? 0;
+        final String price = _formatPrice(priceValue);
+        final String date = _formatDate(row['created_at']?.toString());
+        final int statusCode = (row['status_code'] as int?) ?? 0;
+
+        final _StatusInfo status = _mapStatus(statusCode);
+
+        return UserTradeSummary(
+          title: title,
+          price: price,
+          date: date,
+          statusLabel: status.label,
+          statusColor: status.color,
+          thumbnailUrl: thumbnailUrl,
+        );
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  String _formatPrice(int price) {
+    final buffer = StringBuffer();
+    final text = price.toString();
+    for (int i = 0; i < text.length; i++) {
+      final reverseIndex = text.length - i;
+      buffer.write(text[i]);
+      if (reverseIndex > 1 && reverseIndex % 3 == 1 && i != text.length - 1) {
+        buffer.write(',');
+      }
+    }
+    return '${buffer.toString()}원';
+  }
+
+  String _formatDate(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return '';
+    try {
+      final dt = DateTime.tryParse(isoString);
+      if (dt == null) return '';
+      final m = dt.month.toString().padLeft(2, '0');
+      final d = dt.day.toString().padLeft(2, '0');
+      return '${dt.year}.$m.$d';
+    } catch (_) {
+      return '';
+    }
+  }
+}
+
+class _StatusInfo {
+  _StatusInfo(this.label, this.color);
+
+  final String label;
+  final Color color;
+}
+
+_StatusInfo _mapStatus(int code) {
+  switch (code) {
+    case 1001: // 경매 대기
+    case 1002: // 경매 등록
+    case 1003: // 입찰 발생
+    case 1006: // 즉시 구매 대기
+      return _StatusInfo('입찰 중', const Color(0xffF2994A));
+    case 1007: // 즉시 구매 완료
+      return _StatusInfo('구매 완료', const Color(0xff4C6FFF));
+    case 1009: // 경매 종료 - 낙찰
+      return _StatusInfo('판매 완료', const Color(0xff27AE60));
+    default:
+      return _StatusInfo('입찰 중', const Color(0xffF2994A));
   }
 }

@@ -1,6 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/features/item/user_profile/data/repository/user_profile_repository.dart';
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
+import 'package:bidbird/features/item/widgets/trade_status_chip.dart';
 import 'package:flutter/material.dart';
 
 class UserTradeHistoryScreen extends StatelessWidget {
@@ -10,9 +12,6 @@ class UserTradeHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: 실제 userId별 거래내역 조회로 교체
-    final trades = dummyUserProfile.trades;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('거래내역'),
@@ -20,72 +19,90 @@ class UserTradeHistoryScreen extends StatelessWidget {
       ),
       backgroundColor: BackgroundColor,
       body: SafeArea(
-        child: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: trades.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            final trade = trades[index];
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: BackgroundColor,
-                borderRadius: defaultBorder,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: BackgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+        child: FutureBuilder<List<UserTradeSummary>>(
+          future: UserProfileRepository().fetchUserTrades(userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final trades = snapshot.data ?? [];
+            if (trades.isEmpty) {
+              return const Center(
+                child: Text(
+                  '거래 내역이 없습니다.',
+                  style: TextStyle(fontSize: 14, color: BorderColor),
+                ),
+              );
+            }
+
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: trades.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final trade = trades[index];
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: BackgroundColor,
+                    borderRadius: defaultBorder,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          trade.title,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: trade.thumbnailUrl != null &&
+                                  trade.thumbnailUrl!.isNotEmpty
+                              ? Image.network(
+                                  trade.thumbnailUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) =>
+                                          Container(
+                                    color: BackgroundColor,
+                                  ),
+                                )
+                              : Container(
+                                  color: BackgroundColor,
+                                ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${trade.price}  ·  ${trade.date}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: BorderColor,
-                          ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              trade.title,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${trade.price}  ·  ${trade.date}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: BorderColor,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: trade.statusColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      trade.statusLabel,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                      ),
+                      const SizedBox(width: 8),
+                      TradeStatusChip(
+                        label: trade.statusLabel,
                         color: trade.statusColor,
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         ),
