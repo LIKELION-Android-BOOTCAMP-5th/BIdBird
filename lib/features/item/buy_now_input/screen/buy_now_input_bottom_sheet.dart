@@ -177,9 +177,9 @@ class BuyNowInputBottomSheet extends StatelessWidget {
     showDialog(
       context: parentContext,
       builder: (dialogContext) => ConfirmCheckCancelPopup(
-        title: '${_formatPrice(buyNowPrice)}원에 즉시 구매하시겠습니까?',
+        title: '즉시 구매',
         description:
-            '10분 내에 결제가 완료되지 않으면 거래는 실패로 처리되고, 3회 반복시 거래가 정지 됩니다.',
+            '결제는 10분 이내에 완료해야 합니다.\n제한 시간을 초과하면 거래가 자동 취소됩니다.\n해당 상황이 3회 반복되면 거래가 일시 중지됩니다.',
         checkLabel: '',
         confirmText: '확인',
         cancelText: '취소',
