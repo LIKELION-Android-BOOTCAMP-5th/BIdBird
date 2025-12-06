@@ -1,6 +1,6 @@
-import 'package:bidbird/features/item/price_Input/model/price_input_entity.dart';
+import 'package:bidbird/features/item/bottom_sheet_price_Input/model/bottom_sheet_price_input_entity.dart';
 
-import '../datasource/price_input_data.dart';
+import '../datasource/bottom_sheet_price_input_data.dart';
 
 class PriceInputRepository {
   PriceInputRepository({PriceInputDatasource? datasource})

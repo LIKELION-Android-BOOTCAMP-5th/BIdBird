@@ -1,10 +1,11 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/features/item/buy_now_input/screen/buy_now_input_bottom_sheet.dart';
+import 'package:bidbird/features/item/bottom_sheet_buy_now_input/screen/bottom_sheet_buy_now_input.dart';
+import 'package:bidbird/features/item/bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
-import 'package:bidbird/features/item/price_Input/screen/price_input_screen.dart';
-import 'package:bidbird/features/item/price_Input/viewmodel/price_input_viewmodel.dart';
+import 'package:bidbird/features/item/bottom_sheet_price_Input/screen/price_input_screen.dart';
+import 'package:bidbird/features/item/bottom_sheet_price_Input/viewmodel/price_input_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,6 +23,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   bool _isFavorite = false;
   bool _isTopBidder = false;
   int? _statusCode;
+  bool _isBidRestricted = false;
 
   @override
   void initState() {
@@ -29,6 +31,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     _statusCode = widget.item.statusCode;
     _loadFavoriteState();
     _checkTopBidder();
+    _checkBidRestriction();
   }
 
   Future<void> _loadFavoriteState() async {
@@ -55,6 +58,30 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     }
   }
 
+  Future<void> _checkBidRestriction() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final row = await supabase
+          .from('bid_restriction')
+          .select('is_blocked')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (!mounted || row == null) return;
+
+      final bool isBlocked = row['is_blocked'] as bool? ?? false;
+
+      setState(() {
+        _isBidRestricted = isBlocked;
+      });
+    } catch (e) {
+      debugPrint('Failed to check bid restriction: $e');
+    }
+  }
+
   Future<void> _checkTopBidder() async {
     final supabase = SupabaseManager.shared.supabase;
     final user = supabase.auth.currentUser;
@@ -71,13 +98,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
       final String? currentHighest =
           row['current_highest_bidder']?.toString();
-      final int? intCode = row['int_code'] as int?;
 
       setState(() {
         _isTopBidder = currentHighest != null && currentHighest == user.id;
-        if (intCode != null) {
-          _statusCode = intCode;
-        }
       });
     } catch (e) {
       debugPrint(
@@ -120,6 +143,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   @override
   Widget build(BuildContext context) {
     final isMyItem = widget.isMyItem;
+    final isBidRestricted = _isBidRestricted;
 
     // 즉시 구매 버튼 노출 여부 (상태 + 가격 기준)
     // 1001: 경매 대기, 1006: 즉시 구매 진행 중, 1007: 즉시 구매 완료,
@@ -146,9 +170,35 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       ),
       child: Row(
         children: [
-          _buildFavoriteButton(),
-          const SizedBox(width: 12),
-          if (!isMyItem) ...[
+          // 결제 실패 3회 이상으로 입찰 제한된 경우: 안내 문구만 전체 폭으로 노출 (하트 없음)
+          if (!isMyItem && isBidRestricted) ...[
+            Expanded(
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: BackgroundColor,
+                  borderRadius: BorderRadius.circular(8.7),
+                  border: Border.all(color: BorderColor),
+                ),
+                child: const Center(
+                  child: Text(
+                    '결제 3회 이상 실패하여 입찰이 제한되었습니다.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ]
+
+          // 일반 사용자: 하트 + 입찰/즉시구매 버튼
+          else if (!isMyItem) ...[
+            _buildFavoriteButton(),
+            const SizedBox(width: 12),
             Expanded(
               child: _buildBidButton(),
             ),
@@ -243,45 +293,25 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       );
     }
 
-    if (isTopBidder) {
-      return Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: BackgroundColor,
-          borderRadius: BorderRadius.circular(8.7),
-          border: Border.all(color: BorderColor),
-        ),
-        child: const Center(
-          child: Text(
-            '최고 입찰자입니다',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: TopBidderTextColor,
-            ),
+    // 즉시 구매 진행 중(1006)인 경우에는 최고 입찰자 여부와 상관없이 결제 버튼을 우선 노출
+    if (isBuyNowInProgress && !isBuyNowCompleted) {
+      return ElevatedButton(
+        onPressed: () {
+          debugPrint('[ItemBottomActionBar] 결제하러 가기 버튼 탭');
+          // TODO: 결제 화면으로 이동하는 로직 연동
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: blueColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.7),
           ),
         ),
-      );
-    }
-
-    if (isBuyNowInProgress && !isBuyNowCompleted) {
-      return Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: BackgroundColor,
-          borderRadius: BorderRadius.circular(8.7),
-          border: Border.all(color: BorderColor),
-        ),
-        child: const Center(
-          child: Text(
-            '즉시 구매 중입니다',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: TopBidderTextColor,
-            ),
+        child: const Text(
+          '결제하러 가기',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       );
@@ -405,8 +435,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             ),
           ),
           builder: (context) {
-            return ChangeNotifierProvider<PriceInputViewModel>(
-              create: (_) => PriceInputViewModel(),
+            return ChangeNotifierProvider<BuyNowInputViewModel>(
+              create: (_) => BuyNowInputViewModel(),
               child: BuyNowInputBottomSheet(
                 itemId: widget.item.itemId,
                 buyNowPrice: widget.item.buyNowPrice,

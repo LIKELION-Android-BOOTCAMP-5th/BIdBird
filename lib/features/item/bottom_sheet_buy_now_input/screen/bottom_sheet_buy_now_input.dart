@@ -2,7 +2,7 @@ import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
-import 'package:bidbird/features/item/price_Input/viewmodel/price_input_viewmodel.dart';
+import 'package:bidbird/features/item/bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -31,7 +31,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<PriceInputViewModel>();
+    final viewModel = context.watch<BuyNowInputViewModel>();
 
     return SafeArea(
       child: Padding(
@@ -44,7 +44,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  '즉시 구매하기',
+                  '즉시 구매',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -88,7 +88,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      '즉시 입찰가',
+                      '즉시 구매가',
                       style: TextStyle(
                         fontSize: 13,
                         color: textColor,
@@ -139,7 +139,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
   }
 
   void _showTermsDialog(
-      BuildContext parentContext, PriceInputViewModel viewModel) {
+      BuildContext parentContext, BuyNowInputViewModel viewModel) {
     const terms =
         '즉시 구메란 회원이 경매 화면에서 회사가 제시하는 금액(예: 현재 입찰가에 일정 입찰 단위를 더한 금액 등)을 단일 조작으로 입력하여 곧바로 입찰을 완료하는 기능을 말합니다.\n\n'
         '즉시 구매는 회사 서버에 해당 입찰 정보가 도달하여 시스템에 정상적으로 저장된 시점을 기준으로 유효하게 성립하며, 화면 표시 지연·네트워크 장애 등으로 인한 시간 차이는 인정하지 않습니다.\n\n'
@@ -173,7 +173,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
   }
 
   void _showConfirmDialog(
-      BuildContext parentContext, PriceInputViewModel viewModel) {
+      BuildContext parentContext, BuyNowInputViewModel viewModel) {
     showDialog(
       context: parentContext,
       builder: (dialogContext) => ConfirmCheckCancelPopup(
@@ -193,41 +193,19 @@ class BuyNowInputBottomSheet extends StatelessWidget {
   }
 
   Future<void> _processInstantBid(
-      BuildContext parentContext, PriceInputViewModel viewModel) async {
-    showDialog(
-      context: parentContext,
-      barrierDismissible: false,
-      barrierColor: Colors.transparent,
-      builder: (_) => Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
-          ),
-        ),
-      ),
-    );
-
+      BuildContext parentContext, BuyNowInputViewModel viewModel) async {
     try {
       await viewModel.placeBid(
         itemId: itemId,
         bidPrice: buyNowPrice,
-        isInstant: true,
       );
-
-      // 로딩 다이얼로그는 항상 먼저 닫는다 (최상위 네비게이터 기준)
-      if (parentContext.mounted) {
-        Navigator.of(parentContext, rootNavigator: true).pop();
-      }
 
       if (!parentContext.mounted) return;
       await showDialog(
         context: parentContext,
         barrierDismissible: false,
         builder: (dialogContext) => AskPopup(
-          content: '즉시 입찰이 완료되었습니다.',
+          content: '즉시 구매가 완료되었습니다.',
           yesText: '확인',
           yesLogic: () async {
             Navigator.pop(dialogContext);
@@ -238,10 +216,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
         ),
       );
     } catch (e) {
-      // 에러가 나더라도 로딩 다이얼로그는 먼저 닫는다 (최상위 네비게이터 기준)
       if (parentContext.mounted) {
-        Navigator.of(parentContext, rootNavigator: true).pop();
-
         showDialog(
           context: parentContext,
           builder: (dialogContext) => AskPopup(
