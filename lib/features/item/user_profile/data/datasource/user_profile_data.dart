@@ -44,15 +44,14 @@ class UserProfileDatasource {
     List<UserReview> reviewsList = [];
 
     try {
-      final reviews = await _supabase
+      final List<dynamic> reviews = await _supabase
           .from('user_review')
           .select('from_user_id, rating, comment, created_at')
           .eq('to_user_id', userId)
           .order('created_at', ascending: false);
 
-      if (reviews is List) {
-        final ratings = <double>[];
-        for (final row in reviews) {
+      final ratings = <double>[];
+      for (final row in reviews) {
           final fromUserId = row['from_user_id']?.toString() ?? '';
           final ratingValue = (row['rating'] as num?)?.toDouble();
           final comment = row['comment']?.toString() ?? '';
@@ -77,49 +76,46 @@ class UserProfileDatasource {
               ),
             );
           }
-        }
+      }
 
-        reviewCount = ratings.length;
-        if (reviewCount > 0) {
-          rating = ratings.reduce((a, b) => a + b) / reviewCount;
-        }
+      reviewCount = ratings.length;
+      if (reviewCount > 0) {
+        rating = ratings.reduce((a, b) => a + b) / reviewCount;
+      }
 
-        // 작성자 닉네임 조회
-        final fromIds = reviewsList
-            .map((e) => e.fromUserId)
-            .where((id) => id.isNotEmpty)
-            .toSet()
-            .toList();
+      // 작성자 닉네임 조회
+      final fromIds = reviewsList
+          .map((e) => e.fromUserId)
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList();
 
-        if (fromIds.isNotEmpty) {
-          final userRows = await _supabase
-              .from('users')
-              .select('id, nick_name')
-              .inFilter('id', fromIds);
+      if (fromIds.isNotEmpty) {
+        final List<dynamic> userRows = await _supabase
+            .from('users')
+            .select('id, nick_name')
+            .inFilter('id', fromIds);
 
-          if (userRows is List) {
-            final nickMap = <String, String>{};
-            for (final row in userRows) {
-              final id = row['id']?.toString();
-              final nick = row['nick_name']?.toString();
-              if (id != null && nick != null && nick.isNotEmpty) {
-                nickMap[id] = nick;
-              }
-            }
-
-            reviewsList = reviewsList
-                .map(
-                  (e) => UserReview(
-                    fromUserId: e.fromUserId,
-                    fromUserNickname: nickMap[e.fromUserId] ?? '',
-                    rating: e.rating,
-                    comment: e.comment,
-                    createdAt: e.createdAt,
-                  ),
-                )
-                .toList();
+        final nickMap = <String, String>{};
+        for (final row in userRows) {
+          final id = row['id']?.toString();
+          final nick = row['nick_name']?.toString();
+          if (id != null && nick != null && nick.isNotEmpty) {
+            nickMap[id] = nick;
           }
         }
+
+        reviewsList = reviewsList
+            .map(
+              (e) => UserReview(
+                fromUserId: e.fromUserId,
+                fromUserNickname: nickMap[e.fromUserId] ?? '',
+                rating: e.rating,
+                comment: e.comment,
+                createdAt: e.createdAt,
+              ),
+            )
+            .toList();
       }
     } catch (_) {
       rating = 0;
@@ -142,13 +138,11 @@ class UserProfileDatasource {
     if (userId.isEmpty) return [];
 
     try {
-      final rows = await _supabase
+      final List<dynamic> rows = await _supabase
           .from('items')
           .select('title, thumbnail_image, current_price, created_at, status_code')
           .eq('seller_id', userId)
           .order('created_at', ascending: false);
-
-      if (rows is! List) return [];
 
       return rows.map<UserTradeSummary>((row) {
         final String title = row['title']?.toString() ?? '';
