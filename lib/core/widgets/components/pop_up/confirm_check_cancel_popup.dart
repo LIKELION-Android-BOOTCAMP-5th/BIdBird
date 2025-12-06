@@ -34,6 +34,9 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final bool requireCheck = widget.checkLabel.isNotEmpty;
+    final bool hasDescription = widget.description != null;
+    final bool isLongDescription =
+        (widget.description != null && widget.description!.length > 200);
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -59,35 +62,52 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                   textAlign: TextAlign.center,
                   style: titleFontStyle,
                 ),
-                if (widget.description != null) ...[
+                if (hasDescription) ...[
                   const SizedBox(height: 8),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Text(
-                        widget.description!,
-                        textAlign: TextAlign.left,
-                        style: contentFontStyle,
+                  if (isLongDescription)
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          widget.description!,
+                          textAlign: TextAlign.left,
+                          style: contentFontStyle,
+                        ),
                       ),
+                    )
+                  else
+                    Text(
+                      widget.description!,
+                      textAlign: TextAlign.left,
+                      style: contentFontStyle,
                     ),
-                  ),
                 ],
                 if (widget.checkLabel.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Checkbox(
-                        value: _checked,
-                        activeColor: blueColor,
-                        onChanged: (value) {
-                          setState(() {
-                            _checked = value ?? false;
-                          });
-                        },
+                      Transform.translate(
+                        offset: const Offset(-4, 0),
+                        child: Checkbox(
+                          value: _checked,
+                          activeColor: blueColor,
+                          visualDensity:
+                              const VisualDensity(horizontal: -3, vertical: -3),
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          onChanged: (value) {
+                            setState(() {
+                              _checked = value ?? false;
+                            });
+                          },
+                        ),
                       ),
-                      Text(
-                        widget.checkLabel,
-                        style: contentFontStyle,
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          widget.checkLabel,
+                          style: contentFontStyle,
+                        ),
                       ),
                     ],
                   ),
