@@ -16,6 +16,18 @@ class UserTradeSummary {
   final Color statusColor;
 }
 
+class UserReview {
+  UserReview({
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  final double rating;
+  final String comment;
+  final DateTime createdAt;
+}
+
 class UserProfile {
   UserProfile({
     required this.userId,
@@ -24,6 +36,7 @@ class UserProfile {
     required this.reviewCount,
     required this.avatarUrl,
     required this.trades,
+    required this.reviews,
   });
 
   final String userId;
@@ -32,6 +45,7 @@ class UserProfile {
   final int reviewCount;
   final String avatarUrl;
   final List<UserTradeSummary> trades;
+  final List<UserReview> reviews;
 }
 
 // TODO: 실제 API 연동 전까지 사용하는 더미 데이터
@@ -71,4 +85,5 @@ final dummyUserProfile = UserProfile(
       statusColor: const Color(0xff27AE60),
     ),
   ],
+  reviews: [],
 );
