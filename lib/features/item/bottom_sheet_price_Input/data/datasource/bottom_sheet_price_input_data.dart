@@ -1,5 +1,5 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/item/price_Input/model/price_input_entity.dart';
+import 'package:bidbird/features/item/bottom_sheet_price_Input/model/bottom_sheet_price_input_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PriceInputDatasource {
