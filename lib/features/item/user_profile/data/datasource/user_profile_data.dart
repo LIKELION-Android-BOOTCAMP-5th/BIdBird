@@ -14,7 +14,7 @@ class UserProfileDatasource {
     try {
       userRow = await _supabase
           .from('users')
-          .select('id, nick_name')
+          .select('id, nick_name, profile_image')
           .eq('id', userId)
           .maybeSingle();
     } catch (e, st) {
@@ -30,8 +30,9 @@ class UserProfileDatasource {
     } else {
       nickname = '알 수 없는 사용자';
     }
-    // 현재 users 테이블에 프로필 이미지 컬럼이 없으므로 빈 문자열 사용
-    final avatarUrl = '';
+    final avatarUrl = userRow != null
+        ? (userRow['profile_image']?.toString() ?? '')
+        : '';
 
     // 2) user_review 테이블에서 받은 리뷰들의 평점/개수 및 목록 집계
     double rating = 0;
@@ -41,13 +42,14 @@ class UserProfileDatasource {
     try {
       final reviews = await _supabase
           .from('user_review')
-          .select('rating, comment, created_at')
+          .select('from_user_id, rating, comment, created_at')
           .eq('to_user_id', userId)
           .order('created_at', ascending: false);
 
       if (reviews is List) {
         final ratings = <double>[];
         for (final row in reviews) {
+          final fromUserId = row['from_user_id']?.toString() ?? '';
           final ratingValue = (row['rating'] as num?)?.toDouble();
           final comment = row['comment']?.toString() ?? '';
           final createdAtRaw = row['created_at']?.toString();
@@ -63,6 +65,8 @@ class UserProfileDatasource {
             }
             reviewsList.add(
               UserReview(
+                fromUserId: fromUserId,
+                fromUserNickname: '',
                 rating: ratingValue ?? 0,
                 comment: comment,
                 createdAt: createdAt ?? DateTime.now(),
@@ -70,10 +74,46 @@ class UserProfileDatasource {
             );
           }
         }
-
         reviewCount = ratings.length;
         if (reviewCount > 0) {
           rating = ratings.reduce((a, b) => a + b) / reviewCount;
+        }
+
+        // 작성자 닉네임 조회
+        final fromIds = reviewsList
+            .map((e) => e.fromUserId)
+            .where((id) => id.isNotEmpty)
+            .toSet()
+            .toList();
+
+        if (fromIds.isNotEmpty) {
+          final userRows = await _supabase
+              .from('users')
+              .select('id, nick_name')
+              .inFilter('id', fromIds);
+
+          if (userRows is List) {
+            final nickMap = <String, String>{};
+            for (final row in userRows) {
+              final id = row['id']?.toString();
+              final nick = row['nick_name']?.toString();
+              if (id != null && nick != null && nick.isNotEmpty) {
+                nickMap[id] = nick;
+              }
+            }
+
+            reviewsList = reviewsList
+                .map(
+                  (e) => UserReview(
+                    fromUserId: e.fromUserId,
+                    fromUserNickname: nickMap[e.fromUserId] ?? '',
+                    rating: e.rating,
+                    comment: e.comment,
+                    createdAt: e.createdAt,
+                  ),
+                )
+                .toList();
+          }
         }
       }
     } catch (_) {
