@@ -217,8 +217,10 @@ class BuyNowInputBottomSheet extends StatelessWidget {
         isInstant: true,
       );
 
-      if (!parentContext.mounted) return;
-      Navigator.pop(parentContext);
+      // 로딩 다이얼로그는 항상 먼저 닫는다 (최상위 네비게이터 기준)
+      if (parentContext.mounted) {
+        Navigator.of(parentContext, rootNavigator: true).pop();
+      }
 
       if (!parentContext.mounted) return;
       await showDialog(
@@ -236,8 +238,9 @@ class BuyNowInputBottomSheet extends StatelessWidget {
         ),
       );
     } catch (e) {
+      // 에러가 나더라도 로딩 다이얼로그는 먼저 닫는다 (최상위 네비게이터 기준)
       if (parentContext.mounted) {
-        Navigator.pop(parentContext);
+        Navigator.of(parentContext, rootNavigator: true).pop();
 
         showDialog(
           context: parentContext,

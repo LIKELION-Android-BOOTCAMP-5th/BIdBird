@@ -122,7 +122,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final isMyItem = widget.isMyItem;
 
     // 즉시 구매 버튼 노출 여부 (상태 + 가격 기준)
-    const disabledStatusesForBuyNow = {1001, 1002, 1007, 1009, 1011};
+    // 1001: 경매 대기, 1006: 즉시 구매 진행 중, 1007: 즉시 구매 완료,
+    // 1009: 경매 종료, 1011: 거래 정지
+    const disabledStatusesForBuyNow = {1001, 1006, 1007, 1009, 1011};
     final bool showBuyNow =
         widget.item.buyNowPrice > 0 && !disabledStatusesForBuyNow.contains(_statusCode);
 
@@ -156,6 +158,28 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                 child: _buildBuyNowButton(),
               ),
             ],
+          ] else ...[
+            Expanded(
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: BackgroundColor,
+                  borderRadius: BorderRadius.circular(8.7),
+                  border: Border.all(color: BorderColor),
+                ),
+                child: const Center(
+                  child: Text(
+                    '내 매물은 입찰이 불가능합니다',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: TopBidderTextColor,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -186,7 +210,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final int statusCode = _statusCode ?? 0;
 
     final bool isAuctionEnded = statusCode == 1009; // 경매 종료 - 낙찰
-    final bool isAuctionActive = statusCode == 1003 || statusCode == 1006;
+    final bool isAuctionActive =
+        statusCode == 1002 ||
+        statusCode == 1003 ||
+        statusCode == 1005 ||
+        statusCode == 1008;
     final bool isBuyNowInProgress = statusCode == 1006;
     final bool isBuyNowCompleted = statusCode == 1007;
 
@@ -327,8 +355,13 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     String reason;
     switch (statusCode) {
       case 1001: // 경매 대기
-      case 1002: // 경매 등록
         reason = '경매가 아직 시작되지 않았습니다';
+        break;
+      case 1006: // 즉시 구매 진행 중
+        reason = '즉시 구매 중인 상품입니다';
+        break;
+      case 1007: // 즉시 구매 완료
+        reason = '즉시 구매가 완료된 상품입니다';
         break;
       case 1011: // 거래 정지
         reason = '거래가 정지된 상품입니다';
