@@ -1,5 +1,3 @@
-// TODO: implement ItemRegistrationData model here
-
 class ItemRegistrationData {
   ItemRegistrationData({
     required this.id,

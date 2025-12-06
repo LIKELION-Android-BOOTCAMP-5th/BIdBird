@@ -490,7 +490,7 @@ class _ItemMainInfoSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: BorderColor.withOpacity(0.3),
+              color: BorderColor.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: const [],
             ),
@@ -521,7 +521,7 @@ class _ItemMainInfoSection extends StatelessWidget {
                 Container(
                   width: 1,
                   height: 36,
-                  color: BorderColor.withOpacity(0.5),
+                  color: BorderColor.withValues(alpha: 0.5),
                 ),
                 Expanded(
                   child: Column(
@@ -552,7 +552,7 @@ class _ItemMainInfoSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: BorderColor.withOpacity(0.3),
+              color: BorderColor.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(defaultRadius),
               boxShadow: const [],
             ),
@@ -647,7 +647,7 @@ class _ItemDescriptionSection extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: BorderColor.withOpacity(0.3),
+          color: BorderColor.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(defaultRadius),
           boxShadow: const [],
         ),
