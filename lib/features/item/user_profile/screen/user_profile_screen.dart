@@ -38,33 +38,31 @@ class UserProfileScreen extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 24),
                           decoration: BoxDecoration(
-                            color: BackgroundColor,
+                            color: BorderColor.withValues(alpha: 0.3),
                             borderRadius: defaultBorder,
-                            boxShadow: [
-                              BoxShadow(
-                                color: shadowLow,
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            boxShadow: const [],
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               CircleAvatar(
                                 radius: 32,
-                                backgroundColor:
-                                yellowColor,
-                                child: Text(
-                                  profile.nickname.isNotEmpty
-                                      ? profile.nickname[0]
-                                      : '?',
-                                  style: const TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                                backgroundColor: yellowColor,
+                                backgroundImage: profile.avatarUrl.isNotEmpty
+                                    ? NetworkImage(profile.avatarUrl)
+                                    : null,
+                                child: profile.avatarUrl.isNotEmpty
+                                    ? null
+                                    : Text(
+                                        profile.nickname.isNotEmpty
+                                            ? profile.nickname[0]
+                                            : '?',
+                                        style: const TextStyle(
+                                          fontSize: 26,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                               ),
                               const SizedBox(height: 12),
                               Text(
@@ -91,9 +89,8 @@ class UserProfileScreen extends StatelessWidget {
                                     return Icon(
                                       Icons.star,
                                       size: 16,
-                                      color: filled
-                                          ? BorderColor
-                                          : BorderColor,
+                                      color:
+                                          filled ? yellowColor : BorderColor,
                                     );
                                   }),
                                   const SizedBox(width: 4),
@@ -127,15 +124,9 @@ class UserProfileScreen extends StatelessWidget {
                               vertical: 14,
                             ),
                             decoration: BoxDecoration(
-                              color: BackgroundColor,
+                              color: BorderColor.withValues(alpha: 0.3),
                               borderRadius: defaultBorder,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: shadowLow,
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                              boxShadow: const [],
                             ),
                             child: Row(
                               mainAxisAlignment:
@@ -189,49 +180,74 @@ class _UserReviewSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        if (reviews.isEmpty)
-          const Text(
-            '아직 받은 거래 평이 없습니다.',
-            style: TextStyle(
-              fontSize: 13,
-              color: textColor,
-            ),
-          )
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: reviews.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final review = reviews[index];
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: List.generate(5, (i) {
-                      final filled = i < review.rating.round();
-                      return Icon(
-                        Icons.star,
-                        size: 16,
-                        color: filled ? yellowColor : BorderColor,
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    review.comment.isNotEmpty
-                        ? review.comment
-                        : '내용 없는 리뷰입니다.',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: textColor,
-                    ),
-                  ),
-                ],
-              );
-            },
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: BorderColor.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(defaultRadius),
+            boxShadow: const [],
           ),
+          child: reviews.isEmpty
+              ? const Text(
+                  '아직 받은 거래 평이 없습니다.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: textColor,
+                  ),
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: reviews.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final review = reviews[index];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (review.fromUserId.isNotEmpty) ...[
+                              Flexible(
+                                child: Text(
+                                  review.fromUserNickname.isNotEmpty
+                                      ? review.fromUserNickname
+                                      : '알 수 없는 사용자',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            ...List.generate(5, (i) {
+                              final filled = i < review.rating.round();
+                              return Icon(
+                                Icons.star,
+                                size: 16,
+                                color: filled ? yellowColor : BorderColor,
+                              );
+                            }),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          review.comment.isNotEmpty
+                              ? review.comment
+                              : '내용 없는 리뷰입니다.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+        ),
       ],
     );
   }
