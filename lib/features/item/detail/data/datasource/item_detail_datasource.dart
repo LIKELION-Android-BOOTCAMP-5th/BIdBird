@@ -243,20 +243,4 @@ class ItemDetailDatasource {
       return [];
     }
   }
-
-  Future<Map<String, dynamic>?> _fetchUserInfo(String userId) async {
-    try {
-      final Map<String, dynamic>? userRow = await _supabase
-          .from('users')
-          .select('nickname, name, profile_image_url')
-          .eq('id', userId)
-          .maybeSingle();
-
-      return userRow;
-    } catch (e) {
-      debugPrint('[ItemDetailDatasource] fetch user info error: $e');
-      return null;
-    }
-  }
-
 }

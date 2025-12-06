@@ -4,7 +4,6 @@ import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -406,7 +405,7 @@ class ItemAddViewModel extends ChangeNotifier {
         isAgree: agreed,
       );
 
-      final ItemRegistrationData registrationItem = await _addItemUseCase(
+      await _addItemUseCase(
         entity: data,
         imageUrls: imageUrls,
         primaryImageIndex: primaryImageIndex,
