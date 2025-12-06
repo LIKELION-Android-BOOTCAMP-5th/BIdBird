@@ -73,13 +73,14 @@ class ItemDetailDatasource {
       try {
         final userRow = await _supabase
             .from('users')
-            .select('nickname, name')
+            .select('nick_name, name')
             .eq('id', sellerId)
             .maybeSingle();
 
         if (userRow is Map<String, dynamic>) {
-          sellerTitle = (userRow['nickname']?.toString() ?? '').isNotEmpty
-              ? userRow['nickname'].toString()
+          final rawNick = userRow['nick_name']?.toString() ?? '';
+          sellerTitle = rawNick.isNotEmpty
+              ? rawNick
               : (userRow['name']?.toString() ?? '');
         }
       } catch (e) {
