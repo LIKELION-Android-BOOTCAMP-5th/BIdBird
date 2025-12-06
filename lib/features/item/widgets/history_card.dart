@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
+import 'package:bidbird/features/item/widgets/trade_status_chip.dart';
 import '../../../../core/utils/ui_set/border_radius.dart';
 
 class HistoryCard extends StatelessWidget {
@@ -91,35 +92,12 @@ class HistoryCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const SizedBox.shrink(),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              status,
-                              style: TextStyle(
-                                color:
-                                    CurrentTradeViewModel.getStatusColor(status),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (date != null && date!.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                date!,
-                                style: const TextStyle(
-                                  color: iconColor,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TradeStatusChip(
+                        label: status,
+                        color: CurrentTradeViewModel.getStatusColor(status),
+                      ),
                     ),
                   ],
                 ),
