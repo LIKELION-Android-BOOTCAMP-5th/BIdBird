@@ -159,14 +159,26 @@ class ItemDescriptionSection extends StatelessWidget {
                     }
 
                     final bids = snapshot.data ?? [];
-                    if (bids.isEmpty) {
+
+                    // 가격이 0원인 입찰은 표시하지 않음
+                    final filteredBids = bids.where((bid) {
+                      final dynamic rawPrice = bid['price'];
+                      if (rawPrice == null) return false;
+                      if (rawPrice is num) {
+                        return rawPrice != 0;
+                      }
+                      final parsed = int.tryParse(rawPrice.toString());
+                      return parsed != null && parsed != 0;
+                    }).toList();
+
+                    if (filteredBids.isEmpty) {
                       return const Text(
                         '아직 입찰 내역이 없습니다.',
                         style: TextStyle(fontSize: 12, color: iconColor),
                       );
                     }
 
-                    final limited = bids.take(10).toList();
+                    final limited = filteredBids.take(10).toList();
 
                     return ListView.separated(
                       shrinkWrap: true,
