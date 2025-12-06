@@ -160,26 +160,8 @@ class ItemDetailDatasource {
   }
 
   Future<bool> checkIsTopBidder(String itemId) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return false;
-
-    try {
-      final List<dynamic> rows = await _supabase
-          .from('bid_log')
-          .select('bid_user, bid_price')
-          .eq('item_id', itemId)
-          .order('bid_price', ascending: false)
-          .limit(1);
-
-      if (rows.isNotEmpty) {
-        final topBidUserId = rows[0]['bid_user']?.toString() ?? '';
-        return topBidUserId == user.id;
-      }
-      return false;
-    } catch (e) {
-      debugPrint('[ItemDetailDatasource] check top bidder error: $e');
-      return false;
-    }
+    // TODO: 서버 스키마 확정 후 bid_log의 사용자 컬럼명에 맞춰 재구현
+    return false;
   }
 
   Future<Map<String, dynamic>?> fetchSellerProfile(String sellerId) async {
@@ -235,11 +217,7 @@ class ItemDetailDatasource {
     try {
       final List<dynamic> rows = await _supabase
           .from('bid_log')
-          .select('''
-            bid_price,
-            bid_user,
-            created_at
-          ''')
+          .select('bid_price, created_at')
           .eq('item_id', itemId)
           .order('created_at', ascending: false)
           .limit(10);
@@ -248,20 +226,14 @@ class ItemDetailDatasource {
 
       for (final row in rows) {
         final Map<String, dynamic> bidRow = row as Map<String, dynamic>;
-        final userId = bidRow['bid_user']?.toString() ?? '';
-
-        Map<String, dynamic>? userInfo;
-        if (userId.isNotEmpty) {
-          userInfo = await _fetchUserInfo(userId);
-        }
 
         bidHistory.add({
           'price': ItemDetailPriceHelper
               .formatPrice(bidRow['bid_price'] as int? ?? 0),
-          'user_name': userInfo?['nickname'] ?? userInfo?['name'] ?? '알 수 없음',
-          'user_id': userId,
+          'user_name': '알 수 없음',
+          'user_id': '',
           'created_at': bidRow['created_at']?.toString() ?? '',
-          'profile_image_url': userInfo?['profile_image_url'],
+          'profile_image_url': null,
         });
       }
 
