@@ -30,6 +30,12 @@ class ItemDetailDatasource {
     final String sellerId = row['seller_id']?.toString() ?? '';
     String sellerTitle = await _fetchSellerName(sellerId, row);
 
+    // 판매자 별점/리뷰 수 계산 (bid_status 기반)
+    SellerRatingSummary? ratingSummary;
+    if (sellerId.isNotEmpty) {
+      ratingSummary = await _fetchSellerRating(sellerId);
+    }
+
     final List<String> images = await _fetchImages(itemId);
 
     final int biddingCount = await _fetchBiddingCount(itemId, row);
@@ -49,8 +55,11 @@ class ItemDetailDatasource {
       itemContent: row['description']?.toString() ?? '',
       currentPrice: currentPrice,
       bidPrice: minBidStep,
-      sellerRating: (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
-      sellerReviewCount: (row['seller_review_count'] as int?) ?? 0,
+      sellerRating: ratingSummary?.rating ??
+          (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
+      sellerReviewCount: ratingSummary?.reviewCount ??
+          (row['seller_review_count'] as int?) ?? 0,
+      statusCode: (row['status_code'] as int?) ?? 0,
     );
   }
 
@@ -199,14 +208,14 @@ class ItemDetailDatasource {
 
   Future<SellerRatingSummary> _fetchSellerRating(String sellerId) async {
     try {
-      final completedTrades = await _supabase
-          .from('bid_status')
+      // 프로필 화면과 동일하게 user_review 기준으로 평균 평점 계산
+      final reviews = await _supabase
+          .from('user_review')
           .select('rating')
-          .eq('seller_id', sellerId)
-          .eq('text_code', 'COMPLETED')
+          .eq('to_user_id', sellerId)
           .not('rating', 'is', null);
 
-      return SellerRatingSummary.fromCompletedTrades(completedTrades);
+      return SellerRatingSummary.fromCompletedTrades(reviews);
     } catch (e) {
       debugPrint('[ItemDetailDatasource] fetch seller rating error: $e');
       return SellerRatingSummary(rating: 0.0, reviewCount: 0);

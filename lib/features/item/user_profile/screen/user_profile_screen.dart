@@ -83,16 +83,7 @@ class UserProfileScreen extends StatelessWidget {
                                       color: textColor,
                                     ),
                                   ),
-                                  ...List.generate(5, (index) {
-                                    final filled =
-                                        index < profile.rating.round();
-                                    return Icon(
-                                      Icons.star,
-                                      size: 16,
-                                      color:
-                                          filled ? yellowColor : BorderColor,
-                                    );
-                                  }),
+                                  ..._buildStarIcons(profile.rating),
                                   const SizedBox(width: 4),
                                   Text(
                                     profile.rating.toStringAsFixed(1),
@@ -162,6 +153,30 @@ class UserProfileScreen extends StatelessWidget {
   }
 }
 
+List<Widget> _buildStarIcons(double rating, {double size = 16}) {
+  final int fullStars = rating.floor();
+  final bool hasHalfStar = (rating - fullStars) >= 0.5;
+
+  return List.generate(5, (index) {
+    IconData icon;
+    if (index < fullStars) {
+      icon = Icons.star;
+    } else if (index == fullStars && hasHalfStar) {
+      icon = Icons.star_half;
+    } else {
+      icon = Icons.star_border;
+    }
+
+    return Icon(
+      icon,
+      size: size,
+      color: icon == Icons.star || icon == Icons.star_half
+          ? yellowColor
+          : BorderColor,
+    );
+  });
+}
+
 class _UserReviewSection extends StatelessWidget {
   const _UserReviewSection({required this.reviews});
 
@@ -223,14 +238,15 @@ class _UserReviewSection extends StatelessWidget {
                               ),
                               const SizedBox(width: 8),
                             ],
-                            ...List.generate(5, (i) {
-                              final filled = i < review.rating.round();
-                              return Icon(
-                                Icons.star,
-                                size: 16,
-                                color: filled ? yellowColor : BorderColor,
-                              );
-                            }),
+                            ..._buildStarIcons(review.rating),
+                            const SizedBox(width: 4),
+                            Text(
+                              review.rating.toStringAsFixed(1),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: textColor,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 4),
