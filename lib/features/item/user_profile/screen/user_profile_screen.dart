@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 import 'package:bidbird/features/item/user_profile/viewmodel/user_profile_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -156,12 +157,82 @@ class UserProfileScreen extends StatelessWidget {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 24),
+                        Expanded(
+                          child: _UserReviewSection(reviews: profile.reviews),
+                        ),
                       ],
                     ),
                   ),
           ),
         );
       },
+    );
+  }
+}
+
+class _UserReviewSection extends StatelessWidget {
+  const _UserReviewSection({required this.reviews});
+
+  final List<UserReview> reviews;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '거래 평',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (reviews.isEmpty)
+          const Text(
+            '아직 받은 거래 평이 없습니다.',
+            style: TextStyle(
+              fontSize: 13,
+              color: textColor,
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: reviews.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final review = reviews[index];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: List.generate(5, (i) {
+                      final filled = i < review.rating.round();
+                      return Icon(
+                        Icons.star,
+                        size: 16,
+                        color: filled ? yellowColor : BorderColor,
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    review.comment.isNotEmpty
+                        ? review.comment
+                        : '내용 없는 리뷰입니다.',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: textColor,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+      ],
     );
   }
 }
