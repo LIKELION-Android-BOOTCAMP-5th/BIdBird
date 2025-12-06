@@ -1,0 +1,401 @@
+import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/features/item/buy_now_input/screen/buy_now_input_bottom_sheet.dart';
+import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
+import 'package:bidbird/features/item/price_Input/screen/price_input_screen.dart';
+import 'package:bidbird/features/item/price_Input/viewmodel/price_input_viewmodel.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class ItemBottomActionBar extends StatefulWidget {
+  const ItemBottomActionBar({required this.item, required this.isMyItem, super.key});
+
+  final ItemDetail item;
+  final bool isMyItem;
+
+  @override
+  State<ItemBottomActionBar> createState() => _ItemBottomActionBarState();
+}
+
+class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
+  bool _isFavorite = false;
+  bool _isTopBidder = false;
+  int? _statusCode;
+
+  @override
+  void initState() {
+    super.initState();
+    _statusCode = widget.item.statusCode;
+    _loadFavoriteState();
+    _checkTopBidder();
+  }
+
+  Future<void> _loadFavoriteState() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final List<dynamic> rows = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('item_id', widget.item.itemId)
+          .eq('user_id', user.id)
+          .limit(1);
+
+      if (!mounted) return;
+      setState(() {
+        _isFavorite = rows.isNotEmpty;
+      });
+    } catch (e) {
+      debugPrint(
+        'Failed to load favorite state for itemId=${widget.item.itemId}: $e',
+      );
+    }
+  }
+
+  Future<void> _checkTopBidder() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final row = await supabase
+          .from('bid_status')
+          .select('current_highest_bidder, int_code')
+          .eq('item_id', widget.item.itemId)
+          .maybeSingle();
+
+      if (!mounted || row == null) return;
+
+      final String? currentHighest =
+          row['current_highest_bidder']?.toString();
+      final int? intCode = row['int_code'] as int?;
+
+      setState(() {
+        _isTopBidder = currentHighest != null && currentHighest == user.id;
+        if (intCode != null) {
+          _statusCode = intCode;
+        }
+      });
+    } catch (e) {
+      debugPrint(
+        'Failed to check top bidder for itemId=${widget.item.itemId}: $e',
+      );
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final supabase = SupabaseManager.shared.supabase;
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      if (_isFavorite) {
+        await supabase
+            .from('favorites')
+            .delete()
+            .eq('item_id', widget.item.itemId)
+            .eq('user_id', user.id);
+      } else {
+        await supabase.from('favorites').insert(<String, dynamic>{
+          'item_id': widget.item.itemId,
+          'user_id': user.id,
+        });
+      }
+
+      if (mounted) {
+        setState(() {
+          _isFavorite = !_isFavorite;
+        });
+      }
+    } catch (e) {
+      debugPrint(
+        'Failed to toggle favorite for itemId=${widget.item.itemId}: $e',
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMyItem = widget.isMyItem;
+
+    // 즉시 구매 버튼 노출 여부 (상태 + 가격 기준)
+    const disabledStatusesForBuyNow = {1001, 1002, 1007, 1009, 1011};
+    final bool showBuyNow =
+        widget.item.buyNowPrice > 0 && !disabledStatusesForBuyNow.contains(_statusCode);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(defaultRadius),
+          topRight: Radius.circular(defaultRadius),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x14000000),
+            offset: Offset(0, -2),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _buildFavoriteButton(),
+          const SizedBox(width: 12),
+          if (!isMyItem) ...[
+            Expanded(
+              child: _buildBidButton(),
+            ),
+            if (showBuyNow) ...[
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildBuyNowButton(),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavoriteButton() {
+    return InkWell(
+      onTap: _toggleFavorite,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: BorderColor),
+        ),
+        child: Icon(
+          _isFavorite ? Icons.favorite : Icons.favorite_border,
+          color: _isFavorite ? Colors.red : iconColor,
+          size: 22,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBidButton() {
+    final bool isTopBidder = _isTopBidder;
+    final int statusCode = _statusCode ?? 0;
+
+    final bool isAuctionEnded = statusCode == 1009; // 경매 종료 - 낙찰
+    final bool isAuctionActive = statusCode == 1003 || statusCode == 1006;
+    final bool isBuyNowInProgress = statusCode == 1006;
+    final bool isBuyNowCompleted = statusCode == 1007;
+
+    final bool showBidButton =
+        !isAuctionEnded && isAuctionActive && !isTopBidder && !isBuyNowInProgress;
+
+    if (isAuctionEnded) {
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
+        ),
+        child: const Center(
+          child: Text(
+            '경매가 종료되었습니다.',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (isTopBidder) {
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
+        ),
+        child: const Center(
+          child: Text(
+            '최고 입찰자입니다',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (isBuyNowInProgress && !isBuyNowCompleted) {
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
+        ),
+        child: const Center(
+          child: Text(
+            '즉시 구매 중입니다',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (isBuyNowCompleted) {
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
+        ),
+        child: const Center(
+          child: Text(
+            '즉시 구매되었습니다',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (showBidButton) {
+      return OutlinedButton(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.white,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(defaultRadius),
+              ),
+            ),
+            builder: (context) {
+              return ChangeNotifierProvider<PriceInputViewModel>(
+                create: (_) => PriceInputViewModel(),
+                child: BidBottomSheet(
+                  itemId: widget.item.itemId,
+                  currentPrice: widget.item.currentPrice,
+                  bidUnit: widget.item.bidPrice,
+                  buyNowPrice: widget.item.buyNowPrice,
+                ),
+              );
+            },
+          );
+        },
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: blueColor),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.7),
+          ),
+        ),
+        child: Text(
+          '입찰하기',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: blueColor,
+          ),
+        ),
+      );
+    }
+
+    // 입찰이 비활성화된 경우: 이유를 버튼 형태로 표시
+    String reason;
+    switch (statusCode) {
+      case 1001: // 경매 대기
+      case 1002: // 경매 등록
+        reason = '경매가 아직 시작되지 않았습니다';
+        break;
+      case 1011: // 거래 정지
+        reason = '거래가 정지된 상품입니다';
+        break;
+      default:
+        reason = '현재 입찰할 수 없습니다';
+        break;
+    }
+
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: BackgroundColor,
+        borderRadius: BorderRadius.circular(8.7),
+        border: Border.all(color: BorderColor),
+      ),
+      child: Center(
+        child: Text(
+          reason,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: TopBidderTextColor,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuyNowButton() {
+    return ElevatedButton(
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(defaultRadius),
+            ),
+          ),
+          builder: (context) {
+            return ChangeNotifierProvider<PriceInputViewModel>(
+              create: (_) => PriceInputViewModel(),
+              child: BuyNowInputBottomSheet(
+                itemId: widget.item.itemId,
+                buyNowPrice: widget.item.buyNowPrice,
+              ),
+            );
+          },
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: blueColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.7),
+        ),
+      ),
+      child: const Text(
+        '즉시 구매하기',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
