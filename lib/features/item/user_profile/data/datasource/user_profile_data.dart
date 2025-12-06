@@ -1,4 +1,6 @@
+
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,7 +20,7 @@ class UserProfileDatasource {
           .select('id, nick_name, profile_image')
           .eq('id', userId)
           .maybeSingle();
-    } catch (e, st) {
+    } catch (_) {
       userRow = null;
     }
 
@@ -31,6 +33,7 @@ class UserProfileDatasource {
     } else {
       nickname = '알 수 없는 사용자';
     }
+
     final avatarUrl = userRow != null
         ? (userRow['profile_image']?.toString() ?? '')
         : '';
@@ -75,6 +78,7 @@ class UserProfileDatasource {
             );
           }
         }
+
         reviewCount = ratings.length;
         if (reviewCount > 0) {
           rating = ratings.reduce((a, b) => a + b) / reviewCount;
@@ -129,7 +133,7 @@ class UserProfileDatasource {
       rating: rating,
       reviewCount: reviewCount,
       avatarUrl: avatarUrl,
-      trades: const [], // TODO: 실제 거래 내역 쿼리로 교체
+      trades: const [], // 거래 내역은 별도 fetchUserTrades 사용
       reviews: reviewsList,
     );
   }
@@ -210,12 +214,15 @@ _StatusInfo _mapStatus(int code) {
     case 1002: // 경매 등록
     case 1003: // 입찰 발생
     case 1006: // 즉시 구매 대기
-      return _StatusInfo('입찰 중', const Color(0xffF2994A));
+      return _StatusInfo('입찰 중', tradeBidPendingColor);
     case 1007: // 즉시 구매 완료
-      return _StatusInfo('구매 완료', const Color(0xff4C6FFF));
+      return _StatusInfo('구매 완료', tradePurchaseDoneColor);
     case 1009: // 경매 종료 - 낙찰
-      return _StatusInfo('판매 완료', const Color(0xff27AE60));
+      return _StatusInfo('판매 완료', tradeSaleDoneColor);
+    case 1011: // 경매 정지 - 신고 등
+      return _StatusInfo('거래 정지', tradeBlockedColor);
     default:
-      return _StatusInfo('입찰 중', const Color(0xffF2994A));
+      return _StatusInfo('입찰 중', tradeBidPendingColor);
   }
 }
+
