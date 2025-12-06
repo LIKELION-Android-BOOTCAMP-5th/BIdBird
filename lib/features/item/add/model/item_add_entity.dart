@@ -35,6 +35,8 @@ class ItemAddEntity {
       'status': 'READY',
       'keyword_type': keywordTypeId,
       'auction_duration_hours': auctionDurationHours,
+      'auction_start_at': auctionStartAt.toIso8601String(),
+      'auction_end_at': auctionEndAt.toIso8601String(),
       'is_agree': isAgree,
     };
   }
