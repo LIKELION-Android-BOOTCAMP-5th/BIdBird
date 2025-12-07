@@ -196,6 +196,7 @@ class _UserReviewSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: BorderColor.withValues(alpha: 0.3),
