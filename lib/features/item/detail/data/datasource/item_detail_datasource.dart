@@ -123,6 +123,8 @@ class ItemDetailDatasource {
           .from('bid_log')
           .select('id')
           .eq('item_id', itemId)
+          // 즉시 입찰(is_instant=true)은 참여 입찰 수에서 제외
+          .or('is_instant.is.null,is_instant.eq.false')
           .count(CountOption.exact);
       return countResponse.count;
     } catch (e) {
@@ -229,6 +231,8 @@ class ItemDetailDatasource {
           .from('bid_log')
           .select('bid_price, created_at')
           .eq('item_id', itemId)
+          // 즉시 입찰 로그는 상세 화면 히스토리에서 제외
+          .or('is_instant.is.null,is_instant.eq.false')
           .order('created_at', ascending: false)
           .limit(10);
 
