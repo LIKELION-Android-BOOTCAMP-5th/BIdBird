@@ -142,13 +142,12 @@ class CurrentTradeDatasource {
           if (rawStatus.contains('입찰 제한') || rawStatus.contains('거래정지')) {
             displayStatus = '거래정지';
           } else if (isAuctionEnded) {
-            // 경매가 끝난 경우
-            if (intStatus == 1010) {
-              // 유찰 상태: 낙찰자 없이 종료
-              displayStatus = '유찰';
+            // 경매가 끝난 경우 (구매자 관점에서는 낙찰 또는 패찰만 구분)
+            if (isWinner) {
+              displayStatus = '낙찰';
             } else {
-              // 1008/1009: 낙찰 또는 패찰
-              displayStatus = isWinner ? '낙찰' : '패찰';
+              // 유찰(1010) 포함, 내가 낙찰자가 아니면 모두 패찰로 표기
+              displayStatus = '패찰';
             }
           } else {
             // 경매 진행 중인 경우: 최고가 입찰 / 상위 입찰됨
