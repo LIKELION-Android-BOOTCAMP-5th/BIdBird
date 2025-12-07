@@ -250,13 +250,17 @@ class ItemAddViewModel extends ChangeNotifier {
       return '시작가를 숫자로 입력해주세요.';
     }
 
-    if (startPrice < 1000) {
-      return '시작가는 1,000원 이상이어야 합니다.';
+    if (startPrice < 10000 || startPrice > 1400000) {
+      return '시작가는 10,000원 이상 1,400,000원 이하로 입력해주세요.';
     }
 
     if (useInstantPrice) {
       if (instantPrice == null) {
         return '즉시 입찰가를 숫자로 입력해주세요.';
+      }
+
+      if (instantPrice < 10000 || instantPrice > 1400000) {
+        return '즉시 입찰가는 10,000원 이상 1,400,000원 이하로 입력해주세요.';
       }
 
       if (instantPrice <= startPrice) {
