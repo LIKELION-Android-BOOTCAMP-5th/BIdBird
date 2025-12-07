@@ -147,8 +147,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     // 즉시 구매 버튼 노출 여부 (상태 + 가격 기준)
     // 1001: 경매 대기, 1006: 즉시 구매 진행 중, 1007: 즉시 구매 완료,
-    // 1009: 경매 종료, 1011: 거래 정지
-    const disabledStatusesForBuyNow = {1001, 1006, 1007, 1009, 1011};
+    // 1008/1009/1010: 경매 종료, 1011: 거래 정지
+    const disabledStatusesForBuyNow = {1001, 1006, 1007, 1008, 1009, 1010, 1011};
     final bool showBuyNow =
         widget.item.buyNowPrice > 0 && !disabledStatusesForBuyNow.contains(_statusCode);
 
@@ -259,12 +259,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final bool isTopBidder = _isTopBidder;
     final int statusCode = _statusCode ?? 0;
 
-    final bool isAuctionEnded = statusCode == 1009; // 경매 종료 - 낙찰
+    final bool isAuctionEnded =
+        statusCode == 1008 || statusCode == 1009 || statusCode == 1010; // 경매 종료
     final bool isAuctionActive =
         statusCode == 1002 ||
         statusCode == 1003 ||
-        statusCode == 1005 ||
-        statusCode == 1008;
+        statusCode == 1005;
     final bool isBuyNowInProgress = statusCode == 1006;
     final bool isBuyNowCompleted = statusCode == 1007;
 
@@ -383,22 +383,37 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     // 입찰이 비활성화된 경우: 이유를 버튼 형태로 표시
     String reason;
-    switch (statusCode) {
-      case 1001: // 경매 대기
-        reason = '경매가 아직 시작되지 않았습니다';
-        break;
-      case 1006: // 즉시 구매 진행 중
-        reason = '즉시 구매 중인 상품입니다';
-        break;
-      case 1007: // 즉시 구매 완료
-        reason = '즉시 구매가 완료된 상품입니다';
-        break;
-      case 1011: // 거래 정지
-        reason = '거래가 정지된 상품입니다';
-        break;
-      default:
-        reason = '현재 입찰할 수 없습니다';
-        break;
+
+    // 1) 이미 최고 입찰자인 경우
+    if (isTopBidder) {
+      reason = '이미 이 상품의 최고 입찰자입니다';
+    } else {
+      // 2) 상태 코드별 상세 사유
+      switch (statusCode) {
+        case 1001: // 경매 대기
+          reason = '경매가 아직 시작되지 않았습니다';
+          break;
+        case 1008: // 경매 종료 - 즉시 구매 실패
+        case 1009: // 경매 종료 - 낙찰
+        case 1010: // 경매 종료 - 유찰
+          reason = '경매가 종료되었습니다.';
+          break;
+        case 1006: // 즉시 구매 진행 중
+          reason = '즉시 구매 중인 상품입니다';
+          break;
+        case 1007: // 즉시 구매 완료
+          reason = '즉시 구매가 완료된 상품입니다';
+          break;
+        case 1011: // 거래 정지
+          reason = '거래가 정지된 상품입니다';
+          break;
+        case 0: // 상태 코드 로딩 실패 등
+          reason = '상품 상태 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요';
+          break;
+        default:
+          reason = '현재 입찰할 수 없습니다';
+          break;
+      }
     }
 
     return Container(
