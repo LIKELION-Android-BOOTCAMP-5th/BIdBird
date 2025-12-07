@@ -6,6 +6,10 @@ import 'package:bidbird/features/item/bottom_sheet_buy_now_input/viewmodel/buy_n
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../widget/buy_now_header.dart';
+import '../widget/buy_now_price_card.dart';
+import '../widget/buy_now_primary_button.dart';
+
 class BuyNowInputBottomSheet extends StatelessWidget {
   const BuyNowInputBottomSheet({
     super.key,
@@ -40,96 +44,27 @@ class BuyNowInputBottomSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '즉시 구매',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(
-                    Icons.close,
-                    size: 20,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
+            BuyNowHeader(onClose: () => Navigator.pop(context)),
             const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: defaultBorder,
-                boxShadow: [
-                  BoxShadow(
-                    color: shadowLow,
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: defaultBorder,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      '즉시 구매가',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${_formatPrice(buyNowPrice)}원',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: blueColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            BuyNowPriceCard(
+              formattedPrice: '${_formatPrice(buyNowPrice)}원',
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: viewModel.isSubmitting
-                    ? null
-                    : () => _showTermsDialog(context, viewModel),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: blueColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(defaultRadius),
-                  ),
-                ),
-                child: const Text(
-                  '즉시 구매하기',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+            BuyNowPrimaryButton(
+              isSubmitting: viewModel.isSubmitting,
+              onPressed: () {
+                if (buyNowPrice < 10000 || buyNowPrice > 1400000) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        '즉시 구매가는 10,000원 이상 1,400,000원 이하만 가능합니다.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                _showTermsDialog(context, viewModel);
+              },
             ),
             const SizedBox(height: 8),
           ],
