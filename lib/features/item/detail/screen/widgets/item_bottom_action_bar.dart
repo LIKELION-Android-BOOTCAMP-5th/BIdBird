@@ -1,13 +1,14 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/features/item/bottom_sheet_buy_now_input/screen/bottom_sheet_buy_now_input.dart';
-import 'package:bidbird/features/item/bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
-import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
-import 'package:bidbird/features/item/bottom_sheet_price_Input/screen/price_input_screen.dart';
-import 'package:bidbird/features/item/bottom_sheet_price_Input/viewmodel/price_input_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../../bottom_sheet_buy_now_input/screen/bottom_sheet_buy_now_input.dart';
+import '../../../bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
+import '../../../bottom_sheet_price_Input/screen/price_input_screen.dart';
+import '../../../bottom_sheet_price_Input/viewmodel/price_input_viewmodel.dart';
+import '../../model/item_detail_entity.dart';
 
 class ItemBottomActionBar extends StatefulWidget {
   const ItemBottomActionBar({required this.item, required this.isMyItem, super.key});
