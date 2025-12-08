@@ -123,6 +123,8 @@ class ItemDetailDatasource {
           .from('bid_log')
           .select('id')
           .eq('item_id', itemId)
+          .isFilter('instant_buy_triggered_at', null)
+          .neq('bid_price', 0)
           .count(CountOption.exact);
       return countResponse.count;
     } catch (e) {
