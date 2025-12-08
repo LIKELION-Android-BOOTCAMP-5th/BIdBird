@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';

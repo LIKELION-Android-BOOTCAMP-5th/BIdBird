@@ -1,12 +1,13 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/core/utils/ui_set/fonts.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/features/item/widgets/history_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import '../../../../core/utils/ui_set/border_radius_style.dart';
+import '../../../../core/utils/ui_set/icons_style.dart';
 import '../viewmodel/current_trade_viewmodel.dart';
-import '../../../../core/utils/ui_set/border_radius.dart';
-import '../../../../core/utils/ui_set/icons.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
   const CurrentTradeScreen({super.key});
@@ -47,16 +48,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             _buildTabBar(),
             const SizedBox(height: 8),
             if (viewModel.isLoading)
-              const Expanded(
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              )
+              const Expanded(child: Center(child: CircularProgressIndicator()))
             else if (viewModel.error != null)
               Expanded(
-                child: Center(
-                  child: Text(viewModel.error ?? '오류가 발생했습니다.'),
-                ),
+                child: Center(child: Text(viewModel.error ?? '오류가 발생했습니다.')),
               )
             else
               Expanded(
@@ -97,9 +92,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           height: 40,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected
-                ? blueColor
-                : BackgroundColor,
+            color: isSelected ? blueColor : BackgroundColor,
             borderRadius: BorderRadius.circular(defaultRadius),
             border: Border.all(color: blueColor),
           ),
@@ -108,9 +101,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             style: TextStyle(
               fontSize: buttonFontStyle.fontSize,
               fontWeight: buttonFontStyle.fontWeight,
-              color: isSelected
-                  ? BackgroundColor
-                  : blueColor,
+              color: isSelected ? BackgroundColor : blueColor,
             ),
           ),
         ),
@@ -122,9 +113,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
     final data = viewModel.bidHistory;
 
     if (data.isEmpty) {
-      return const Center(
-        child: Text('입찰 내역이 없습니다.'),
-      );
+      return const Center(child: Text('입찰 내역이 없습니다.'));
     }
 
     return RefreshIndicator(
@@ -155,9 +144,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
     final data = viewModel.saleHistory;
 
     if (data.isEmpty) {
-      return const Center(
-        child: Text('판매 내역이 없습니다.'),
-      );
+      return const Center(child: Text('판매 내역이 없습니다.'));
     }
 
     return RefreshIndicator(
