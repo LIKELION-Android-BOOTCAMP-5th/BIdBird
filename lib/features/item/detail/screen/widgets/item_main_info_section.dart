@@ -1,12 +1,16 @@
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:flutter/material.dart';
 
 import '../item_detail_utils.dart';
 
 class ItemMainInfoSection extends StatelessWidget {
-  const ItemMainInfoSection({required this.item, required this.isMyItem, super.key});
+  const ItemMainInfoSection({
+    required this.item,
+    required this.isMyItem,
+    super.key,
+  });
 
   final ItemDetail item;
   final bool isMyItem;
@@ -98,10 +102,7 @@ class ItemMainInfoSection extends StatelessWidget {
                     children: [
                       const Text(
                         '현재 입찰가',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: iconColor,
-                        ),
+                        style: TextStyle(fontSize: 12, color: iconColor),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -125,10 +126,7 @@ class ItemMainInfoSection extends StatelessWidget {
                     children: [
                       const Text(
                         '참여 입찰',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: iconColor,
-                        ),
+                        style: TextStyle(fontSize: 12, color: iconColor),
                       ),
                       const SizedBox(height: 4),
                       Text(

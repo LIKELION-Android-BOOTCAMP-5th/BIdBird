@@ -1,6 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,7 +11,11 @@ import '../../../bottom_sheet_price_Input/viewmodel/price_input_viewmodel.dart';
 import '../../model/item_detail_entity.dart';
 
 class ItemBottomActionBar extends StatefulWidget {
-  const ItemBottomActionBar({required this.item, required this.isMyItem, super.key});
+  const ItemBottomActionBar({
+    required this.item,
+    required this.isMyItem,
+    super.key,
+  });
 
   final ItemDetail item;
   final bool isMyItem;
@@ -97,8 +101,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
       if (!mounted || row == null) return;
 
-      final String? currentHighest =
-          row['current_highest_bidder']?.toString();
+      final String? currentHighest = row['current_highest_bidder']?.toString();
 
       setState(() {
         _isTopBidder = currentHighest != null && currentHighest == user.id;
@@ -149,9 +152,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 즉시 구매 버튼 노출 여부 (상태 + 가격 기준)
     // 1001: 경매 대기, 1006: 즉시 구매 진행 중, 1007: 즉시 구매 완료,
     // 1008/1009/1010: 경매 종료, 1011: 거래 정지
-    const disabledStatusesForBuyNow = {1001, 1006, 1007, 1008, 1009, 1010, 1011};
+    const disabledStatusesForBuyNow = {
+      1001,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+    };
     final bool showBuyNow =
-        widget.item.buyNowPrice > 0 && !disabledStatusesForBuyNow.contains(_statusCode);
+        widget.item.buyNowPrice > 0 &&
+        !disabledStatusesForBuyNow.contains(_statusCode);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -195,19 +207,14 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               ),
             ),
           ]
-
           // 일반 사용자: 하트 + 입찰/즉시구매 버튼
           else if (!isMyItem) ...[
             _buildFavoriteButton(),
             const SizedBox(width: 12),
-            Expanded(
-              child: _buildBidButton(),
-            ),
+            Expanded(child: _buildBidButton()),
             if (showBuyNow) ...[
               const SizedBox(width: 8),
-              Expanded(
-                child: _buildBuyNowButton(),
-              ),
+              Expanded(child: _buildBuyNowButton()),
             ],
           ] else ...[
             Expanded(
@@ -263,14 +270,15 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final bool isAuctionEnded =
         statusCode == 1008 || statusCode == 1009 || statusCode == 1010; // 경매 종료
     final bool isAuctionActive =
-        statusCode == 1002 ||
-        statusCode == 1003 ||
-        statusCode == 1005;
+        statusCode == 1002 || statusCode == 1003 || statusCode == 1005;
     final bool isBuyNowInProgress = statusCode == 1006;
     final bool isBuyNowCompleted = statusCode == 1007;
 
     final bool showBidButton =
-        !isAuctionEnded && isAuctionActive && !isTopBidder && !isBuyNowInProgress;
+        !isAuctionEnded &&
+        isAuctionActive &&
+        !isTopBidder &&
+        !isBuyNowInProgress;
 
     if (isAuctionEnded) {
       return Container(
@@ -463,9 +471,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: blueColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.7),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.7)),
       ),
       child: const Text(
         '즉시 구매하기',

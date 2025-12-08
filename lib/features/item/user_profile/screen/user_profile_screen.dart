@@ -1,5 +1,5 @@
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 import 'package:bidbird/features/item/user_profile/viewmodel/user_profile_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -20,23 +20,24 @@ class UserProfileScreen extends StatelessWidget {
         final profile = vm.profile;
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('프로필'),
-            centerTitle: true,
-          ),
+          appBar: AppBar(title: const Text('프로필'), centerTitle: true),
           backgroundColor: BackgroundColor,
           body: SafeArea(
             child: profile == null
                 ? const Center(child: CircularProgressIndicator())
                 : Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 24),
+                            horizontal: 20,
+                            vertical: 24,
+                          ),
                           decoration: BoxDecoration(
                             color: BorderColor.withValues(alpha: 0.3),
                             borderRadius: defaultBorder,
@@ -120,8 +121,7 @@ class UserProfileScreen extends StatelessWidget {
                               boxShadow: const [],
                             ),
                             child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: const [
                                 Text(
                                   '거래내역',
@@ -189,10 +189,7 @@ class _UserReviewSection extends StatelessWidget {
       children: [
         const Text(
           '거래 평',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
         Container(
@@ -206,10 +203,7 @@ class _UserReviewSection extends StatelessWidget {
           child: reviews.isEmpty
               ? const Text(
                   '아직 받은 거래 평이 없습니다.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: textColor,
-                  ),
+                  style: TextStyle(fontSize: 13, color: textColor),
                 )
               : ListView.separated(
                   shrinkWrap: true,

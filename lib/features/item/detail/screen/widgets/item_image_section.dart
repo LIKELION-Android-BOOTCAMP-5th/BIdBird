@@ -1,4 +1,4 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:flutter/material.dart';
 
@@ -69,18 +69,17 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                   width: double.infinity,
                   color: ImageBackgroundColor,
                   child: const Center(
-                    child: Text(
-                      '상품 사진',
-                      style: TextStyle(color: iconColor),
-                    ),
+                    child: Text('상품 사진', style: TextStyle(color: iconColor)),
                   ),
                 ),
               Positioned(
                 top: 16,
                 left: 16,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: RedColor,
                     borderRadius: BorderRadius.circular(4),

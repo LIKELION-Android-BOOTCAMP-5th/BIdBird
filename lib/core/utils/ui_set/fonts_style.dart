@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'colors.dart';
+import 'colors_style.dart';
 
 // 제목
 final TextStyle titleFontStyle = TextStyle(

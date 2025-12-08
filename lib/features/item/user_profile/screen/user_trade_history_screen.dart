@@ -1,5 +1,5 @@
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/user_profile/data/repository/user_profile_repository.dart';
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 import 'package:bidbird/features/item/widgets/trade_status_chip.dart';
@@ -13,10 +13,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('거래내역'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('거래내역'), centerTitle: true),
       backgroundColor: BackgroundColor,
       body: SafeArea(
         child: FutureBuilder<List<UserTradeSummary>>(
@@ -55,20 +52,16 @@ class UserTradeHistoryScreen extends StatelessWidget {
                         child: SizedBox(
                           width: 48,
                           height: 48,
-                          child: trade.thumbnailUrl != null &&
+                          child:
+                              trade.thumbnailUrl != null &&
                                   trade.thumbnailUrl!.isNotEmpty
                               ? Image.network(
                                   trade.thumbnailUrl!,
                                   fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) =>
-                                          Container(
-                                    color: BackgroundColor,
-                                  ),
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(color: BackgroundColor),
                                 )
-                              : Container(
-                                  color: BackgroundColor,
-                                ),
+                              : Container(color: BackgroundColor),
                         ),
                       ),
                       const SizedBox(width: 12),

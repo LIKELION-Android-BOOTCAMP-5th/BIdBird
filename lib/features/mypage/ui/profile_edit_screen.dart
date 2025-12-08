@@ -1,15 +1,12 @@
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/core/utils/ui_set/fonts.dart';
-import 'package:bidbird/core/utils/ui_set/icons.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/features/mypage/data/profile_repository.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_edit_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class ProfileEditScreen extends StatelessWidget {
   const ProfileEditScreen({super.key});
