@@ -1,3 +1,4 @@
+import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/utils/ui_set/icons.dart';
 import 'package:bidbird/features/feed/repository/home_repository.dart';
@@ -56,98 +57,95 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context, viewModel, child) {
               return Stack(
                 children: [
-                  ListView(
-                    children: [
-                      SizedBox(
-                        height: 50,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: viewModel.keywords.length,
-                          itemBuilder: (context, index) {
-                            final String title =
-                                viewModel.keywords[index].title;
-                            // final bool isSelected =
-                            //     title == viewModel.selectCategory;
-                            return Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // viewModel.ChangeCategory(title);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: blueColor,
+                  RefreshIndicator(
+                    onRefresh: viewModel.handleRefresh,
+                    child: CustomScrollView(
+                      controller: viewModel.scrollController,
+                      slivers: [
+                        // 키워드 영역
+                        SliverToBoxAdapter(
+                          child: SizedBox(
+                            height: 50,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: viewModel.keywords.length,
+                              itemBuilder: (context, index) {
+                                final String title =
+                                    viewModel.keywords[index].title;
 
-                                  // foregroundColor: isSelected
-                                  //     ? Colors.white
-                                  //     : Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 8,
+                                return Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: ElevatedButton(
+                                    onPressed: () {},
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: blueColor,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 8,
+                                      ),
+                                      minimumSize: const Size(0, 0),
+                                    ),
+                                    child: Text(
+                                      title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
-                                  minimumSize: const Size(0, 0),
-                                ),
-                                child: Text(
-                                  title,
-                                  //TODO: 색 나중에 선택 되었을 때 조건문으로 변경 예정
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            );
-                          },
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: GridView.builder(
-                          // GridView가 부모 ListView의 공간에 맞게 높이를 최소화하도록 설정
-                          shrinkWrap: true,
-                          // GridView 자체는 스크롤되지 않도록 설정 (부모 ListView가 스크롤을 담당)
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 0.75,
-                                mainAxisSpacing: 5,
-                                crossAxisSpacing: 20,
-                              ),
-                          itemCount: 10,
-                          itemBuilder: (context, index) {
-                            return Column(
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8.7),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      children: [
-                                        Stack(
-                                          children: [
-                                            //이 컨테이너 대신에 사진이 들어가면 됨
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[200],
-                                                borderRadius: defaultBorder,
-                                              ),
-                                              child: AspectRatio(
+
+                        // 슬라이버 그리드 (2개씩)
+                        SliverPadding(
+                          padding: const EdgeInsets.all(20.0),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.75,
+                                  mainAxisSpacing: 5,
+                                  crossAxisSpacing: 20,
+                                ),
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final item = viewModel.Items[index];
+                              final title = item.title;
+                              final currentPrice = item.current_price;
+
+                              return Column(
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8.7),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Column(
+                                        children: [
+                                          Stack(
+                                            children: [
+                                              AspectRatio(
                                                 aspectRatio: 1,
-                                                child: Center(
-                                                  child: const Icon(
-                                                    Icons.image,
-                                                    size: 100,
-                                                    color: Colors.grey,
+                                                child: ClipRRect(
+                                                  borderRadius: defaultBorder,
+                                                  child: Image.network(
+                                                    item.thumbnail_image,
+                                                    fit: BoxFit.cover,
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.all(
-                                                8.0,
-                                              ),
-                                              child: Align(
-                                                alignment: Alignment.topCenter,
+
+                                              // 잔여 시간
+                                              Positioned(
+                                                top: 8,
+                                                left: 8,
+                                                right: 8,
                                                 child: Container(
                                                   padding:
                                                       const EdgeInsets.symmetric(
@@ -161,9 +159,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           4,
                                                         ),
                                                   ),
-                                                  child: Text(
+                                                  child: const Text(
                                                     '잔여 시간: 12:12',
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 12,
                                                       fontWeight:
@@ -172,57 +170,52 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                            Positioned(
-                                              bottom: 4,
-                                              left: 8,
-                                              right: 8,
-                                              //나중에 사진 올라가면 이 부분 grey[200]으로 잔여 시간처럼, 글씨도 똑같이
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  //Todo: 나중에 뷰카운트 2차 업데이트
-                                                  // Row(
-                                                  //   spacing: 2,
-                                                  //   children: [
-                                                  //     Icon(
-                                                  //       Icons.remove_red_eye,
-                                                  //       size: 12,
-                                                  //     ),
-                                                  //     Text("12"),
-                                                  //   ],
-                                                  // ),
-                                                  Text("입찰 건수: 12"),
-                                                ],
+
+                                              /// 입찰 건수
+                                              Positioned(
+                                                bottom: 4,
+                                                left: 8,
+                                                right: 8,
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: const [
+                                                    Text(
+                                                      "입찰 건수: 12",
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        const Align(
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            "상품명",
-                                            style: TextStyle(
+                                            ],
+                                          ),
+
+                                          const SizedBox(height: 8),
+
+                                          Text(
+                                            title,
+                                            style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        ),
-                                        const Align(
-                                          alignment: Alignment.center,
-                                          child: Text("현재 가격"),
-                                        ),
-                                      ],
+                                          Text(
+                                            "현재 가격: ${currentPrice.toCommaString()}원",
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            );
-                          },
+                                ],
+                              );
+                            }, childCount: viewModel.Items.length),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   if (_fabMenuOpen)
                     Positioned(
