@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
 import '../viewmodel/item_add_viewmodel.dart';
@@ -33,18 +33,11 @@ class ItemAddImagesSection extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.file_upload_outlined,
-                    color: iconColor,
-                    size: 32,
-                  ),
+                  Icon(Icons.file_upload_outlined, color: iconColor, size: 32),
                   const SizedBox(height: 8),
                   const Text(
                     '이미지를 업로드하세요',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: iconColor,
-                    ),
+                    style: TextStyle(fontSize: 13, color: iconColor),
                   ),
                 ],
               ),
@@ -52,10 +45,7 @@ class ItemAddImagesSection extends StatelessWidget {
           else
             ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               itemBuilder: (context, index) {
                 final image = viewModel.selectedImages[index];
                 final bool isPrimary = index == viewModel.primaryImageIndex;
@@ -139,11 +129,7 @@ class ItemAddImagesSection extends StatelessWidget {
                   color: blueColor,
                   borderRadius: BorderRadius.circular(defaultRadius),
                 ),
-                child: const Icon(
-                  Icons.add,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 20),
               ),
             ),
           ),
@@ -162,10 +148,7 @@ class ItemAddImagesSection extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   '${viewModel.selectedImages.length}/10',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
             ),

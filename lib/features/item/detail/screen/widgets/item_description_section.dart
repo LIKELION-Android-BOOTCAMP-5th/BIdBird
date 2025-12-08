@@ -1,5 +1,5 @@
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:flutter/material.dart';
@@ -74,7 +74,10 @@ class ItemDescriptionSection extends StatelessWidget {
                         context.push('/user/${item.sellerId}');
                       },
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         minimumSize: const Size(0, 0),
                       ),
@@ -90,22 +93,14 @@ class ItemDescriptionSection extends StatelessWidget {
                             ),
                           ),
                           SizedBox(width: 4),
-                          Icon(
-                            Icons.chevron_right,
-                            size: 16,
-                            color: blueColor,
-                          ),
+                          Icon(Icons.chevron_right, size: 16, color: blueColor),
                         ],
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: BorderColor,
-                ),
+                const Divider(height: 1, thickness: 1, color: BorderColor),
                 const SizedBox(height: 12),
                 const Text(
                   '상품 설명',

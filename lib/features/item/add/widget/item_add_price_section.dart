@@ -1,4 +1,4 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
 import '../viewmodel/item_add_viewmodel.dart';
@@ -41,8 +41,9 @@ class ItemAddPriceSection extends StatelessWidget {
                   if (formatted != value) {
                     viewModel.startPriceController.value = TextEditingValue(
                       text: formatted,
-                      selection:
-                          TextSelection.collapsed(offset: formatted.length),
+                      selection: TextSelection.collapsed(
+                        offset: formatted.length,
+                      ),
                     );
                   }
                 },
@@ -78,8 +79,10 @@ class ItemAddPriceSection extends StatelessWidget {
                             ? blueColor
                             : Colors.black,
                       ),
-                      visualDensity:
-                          const VisualDensity(horizontal: -4, vertical: -4),
+                      visualDensity: const VisualDensity(
+                        horizontal: -4,
+                        vertical: -4,
+                      ),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       onChanged: (value) {
                         if (value == null) return;
@@ -94,16 +97,18 @@ class ItemAddPriceSection extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 enabled: viewModel.useInstantPrice,
                 decoration: inputDecoration('즉시 입찰가 입력').copyWith(
-                  fillColor:
-                      viewModel.useInstantPrice ? Colors.white : BorderColor.withValues(alpha: 0.2),
+                  fillColor: viewModel.useInstantPrice
+                      ? Colors.white
+                      : BorderColor.withValues(alpha: 0.2),
                 ),
                 onChanged: (value) {
                   final formatted = viewModel.formatNumber(value);
                   if (formatted != value) {
                     viewModel.instantPriceController.value = TextEditingValue(
                       text: formatted,
-                      selection:
-                          TextSelection.collapsed(offset: formatted.length),
+                      selection: TextSelection.collapsed(
+                        offset: formatted.length,
+                      ),
                     );
                   }
                 },

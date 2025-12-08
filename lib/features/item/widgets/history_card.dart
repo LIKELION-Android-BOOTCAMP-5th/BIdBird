@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/widgets/trade_status_chip.dart';
-import '../../../../core/utils/ui_set/border_radius.dart';
+import 'package:flutter/material.dart';
+
+import '../../../../core/utils/ui_set/border_radius_style.dart';
 
 class HistoryCard extends StatelessWidget {
   const HistoryCard({
@@ -55,13 +56,9 @@ class HistoryCard extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(defaultRadius),
                       child: (thumbnailUrl != null && thumbnailUrl!.isNotEmpty)
-                          ? Image.network(
-                              thumbnailUrl!,
-                              fit: BoxFit.cover,
-                            )
+                          ? Image.network(thumbnailUrl!, fit: BoxFit.cover)
                           : Container(
-                              color:
-                              BackgroundColor,
+                              color: BackgroundColor,
                               child: const Icon(
                                 Icons.image,
                                 size: 32,
@@ -76,8 +73,10 @@ class HistoryCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Padding(
-                padding:
-                const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,

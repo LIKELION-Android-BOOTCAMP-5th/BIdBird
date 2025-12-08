@@ -1,4 +1,4 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/item_registration_list/viewmodel/item_registration_list_viewmodel.dart';
 import 'package:bidbird/features/item/widgets/history_card.dart';
 import 'package:flutter/material.dart';
@@ -15,14 +15,9 @@ class RegistrationScreen extends StatelessWidget {
       child: Consumer<RegistrationViewModel>(
         builder: (context, viewModel, _) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('매물 등록 확인'),
-              centerTitle: true,
-            ),
+            appBar: AppBar(title: const Text('매물 등록 확인'), centerTitle: true),
             backgroundColor: BackgroundColor,
-            body: SafeArea(
-              child: _buildBody(context, viewModel),
-            ),
+            body: SafeArea(child: _buildBody(context, viewModel)),
           );
         },
       ),
@@ -36,17 +31,12 @@ class RegistrationScreen extends StatelessWidget {
 
     if (viewModel.error != null) {
       return Center(
-        child: Text(
-          viewModel.error!,
-          style: const TextStyle(fontSize: 14),
-        ),
+        child: Text(viewModel.error!, style: const TextStyle(fontSize: 14)),
       );
     }
 
     if (viewModel.items.isEmpty) {
-      return const Center(
-        child: Text('등록 대기 중인 매물이 없습니다.'),
-      );
+      return const Center(child: Text('등록 대기 중인 매물이 없습니다.'));
     }
 
     return ListView.separated(
@@ -74,4 +64,3 @@ class RegistrationScreen extends StatelessWidget {
     );
   }
 }
-

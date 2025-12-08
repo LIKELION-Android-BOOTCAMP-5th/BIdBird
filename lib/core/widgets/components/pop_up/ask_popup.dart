@@ -1,7 +1,7 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
-import '../../../utils/ui_set/fonts.dart';
+import '../../../utils/ui_set/fonts_style.dart';
 
 class AskPopup extends StatelessWidget {
   final String content;

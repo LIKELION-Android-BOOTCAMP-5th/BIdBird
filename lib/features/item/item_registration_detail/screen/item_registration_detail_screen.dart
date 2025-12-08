@@ -1,7 +1,7 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
-import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:bidbird/features/item/item_registration_detail/viewmodel/item_registration_detail_viewmodel.dart';
+import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -27,8 +27,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String startPriceText = _formatPrice(item.startPrice);
-    final String? instantPriceText =
-        item.instantPrice > 0 ? _formatPrice(item.instantPrice) : null;
+    final String? instantPriceText = item.instantPrice > 0
+        ? _formatPrice(item.instantPrice)
+        : null;
 
     return ChangeNotifierProvider<ItemRegistrationDetailViewModel>(
       create: (_) => ItemRegistrationDetailViewModel(item: item)..loadTerms(),
@@ -96,10 +97,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           children: [
             Positioned.fill(
               child: item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
-                  ? Image.network(
-                      item.thumbnailUrl!,
-                      fit: BoxFit.cover,
-                    )
+                  ? Image.network(item.thumbnailUrl!, fit: BoxFit.cover)
                   : const Center(
                       child: Text(
                         '이미지 없음',
@@ -142,20 +140,14 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '시작가 ₩$startPriceText',
-            style: const TextStyle(
-              fontSize: 13,
-              color: textColor,
-            ),
+            style: const TextStyle(fontSize: 13, color: textColor),
           ),
           const SizedBox(height: 4),
           Text(
             instantPriceText != null
                 ? '즉시 입찰가 ₩$instantPriceText'
                 : '즉시 입찰가: 없음',
-            style: const TextStyle(
-              fontSize: 13,
-              color: iconColor,
-            ),
+            style: const TextStyle(fontSize: 13, color: iconColor),
           ),
         ],
       ),
@@ -183,10 +175,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             item.description,
-            style: const TextStyle(
-              fontSize: 13,
-              color: textColor,
-            ),
+            style: const TextStyle(fontSize: 13, color: textColor),
           ),
         ],
       ),

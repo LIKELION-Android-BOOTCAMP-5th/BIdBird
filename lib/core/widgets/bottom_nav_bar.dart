@@ -1,8 +1,8 @@
-import 'package:bidbird/core/utils/ui_set/icons.dart';
+import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../utils/ui_set/colors.dart';
+import '../utils/ui_set/colors_style.dart';
 
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});
