@@ -302,25 +302,50 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       );
     }
 
-    // 즉시 구매 진행 중(1006)인 경우에는 최고 입찰자 여부와 상관없이 결제 버튼을 우선 노출
+    // 즉시 구매 진행 중(1006)인 경우
+    // - 즉시 구매를 건 사용자(현재 최고 입찰자)는 '결제하러 가기' 버튼 노출
+    // - 그 외 사용자는 안내 문구만 노출
     if (isBuyNowInProgress && !isBuyNowCompleted) {
-      return ElevatedButton(
-        onPressed: () {
-          debugPrint('[ItemBottomActionBar] 결제하러 가기 버튼 탭');
-          // TODO: 결제 화면으로 이동하는 로직 연동
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: blueColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.7),
+      if (isTopBidder) {
+        return ElevatedButton(
+          onPressed: () {
+            debugPrint('[ItemBottomActionBar] 결제하러 가기 버튼 탭');
+            // TODO: 결제 화면으로 이동하는 로직 연동
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: blueColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.7),
+            ),
           ),
+          child: const Text(
+            '결제하러 가기',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        );
+      }
+
+      // 다른 사용자는 결제 대기 안내 문구만 표시
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
         ),
-        child: const Text(
-          '결제하러 가기',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+        child: const Center(
+          child: Text(
+            '즉시 구매 결제 대기중입니다',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
           ),
         ),
       );
@@ -395,7 +420,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     // 1) 이미 최고 입찰자인 경우
     if (isTopBidder) {
-      reason = '이미 이 상품의 최고 입찰자입니다';
+      reason = '최고 입찰자입니다';
     } else {
       // 2) 상태 코드별 상세 사유
       switch (statusCode) {
@@ -408,10 +433,10 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           reason = '경매가 종료되었습니다.';
           break;
         case 1006: // 즉시 구매 진행 중
-          reason = '즉시 구매 중인 상품입니다';
+          reason = '즉시 구매 결제 대기중입니다';
           break;
         case 1007: // 즉시 구매 완료
-          reason = '즉시 구매가 완료된 상품입니다';
+          reason = '즉시 구매되었습니다';
           break;
         case 1011: // 거래 정지
           reason = '거래가 정지된 상품입니다';
