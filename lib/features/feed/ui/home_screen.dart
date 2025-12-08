@@ -1,13 +1,14 @@
 import 'package:bidbird/core/utils/extension/money_extension.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/core/utils/ui_set/icons.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/features/feed/repository/home_repository.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/utils/ui_set/border_radius.dart';
+import '../../../core/utils/ui_set/border_radius_style.dart';
+import '../../../core/utils/ui_set/shadow_style.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -123,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8.7),
+                                      boxShadow: [defaultShadow],
                                     ),
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -153,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         vertical: 4,
                                                       ),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.red,
+                                                    color: RedColor,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           4,

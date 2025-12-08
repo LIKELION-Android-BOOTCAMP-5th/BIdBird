@@ -1,5 +1,5 @@
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -34,35 +34,51 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   }
 
   void _increaseBid() {
-    debugPrint('[BidBottomSheet] _increaseBid called, bidUnit: ${widget.bidUnit}');
+    debugPrint(
+      '[BidBottomSheet] _increaseBid called, bidUnit: ${widget.bidUnit}',
+    );
     debugPrint('[BidBottomSheet] _increaseBid: before _bidAmount: $_bidAmount');
-    
+
     setState(() {
       final next = _bidAmount + widget.bidUnit;
-      debugPrint('[BidBottomSheet] _increaseBid: _bidAmount: $_bidAmount, next: $next, buyNowPrice: ${widget.buyNowPrice}');
+      debugPrint(
+        '[BidBottomSheet] _increaseBid: _bidAmount: $_bidAmount, next: $next, buyNowPrice: ${widget.buyNowPrice}',
+      );
 
       if (widget.buyNowPrice > 0 && next > widget.buyNowPrice) {
-        debugPrint('[BidBottomSheet] _increaseBid: next > buyNowPrice, not updating');
+        debugPrint(
+          '[BidBottomSheet] _increaseBid: next > buyNowPrice, not updating',
+        );
       } else {
         _bidAmount = next;
-        debugPrint('[BidBottomSheet] _increaseBid: updated _bidAmount to $_bidAmount');
+        debugPrint(
+          '[BidBottomSheet] _increaseBid: updated _bidAmount to $_bidAmount',
+        );
       }
     });
-    
+
     debugPrint('[BidBottomSheet] _increaseBid: after _bidAmount: $_bidAmount');
   }
 
   void _decreaseBid() {
-    debugPrint('[BidBottomSheet] _decreaseBid called, bidUnit: ${widget.bidUnit}');
+    debugPrint(
+      '[BidBottomSheet] _decreaseBid called, bidUnit: ${widget.bidUnit}',
+    );
     setState(() {
       final minBid = widget.currentPrice + widget.bidUnit;
       final next = _bidAmount - widget.bidUnit;
-      debugPrint('[BidBottomSheet] _decreaseBid: _bidAmount: $_bidAmount, next: $next, minBid: $minBid');
+      debugPrint(
+        '[BidBottomSheet] _decreaseBid: _bidAmount: $_bidAmount, next: $next, minBid: $minBid',
+      );
       if (next >= minBid) {
         _bidAmount = next;
-        debugPrint('[BidBottomSheet] _decreaseBid: updated _bidAmount to $_bidAmount');
+        debugPrint(
+          '[BidBottomSheet] _decreaseBid: updated _bidAmount to $_bidAmount',
+        );
       } else {
-        debugPrint('[BidBottomSheet] _decreaseBid: next < minBid, not updating');
+        debugPrint(
+          '[BidBottomSheet] _decreaseBid: next < minBid, not updating',
+        );
       }
     });
   }
@@ -96,179 +112,166 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '입찰하기',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '입찰하기',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.close,
-                  size: 20,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: defaultBorder,
-              boxShadow: [
-                BoxShadow(
-                  color: shadowLow,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: defaultBorder,
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: defaultBorder,
+                boxShadow: [
+                  BoxShadow(
+                    color: shadowLow,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '현재 가격',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: textColor,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_formatPrice(widget.currentPrice)}원',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          const Text(
-                            '호가',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: textColor,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatBidUnit(widget.bidUnit),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: RedColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: Container(
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
+                      horizontal: 16,
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(defaultRadius),
-                      border: Border.all(color: blueColor, width: 2),
+                      color: Colors.grey.shade200,
+                      borderRadius: defaultBorder,
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
-                          '입찰 금액',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: blueColor,
-                          ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              '현재 가격',
+                              style: TextStyle(fontSize: 13, color: textColor),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${_formatPrice(widget.currentPrice)}원',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${_formatPrice(_bidAmount)}원',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: blueColor,
-                          ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text(
+                              '호가',
+                              style: TextStyle(fontSize: 13, color: textColor),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatBidUnit(widget.bidUnit),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: RedColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildRoundBidButton('-', _decreaseBid),
-                    _buildRoundBidButton('+', _increaseBid),
-                  ],
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(defaultRadius),
+                        border: Border.all(color: blueColor, width: 2),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            '입찰 금액',
+                            style: TextStyle(fontSize: 12, color: blueColor),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_formatPrice(_bidAmount)}원',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: blueColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildRoundBidButton('-', _decreaseBid),
+                      _buildRoundBidButton('+', _increaseBid),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: viewModel.isSubmitting
-                  ? null
-                  : () => _showConfirmDialog(context, viewModel),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: blueColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(defaultRadius),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: viewModel.isSubmitting
+                    ? null
+                    : () => _showConfirmDialog(context, viewModel),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: blueColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(defaultRadius),
+                  ),
+                ),
+                child: const Text(
+                  '입찰 확인',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              child: const Text(
-                '입찰 확인',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
             ),
-          ),
-          const SizedBox(height: 8),
-        ],
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );
@@ -284,25 +287,22 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: Colors.grey.shade300,
-            width: 1,
-          ),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
         ),
         child: Center(
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
           ),
         ),
       ),
     );
   }
 
-  void _showConfirmDialog(BuildContext parentContext, PriceInputViewModel viewModel) {
+  void _showConfirmDialog(
+    BuildContext parentContext,
+    PriceInputViewModel viewModel,
+  ) {
     showDialog(
       context: parentContext,
       builder: (dialogContext) => AskPopup(
@@ -318,8 +318,9 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   }
 
   Future<void> _processBid(
-      BuildContext parentContext, PriceInputViewModel viewModel) async {
-
+    BuildContext parentContext,
+    PriceInputViewModel viewModel,
+  ) async {
     showDialog(
       context: parentContext,
       barrierDismissible: false,
@@ -337,10 +338,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     );
 
     try {
-      await viewModel.placeBid(
-        itemId: widget.itemId,
-        bidPrice: _bidAmount,
-      );
+      await viewModel.placeBid(itemId: widget.itemId, bidPrice: _bidAmount);
 
       if (!parentContext.mounted) return;
       Navigator.pop(parentContext);

@@ -1,5 +1,3 @@
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/features/item/bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
@@ -46,9 +44,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
           children: [
             BuyNowHeader(onClose: () => Navigator.pop(context)),
             const SizedBox(height: 16),
-            BuyNowPriceCard(
-              formattedPrice: '${_formatPrice(buyNowPrice)}원',
-            ),
+            BuyNowPriceCard(formattedPrice: '${_formatPrice(buyNowPrice)}원'),
             const SizedBox(height: 24),
             BuyNowPrimaryButton(
               isSubmitting: viewModel.isSubmitting,
@@ -56,9 +52,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
                 if (buyNowPrice < 10000 || buyNowPrice > 1400000) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text(
-                        '즉시 구매가는 10,000원 이상 1,400,000원 이하만 가능합니다.',
-                      ),
+                      content: Text('즉시 구매가는 10,000원 이상 1,400,000원 이하만 가능합니다.'),
                     ),
                   );
                   return;
@@ -74,7 +68,9 @@ class BuyNowInputBottomSheet extends StatelessWidget {
   }
 
   void _showTermsDialog(
-      BuildContext parentContext, BuyNowInputViewModel viewModel) {
+    BuildContext parentContext,
+    BuyNowInputViewModel viewModel,
+  ) {
     const terms =
         '즉시 구메란 회원이 경매 화면에서 회사가 제시하는 금액(예: 현재 입찰가에 일정 입찰 단위를 더한 금액 등)을 단일 조작으로 입력하여 곧바로 입찰을 완료하는 기능을 말합니다.\n\n'
         '즉시 구매는 회사 서버에 해당 입찰 정보가 도달하여 시스템에 정상적으로 저장된 시점을 기준으로 유효하게 성립하며, 화면 표시 지연·네트워크 장애 등으로 인한 시간 차이는 인정하지 않습니다.\n\n'
@@ -108,7 +104,9 @@ class BuyNowInputBottomSheet extends StatelessWidget {
   }
 
   void _showConfirmDialog(
-      BuildContext parentContext, BuyNowInputViewModel viewModel) {
+    BuildContext parentContext,
+    BuyNowInputViewModel viewModel,
+  ) {
     showDialog(
       context: parentContext,
       builder: (dialogContext) => ConfirmCheckCancelPopup(
@@ -128,12 +126,11 @@ class BuyNowInputBottomSheet extends StatelessWidget {
   }
 
   Future<void> _processInstantBid(
-      BuildContext parentContext, BuyNowInputViewModel viewModel) async {
+    BuildContext parentContext,
+    BuyNowInputViewModel viewModel,
+  ) async {
     try {
-      await viewModel.placeBid(
-        itemId: itemId,
-        bidPrice: buyNowPrice,
-      );
+      await viewModel.placeBid(itemId: itemId, bidPrice: buyNowPrice);
 
       if (!parentContext.mounted) return;
       await showDialog(

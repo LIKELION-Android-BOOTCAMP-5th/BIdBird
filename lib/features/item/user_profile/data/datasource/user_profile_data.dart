@@ -1,13 +1,12 @@
-
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserProfileDatasource {
   UserProfileDatasource({SupabaseClient? supabase})
-      : _supabase = supabase ?? SupabaseManager.shared.supabase;
+    : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   final SupabaseClient _supabase;
 
@@ -52,30 +51,30 @@ class UserProfileDatasource {
 
       final ratings = <double>[];
       for (final row in reviews) {
-          final fromUserId = row['from_user_id']?.toString() ?? '';
-          final ratingValue = (row['rating'] as num?)?.toDouble();
-          final comment = row['comment']?.toString() ?? '';
-          final createdAtRaw = row['created_at']?.toString();
+        final fromUserId = row['from_user_id']?.toString() ?? '';
+        final ratingValue = (row['rating'] as num?)?.toDouble();
+        final comment = row['comment']?.toString() ?? '';
+        final createdAtRaw = row['created_at']?.toString();
 
-          if (ratingValue != null) {
-            ratings.add(ratingValue);
-          }
+        if (ratingValue != null) {
+          ratings.add(ratingValue);
+        }
 
-          if (ratingValue != null || comment.isNotEmpty) {
-            DateTime? createdAt;
-            if (createdAtRaw != null) {
-              createdAt = DateTime.tryParse(createdAtRaw);
-            }
-            reviewsList.add(
-              UserReview(
-                fromUserId: fromUserId,
-                fromUserNickname: '',
-                rating: ratingValue ?? 0,
-                comment: comment,
-                createdAt: createdAt ?? DateTime.now(),
-              ),
-            );
+        if (ratingValue != null || comment.isNotEmpty) {
+          DateTime? createdAt;
+          if (createdAtRaw != null) {
+            createdAt = DateTime.tryParse(createdAtRaw);
           }
+          reviewsList.add(
+            UserReview(
+              fromUserId: fromUserId,
+              fromUserNickname: '',
+              rating: ratingValue ?? 0,
+              comment: comment,
+              createdAt: createdAt ?? DateTime.now(),
+            ),
+          );
+        }
       }
 
       reviewCount = ratings.length;
@@ -140,7 +139,9 @@ class UserProfileDatasource {
     try {
       final List<dynamic> rows = await _supabase
           .from('items')
-          .select('title, thumbnail_image, current_price, created_at, status_code')
+          .select(
+            'title, thumbnail_image, current_price, created_at, status_code',
+          )
           .eq('seller_id', userId)
           .order('created_at', ascending: false);
 
@@ -219,4 +220,3 @@ _StatusInfo _mapStatus(int code) {
       return _StatusInfo('입찰 중', tradeBidPendingColor);
   }
 }
-

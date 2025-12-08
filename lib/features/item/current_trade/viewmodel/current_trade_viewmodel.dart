@@ -1,21 +1,21 @@
 import 'dart:async';
 
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
 
 import '../data/repository/current_trade_repository.dart';
 import '../model/current_trade_entity.dart';
 
 class CurrentTradeViewModel extends ChangeNotifier {
   final CurrentTradeRepository _repository;
-  
+
   List<BidHistoryItem> _bidHistory = [];
   List<SaleHistoryItem> _saleHistory = [];
   bool _isLoading = false;
   String? _error;
 
-  CurrentTradeViewModel({required CurrentTradeRepository repository}) 
-      : _repository = repository;
+  CurrentTradeViewModel({required CurrentTradeRepository repository})
+    : _repository = repository;
 
   List<BidHistoryItem> get bidHistory => _bidHistory;
   List<SaleHistoryItem> get saleHistory => _saleHistory;
@@ -31,10 +31,10 @@ class CurrentTradeViewModel extends ChangeNotifier {
         _repository.fetchMyBidHistory(),
         _repository.fetchMySaleHistory(),
       ]);
-      
+
       _bidHistory = results[0] as List<BidHistoryItem>;
       _saleHistory = results[1] as List<SaleHistoryItem>;
-      
+
       notifyListeners();
     } catch (e) {
       _error = e.toString();

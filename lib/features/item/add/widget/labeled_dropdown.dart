@@ -1,4 +1,4 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
 class LabeledDropdown<T> extends StatelessWidget {
@@ -41,10 +41,7 @@ class LabeledDropdown<T> extends StatelessWidget {
           decoration: decoration,
           icon: const Icon(Icons.keyboard_arrow_down_rounded),
           dropdownColor: Colors.white,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.black87,
-          ),
+          style: const TextStyle(fontSize: 13, color: Colors.black87),
         ),
       ],
     );

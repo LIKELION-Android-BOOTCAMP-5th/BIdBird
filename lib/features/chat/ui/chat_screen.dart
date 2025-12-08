@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/utils/ui_set/icons.dart';
+import '../../../core/utils/ui_set/icons_style.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});

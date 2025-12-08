@@ -1,6 +1,6 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/core/utils/ui_set/fonts.dart';
-import 'package:bidbird/core/utils/ui_set/border_radius.dart';
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:flutter/material.dart';
 
 class ConfirmCheckCancelPopup extends StatefulWidget {
@@ -24,7 +24,8 @@ class ConfirmCheckCancelPopup extends StatefulWidget {
   });
 
   @override
-  State<ConfirmCheckCancelPopup> createState() => _ConfirmCheckCancelPopupState();
+  State<ConfirmCheckCancelPopup> createState() =>
+      _ConfirmCheckCancelPopupState();
 }
 
 class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
@@ -40,9 +41,7 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
 
     return Dialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: defaultBorder,
-      ),
+      shape: RoundedRectangleBorder(borderRadius: defaultBorder),
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: SafeArea(
         minimum: const EdgeInsets.all(0),
@@ -91,8 +90,10 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                         child: Checkbox(
                           value: _checked,
                           activeColor: blueColor,
-                          visualDensity:
-                              const VisualDensity(horizontal: -3, vertical: -3),
+                          visualDensity: const VisualDensity(
+                            horizontal: -3,
+                            vertical: -3,
+                          ),
                           materialTapTargetSize:
                               MaterialTapTargetSize.shrinkWrap,
                           onChanged: (value) {
@@ -104,10 +105,7 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                       ),
                       const SizedBox(width: 4),
                       Flexible(
-                        child: Text(
-                          widget.checkLabel,
-                          style: contentFontStyle,
-                        ),
+                        child: Text(widget.checkLabel, style: contentFontStyle),
                       ),
                     ],
                   ),
@@ -121,22 +119,22 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                         child: FilledButton(
                           style: ButtonStyle(
                             backgroundColor:
-                                MaterialStateProperty.resolveWith<Color?>(
-                              (states) {
-                                if (states.contains(MaterialState.disabled)) {
-                                  return Colors.grey.shade300;
-                                }
-                                return blueColor;
-                              },
-                            ),
+                                MaterialStateProperty.resolveWith<Color?>((
+                                  states,
+                                ) {
+                                  if (states.contains(MaterialState.disabled)) {
+                                    return Colors.grey.shade300;
+                                  }
+                                  return blueColor;
+                                }),
                           ),
                           onPressed: requireCheck
                               ? (_checked
-                                  ? () {
-                                      Navigator.of(context).pop();
-                                      widget.onConfirm(_checked);
-                                    }
-                                  : null)
+                                    ? () {
+                                        Navigator.of(context).pop();
+                                        widget.onConfirm(_checked);
+                                      }
+                                    : null)
                               : () {
                                   Navigator.of(context).pop();
                                   widget.onConfirm(true);
@@ -157,9 +155,9 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                         height: 44,
                         child: FilledButton(
                           style: ButtonStyle(
-                            backgroundColor:
-                                MaterialStateProperty.all<Color>(
-                                    Colors.grey.shade100),
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                              Colors.grey.shade100,
+                            ),
                           ),
                           onPressed: () {
                             Navigator.of(context).pop();
