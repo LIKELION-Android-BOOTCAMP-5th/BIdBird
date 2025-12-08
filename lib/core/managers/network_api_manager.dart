@@ -13,7 +13,8 @@ class NetworkApiManager {
 
   Future<List<HomeCodeKeywordType>> getKeywordType() async {
     final response = await dio.get(
-      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/code_keyword_type?select=*',
+      //키워드 최신순으로 정렬
+      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/code_keyword_type?select=*&order=id.asc',
       options: Options(
         headers: {
           'apikey':
@@ -33,9 +34,11 @@ class NetworkApiManager {
     return results;
   }
 
-  Future<List<ItemsEntity>> getItems({
+  Future<List<ItemsEntity>> getItems(
+    String orderBy, {
     int currentIndex = 1,
     int perPage = 8,
+    int? keywordType,
   }) async {
     int startIndex = currentIndex - 1;
     int endIndex = perPage - 1;
@@ -48,8 +51,16 @@ class NetworkApiManager {
 
     final String range = "${startIndex}-${endIndex}";
 
+    String filterQuery = "";
+    //110 이 전체 카테고리 코드
+    if (keywordType != null && keywordType != 110) {
+      filterQuery = "&keyword_type=eq.$keywordType";
+    }
+
     final response = await dio.get(
-      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items?select=*',
+      //최신순이 기본 설정
+      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items?select=*&order=$orderBy'
+      '$filterQuery',
       options: Options(
         headers: {
           'apikey':
