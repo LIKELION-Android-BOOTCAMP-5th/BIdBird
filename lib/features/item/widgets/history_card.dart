@@ -32,9 +32,14 @@ class HistoryCard extends StatelessWidget {
           borderRadius: defaultBorder,
           boxShadow: const [
             BoxShadow(
-              color: Colors.black12,
+              color: shadowHigh,
               blurRadius: 10,
               offset: Offset(0, 4),
+            ),
+            BoxShadow(
+              color: shadowLow,
+              blurRadius: 4,
+              offset: Offset(0, 1),
             ),
           ],
         ),
