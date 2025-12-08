@@ -10,7 +10,15 @@ class HomeRepository {
     return await NetworkApiManager.shared.getKeywordType();
   }
 
-  Future<List<ItemsEntity>> fetchItems({int currentIndex = 1}) async {
-    return await NetworkApiManager.shared.getItems(currentIndex: currentIndex);
+  Future<List<ItemsEntity>> fetchItems(
+    String orderBy, {
+    int currentIndex = 1,
+    int? keywordType,
+  }) async {
+    return await NetworkApiManager.shared.getItems(
+      orderBy,
+      currentIndex: currentIndex,
+      keywordType: keywordType,
+    );
   }
 }
