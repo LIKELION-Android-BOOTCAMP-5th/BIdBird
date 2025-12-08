@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/utils/extension/time_extension.dart';
 import '../../../core/utils/ui_set/border_radius_style.dart';
 import '../../../core/utils/ui_set/shadow_style.dart';
 
@@ -18,13 +19,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final HomeRepository _homeRepository = HomeRepository();
   bool _fabMenuOpen = false;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => HomeViewmodel(_homeRepository),
+      create: (context) => HomeViewmodel(HomeRepository()),
       child: Scaffold(
         appBar: AppBar(
           title: Row(
@@ -71,15 +71,30 @@ class _HomeScreenState extends State<HomeScreen> {
                               scrollDirection: Axis.horizontal,
                               itemCount: viewModel.keywords.length,
                               itemBuilder: (context, index) {
-                                final String title =
+                                final String keyword =
                                     viewModel.keywords[index].title;
+                                final bool isSelected =
+                                    keyword == viewModel.selectKeyword;
 
                                 return Padding(
                                   padding: const EdgeInsets.all(4.0),
                                   child: ElevatedButton(
-                                    onPressed: () {},
+                                    //TODO keyWord 필터링 걸기
+                                    onPressed: () {
+                                      final keywordSelect =
+                                          viewModel.keywords[index];
+                                      viewModel.selectKeywordAndFetch(
+                                        keywordSelect.title,
+                                        keywordSelect.id,
+                                      );
+                                    },
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: blueColor,
+                                      backgroundColor: isSelected
+                                          ? blueColor
+                                          : Colors.transparent,
+                                      foregroundColor: isSelected
+                                          ? Colors.white
+                                          : Colors.white,
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 20,
                                         vertical: 8,
@@ -87,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       minimumSize: const Size(0, 0),
                                     ),
                                     child: Text(
-                                      title,
+                                      keyword,
                                       style: const TextStyle(
                                         color: Colors.white,
                                       ),
@@ -116,102 +131,203 @@ class _HomeScreenState extends State<HomeScreen> {
                             ) {
                               final item = viewModel.Items[index];
                               final title = item.title;
-                              final currentPrice = item.current_price;
 
-                              return Column(
-                                children: [
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8.7),
-                                      boxShadow: [defaultShadow],
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        children: [
-                                          Stack(
-                                            children: [
-                                              AspectRatio(
-                                                aspectRatio: 1,
-                                                child: ClipRRect(
-                                                  borderRadius: defaultBorder,
-                                                  child: Image.network(
-                                                    item.thumbnail_image,
-                                                    fit: BoxFit.cover,
+                              return GestureDetector(
+                                onTap: () {
+                                  // item_detail 페이지로 이동
+                                  context.push(('/item/${item.id}'));
+                                },
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(
+                                          8.7,
+                                        ),
+                                        boxShadow: [defaultShadow],
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          children: [
+                                            Stack(
+                                              children: [
+                                                AspectRatio(
+                                                  aspectRatio: 1,
+                                                  child: ClipRRect(
+                                                    borderRadius: defaultBorder,
+                                                    child: Image.network(
+                                                      item.thumbnail_image,
+                                                      fit: BoxFit.cover,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
 
-                                              // 잔여 시간
-                                              Positioned(
-                                                top: 8,
-                                                left: 8,
-                                                right: 8,
-                                                child: Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: RedColor,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          4,
+                                                // 잔여 시간
+                                                Positioned(
+                                                  top: 8,
+                                                  left: 8,
+                                                  right: 8,
+                                                  // 가로 폭을 비율로 주기 위한 UI
+                                                  child: Align(
+                                                    alignment:
+                                                        Alignment.centerRight,
+                                                    child: FractionallySizedBox(
+                                                      widthFactor: 0.5,
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: RedColor,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                15,
+                                                              ),
                                                         ),
-                                                  ),
-                                                  child: const Text(
-                                                    '잔여 시간: 12:12',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-
-                                              /// 입찰 건수
-                                              Positioned(
-                                                bottom: 4,
-                                                left: 8,
-                                                right: 8,
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: const [
-                                                    Text(
-                                                      "입찰 건수: 12",
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 12,
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .center,
+                                                          spacing: 3,
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .access_alarm,
+                                                              size: 12,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                            Text(
+                                                              formatRemainingTime(
+                                                                item.finishTime,
+                                                              ),
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 12,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
                                                     ),
-                                                  ],
+                                                  ),
+                                                ),
+
+                                                /// 입찰 건수
+                                                Positioned(
+                                                  bottom: 6,
+                                                  left: 6,
+                                                  right: 8,
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.black45,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                15,
+                                                              ),
+                                                        ),
+                                                        child: Row(
+                                                          spacing: 3,
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .account_circle,
+                                                              color:
+                                                                  Colors.white,
+                                                              size: 12,
+                                                            ),
+                                                            Text(
+                                                              "${item.bidding_count}",
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 12,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Positioned(
+                                                  bottom: 6,
+                                                  right: 6,
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.black45,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                15,
+                                                              ),
+                                                        ),
+                                                        child: Text(
+                                                          "${item.current_price.toCommaString()}원",
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+
+                                            const SizedBox(height: 8),
+
+                                            Align(
+                                              alignment: Alignment.topLeft,
+                                              child: Text(
+                                                title,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                            ],
-                                          ),
-
-                                          const SizedBox(height: 8),
-
-                                          Text(
-                                            title,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
                                             ),
-                                          ),
-                                          Text(
-                                            "현재 가격: ${currentPrice.toCommaString()}원",
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               );
                             }, childCount: viewModel.Items.length),
                           ),
