@@ -14,7 +14,7 @@ class ItemsEntity {
   final String created_at;
   final bool is_agree;
   final String auction_start_at;
-  final String auction_stat;
+  final String? auction_stat;
   final int auction_duration_hours;
   final int status_code;
 
@@ -56,7 +56,7 @@ class ItemsEntity {
       created_at: json['created_at'] as String,
       is_agree: json['is_agree'] as bool,
       auction_start_at: json['auction_start_at'] as String,
-      auction_stat: json['auction_stat'] as String,
+      auction_stat: json['auction_stat'] as String?,
       auction_duration_hours: json['auction_duration_hours'] as int,
       status_code: json['status_code'] as int,
     );
