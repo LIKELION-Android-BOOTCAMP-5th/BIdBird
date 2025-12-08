@@ -123,12 +123,9 @@ class ItemDetailDatasource {
           .from('bid_log')
           .select('id')
           .eq('item_id', itemId)
-          // 즉시 입찰(is_instant=true)은 참여 입찰 수에서 제외
-          .or('is_instant.is.null,is_instant.eq.false')
           .count(CountOption.exact);
       return countResponse.count;
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] fetch bidding count error: $e');
       return (row['bidding_count'] as int?) ?? 0;
     }
   }
@@ -185,7 +182,7 @@ class ItemDetailDatasource {
           .select('''
             id,
             name,
-            nickname,
+            nick_name,
             profile_image_url,
             email,
             created_at
@@ -231,8 +228,6 @@ class ItemDetailDatasource {
           .from('bid_log')
           .select('bid_price, created_at')
           .eq('item_id', itemId)
-          // 즉시 입찰 로그는 상세 화면 히스토리에서 제외
-          .or('is_instant.is.null,is_instant.eq.false')
           .order('created_at', ascending: false)
           .limit(10);
 
@@ -241,9 +236,16 @@ class ItemDetailDatasource {
       for (final row in rows) {
         final Map<String, dynamic> bidRow = row as Map<String, dynamic>;
 
+        final dynamic rawPrice = bidRow['bid_price'];
+        final int price;
+        if (rawPrice is num) {
+          price = rawPrice.toInt();
+        } else {
+          price = int.tryParse(rawPrice?.toString() ?? '') ?? 0;
+        }
+
         bidHistory.add({
-          'price': ItemDetailPriceHelper
-              .formatPrice(bidRow['bid_price'] as int? ?? 0),
+          'price': price,
           'user_name': '알 수 없음',
           'user_id': '',
           'created_at': bidRow['created_at']?.toString() ?? '',
@@ -253,7 +255,6 @@ class ItemDetailDatasource {
 
       return bidHistory;
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] fetch bid history error: $e');
       return [];
     }
   }
