@@ -17,6 +17,7 @@ class ItemsEntity {
   final String? auction_stat;
   final int auction_duration_hours;
   final int status_code;
+  final DateTime finishTime;
 
   ItemsEntity({
     required this.id,
@@ -37,9 +38,18 @@ class ItemsEntity {
     required this.auction_stat,
     required this.auction_duration_hours,
     required this.status_code,
+    required this.finishTime,
   });
 
   factory ItemsEntity.fromJson(Map<String, dynamic> json) {
+    //created_at을 DateTime으로 바꾸고 finishTime으로 한 번 더 받기 위한 과정
+    final createdAtRaw = json['created_at']?.toString();
+    final createdAt = createdAtRaw != null
+        ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+        : DateTime.now();
+    final durationHours = (json['auction_duration_hours'] as int?) ?? 24;
+    final finishTime = createdAt.add(Duration(hours: durationHours));
+
     return ItemsEntity(
       id: json['id'] as String,
       seller_id: json['seller_id'] as String,
@@ -59,6 +69,7 @@ class ItemsEntity {
       auction_stat: json['auction_stat'] as String?,
       auction_duration_hours: json['auction_duration_hours'] as int,
       status_code: json['status_code'] as int,
+      finishTime: finishTime,
     );
   }
 }

@@ -19,6 +19,18 @@ class HomeViewmodel extends ChangeNotifier {
   List<ItemsEntity> get Items => _Items;
   bool buttonIsWorking = false;
   OrderByType type = OrderByType.newFirst;
+  String selectKeyword = "전체";
+
+  int? get selectedKeywordId {
+    if (selectKeyword == "전체") return null;
+    try {
+      return _keywords.firstWhere((e) => e.title == selectKeyword).id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Timer? _debounce;
 
   //페이징 처리
   int _currentPage = 1;
@@ -28,7 +40,6 @@ class HomeViewmodel extends ChangeNotifier {
 
   HomeViewmodel(this._homeRepository) {
     getKeywordList();
-    Timer? _debounce;
 
     // 스크롤 fetch 설정 부분, 여기서 기본적인 fetch도 이루어짐
     scrollController.addListener(() async {
@@ -63,30 +74,77 @@ class HomeViewmodel extends ChangeNotifier {
     fetchItems();
   }
 
+  //[메모리 누수] scrollController, Timer 정지
+  @override
+  void dispose() {
+    scrollController.dispose();
+    _debounce?.cancel();
+    // TODO: implement dispose
+    super.dispose();
+  }
+
   Future<void> getKeywordList() async {
     keywords.addAll(await _homeRepository.getKeywordType());
     notifyListeners();
   }
 
-  Future<void> fetchItems({int currentIndex = 1}) async {
-    _Items = await _homeRepository.fetchItems(currentIndex: _currentPage);
+  String setOrderBy(OrderByType type) {
+    if (type == OrderByType.newFirst)
+      return "created_at.desc";
+    else if (type == OrderByType.oldFirst)
+      return "created_at.asc";
+    else
+      return "likes_count.desc";
+  }
+
+  Future<void> fetchItems() async {
+    String orderBy = setOrderBy(type);
+    _Items = await _homeRepository.fetchItems(
+      orderBy,
+      currentIndex: _currentPage,
+      keywordType: selectedKeywordId,
+    );
     notifyListeners();
   }
 
   Future<void> handleRefresh() async {
+    String orderBy = setOrderBy(type);
     _currentPage = 1;
     _Items = [];
     notifyListeners();
-    _Items = await _homeRepository.fetchItems(currentIndex: _currentPage);
+    _Items = await _homeRepository.fetchItems(
+      orderBy,
+      currentIndex: _currentPage,
+    );
     notifyListeners();
   }
 
   Future<void> fetchNextItems() async {
+    String orderBy = setOrderBy(type);
     _currentPage++;
     List<ItemsEntity> newFetchPosts = await _homeRepository.fetchItems(
+      orderBy,
       currentIndex: _currentPage,
+      keywordType: selectedKeywordId,
     );
     _Items.addAll(newFetchPosts);
+    notifyListeners();
+  }
+
+  void selectKeywordAndFetch(String keyword, int? keywordId) async {
+    selectKeyword = keyword;
+    _currentPage = 1;
+    _Items = [];
+    notifyListeners();
+
+    String orderBy = setOrderBy(type);
+
+    _Items = await _homeRepository.fetchItems(
+      orderBy,
+      currentIndex: _currentPage,
+      keywordType: keywordId,
+    );
+
     notifyListeners();
   }
 }
