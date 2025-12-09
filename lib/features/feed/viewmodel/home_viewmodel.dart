@@ -21,6 +21,14 @@ class HomeViewmodel extends ChangeNotifier {
   OrderByType type = OrderByType.newFirst;
   String selectKeyword = "전체";
 
+  //검색 기능 관련
+  bool searchButton = false;
+  final userInputController = TextEditingController();
+  // 글씨 지우면 검색모드 꺼지기
+  bool isSearching = false;
+
+  String currentSearchText = "";
+
   int? get selectedKeywordId {
     if (selectKeyword == "전체") return null;
     try {
@@ -38,6 +46,10 @@ class HomeViewmodel extends ChangeNotifier {
   //스크롤 컨트롤러
   ScrollController scrollController = ScrollController();
 
+  //실시간 검색
+  Timer? _searchDebounce;
+
+  ///시작할 때 작동
   HomeViewmodel(this._homeRepository) {
     getKeywordList();
 
@@ -61,6 +73,8 @@ class HomeViewmodel extends ChangeNotifier {
         }
       });
 
+      if (isSearching == true) return;
+
       if (scrollController.position.atEdge &&
           scrollController.position.pixels != 0) {
         fetchNextItems();
@@ -79,6 +93,7 @@ class HomeViewmodel extends ChangeNotifier {
   void dispose() {
     scrollController.dispose();
     _debounce?.cancel();
+    _searchDebounce?.cancel();
     // TODO: implement dispose
     super.dispose();
   }
@@ -122,16 +137,29 @@ class HomeViewmodel extends ChangeNotifier {
   Future<void> fetchNextItems() async {
     String orderBy = setOrderBy(type);
     _currentPage++;
-    List<ItemsEntity> newFetchPosts = await _homeRepository.fetchItems(
-      orderBy,
-      currentIndex: _currentPage,
-      keywordType: selectedKeywordId,
-    );
+
+    List<ItemsEntity> newFetchPosts;
+
+    if (isSearching) {
+      newFetchPosts = await _homeRepository.fetchSearchResult(
+        orderBy,
+        currentIndex: _currentPage,
+        keywordType: selectedKeywordId,
+        userInputSearchText: currentSearchText,
+      );
+    } else {
+      newFetchPosts = await _homeRepository.fetchItems(
+        orderBy,
+        currentIndex: _currentPage,
+        keywordType: selectedKeywordId,
+      );
+    }
+
     _Items.addAll(newFetchPosts);
     notifyListeners();
   }
 
-  void selectKeywordAndFetch(String keyword, int? keywordId) async {
+  Future<void> selectKeywordAndFetch(String keyword, int? keywordId) async {
     selectKeyword = keyword;
     _currentPage = 1;
     _Items = [];
@@ -139,12 +167,74 @@ class HomeViewmodel extends ChangeNotifier {
 
     String orderBy = setOrderBy(type);
 
-    _Items = await _homeRepository.fetchItems(
+    if (isSearching) {
+      // 검색 중이면 검색 결과 + 키워드 필터로 호출
+      _Items = await _homeRepository.fetchSearchResult(
+        orderBy,
+        currentIndex: _currentPage,
+        keywordType: keywordId,
+        userInputSearchText: currentSearchText,
+      );
+    } else {
+      // 평소 모드
+      _Items = await _homeRepository.fetchItems(
+        orderBy,
+        currentIndex: _currentPage,
+        keywordType: keywordId,
+      );
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> workSearchBar() async {
+    searchButton = !searchButton;
+    notifyListeners();
+  }
+
+  Future<void> search(String userInput) async {
+    isSearching = userInput.isNotEmpty;
+    currentSearchText = userInput;
+    _currentPage = 1;
+    _Items = [];
+    notifyListeners();
+
+    String orderBy = setOrderBy(type);
+    userInputController.text = userInput;
+
+    _Items = await _homeRepository.fetchSearchResult(
       orderBy,
       currentIndex: _currentPage,
-      keywordType: keywordId,
+      keywordType: selectedKeywordId,
+      userInputSearchText: userInput,
     );
 
+    notifyListeners();
+  }
+
+  // 실시간 검색 호출
+  void onSearchTextChanged(String text) {
+    if (_searchDebounce?.isActive ?? false) _searchDebounce!.cancel();
+
+    _searchDebounce = Timer(const Duration(milliseconds: 100), () {
+      isSearching = text.isNotEmpty;
+      search(text);
+    });
+  }
+
+  Future<void> searchNextItems() async {
+    _currentPage++;
+
+    String orderBy = setOrderBy(type);
+
+    List<ItemsEntity> moreItems = await _homeRepository.fetchSearchResult(
+      orderBy,
+      currentIndex: _currentPage,
+      keywordType: selectedKeywordId,
+      userInputSearchText: currentSearchText,
+    );
+
+    _Items.addAll(moreItems);
     notifyListeners();
   }
 }
