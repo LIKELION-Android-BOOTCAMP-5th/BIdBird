@@ -186,11 +186,35 @@ class ItemDescriptionSection extends StatelessWidget {
                         final createdAtRaw = bid['created_at']?.toString();
                         final relative = formatRelativeTime(createdAtRaw);
 
+                        // 입찰 타입/상태 표시
+                        final int code = (bid['auction_log_code'] as int?) ?? 0;
+                        String typeLabel = '';
+                        String statusLabel = '';
+
+                        // 현재 정의된 로그 코드 기준
+                        // 410: 경매 진행 중(일반 입찰), 411: 상위 입찰, 430: 입찰 낙찰, 431: 즉시 구매 낙찰
+                        if (code == 431) {
+                          typeLabel = '즉시 입찰';
+                        } else if (code == 410 || code == 411 || code == 430) {
+                          typeLabel = '일반 입찰';
+                        } else if (price.isNotEmpty) {
+                          // 그 외 코드는 가격이 들어와 있으면 즉시 입찰 실패로 간주
+                          typeLabel = '즉시 입찰';
+                          statusLabel = '실패';
+                        }
+
+                        String trailingLabel = '';
+                        if (typeLabel.isNotEmpty && statusLabel.isNotEmpty) {
+                          trailingLabel = ' ($typeLabel · $statusLabel)';
+                        } else if (typeLabel.isNotEmpty) {
+                          trailingLabel = ' ($typeLabel)';
+                        }
+
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '${index + 1}. $price원',
+                              '${index + 1}. $price원$trailingLabel',
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,

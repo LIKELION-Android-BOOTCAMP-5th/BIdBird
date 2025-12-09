@@ -278,12 +278,12 @@ class ItemDetailDatasource {
         return [];
       }
 
-      // 2) 입찰/낙찰 관련 로그를 auctions_status_log 에서 조회
+      // 2) 해당 경매의 모든 로그를 auctions_status_log 에서 조회
+      //    (실제 화면에서는 price가 0이 아닌 기록만 노출함)
       final List<dynamic> rows = await _supabase
           .from('auctions_status_log')
           .select('bid_status_id, bid_price, auction_log_code, created_at')
           .eq('bid_status_id', auctionId)
-          .inFilter('auction_log_code', [410, 411, 430, 431])
           .order('created_at', ascending: false)
           .limit(10);
 
@@ -306,6 +306,7 @@ class ItemDetailDatasource {
           'user_id': '',
           'created_at': logRow['created_at']?.toString() ?? '',
           'profile_image_url': null,
+          'auction_log_code': logRow['auction_log_code'],
         });
       }
 
