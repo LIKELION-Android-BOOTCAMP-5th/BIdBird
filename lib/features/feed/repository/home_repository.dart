@@ -21,4 +21,18 @@ class HomeRepository {
       keywordType: keywordType,
     );
   }
+
+  Future<List<ItemsEntity>> fetchSearchResult(
+    String orderBy, {
+    int currentIndex = 1,
+    int? keywordType,
+    String? userInputSearchText,
+  }) async {
+    return await NetworkApiManager.shared.getSearchResults(
+      orderBy,
+      currentIndex: currentIndex,
+      keywordType: keywordType,
+      userInputSearchText: userInputSearchText,
+    );
+  }
 }
