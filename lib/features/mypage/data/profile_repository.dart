@@ -1,5 +1,5 @@
 import '../../../core/managers/supabase_manager.dart';
-import '../viewmodel/profile_viewmodel.dart';
+import '../model/profile_model.dart';
 
 class ProfileRepository {
   final _client = SupabaseManager.shared.supabase;
@@ -65,7 +65,6 @@ class ProfileRepository {
   }
 
   //delete만들기
-
   Future<void> unregisterUser() async {
     final user = _client.auth.currentUser;
 
