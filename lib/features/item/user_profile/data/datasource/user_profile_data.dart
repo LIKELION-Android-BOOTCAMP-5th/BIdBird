@@ -137,23 +137,70 @@ class UserProfileDatasource {
     if (userId.isEmpty) return [];
 
     try {
-      final List<dynamic> rows = await _supabase
-          .from('items')
-          .select(
-            'title, thumbnail_image, current_price, created_at, status_code',
-          )
+      // 1) 판매자가 해당 유저인 아이템 목록 조회 (items_detail 기준)
+      final List<dynamic> itemRows = await _supabase
+          .from('items_detail')
+          .select('item_id, title, thumbnail_image, created_at, seller_id')
           .eq('seller_id', userId)
           .order('created_at', ascending: false);
 
-      return rows.map<UserTradeSummary>((row) {
-        final String title = row['title']?.toString() ?? '';
-        final String? thumbnailUrl = row['thumbnail_image']?.toString();
-        final int priceValue = (row['current_price'] as int?) ?? 0;
-        final String price = _formatPrice(priceValue);
-        final String date = _formatDate(row['created_at']?.toString());
-        final int statusCode = (row['status_code'] as int?) ?? 0;
+      if (itemRows.isEmpty) return [];
 
-        final _StatusInfo status = _mapStatus(statusCode);
+      final Map<String, Map<String, dynamic>> itemsById = {};
+      final List<String> itemIds = [];
+      for (final row in itemRows) {
+        final id = row['item_id']?.toString();
+        if (id != null) {
+          itemsById[id] = row;
+          itemIds.add(id);
+        }
+      }
+
+      // 2) 각 아이템에 대한 경매/거래 상태 및 현재가 조회 (auctions 기준, 1라운드)
+      Map<String, int> priceByItemId = {};
+      Map<String, int> auctionCodeByItemId = {};
+      Map<String, int> tradeCodeByItemId = {};
+      if (itemIds.isNotEmpty) {
+        final priceRows = await _supabase
+            .from('auctions')
+            .select(
+                'item_id, current_price, auction_status_code, trade_status_code')
+            .inFilter('item_id', itemIds)
+            .eq('round', 1);
+
+        for (final row in priceRows) {
+          final id = row['item_id']?.toString();
+          if (id != null) {
+            priceByItemId[id] = (row['current_price'] as int?) ?? 0;
+            final auctionCode = row['auction_status_code'] as int?;
+            if (auctionCode != null) {
+              auctionCodeByItemId[id] = auctionCode;
+            }
+            final tradeCode = row['trade_status_code'] as int?;
+            if (tradeCode != null) {
+              tradeCodeByItemId[id] = tradeCode;
+            }
+          }
+        }
+      }
+
+      // 3) 화면에서 사용할 요약 데이터로 변환
+      return itemIds.map<UserTradeSummary>((itemId) {
+        final item = itemsById[itemId] ?? <String, dynamic>{};
+        final auctionCode = auctionCodeByItemId[itemId];
+        final tradeCode = tradeCodeByItemId[itemId];
+        final createdAt = item['created_at']?.toString();
+
+        final String title = item['title']?.toString() ?? '';
+        final String? thumbnailUrl = item['thumbnail_image']?.toString();
+        final int priceValue = priceByItemId[itemId] ?? 0;
+        final String price = _formatPrice(priceValue);
+        final String date = _formatDate(createdAt);
+
+        final _StatusInfo status = _mapAuctionTradeStatus(
+          auctionCode,
+          tradeCode,
+        );
 
         return UserTradeSummary(
           title: title,
@@ -203,19 +250,30 @@ class _StatusInfo {
   final Color color;
 }
 
-_StatusInfo _mapStatus(int code) {
-  switch (code) {
-    case 1001: // 경매 대기
-    case 1002: // 경매 등록
-    case 1003: // 입찰 발생
-    case 1006: // 즉시 구매 대기
+_StatusInfo _mapAuctionTradeStatus(int? auctionCode, int? tradeCode) {
+  // trade_status_code 우선
+  if (tradeCode == 550) {
+    return _StatusInfo('거래 완료', tradeSaleDoneColor);
+  }
+  if (tradeCode == 520) {
+    return _StatusInfo('구매 완료', tradePurchaseDoneColor);
+  }
+  if (tradeCode == 510) {
+    return _StatusInfo('결제 대기', tradeBidPendingColor);
+  }
+
+  // 그 외에는 auction_status_code 기준
+  switch (auctionCode) {
+    case 300: // 경매 대기
+    case 310: // 경매 진행 중
+    case 311: // 즉시 구매 진행 중
       return _StatusInfo('입찰 중', tradeBidPendingColor);
-    case 1007: // 즉시 구매 완료
-      return _StatusInfo('구매 완료', tradePurchaseDoneColor);
-    case 1009: // 경매 종료 - 낙찰
+    case 321: // 낙찰
       return _StatusInfo('판매 완료', tradeSaleDoneColor);
-    case 1011: // 경매 정지 - 신고 등
-      return _StatusInfo('거래 정지', tradeBlockedColor);
+    case 322: // 즉시 구매 완료
+      return _StatusInfo('구매 완료', tradePurchaseDoneColor);
+    case 323: // 유찰
+      return _StatusInfo('유찰', tradeBlockedColor);
     default:
       return _StatusInfo('입찰 중', tradeBidPendingColor);
   }
