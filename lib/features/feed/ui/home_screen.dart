@@ -35,20 +35,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 100,
                 height: 100,
               ),
-              Row(
-                spacing: 25,
-                children: [
-                  Image.asset(
-                    'assets/icons/search_icon.png',
-                    width: iconSize.width,
-                    height: iconSize.height,
-                  ),
-                  Image.asset(
-                    'assets/icons/alarm_icon.png',
-                    width: iconSize.width,
-                    height: iconSize.height,
-                  ),
-                ],
+              //UI 깨짐 방지
+              Flexible(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  spacing: 25,
+                  children: [
+                    Image.asset(
+                      'assets/icons/search_icon.png',
+                      width: iconSize.width,
+                      height: iconSize.height,
+                    ),
+                    Image.asset(
+                      'assets/icons/alarm_icon.png',
+                      width: iconSize.width,
+                      height: iconSize.height,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -79,7 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 return Padding(
                                   padding: const EdgeInsets.all(4.0),
                                   child: ElevatedButton(
-                                    //TODO keyWord 필터링 걸기
                                     onPressed: () {
                                       final keywordSelect =
                                           viewModel.keywords[index];
@@ -204,17 +207,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                                               color:
                                                                   Colors.white,
                                                             ),
-                                                            Text(
-                                                              formatRemainingTime(
-                                                                item.finishTime,
-                                                              ),
-                                                              style: TextStyle(
-                                                                color: Colors
-                                                                    .white,
-                                                                fontSize: 12,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
+                                                            Flexible(
+                                                              child: Text(
+                                                                formatRemainingTime(
+                                                                  item.finishTime,
+                                                                ),
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontSize: 12,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600,
+                                                                ),
                                                               ),
                                                             ),
                                                           ],
