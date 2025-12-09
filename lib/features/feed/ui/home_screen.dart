@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     alignment:
                                                         Alignment.centerRight,
                                                     child: FractionallySizedBox(
-                                                      widthFactor: 0.5,
+                                                      widthFactor: 0.60,
                                                       child: Container(
                                                         padding:
                                                             const EdgeInsets.symmetric(
