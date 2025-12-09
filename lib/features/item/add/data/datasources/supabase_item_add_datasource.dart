@@ -20,89 +20,100 @@ class SupabaseItemAddDatasource {
     if (user == null) {
       throw Exception('로그인 정보가 없습니다. 다시 로그인 해주세요.');
     }
-
-    Map<String, dynamic> row;
-
-    if (editingItemId == null) {
-      final Map<String, dynamic> inserted = await _supabase
-          .from('items')
-          .insert(entity.toJson(sellerId: user.id))
-          .select(
-            'id, title, description, start_price, buy_now_price, keyword_type',
-          )
-          .single();
-      row = inserted;
-    } else {
-      final Map<String, dynamic> updateJson = entity.toJson(sellerId: user.id)
-        ..remove('seller_id')
-        ..remove('current_price')
-        ..remove('bidding_count')
-        ..remove('status');
-
-      final Map<String, dynamic> updated = await _supabase
-          .from('items')
-          .update(updateJson)
-          .eq('id', editingItemId)
-          .select(
-            'id, title, description, start_price, buy_now_price, keyword_type',
-          )
-          .single();
-      row = updated;
+    if (imageUrls.isEmpty) {
+      throw Exception('이미지는 최소 1장이 필요합니다.');
+    }
+    if (imageUrls.length > 10) {
+      throw Exception('이미지는 최대 10장까지 등록 가능합니다.');
     }
 
-    final String itemId = row['id'].toString();
+    if (entity.title.trim().isEmpty) {
+      throw Exception('제목을 입력해주세요.');
+    }
+    if (entity.title.length > 20) {
+      throw Exception('제목은 20자 이하여야 합니다.');
+    }
+    if (entity.description.isNotEmpty && entity.description.length > 1000) {
+      throw Exception('본문은 1000자 이하여야 합니다.');
+    }
+    if (entity.startPrice < 10000) {
+      throw Exception('시작 가격은 10,000원 이상이어야 합니다.');
+    }
+    if (entity.instantPrice > 0 && entity.instantPrice <= entity.startPrice) {
+      throw Exception('즉시 구매가는 시작 가격보다 커야 합니다.');
+    }
+    if (entity.keywordTypeId <= 0) {
+      throw Exception('카테고리를 선택해주세요.');
+    }
+    if (entity.auctionDurationHours <= 0) {
+      throw Exception('경매 기간을 설정해주세요.');
+    }
+
+    final dynamic result = await _supabase.rpc(
+      'register_item',
+      params: <String, dynamic>{
+        'p_seller_id': user.id,
+        'p_title': entity.title,
+        'p_description': entity.description,
+        'p_start_price': entity.startPrice,
+        'p_buy_now_price': entity.instantPrice > 0 ? entity.instantPrice : null,
+        'p_keyword_type': entity.keywordTypeId,
+        'p_duration_minutes': entity.auctionDurationHours * 60,
+      },
+    );
+
+    final String itemId = result.toString();
 
     if (editingItemId != null) {
       await _supabase.from('item_images').delete().eq('item_id', itemId);
     }
 
-    if (imageUrls.isNotEmpty) {
-      final List<Map<String, dynamic>> imageRows = <Map<String, dynamic>>[];
-      for (int i = 0; i < imageUrls.length && i < 10; i++) {
-        imageRows.add(<String, dynamic>{
-          'item_id': itemId,
-          'image_url': imageUrls[i],
-          'sort_order': i + 1,
-        });
-      }
+    final List<Map<String, dynamic>> imageRows = <Map<String, dynamic>>[];
+    for (int i = 0; i < imageUrls.length && i < 10; i++) {
+      imageRows.add(<String, dynamic>{
+        'item_id': itemId,
+        'image_url': imageUrls[i],
+        'sort_order': i + 1,
+      });
+    }
 
-      if (imageRows.isNotEmpty) {
-        await _supabase.from('item_images').insert(imageRows);
-      }
+    if (imageRows.isNotEmpty) {
+      await _supabase.from('item_images').insert(imageRows);
+    }
 
-      try {
-        int index = 0;
-        if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
-          index = primaryImageIndex;
-        }
-        await _supabase.functions.invoke(
-          'create-thumbnail',
-          body: <String, dynamic>{
-            'itemId': itemId,
-            'imageUrl': imageUrls[index],
-          },
-        );
-      } catch (e) {
-        debugPrint('create-thumbnail error: $e');
+    try {
+      int index = 0;
+      if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
+        index = primaryImageIndex;
       }
+      await _supabase.functions.invoke(
+        'create-thumbnail',
+        body: <String, dynamic>{
+          'itemId': itemId,
+          'imageUrl': imageUrls[index],
+        },
+      );
+    } catch (e) {
+      debugPrint('create-thumbnail error: $e');
     }
 
     int thumbnailIndex = 0;
-    if (imageUrls.isNotEmpty) {
-      if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
-        thumbnailIndex = primaryImageIndex;
-      }
+    if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
+      thumbnailIndex = primaryImageIndex;
     }
+
+    await _supabase.from('items_detail').update(<String, dynamic>{
+      'thumbnail_image': imageUrls[thumbnailIndex],
+    }).eq('item_id', itemId);
 
     return ItemRegistrationData(
       id: itemId,
-      title: row['title']?.toString() ?? entity.title,
-      description: row['description']?.toString() ?? entity.description,
-      startPrice: (row['start_price'] as num?)?.toInt() ?? entity.startPrice,
-      instantPrice:
-          (row['buy_now_price'] as num?)?.toInt() ?? entity.instantPrice,
-      thumbnailUrl: imageUrls.isNotEmpty ? imageUrls[thumbnailIndex] : null,
-      keywordTypeId: (row['keyword_type'] as num?)?.toInt(),
+      title: entity.title,
+      description: entity.description,
+      startPrice: entity.startPrice,
+      instantPrice: entity.instantPrice,
+      thumbnailUrl: imageUrls[thumbnailIndex],
+      keywordTypeId: entity.keywordTypeId,
     );
   }
 }
