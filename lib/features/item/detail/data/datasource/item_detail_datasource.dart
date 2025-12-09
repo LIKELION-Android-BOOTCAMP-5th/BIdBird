@@ -38,9 +38,27 @@ class ItemDetailDatasource {
 
     final List<String> images = await _fetchImages(itemId);
 
-    final int biddingCount = await _fetchBiddingCount(itemId, row);
+    int biddingCount = 0;
+    int currentPrice = 0;
+    int statusCode = 0;
 
-    final currentPrice = (row['current_price'] as int?) ?? 0;
+    try {
+      final auctionRow = await _supabase
+          .from('auctions')
+          .select('current_price, bid_count, auction_status_code')
+          .eq('item_id', itemId)
+          .eq('round', 1)
+          .maybeSingle();
+
+      if (auctionRow is Map<String, dynamic>) {
+        currentPrice = (auctionRow['current_price'] as int?) ?? 0;
+        biddingCount = (auctionRow['bid_count'] as int?) ?? 0;
+        statusCode = (auctionRow['auction_status_code'] as int?) ?? 0;
+      }
+    } catch (e) {
+      debugPrint('[ItemDetailDatasource] fetch auction info error: $e');
+    }
+
     final minBidStep = ItemDetailPriceHelper.calculateBidStep(currentPrice);
 
     return ItemDetail(
@@ -59,7 +77,7 @@ class ItemDetailDatasource {
           (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
       sellerReviewCount: ratingSummary?.reviewCount ??
           (row['seller_review_count'] as int?) ?? 0,
-      statusCode: (row['status_code'] as int?) ?? 0,
+      statusCode: statusCode,
     );
   }
 
@@ -171,8 +189,25 @@ class ItemDetailDatasource {
   }
 
   Future<bool> checkIsTopBidder(String itemId) async {
-    // TODO: 서버 스키마 확정 후 bid_log의 사용자 컬럼명에 맞춰 재구현
-    return false;
+    final user = _supabase.auth.currentUser;
+    if (user == null) return false;
+
+    try {
+      final row = await _supabase
+          .from('auctions')
+          .select('last_bid_user_id')
+          .eq('item_id', itemId)
+          .eq('round', 1)
+          .maybeSingle();
+
+      if (row is! Map<String, dynamic>) return false;
+
+      final String? lastBidUserId = row['last_bid_user_id']?.toString();
+      return lastBidUserId != null && lastBidUserId == user.id;
+    } catch (e) {
+      debugPrint('[ItemDetailDatasource] checkIsTopBidder error: $e');
+      return false;
+    }
   }
 
   Future<Map<String, dynamic>?> fetchSellerProfile(String sellerId) async {
@@ -226,19 +261,38 @@ class ItemDetailDatasource {
 
   Future<List<Map<String, dynamic>>> fetchBidHistory(String itemId) async {
     try {
-      final List<dynamic> rows = await _supabase
-          .from('bid_log')
-          .select('bid_price, created_at')
+      // 1) 해당 아이템의 경매 ID 조회 (round 1 기준)
+      final auctionRow = await _supabase
+          .from('auctions')
+          .select('auction_id')
           .eq('item_id', itemId)
+          .eq('round', 1)
+          .maybeSingle();
+
+      if (auctionRow is! Map<String, dynamic>) {
+        return [];
+      }
+
+      final String? auctionId = auctionRow['auction_id']?.toString();
+      if (auctionId == null || auctionId.isEmpty) {
+        return [];
+      }
+
+      // 2) 입찰/낙찰 관련 로그를 auctions_status_log 에서 조회
+      final List<dynamic> rows = await _supabase
+          .from('auctions_status_log')
+          .select('bid_status_id, bid_price, auction_log_code, created_at')
+          .eq('bid_status_id', auctionId)
+          .inFilter('auction_log_code', [410, 411, 430, 431])
           .order('created_at', ascending: false)
           .limit(10);
 
-      List<Map<String, dynamic>> bidHistory = [];
+      final List<Map<String, dynamic>> bidHistory = [];
 
       for (final row in rows) {
-        final Map<String, dynamic> bidRow = row as Map<String, dynamic>;
+        final Map<String, dynamic> logRow = row as Map<String, dynamic>;
 
-        final dynamic rawPrice = bidRow['bid_price'];
+        final dynamic rawPrice = logRow['bid_price'];
         final int price;
         if (rawPrice is num) {
           price = rawPrice.toInt();
@@ -250,13 +304,14 @@ class ItemDetailDatasource {
           'price': price,
           'user_name': '알 수 없음',
           'user_id': '',
-          'created_at': bidRow['created_at']?.toString() ?? '',
+          'created_at': logRow['created_at']?.toString() ?? '',
           'profile_image_url': null,
         });
       }
 
       return bidHistory;
     } catch (e) {
+      debugPrint('[ItemDetailDatasource] fetchBidHistory error: $e');
       return [];
     }
   }

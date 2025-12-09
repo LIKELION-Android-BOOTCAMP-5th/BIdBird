@@ -108,59 +108,49 @@ class ItemDetailViewModel extends ChangeNotifier {
   }
 
   void setupRealtimeSubscription() {
-    _bidStatusChannel = _supabase.channel('bid_status_$itemId');
+    // auctions: 현재가, 최고 입찰자, 상태 코드 변경 감지
+    _bidStatusChannel = _supabase.channel('auctions_$itemId');
     _bidStatusChannel!
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'bid_status',
+          table: 'auctions',
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
             column: 'item_id',
             value: itemId,
           ),
           callback: (payload) {
-            debugPrint('[ItemDetailViewModel] bid_status 변경 감지');
+            debugPrint('[ItemDetailViewModel] auctions 변경 감지');
             loadItemDetail();
           },
         )
         .subscribe();
 
-    _itemsChannel = _supabase.channel('items_$itemId');
+    // items_detail: 제목, 설명, 썸네일 등 변경 감지
+    _itemsChannel = _supabase.channel('items_detail_$itemId');
     _itemsChannel!
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'items',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'id',
-            value: itemId,
-          ),
-          callback: (payload) {
-            debugPrint('[ItemDetailViewModel] items 변경 감지');
-            loadItemDetail();
-          },
-        )
-        .subscribe();
-
-    _bidLogChannel = _supabase.channel('bid_log_$itemId');
-    _bidLogChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'bid_log',
+          table: 'items_detail',
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
             column: 'item_id',
             value: itemId,
           ),
           callback: (payload) {
-            debugPrint('[ItemDetailViewModel] bid_log 추가 감지');
+            debugPrint('[ItemDetailViewModel] items_detail 변경 감지');
             loadItemDetail();
           },
         )
         .subscribe();
+
+    // bid_log 는 더 이상 사용하지 않으므로 채널 생성 안 함
+    if (_bidLogChannel != null) {
+      _supabase.removeChannel(_bidLogChannel!);
+      _bidLogChannel = null;
+    }
   }
 
   @override
