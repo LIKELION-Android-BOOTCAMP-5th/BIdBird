@@ -2,23 +2,23 @@ import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/splash_screen.dart';
 import 'package:bidbird/features/auth/ui/auth_ui.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
-import 'package:bidbird/features/chat/ui/chat_screen.dart';
-import 'package:bidbird/features/chat/ui/chatting_room_screen.dart';
+import 'package:bidbird/features/chat/screen/chat_screen.dart';
+import 'package:bidbird/features/chat/screen/chatting_room_screen.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item/add/screen/item_add_screen.dart';
 import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
-import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
-import 'package:bidbird/features/item/item_registration_detail/screen/item_registration_detail_screen.dart';
-import 'package:bidbird/features/item/item_registration_list/screen/item_registration_list_screen.dart';
 import 'package:bidbird/features/item/current_trade/data/repository/current_trade_repository.dart';
 import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
+import 'package:bidbird/features/item/item_registration_detail/screen/item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
+import 'package:bidbird/features/item/item_registration_list/screen/item_registration_list_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
 import 'package:bidbird/features/item/user_profile_history/screen/user_history_screen.dart';
 import 'package:bidbird/features/mypage/data/report_feedback_repository.dart';
-import 'package:bidbird/features/mypage/ui/cs_screen.dart';
 import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
+import 'package:bidbird/features/mypage/ui/cs_screen.dart';
 import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
 import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
 import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
@@ -32,10 +32,16 @@ import 'package:provider/provider.dart';
 
 import '../models/user_entity.dart';
 
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
+
 GoRouter createAppRouter(BuildContext context) {
   final AuthViewModel authVM = context.read<AuthViewModel>();
 
   return GoRouter(
+    observers: [
+      routeObserver, // ← 여기!!
+    ],
     initialLocation: '/login',
     refreshListenable: authVM,
     redirect: (BuildContext context, GoRouterState state) {
@@ -128,10 +134,13 @@ GoRouter createAppRouter(BuildContext context) {
             },
             routes: [
               GoRoute(
-                path: '/:roomId',
+                path: '/room',
                 pageBuilder: (context, state) {
-                  final roomId = state.pathParameters["roomId"] ?? "";
-                  return const NoTransitionPage(child: ChattingRoomScreen());
+                  final String? thisItemId =
+                      state.uri.queryParameters["itemId"] ?? null;
+                  return NoTransitionPage(
+                    child: ChattingRoomScreen(itemId: thisItemId),
+                  );
                 },
                 routes: [
                   GoRoute(
