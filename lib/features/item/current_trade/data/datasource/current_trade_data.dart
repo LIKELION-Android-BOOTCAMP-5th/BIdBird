@@ -168,9 +168,8 @@ class CurrentTradeDatasource {
       final itemRows = await _supabase
           .from('items_detail')
           .select(
-              'item_id, title, thumbnail_image, auction_status_code, trade_status_code, visibility_status, created_at')
+              'item_id, title, thumbnail_image, visibility_status, created_at')
           .eq('seller_id', user.id)
-          .eq('visibility_status', true)
           .order('created_at', ascending: false);
 
       if (itemRows.isEmpty) return [];
@@ -186,10 +185,12 @@ class CurrentTradeDatasource {
       }
 
       Map<String, int> priceByItemId = {};
+      Map<String, int> auctionCodeByItemId = {};
+      Map<String, int> tradeCodeByItemId = {};
       if (itemIds.isNotEmpty) {
         final priceRows = await _supabase
             .from('auctions')
-            .select('item_id, current_price')
+            .select('item_id, current_price, auction_status_code, trade_status_code')
             .inFilter('item_id', itemIds)
             .eq('round', 1);
 
@@ -197,14 +198,22 @@ class CurrentTradeDatasource {
           final id = row['item_id']?.toString();
           if (id != null) {
             priceByItemId[id] = (row['current_price'] as int?) ?? 0;
+            final auctionCode = row['auction_status_code'] as int?;
+            if (auctionCode != null) {
+              auctionCodeByItemId[id] = auctionCode;
+            }
+            final tradeCode = row['trade_status_code'] as int?;
+            if (tradeCode != null) {
+              tradeCodeByItemId[id] = tradeCode;
+            }
           }
         }
       }
 
       return itemIds.map((itemId) {
         final item = itemsById[itemId] ?? <String, dynamic>{};
-        final auctionCode = item['auction_status_code'] as int?;
-        final tradeCode = item['trade_status_code'] as int?;
+        final auctionCode = auctionCodeByItemId[itemId];
+        final tradeCode = tradeCodeByItemId[itemId];
         final createdAt = item['created_at']?.toString() ?? '';
 
         String status;
