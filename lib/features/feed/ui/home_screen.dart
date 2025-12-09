@@ -48,6 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           minHeight: 40,
                         ),
                         backgroundColor: MaterialStatePropertyAll(Colors.white),
+                        hintText: "검색어를 입력하세요",
+                        hintStyle: MaterialStateProperty.all(
+                          TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                        ),
+                        autoFocus: true,
                         onChanged: (text) {
                           viewModel.onSearchTextChanged(text);
                         },
@@ -93,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           // 키워드 영역
                           SliverToBoxAdapter(
                             child: SizedBox(
-                              height: 50,
+                              height: 42,
                               child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
                                 itemCount: viewModel.keywords.length,
@@ -103,7 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   final bool isSelected =
                                       keyword == viewModel.selectKeyword;
                                   return Padding(
-                                    padding: const EdgeInsets.all(4.0),
+                                    padding: const EdgeInsets.only(
+                                      top: 4,
+                                      right: 4,
+                                      left: 4,
+                                    ),
                                     child: ElevatedButton(
                                       onPressed: () {
                                         final keywordSelect =
@@ -115,21 +124,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                       },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: isSelected
-                                            ? blueColor
-                                            : Colors.transparent,
-                                        foregroundColor: isSelected
-                                            ? Colors.white
-                                            : Colors.white,
+                                            ? Color(0xffe3ecfd)
+                                            : Color(0xffF3F4F6),
+                                        // foregroundColor: isSelected
+                                        //     ? Colors.white
+                                        //     : Colors.white,
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 20,
                                           vertical: 8,
                                         ),
                                         minimumSize: const Size(0, 0),
+                                        elevation: 0.0,
                                       ),
-                                      child: Text(
-                                        keyword,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                      child: Align(
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          keyword,
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? Color(0xff3B82F6)
+                                                : Color(0xff6B7280),
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -142,7 +160,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           // 슬라이버 그리드 (2개씩)
                           if (viewModel.searchButton)
                             SliverPadding(
-                              padding: const EdgeInsets.all(20.0),
+                              padding: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 20,
+                                top: 15,
+                              ),
                               sliver: SliverGrid(
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
@@ -379,7 +402,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           if (!viewModel.searchButton)
                             SliverPadding(
-                              padding: const EdgeInsets.all(20.0),
+                              padding: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 20,
+                                top: 15,
+                              ),
                               sliver: SliverGrid(
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
