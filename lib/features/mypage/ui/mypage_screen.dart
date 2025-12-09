@@ -10,13 +10,13 @@ import 'package:provider/provider.dart';
 
 import '../viewmodel/profile_viewmodel.dart';
 
-class MyPageScreen extends StatelessWidget {
-  const MyPageScreen({super.key});
+class MypageScreen extends StatelessWidget {
+  const MypageScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final viewModel = context.watch<ProfileViewModel>();
+    final vm = context.watch<ProfileViewModel>();
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -34,32 +34,34 @@ class MyPageScreen extends StatelessWidget {
         ),
         backgroundColor: theme.appBarTheme.backgroundColor,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Profile(viewModel: viewModel),
-            const SizedBox(height: 24),
-            Expanded(child: _MyPageMenuList()),
-          ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _MypageProfile(vm: vm),
+              const SizedBox(height: 24),
+              Expanded(child: _MypageItemList()),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _Profile extends StatelessWidget {
-  final ProfileViewModel viewModel;
+class _MypageProfile extends StatelessWidget {
+  final ProfileViewModel vm;
 
-  const _Profile({required this.viewModel});
+  const _MypageProfile({required this.vm});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = Theme.of(context); //쓴적이없음
 
     //처음프로필로딩할떄나옴
-    if (viewModel.isLoading) {
+    if (vm.isLoading) {
       return Center(
         child: SizedBox(
           width: 32,
@@ -69,16 +71,13 @@ class _Profile extends StatelessWidget {
       );
     }
 
-    final profile = viewModel.profile;
+    final profile = vm.profile;
     final nickName = profile?.nickName ?? '닉네임을 등록하세요';
     final phoneNumber = profile?.phoneNumber ?? '전화번호를 등록하세요';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: blueColor,
-        borderRadius: BorderRadius.circular(8.7), //표준맞추기
-      ),
+      decoration: BoxDecoration(color: blueColor, borderRadius: defaultBorder),
       child: Row(
         children: [
           CircleAvatar(
@@ -99,13 +98,9 @@ class _Profile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                nickName, //style추가//TextStyle
-              ),
+              Text(nickName),
               const SizedBox(height: 4),
-              Text(
-                phoneNumber, //style추가//TextStyle
-              ),
+              Text(phoneNumber),
             ],
           ),
         ],
@@ -114,40 +109,40 @@ class _Profile extends StatelessWidget {
   }
 }
 
-class _MyPageMenuList extends StatelessWidget {
+class _MypageItemList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _MenuItem(
+        _Item(
           icon: Icons.edit,
           title: '정보 수정',
           onTap: () {
             context.go('/mypage/update_info');
           },
         ),
-        _MenuItem(
+        _Item(
           icon: Icons.favorite_border,
           title: '관심 목록',
           onTap: () {
             //
           },
         ),
-        _MenuItem(
+        _Item(
           icon: Icons.receipt_long,
           title: '거래 내역',
           onTap: () {
             //
           },
         ),
-        _MenuItem(
+        _Item(
           icon: Icons.support_agent,
           title: '고객센터',
           onTap: () {
-            //
+            context.go('/mypage/service_center');
           },
         ),
-        _MenuItem(
+        _Item(
           icon: Icons.block,
           title: '블랙리스트',
           onTap: () {
@@ -159,12 +154,10 @@ class _MyPageMenuList extends StatelessWidget {
           width: double.infinity,
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: defaultBorder, //표준맞추기
-              ),
+              foregroundColor: RedColor,
+              side: const BorderSide(color: RedColor),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: defaultBorder),
             ),
             onPressed: () async {
               showDialog(
@@ -191,7 +184,7 @@ class _MyPageMenuList extends StatelessWidget {
               style: TextStyle(
                 fontSize: buttonFontStyle.fontSize,
                 fontWeight: buttonFontStyle.fontWeight,
-                color: Colors.red,
+                color: RedColor,
               ),
             ),
           ),
@@ -202,24 +195,20 @@ class _MyPageMenuList extends StatelessWidget {
   }
 }
 
-class _MenuItem extends StatelessWidget {
+class _Item extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
 
-  const _MenuItem({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
+  const _Item({required this.icon, required this.title, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         ListTile(
-          leading: Icon(icon, color: iconColor), //size: iconSize//넣고싶은데타입이안맞음
-          title: Text(title), //style://final theme = Theme.of(context);//통일하기
+          leading: Icon(icon, color: iconColor),
+          title: Text(title),
           trailing: const Icon(Icons.chevron_right, color: iconColor),
           onTap: onTap,
         ),

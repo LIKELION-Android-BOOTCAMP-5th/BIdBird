@@ -16,8 +16,15 @@ import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_view
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_trade_history_screen.dart';
+import 'package:bidbird/features/mypage/data/report_feedback_repository.dart';
+import 'package:bidbird/features/mypage/ui/cs_screen.dart';
+import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
 import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
 import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
+import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
+import 'package:bidbird/features/mypage/ui/report_feedback_screen.dart';
+import 'package:bidbird/features/mypage/ui/terms_screen.dart';
+import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -140,7 +147,7 @@ GoRouter createAppRouter(BuildContext context) {
           GoRoute(
             path: '/mypage',
             pageBuilder: (context, state) {
-              return const NoTransitionPage(child: MyPageScreen());
+              return const NoTransitionPage(child: MypageScreen());
             },
             routes: [
               GoRoute(
@@ -152,31 +159,38 @@ GoRouter createAppRouter(BuildContext context) {
               GoRoute(
                 path: '/favorite',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MyPageScreen());
+                  return const NoTransitionPage(child: MypageScreen());
                 },
               ),
               GoRoute(
                 path: '/trade',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MyPageScreen());
+                  return const NoTransitionPage(child: MypageScreen());
                 },
               ),
               GoRoute(
                 path: '/service_center',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MyPageScreen());
+                  return const NoTransitionPage(child: CsScreen());
                 },
                 routes: [
                   GoRoute(
                     path: '/terms',
                     pageBuilder: (context, state) {
-                      return const NoTransitionPage(child: MyPageScreen());
+                      return const NoTransitionPage(child: TermsScreen());
                     },
                   ),
                   GoRoute(
                     path: '/report_feedback',
                     pageBuilder: (context, state) {
-                      return const NoTransitionPage(child: MyPageScreen());
+                      return NoTransitionPage(
+                        child: ChangeNotifierProvider(
+                          create: (_) => ReportFeedbackViewModel(
+                            repository: ReportFeedbackRepository(),
+                          )..loadReports(),
+                          child: const ReportFeedbackScreen(),
+                        ),
+                      );
                     },
                     routes: [
                       GoRoute(
@@ -184,7 +198,15 @@ GoRouter createAppRouter(BuildContext context) {
                         pageBuilder: (context, state) {
                           final feedbackId =
                               state.pathParameters["feedbackId"] ?? "";
-                          return const NoTransitionPage(child: MyPageScreen());
+                          final report =
+                              state.extra
+                                  as ReportFeedbackModel?; //state.extra(Object?타입)쓸떄사용해야하는문법
+                          return NoTransitionPage(
+                            child: ReportFeedbackDetailScreen(
+                              feedbackId: feedbackId,
+                              report: report,
+                            ),
+                          );
                         },
                       ),
                     ],
@@ -194,13 +216,13 @@ GoRouter createAppRouter(BuildContext context) {
               GoRoute(
                 path: '/black_list',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MyPageScreen());
+                  return const NoTransitionPage(child: MypageScreen());
                 },
               ),
               GoRoute(
                 path: '/setting',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MyPageScreen());
+                  return const NoTransitionPage(child: MypageScreen());
                 },
               ),
             ],
