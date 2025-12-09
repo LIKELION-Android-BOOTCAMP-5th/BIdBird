@@ -266,7 +266,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final bool isAuctionEnded =
         statusCode == 321 || statusCode == 322 || statusCode == 323;
 
-    final bool isAuctionPending = statusCode == 300;
     final bool isAuctionActive = statusCode == 310;
     final bool isBuyNowInProgress = statusCode == 311;
     final bool isBuyNowCompleted = statusCode == 322;
