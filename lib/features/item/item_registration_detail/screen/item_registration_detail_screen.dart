@@ -31,6 +31,19 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
         ? _formatPrice(item.instantPrice)
         : null;
 
+    String auctionDurationText;
+    switch (item.auctionDurationHours) {
+      case 12:
+        auctionDurationText = '12시간';
+        break;
+      case 24:
+        auctionDurationText = '24시간';
+        break;
+      default:
+        auctionDurationText = '${item.auctionDurationHours}시간';
+        break;
+    }
+
     return ChangeNotifierProvider<ItemRegistrationDetailViewModel>(
       create: (_) => ItemRegistrationDetailViewModel(item: item)..loadTerms(),
       child: Consumer<ItemRegistrationDetailViewModel>(
@@ -67,9 +80,11 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                         children: [
                           _buildImageSection(),
                           const SizedBox(height: 16),
-                          _buildInfoCard(startPriceText, instantPriceText),
-                          const SizedBox(height: 12),
-                          _buildDescriptionCard(),
+                          _buildInfoCard(
+                            startPriceText,
+                            instantPriceText,
+                            auctionDurationText,
+                          ),
                         ],
                       ),
                     ),
@@ -119,7 +134,11 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(String startPriceText, String? instantPriceText) {
+  Widget _buildInfoCard(
+    String startPriceText,
+    String? instantPriceText,
+    String auctionDurationText,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -132,42 +151,64 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           Text(
             item.title,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 17,
               fontWeight: FontWeight.w600,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '시작가 ₩$startPriceText',
-            style: const TextStyle(fontSize: 13, color: textColor),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '시작가',
+                style: TextStyle(fontSize: 14, color: textColor),
+              ),
+              Text(
+                '$startPriceText원',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
-          Text(
-            instantPriceText != null
-                ? '즉시 입찰가 ₩$instantPriceText'
-                : '즉시 입찰가: 없음',
-            style: const TextStyle(fontSize: 13, color: iconColor),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '즉시 입찰가',
+                style: TextStyle(fontSize: 14, color: textColor),
+              ),
+              Text(
+                instantPriceText != null ? '$instantPriceText원' : '없음',
+                style: const TextStyle(fontSize: 14, color: textColor),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDescriptionCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '경매 기간',
+                style: TextStyle(fontSize: 14, color: textColor),
+              ),
+              Text(
+                auctionDurationText,
+                style: const TextStyle(fontSize: 14, color: textColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFE5E5E5)),
+          const SizedBox(height: 12),
           const Text(
             '상품 설명',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: textColor,
             ),
@@ -175,7 +216,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             item.description,
-            style: const TextStyle(fontSize: 13, color: textColor),
+            style: const TextStyle(fontSize: 14, color: textColor),
           ),
         ],
       ),

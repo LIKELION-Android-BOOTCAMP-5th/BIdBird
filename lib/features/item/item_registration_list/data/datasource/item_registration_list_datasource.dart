@@ -19,7 +19,7 @@ class RegistrationDatasource {
       final List<dynamic> rows = await _supabase
           .from('items_detail')
           .select(
-        'item_id, title, description, start_price, buy_now_price, keyword_type, seller_id, thumbnail_image, is_agreed, created_at',
+        'item_id, title, description, start_price, buy_now_price, keyword_type, seller_id, thumbnail_image, is_agreed, created_at, auction_duration_hours',
       )
           .eq('seller_id', user.id)
           .filter('is_agreed', 'is', null)
@@ -34,6 +34,8 @@ class RegistrationDatasource {
           description: row['description']?.toString() ?? '',
           startPrice: (row['start_price'] as num?)?.toInt() ?? 0,
           instantPrice: (row['buy_now_price'] as num?)?.toInt() ?? 0,
+          auctionDurationHours:
+              (row['auction_duration_hours'] as num?)?.toInt() ?? 0,
           thumbnailUrl: row['thumbnail_image']?.toString(),
           keywordTypeId: (row['keyword_type'] as num?)?.toInt(),
         );
