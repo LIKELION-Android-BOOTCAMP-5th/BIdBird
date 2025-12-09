@@ -11,9 +11,9 @@ class ItemDetailDatasource {
 
   Future<ItemDetail?> fetchItemDetail(String itemId) async {
     final List<dynamic> result = await _supabase
-        .from('items')
+        .from('items_detail')
         .select()
-        .eq('id', itemId)
+        .eq('item_id', itemId)
         .limit(1);
 
     if (result.isEmpty) return null;
@@ -44,7 +44,7 @@ class ItemDetailDatasource {
     final minBidStep = ItemDetailPriceHelper.calculateBidStep(currentPrice);
 
     return ItemDetail(
-      itemId: row['id']?.toString() ?? itemId,
+      itemId: row['item_id']?.toString() ?? itemId,
       sellerId: sellerId,
       itemTitle: row['title']?.toString() ?? '',
       itemImages: images,
