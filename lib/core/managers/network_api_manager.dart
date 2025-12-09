@@ -54,12 +54,12 @@ class NetworkApiManager {
     String filterQuery = "";
     //110 이 전체 카테고리 코드
     if (keywordType != null && keywordType != 110) {
-      filterQuery = "&keyword_type=eq.$keywordType";
+      filterQuery += "&keyword_type=eq.$keywordType";
     }
 
     final response = await dio.get(
       //최신순이 기본 설정
-      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items?select=*&order=$orderBy'
+      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items_detail?select=*,auctions(bid_count)&order=$orderBy'
       '$filterQuery',
       options: Options(
         headers: {
