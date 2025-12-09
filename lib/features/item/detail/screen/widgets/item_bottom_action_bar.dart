@@ -94,17 +94,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     try {
       final row = await supabase
-          .from('bid_status')
-          .select('current_highest_bidder, int_code')
+          .from('auctions')
+          .select('last_bid_user_id')
           .eq('item_id', widget.item.itemId)
+          .eq('round', 1)
           .maybeSingle();
 
       if (!mounted || row == null) return;
 
-      final String? currentHighest = row['current_highest_bidder']?.toString();
+      final String? lastBidUserId = row['last_bid_user_id']?.toString();
 
       setState(() {
-        _isTopBidder = currentHighest != null && currentHighest == user.id;
+        _isTopBidder = lastBidUserId != null && lastBidUserId == user.id;
       });
     } catch (e) {
       debugPrint(
@@ -149,17 +150,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final isMyItem = widget.isMyItem;
     final isBidRestricted = _isBidRestricted;
 
-    // 즉시 구매 버튼 노출 여부 (상태 + 가격 기준)
-    // 1001: 경매 대기, 1006: 즉시 구매 진행 중, 1007: 즉시 구매 완료,
-    // 1008/1009/1010: 경매 종료, 1011: 거래 정지
     const disabledStatusesForBuyNow = {
-      1001,
-      1006,
-      1007,
-      1008,
-      1009,
-      1010,
-      1011,
+      300,
+      311,
+      321,
+      322,
+      323,
     };
     final bool showBuyNow =
         widget.item.buyNowPrice > 0 &&
@@ -268,11 +264,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final int statusCode = _statusCode ?? 0;
 
     final bool isAuctionEnded =
-        statusCode == 1008 || statusCode == 1009 || statusCode == 1010; // 경매 종료
-    final bool isAuctionActive =
-        statusCode == 1002 || statusCode == 1003 || statusCode == 1005;
-    final bool isBuyNowInProgress = statusCode == 1006;
-    final bool isBuyNowCompleted = statusCode == 1007;
+        statusCode == 321 || statusCode == 322 || statusCode == 323;
+
+    final bool isAuctionPending = statusCode == 300;
+    final bool isAuctionActive = statusCode == 310;
+    final bool isBuyNowInProgress = statusCode == 311;
+    final bool isBuyNowCompleted = statusCode == 322;
 
     final bool showBidButton =
         !isAuctionEnded &&
@@ -424,25 +421,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     } else {
       // 2) 상태 코드별 상세 사유
       switch (statusCode) {
-        case 1001: // 경매 대기
+        case 300:
           reason = '경매가 아직 시작되지 않았습니다';
           break;
-        case 1008: // 경매 종료 - 즉시 구매 실패
-        case 1009: // 경매 종료 - 낙찰
-        case 1010: // 경매 종료 - 유찰
+        case 321:
+        case 323:
           reason = '경매가 종료되었습니다.';
           break;
-        case 1006: // 즉시 구매 진행 중
+        case 311:
           reason = '즉시 구매 결제 대기중입니다';
           break;
-        case 1007: // 즉시 구매 완료
+        case 322:
           reason = '즉시 구매되었습니다';
-          break;
-        case 1011: // 거래 정지
-          reason = '거래가 정지된 상품입니다';
-          break;
-        case 0: // 상태 코드 로딩 실패 등
-          reason = '상품 상태 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요';
           break;
         default:
           reason = '현재 입찰할 수 없습니다';
