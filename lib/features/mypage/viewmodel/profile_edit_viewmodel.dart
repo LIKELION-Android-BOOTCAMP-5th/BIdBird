@@ -3,12 +3,10 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/managers/cloudinary_manager.dart';
 import '../data/profile_repository.dart';
-import 'profile_viewmodel.dart';
+import '../model/profile_model.dart';
 
 class ProfileEditViewModel extends ChangeNotifier {
   final ProfileRepository _repository;
-
-  final Profile? _initialProfile;
 
   final TextEditingController nickNameTextfield;
   final TextEditingController phoneTextfield;
@@ -21,8 +19,7 @@ class ProfileEditViewModel extends ChangeNotifier {
   String? errorMessage;
 
   ProfileEditViewModel(this._repository, {Profile? initialProfile})
-    : _initialProfile = initialProfile,
-      nickNameTextfield = TextEditingController(text: initialProfile?.nickName),
+    : nickNameTextfield = TextEditingController(text: initialProfile?.nickName),
       phoneTextfield = TextEditingController(text: initialProfile?.phoneNumber),
       _profileImageUrl = initialProfile?.profileImageUrl;
 
@@ -89,7 +86,6 @@ class ProfileEditViewModel extends ChangeNotifier {
   }
 
   //delete만들기
-
   Future<void> unregisterUser() async {
     try {
       await _repository.unregisterUser();
@@ -99,10 +95,10 @@ class ProfileEditViewModel extends ChangeNotifier {
     }
   }
 
-  // @override
-  // void dispose() {
-  //   nickNameTextfield.dispose();
-  //   phoneTextfield.dispose();
-  //   super.dispose();
-  // } //컨트롤러등은메모리정리해야함
+  @override
+  void dispose() {
+    nickNameTextfield.dispose();
+    phoneTextfield.dispose();
+    super.dispose();
+  } //컨트롤러등은메모리정리해야함//언마운트될때ChangeNotifierProvider가자동으로호출해줌
 }
