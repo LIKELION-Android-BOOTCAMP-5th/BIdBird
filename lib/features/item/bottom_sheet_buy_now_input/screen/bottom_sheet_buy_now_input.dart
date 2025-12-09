@@ -1,6 +1,7 @@
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/features/item/bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
+import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -141,6 +142,15 @@ class BuyNowInputBottomSheet extends StatelessWidget {
           yesText: '확인',
           yesLogic: () async {
             Navigator.pop(dialogContext);
+            if (!parentContext.mounted) return;
+
+            // 상세 화면 강제 새로고침
+            final detailViewModel =
+                parentContext.read<ItemDetailViewModel?>();
+            if (detailViewModel != null) {
+              await detailViewModel.loadItemDetail();
+            }
+
             if (parentContext.mounted) {
               Navigator.pop(parentContext);
             }

@@ -26,7 +26,19 @@ class RegistrationScreen extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, RegistrationViewModel viewModel) {
     if (viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 12),
+            Text(
+              '로딩중',
+              style: TextStyle(fontSize: 14, color: textColor),
+            ),
+          ],
+        ),
+      );
     }
 
     if (viewModel.error != null) {

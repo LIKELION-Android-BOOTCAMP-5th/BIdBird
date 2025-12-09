@@ -137,11 +137,11 @@ class ItemAddViewModel extends ChangeNotifier {
     final supabase = SupabaseManager.shared.supabase;
     try {
       final Map<String, dynamic> row = await supabase
-          .from('items')
+          .from('items_detail')
           .select(
             'title, description, start_price, buy_now_price, keyword_type, auction_duration_hours',
           )
-          .eq('id', itemId)
+          .eq('item_id', itemId)
           .single();
 
       titleController.text = (row['title'] ?? '').toString();
@@ -347,8 +347,21 @@ class ItemAddViewModel extends ChangeNotifier {
       barrierDismissible: false,
       builder: (_) {
         return const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+              ),
+              SizedBox(height: 12),
+              Text(
+                '로딩중',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: textColor,
+                ),
+              ),
+            ],
           ),
         );
       },
