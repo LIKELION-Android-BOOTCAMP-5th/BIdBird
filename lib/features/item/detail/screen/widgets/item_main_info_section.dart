@@ -2,6 +2,7 @@ import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../item_detail_utils.dart';
 
@@ -64,6 +65,7 @@ class ItemMainInfoSection extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () {
                     // TODO: 판매자 연락 기능 연동 (채팅 등)
+                    context.push('/chat/room?itemId=${item.itemId}');
                   },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
