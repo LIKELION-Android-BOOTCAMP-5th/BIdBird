@@ -59,7 +59,7 @@ class NetworkApiManager {
 
     final response = await dio.get(
       //최신순이 기본 설정
-      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items_detail?select=*,auctions(bid_count)&order=$orderBy'
+      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
       '$filterQuery',
       options: Options(
         headers: {
@@ -111,7 +111,7 @@ class NetworkApiManager {
 
     final response = await dio.get(
       //최신순이 기본 설정
-      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items?select=*&order=$orderBy'
+      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
       '$filterSearchText'
       '$filterQuery',
       options: Options(
