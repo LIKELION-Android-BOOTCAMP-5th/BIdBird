@@ -25,8 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => HomeViewmodel(HomeRepository()),
-      //휴대폰 글씨크기 무시, 글씨 고정
       child: MediaQuery(
+        //휴대폰 글씨크기 무시, 글씨 고정
         data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
         child: Consumer<HomeViewmodel>(
           builder: (context, viewModel, child) {
