@@ -36,7 +36,7 @@ class EditItemRemoteDataSource {
       buyNowPrice: (row['buy_now_price'] as num?)?.toInt() ?? 0,
       keywordTypeId: (row['keyword_type'] as num?)?.toInt() ?? 0,
       auctionDurationHours:
-          (row['auction_duration_hours'] as num?)?.toInt() ?? 4,
+          (((row['auction_duration_hours'] as num?)?.toInt() ?? 240) ~/ 60),
       imageUrls: imageUrls,
     );
   }
