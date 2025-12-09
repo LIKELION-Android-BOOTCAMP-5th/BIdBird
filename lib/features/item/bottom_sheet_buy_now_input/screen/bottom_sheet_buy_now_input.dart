@@ -1,3 +1,4 @@
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/features/item/bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
@@ -49,7 +50,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
             const SizedBox(height: 24),
             BuyNowPrimaryButton(
               isSubmitting: viewModel.isSubmitting,
-              onPressed: () {
+              onPressed: () async {
                 if (buyNowPrice < 10000 || buyNowPrice > 1400000) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -58,6 +59,47 @@ class BuyNowInputBottomSheet extends StatelessWidget {
                   );
                   return;
                 }
+
+                final supabase = SupabaseManager.shared.supabase;
+                final user = supabase.auth.currentUser;
+
+                if (user == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('로그인 정보가 없습니다. 다시 로그인 해주세요.'),
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  final row = await supabase
+                      .from('bid_restriction')
+                      .select('is_blocked')
+                      .eq('user_id', user.id)
+                      .maybeSingle();
+
+                  final bool isBlocked =
+                      row != null ? (row['is_blocked'] as bool? ?? false) : false;
+
+                  if (isBlocked) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                            Text('결제 3회 이상 실패하여 입찰이 제한되었습니다.'),
+                      ),
+                    );
+                    return;
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('입찰 제한 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.\n$e'),
+                    ),
+                  );
+                  return;
+                }
+
                 _showTermsDialog(context, viewModel);
               },
             ),
