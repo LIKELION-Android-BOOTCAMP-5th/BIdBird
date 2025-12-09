@@ -1,24 +1,34 @@
 import 'dart:io';
-
-import 'package:bidbird/core/managers/cloudinary_manager.dart';
-import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/repository/item_add_repository.dart';
+import '../data/repository/keyword_repository.dart';
+import '../data/repository/edit_item_repository.dart';
+import '../data/repository/image_upload_repository.dart';
 import '../model/add_item_usecase.dart';
+import '../model/get_edit_item_usecase.dart';
+import '../model/get_keyword_types_usecase.dart';
 import '../model/item_add_entity.dart';
+import '../model/upload_images_usecase.dart';
 
 class ItemAddViewModel extends ChangeNotifier {
   ItemAddViewModel()
-    : _addItemUseCase = AddItemUseCase(ItemAddRepositoryImpl());
+    : _addItemUseCase = AddItemUseCase(ItemAddGatewayImpl()),
+      _getKeywordTypesUseCase =
+          GetKeywordTypesUseCase(KeywordGatewayImpl()),
+      _getEditItemUseCase = GetEditItemUseCase(EditItemGatewayImpl()),
+      _uploadImagesUseCase =
+          UploadImagesUseCase(ImageUploadGatewayImpl());
 
   final AddItemUseCase _addItemUseCase;
+  final GetKeywordTypesUseCase _getKeywordTypesUseCase;
+  final GetEditItemUseCase _getEditItemUseCase;
+  final UploadImagesUseCase _uploadImagesUseCase;
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController startPriceController = TextEditingController();
@@ -56,17 +66,10 @@ class ItemAddViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final supabase = SupabaseManager.shared.supabase;
-      final List<dynamic> data = await supabase
-          .from('code_keyword_type')
-          .select('id, title')
-          .order('id');
-
+      final types = await _getKeywordTypesUseCase();
       keywordTypes
         ..clear()
-        ..addAll(data.cast<Map<String, dynamic>>());
-    } on PostgrestException catch (e) {
-      throw Exception('카테고리를 불러오는 중 오류가 발생했습니다: ${e.message}');
+        ..addAll(types.map((e) => {'id': e.id, 'title': e.title}));
     } catch (e) {
       throw Exception('카테고리를 불러오는 중 오류가 발생했습니다: $e');
     } finally {
@@ -133,27 +136,19 @@ class ItemAddViewModel extends ChangeNotifier {
   /// 기존 매물을 수정하기 위해 items / item_images 데이터를 폼에 채웁니다.
   Future<void> startEdit(String itemId) async {
     editingItemId = itemId;
-
-    final supabase = SupabaseManager.shared.supabase;
     try {
-      final Map<String, dynamic> row = await supabase
-          .from('items_detail')
-          .select(
-            'title, description, start_price, buy_now_price, keyword_type, auction_duration_hours',
-          )
-          .eq('item_id', itemId)
-          .single();
+      final editItem = await _getEditItemUseCase(itemId);
 
-      titleController.text = (row['title'] ?? '').toString();
-      descriptionController.text = (row['description'] ?? '').toString();
+      titleController.text = editItem.title;
+      descriptionController.text = editItem.description;
 
-      final int? startPrice = (row['start_price'] as num?)?.toInt();
-      if (startPrice != null) {
+      final int startPrice = editItem.startPrice;
+      if (startPrice > 0) {
         startPriceController.text = formatNumber(startPrice.toString());
       }
 
-      final int? buyNowPrice = (row['buy_now_price'] as num?)?.toInt();
-      if (buyNowPrice != null && buyNowPrice > 0) {
+      final int buyNowPrice = editItem.buyNowPrice;
+      if (buyNowPrice > 0) {
         useInstantPrice = true;
         instantPriceController.text = formatNumber(buyNowPrice.toString());
       } else {
@@ -161,10 +156,9 @@ class ItemAddViewModel extends ChangeNotifier {
         instantPriceController.clear();
       }
 
-      selectedKeywordTypeId = (row['keyword_type'] as num?)?.toInt();
+      selectedKeywordTypeId = editItem.keywordTypeId;
 
-      final int durationHours =
-          (row['auction_duration_hours'] as num?)?.toInt() ?? 4;
+      final int durationHours = editItem.auctionDurationHours;
       if (durationHours == 12) {
         selectedDuration = '12시간';
       } else if (durationHours == 24) {
@@ -175,31 +169,19 @@ class ItemAddViewModel extends ChangeNotifier {
 
       notifyListeners();
 
-      await loadExistingImages(itemId);
+      await loadExistingImages(editItem.imageUrls);
     } catch (_) {
       // 실패해도 새로 작성할 수 있도록 조용히 무시
     }
   }
 
   /// 수정 모드에서 기존 이미지를 불러와 selectedImages에 채웁니다.
-  Future<void> loadExistingImages(String itemId) async {
+  Future<void> loadExistingImages(List<String> imageUrls) async {
     try {
-      final supabase = SupabaseManager.shared.supabase;
-      final List<dynamic> data = await supabase
-          .from('item_images')
-          .select('image_url, sort_order')
-          .eq('item_id', itemId)
-          .order('sort_order');
-
-      if (data.isEmpty) return;
-
       final dio = Dio();
       final List<XFile> files = <XFile>[];
 
-      for (final dynamic row in data) {
-        final map = row as Map<String, dynamic>;
-        final String url = map['image_url'] as String;
-
+      for (final String url in imageUrls) {
         try {
           final response = await dio.get<List<int>>(
             url,
@@ -359,6 +341,9 @@ class ItemAddViewModel extends ChangeNotifier {
                 style: TextStyle(
                   fontSize: 14,
                   color: textColor,
+                  decoration: TextDecoration.none,
+                  decorationColor: Colors.transparent,
+                  decorationThickness: 0,
                 ),
               ),
             ],
@@ -368,18 +353,6 @@ class ItemAddViewModel extends ChangeNotifier {
     );
 
     try {
-      final supabase = SupabaseManager.shared.supabase;
-      final user = supabase.auth.currentUser;
-
-      if (user == null) {
-        if (context.mounted) {
-          scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text('로그인 정보가 없습니다. 다시 로그인 해주세요.')),
-          );
-        }
-        return;
-      }
-
       final DateTime now = DateTime.now();
 
       int auctionHours = 4;
@@ -397,8 +370,7 @@ class ItemAddViewModel extends ChangeNotifier {
       final DateTime auctionStartAt = now;
       final DateTime auctionEndAt = now.add(Duration(hours: auctionHours));
 
-      final List<String> imageUrls = await CloudinaryManager.shared
-          .uploadImageListToCloudinary(selectedImages);
+      final List<String> imageUrls = await _uploadImagesUseCase(selectedImages);
 
       if (imageUrls.isEmpty) {
         if (context.mounted) {

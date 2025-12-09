@@ -32,9 +32,21 @@ class RegistrationScreen extends StatelessWidget {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 12),
-            Text(
-              '로딩중',
-              style: TextStyle(fontSize: 14, color: textColor),
+            ClipRect(
+              child: Align(
+                alignment: Alignment.topCenter,
+                heightFactor: 0.8,
+                child: Text(
+                  '로딩중',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: textColor,
+                    decoration: TextDecoration.none,
+                    decorationColor: Colors.transparent,
+                    decorationThickness: 0,
+                  ),
+                ),
+              ),
             ),
           ],
         ),

@@ -1,11 +1,11 @@
 import 'package:bidbird/features/item/add/model/item_add_entity.dart';
-import 'package:bidbird/features/item/add/data/repository/item_add_repository.dart';
+import 'package:bidbird/features/item/add/model/item_add_gateway.dart';
 import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 
 class AddItemUseCase {
-  AddItemUseCase(this._repository);
+  AddItemUseCase(this._gateway);
 
-  final ItemAddRepositoryImpl _repository;
+  final ItemAddGateway _gateway;
 
   Future<ItemRegistrationData> call({
     required ItemAddEntity entity,
@@ -13,7 +13,7 @@ class AddItemUseCase {
     required int primaryImageIndex,
     String? editingItemId,
   }) {
-    return _repository.saveItem(
+    return _gateway.saveItem(
       entity: entity,
       imageUrls: imageUrls,
       primaryImageIndex: primaryImageIndex,

@@ -49,23 +49,41 @@ class SupabaseItemAddDatasource {
       throw Exception('경매 기간을 설정해주세요.');
     }
 
-    final dynamic result = await _supabase.rpc(
-      'register_item',
-      params: <String, dynamic>{
-        'p_seller_id': user.id,
-        'p_title': entity.title,
-        'p_description': entity.description,
-        'p_start_price': entity.startPrice,
-        'p_buy_now_price': entity.instantPrice > 0 ? entity.instantPrice : null,
-        'p_keyword_type': entity.keywordTypeId,
-        'p_duration_minutes': entity.auctionDurationHours * 60,
-      },
-    );
-
-    final String itemId = result.toString();
+    // 편집 모드(editingItemId != null)에서는 기존 아이템을 업데이트만 하고,
+    // 신규 등록 시에만 register_item RPC를 통해 새로운 아이템을 생성합니다.
+    late final String itemId;
 
     if (editingItemId != null) {
+      itemId = editingItemId;
+
+      // 기존 아이템 기본 정보 업데이트
+      await _supabase.from('items_detail').update(<String, dynamic>{
+        'title': entity.title,
+        'description': entity.description,
+        'start_price': entity.startPrice,
+        'buy_now_price': entity.instantPrice > 0 ? entity.instantPrice : null,
+        'keyword_type': entity.keywordTypeId,
+        'auction_duration_hours': entity.auctionDurationHours,
+      }).eq('item_id', itemId);
+
+      // 기존 이미지 삭제 (기존 아이템 기준)
       await _supabase.from('item_images').delete().eq('item_id', itemId);
+    } else {
+      final dynamic result = await _supabase.rpc(
+        'register_item',
+        params: <String, dynamic>{
+          'p_seller_id': user.id,
+          'p_title': entity.title,
+          'p_description': entity.description,
+          'p_start_price': entity.startPrice,
+          'p_buy_now_price':
+              entity.instantPrice > 0 ? entity.instantPrice : null,
+          'p_keyword_type': entity.keywordTypeId,
+          'p_duration_minutes': entity.auctionDurationHours * 60,
+        },
+      );
+
+      itemId = result.toString();
     }
 
     final List<Map<String, dynamic>> imageRows = <Map<String, dynamic>>[];
