@@ -41,7 +41,8 @@ class CurrentTradeDatasource {
       if (auctionIds.isNotEmpty) {
         final auctionsRows = await _supabase
             .from('auctions')
-            .select('auction_id, item_id, current_price')
+            .select(
+                'auction_id, item_id, current_price, auction_status_code, trade_status_code')
             .inFilter('auction_id', auctionIds.toList());
 
         for (final row in auctionsRows) {
@@ -86,6 +87,10 @@ class CurrentTradeDatasource {
       for (final row in logRows) {
         final auctionId = row['bid_status_id']?.toString();
         final auction = auctionsById[auctionId] ?? <String, dynamic>{};
+        final int auctionStatusCode =
+            (auction['auction_status_code'] as int?) ?? 0;
+        final int tradeStatusCode =
+            (auction['trade_status_code'] as int?) ?? 0;
         final itemId = auction['item_id']?.toString() ?? '';
         if (itemId.isEmpty) continue;
 
@@ -103,7 +108,19 @@ class CurrentTradeDatasource {
             status = '입찰 낙찰';
             break;
           case 431:
-            status = '즉시 구매 낙찰';
+            // 즉시 구매 시도 로그이지만, 실제 경매/거래 상태에 따라 보정
+            if (auctionStatusCode == 310) {
+              // 즉시구매 실패 등으로 다시 경매 진행 중인 경우
+              status = '경매 진행 중';
+            } else if (auctionStatusCode == 322 ||
+                tradeStatusCode == 520 ||
+                tradeStatusCode == 550) {
+              // 즉시 구매가 최종적으로 완료/거래 완료된 경우
+              status = '즉시 구매 완료';
+            } else {
+              // 그 외에는 기본적으로 즉시 구매 낙찰로 취급
+              status = '즉시 구매 낙찰';
+            }
             break;
           default:
             status = '';
