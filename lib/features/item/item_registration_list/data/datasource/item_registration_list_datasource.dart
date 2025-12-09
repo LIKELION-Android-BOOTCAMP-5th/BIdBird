@@ -17,19 +17,19 @@ class RegistrationDatasource {
 
     try {
       final List<dynamic> rows = await _supabase
-          .from('items')
+          .from('items_detail')
           .select(
-        'id, title, description, start_price, buy_now_price, keyword_type, is_agree, seller_id, thumbnail_image',
+        'item_id, title, description, start_price, buy_now_price, keyword_type, seller_id, thumbnail_image, is_agreed, created_at',
       )
           .eq('seller_id', user.id)
-          .eq('is_agree', false)
+          .filter('is_agreed', 'is', null)
           .order('created_at', ascending: false);
 
       return rows.map<ItemRegistrationData>((dynamic raw) {
         final Map<String, dynamic> row = raw as Map<String, dynamic>;
 
         return ItemRegistrationData(
-          id: row['id']?.toString() ?? '',
+          id: row['item_id']?.toString() ?? '',
           title: row['title']?.toString() ?? '',
           description: row['description']?.toString() ?? '',
           startPrice: (row['start_price'] as num?)?.toInt() ?? 0,
