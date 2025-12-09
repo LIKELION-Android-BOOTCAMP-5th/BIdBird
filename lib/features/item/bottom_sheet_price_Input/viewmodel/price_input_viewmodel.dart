@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../data/repository/bottom_sheet_price_input_repository.dart';
 import '../model/bottom_sheet_price_input_entity.dart';
+import '../model/place_bid_usecase.dart';
+import '../data/repository/bottom_sheet_price_input_repository.dart';
 
 class PriceInputViewModel extends ChangeNotifier {
-  PriceInputViewModel({PriceInputRepository? repository})
-      : _repository = repository ?? PriceInputRepository();
+  PriceInputViewModel({PlaceBidUseCase? placeBidUseCase})
+      : _placeBidUseCase =
+            placeBidUseCase ?? PlaceBidUseCase(BidInputGatewayImpl());
 
-  final PriceInputRepository _repository;
+  final PlaceBidUseCase _placeBidUseCase;
 
   bool isSubmitting = false;
 
@@ -27,7 +29,7 @@ class PriceInputViewModel extends ChangeNotifier {
         bidPrice: bidPrice,
         isInstant: isInstant,
       );
-      await _repository.placeBid(request);
+      await _placeBidUseCase(request);
     } catch (e) {
       rethrow;
     } finally {
