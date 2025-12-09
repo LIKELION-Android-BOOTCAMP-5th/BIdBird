@@ -132,25 +132,6 @@ class ItemDetailDatasource {
     return images;
   }
 
-  Future<int> _fetchBiddingCount(
-    String itemId,
-    Map<String, dynamic> row,
-  ) async {
-    try {
-      final countResponse = await _supabase
-          .from('bid_log')
-          .select('id')
-          .eq('item_id', itemId)
-          .isFilter('instant_buy_triggered_at', null)
-          .neq('bid_price', 0)
-          .count(CountOption.exact);
-      return countResponse.count;
-    } catch (e) {
-      return (row['bidding_count'] as int?) ?? 0;
-    }
-  }
-
-
   Future<bool> checkIsFavorite(String itemId) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return false;
