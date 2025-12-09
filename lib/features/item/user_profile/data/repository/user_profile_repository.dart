@@ -11,8 +11,4 @@ class UserProfileRepository {
   Future<UserProfile> fetchUserProfile(String userId) {
     return _datasource.fetchUserProfile(userId);
   }
-
-  Future<List<UserTradeSummary>> fetchUserTrades(String userId) {
-    return _datasource.fetchUserTrades(userId);
-  }
 }
