@@ -1,14 +1,16 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../bottom_sheet_buy_now_input/model/check_bid_restriction_usecase.dart';
+import '../../../bottom_sheet_buy_now_input/data/repository/bid_restriction_gateway_impl.dart';
 import '../../../bottom_sheet_buy_now_input/screen/bottom_sheet_buy_now_input.dart';
 import '../../../bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
 import '../../../bottom_sheet_price_Input/screen/price_input_screen.dart';
 import '../../../bottom_sheet_price_Input/viewmodel/price_input_viewmodel.dart';
 import '../../model/item_detail_entity.dart';
+import '../../viewmodel/item_detail_viewmodel.dart';
 
 class ItemBottomActionBar extends StatefulWidget {
   const ItemBottomActionBar({
@@ -25,128 +27,37 @@ class ItemBottomActionBar extends StatefulWidget {
 }
 
 class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
-  bool _isFavorite = false;
-  bool _isTopBidder = false;
   int? _statusCode;
   bool _isBidRestricted = false;
+
+  final CheckBidRestrictionUseCase _checkBidRestrictionUseCase =
+      CheckBidRestrictionUseCase(BidRestrictionGatewayImpl());
 
   @override
   void initState() {
     super.initState();
     _statusCode = widget.item.statusCode;
-    _loadFavoriteState();
-    _checkTopBidder();
     _checkBidRestriction();
   }
 
-  Future<void> _loadFavoriteState() async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      final List<dynamic> rows = await supabase
-          .from('favorites')
-          .select('id')
-          .eq('item_id', widget.item.itemId)
-          .eq('user_id', user.id)
-          .limit(1);
-
-      if (!mounted) return;
-      setState(() {
-        _isFavorite = rows.isNotEmpty;
-      });
-    } catch (e) {
-      debugPrint(
-        'Failed to load favorite state for itemId=${widget.item.itemId}: $e',
-      );
-    }
-  }
-
   Future<void> _checkBidRestriction() async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
     try {
-      final row = await supabase
-          .from('bid_restriction')
-          .select('fail_count')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-      if (!mounted || row == null) return;
-
-      final int failCount = (row['fail_count'] as num?)?.toInt() ?? 0;
+      final isBlocked = await _checkBidRestrictionUseCase();
+      if (!mounted) return;
 
       setState(() {
-        _isBidRestricted = failCount >= 3;
+        _isBidRestricted = isBlocked;
       });
     } catch (e) {
       debugPrint('Failed to check bid restriction: $e');
     }
   }
 
-  Future<void> _checkTopBidder() async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      final row = await supabase
-          .from('auctions')
-          .select('last_bid_user_id')
-          .eq('item_id', widget.item.itemId)
-          .eq('round', 1)
-          .maybeSingle();
-
-      if (!mounted || row == null) return;
-
-      final String? lastBidUserId = row['last_bid_user_id']?.toString();
-
-      setState(() {
-        _isTopBidder = lastBidUserId != null && lastBidUserId == user.id;
-      });
-    } catch (e) {
-      debugPrint(
-        'Failed to check top bidder for itemId=${widget.item.itemId}: $e',
-      );
-    }
-  }
-
-  Future<void> _toggleFavorite() async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
-
-    try {
-      if (_isFavorite) {
-        await supabase
-            .from('favorites')
-            .delete()
-            .eq('item_id', widget.item.itemId)
-            .eq('user_id', user.id);
-      } else {
-        await supabase.from('favorites').insert(<String, dynamic>{
-          'item_id': widget.item.itemId,
-          'user_id': user.id,
-        });
-      }
-
-      if (mounted) {
-        setState(() {
-          _isFavorite = !_isFavorite;
-        });
-      }
-    } catch (e) {
-      debugPrint(
-        'Failed to toggle favorite for itemId=${widget.item.itemId}: $e',
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final itemDetailViewModel = context.watch<ItemDetailViewModel?>();
+    final isFavorite = itemDetailViewModel?.isFavorite ?? false;
+    final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
     final isMyItem = widget.isMyItem;
     final isBidRestricted = _isBidRestricted;
 
@@ -205,9 +116,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           ]
           // 일반 사용자: 하트 + 입찰/즉시구매 버튼
           else if (!isMyItem) ...[
-            _buildFavoriteButton(),
+            _buildFavoriteButton(isFavorite, itemDetailViewModel),
             const SizedBox(width: 12),
-            Expanded(child: _buildBidButton()),
+            Expanded(child: _buildBidButton(isTopBidder)),
             if (showBuyNow) ...[
               const SizedBox(width: 8),
               Expanded(child: _buildBuyNowButton()),
@@ -240,9 +151,14 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     );
   }
 
-  Widget _buildFavoriteButton() {
+  Widget _buildFavoriteButton(
+    bool isFavorite,
+    ItemDetailViewModel? itemDetailViewModel,
+  ) {
     return InkWell(
-      onTap: _toggleFavorite,
+      onTap: () {
+        itemDetailViewModel?.toggleFavorite();
+      },
       child: Container(
         width: 40,
         height: 40,
@@ -251,16 +167,15 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           border: Border.all(color: BorderColor),
         ),
         child: Icon(
-          _isFavorite ? Icons.favorite : Icons.favorite_border,
-          color: _isFavorite ? Colors.red : iconColor,
+          isFavorite ? Icons.favorite : Icons.favorite_border,
+          color: isFavorite ? Colors.red : iconColor,
           size: 22,
         ),
       ),
     );
   }
 
-  Widget _buildBidButton() {
-    final bool isTopBidder = _isTopBidder;
+  Widget _buildBidButton(bool isTopBidder) {
     final int statusCode = _statusCode ?? 0;
 
     final bool isAuctionEnded =
