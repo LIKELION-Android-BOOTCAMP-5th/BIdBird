@@ -409,17 +409,21 @@ class ItemAddViewModel extends ChangeNotifier {
       if (!context.mounted) return;
       await showDialog(
         context: context,
-        builder: (_) => AskPopup(
-          content: '매물 등록 확인 화면으로 이동하여 최종 등록을 진행해 주세요.',
-          yesText: '이동하기',
-          yesLogic: () async {
-            navigator.pop();
-            if (!context.mounted) return;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+        barrierDismissible: false,
+        builder: (_) => WillPopScope(
+          onWillPop: () async => false,
+          child: AskPopup(
+            content: '매물 등록 확인 화면으로 이동하여 최종 등록을 진행해 주세요.',
+            yesText: '이동하기',
+            yesLogic: () async {
+              navigator.pop();
               if (!context.mounted) return;
-              context.push('/add_item/item_registration_list');
-            });
-          },
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!context.mounted) return;
+                context.go('/add_item/item_registration_list');
+              });
+            },
+          ),
         ),
       );
     } catch (e) {
