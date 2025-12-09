@@ -15,7 +15,7 @@ import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
-import 'package:bidbird/features/item/user_profile/screen/user_trade_history_screen.dart';
+import 'package:bidbird/features/item/user_profile_history/screen/user_history_screen.dart';
 import 'package:bidbird/features/mypage/data/report_feedback_repository.dart';
 import 'package:bidbird/features/mypage/ui/cs_screen.dart';
 import 'package:bidbird/features/mypage/model/report_feedback_model.dart';

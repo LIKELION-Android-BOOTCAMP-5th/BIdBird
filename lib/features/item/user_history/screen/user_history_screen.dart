@@ -1,7 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/features/item/user_profile/data/repository/user_profile_repository.dart';
-import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
+import 'package:bidbird/features/item/user_history/data/repository/user_history_repository.dart';
+import 'package:bidbird/features/item/user_history/model/user_history_entity.dart';
 import 'package:bidbird/features/item/widgets/trade_status_chip.dart';
 import 'package:flutter/material.dart';
 
