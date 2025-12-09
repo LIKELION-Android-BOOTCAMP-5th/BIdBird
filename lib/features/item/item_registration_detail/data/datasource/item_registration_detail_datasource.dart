@@ -59,7 +59,7 @@ class ItemRegistrationDetailDatasource {
   Future<void> deleteItem(String itemId) async {
     try {
       await _supabase.from('item_images').delete().eq('item_id', itemId);
-      await _supabase.from('items').delete().eq('id', itemId);
+      await _supabase.from('items_detail').delete().eq('item_id', itemId);
     } on PostgrestException catch (e) {
       debugPrint('[ItemRegistrationDetailDatasource] deleteItem PostgrestException: ${e.message}');
       rethrow;
