@@ -1,4 +1,3 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/features/item/bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
@@ -51,39 +50,21 @@ class BuyNowInputBottomSheet extends StatelessWidget {
             BuyNowPrimaryButton(
               isSubmitting: viewModel.isSubmitting,
               onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final parentContext = context;
                 if (buyNowPrice < 10000 || buyNowPrice > 1400000) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(
                       content: Text('즉시 구매가는 10,000원 이상 1,400,000원 이하만 가능합니다.'),
                     ),
                   );
                   return;
                 }
-
-                final supabase = SupabaseManager.shared.supabase;
-                final user = supabase.auth.currentUser;
-
-                if (user == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('로그인 정보가 없습니다. 다시 로그인 해주세요.'),
-                    ),
-                  );
-                  return;
-                }
-
                 try {
-                  final row = await supabase
-                      .from('bid_restriction')
-                      .select('is_blocked')
-                      .eq('user_id', user.id)
-                      .maybeSingle();
-
-                  final bool isBlocked =
-                      row != null ? (row['is_blocked'] as bool? ?? false) : false;
+                  final isBlocked = await viewModel.checkBidRestriction();
 
                   if (isBlocked) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       const SnackBar(
                         content:
                             Text('결제 3회 이상 실패하여 입찰이 제한되었습니다.'),
@@ -92,7 +73,7 @@ class BuyNowInputBottomSheet extends StatelessWidget {
                     return;
                   }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text('입찰 제한 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.\n$e'),
                     ),
@@ -100,7 +81,9 @@ class BuyNowInputBottomSheet extends StatelessWidget {
                   return;
                 }
 
-                _showTermsDialog(context, viewModel);
+                if (!parentContext.mounted) return;
+
+                _showTermsDialog(parentContext, viewModel);
               },
             ),
             const SizedBox(height: 8),
