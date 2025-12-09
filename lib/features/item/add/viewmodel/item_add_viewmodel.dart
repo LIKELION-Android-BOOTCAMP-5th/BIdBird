@@ -67,9 +67,17 @@ class ItemAddViewModel extends ChangeNotifier {
 
     try {
       final types = await _getKeywordTypesUseCase();
+      final filtered = types.where((e) => e.title != '전체');
       keywordTypes
         ..clear()
-        ..addAll(types.map((e) => {'id': e.id, 'title': e.title}));
+        ..addAll(filtered.map((e) => {'id': e.id, 'title': e.title}));
+
+      // 현재 선택된 카테고리가 필터링된 목록에 없다면 초기화
+      final validIds = keywordTypes.map<int>((e) => e['id'] as int).toSet();
+      if (selectedKeywordTypeId != null &&
+          !validIds.contains(selectedKeywordTypeId)) {
+        selectedKeywordTypeId = null;
+      }
     } catch (e) {
       throw Exception('카테고리를 불러오는 중 오류가 발생했습니다: $e');
     } finally {
@@ -413,7 +421,7 @@ class ItemAddViewModel extends ChangeNotifier {
         builder: (_) => WillPopScope(
           onWillPop: () async => false,
           child: AskPopup(
-            content: '매물 등록 확인 화면으로 이동하여 최종 등록을 진행해 주세요.',
+            content: '매물 등록 확인 화면으로 이동하여\n최종 등록을 진행해 주세요.',
             yesText: '이동하기',
             yesLogic: () async {
               navigator.pop();
