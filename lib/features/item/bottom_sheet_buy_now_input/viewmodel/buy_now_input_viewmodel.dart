@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 
-import 'package:bidbird/features/item/bottom_sheet_buy_now_input/data/repository/buy_now_input_repository.dart';
 import 'package:bidbird/features/item/bottom_sheet_buy_now_input/model/buy_now_input_entity.dart';
+import 'package:bidbird/features/item/bottom_sheet_buy_now_input/model/place_buy_now_bid_usecase.dart';
+import 'package:bidbird/features/item/bottom_sheet_buy_now_input/model/check_bid_restriction_usecase.dart';
+import 'package:bidbird/features/item/bottom_sheet_buy_now_input/data/repository/buy_now_input_repository.dart';
+import 'package:bidbird/features/item/bottom_sheet_buy_now_input/data/repository/bid_restriction_gateway_impl.dart';
 
 class BuyNowInputViewModel extends ChangeNotifier {
-  BuyNowInputViewModel({BuyNowInputRepository? repository})
-      : _repository = repository ?? BuyNowInputRepository();
+  BuyNowInputViewModel({
+    PlaceBuyNowBidUseCase? placeBuyNowBidUseCase,
+    CheckBidRestrictionUseCase? checkBidRestrictionUseCase,
+  })  : _placeBuyNowBidUseCase =
+            placeBuyNowBidUseCase ?? PlaceBuyNowBidUseCase(BuyNowInputGatewayImpl()),
+        _checkBidRestrictionUseCase = checkBidRestrictionUseCase ??
+            CheckBidRestrictionUseCase(BidRestrictionGatewayImpl());
 
-  final BuyNowInputRepository _repository;
+  final PlaceBuyNowBidUseCase _placeBuyNowBidUseCase;
+  final CheckBidRestrictionUseCase _checkBidRestrictionUseCase;
 
   bool isSubmitting = false;
+
+  Future<bool> checkBidRestriction() {
+    return _checkBidRestrictionUseCase();
+  }
 
   Future<void> placeBid({
     required String itemId,
@@ -25,7 +38,7 @@ class BuyNowInputViewModel extends ChangeNotifier {
         itemId: itemId,
         bidPrice: bidPrice,
       );
-      await _repository.placeBid(request);
+      await _placeBuyNowBidUseCase(request);
     } catch (e) {
       rethrow;
     } finally {

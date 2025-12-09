@@ -71,16 +71,16 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     try {
       final row = await supabase
           .from('bid_restriction')
-          .select('is_blocked')
+          .select('fail_count')
           .eq('user_id', user.id)
           .maybeSingle();
 
       if (!mounted || row == null) return;
 
-      final bool isBlocked = row['is_blocked'] as bool? ?? false;
+      final int failCount = (row['fail_count'] as num?)?.toInt() ?? 0;
 
       setState(() {
-        _isBidRestricted = isBlocked;
+        _isBidRestricted = failCount >= 3;
       });
     } catch (e) {
       debugPrint('Failed to check bid restriction: $e');
