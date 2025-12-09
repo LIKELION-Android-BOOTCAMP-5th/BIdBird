@@ -220,7 +220,7 @@ class ItemDetailDatasource {
             id,
             name,
             nick_name,
-            profile_image_url,
+            profile_image,
             email,
             created_at
           ''')
@@ -232,6 +232,7 @@ class ItemDetailDatasource {
 
         return {
           ...userRow,
+          'profile_image_url': userRow['profile_image'],
           'rating': ratingSummary.rating,
           'review_count': ratingSummary.reviewCount,
         };
