@@ -1,12 +1,15 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/features/mypage/data/profile_repository.dart';
-import 'package:bidbird/features/mypage/viewmodel/profile_edit_viewmodel.dart';
-import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
+import 'package:bidbird/core/utils/ui_set/icons_style.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import 'package:bidbird/features/mypage/data/profile_repository.dart';
+import 'package:bidbird/features/mypage/viewmodel/profile_edit_viewmodel.dart';
+import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 
 class ProfileEditScreen extends StatelessWidget {
   const ProfileEditScreen({super.key});
@@ -40,7 +43,7 @@ class ProfileEditScreen extends StatelessWidget {
                   children: [
                     const SizedBox(height: 24),
                     _ProfileImage(vm: vm),
-                    //const SizedBox(height: 24),
+                    const SizedBox(height: 48),
                     _ProfileForm(vm: vm),
                     // const SizedBox(height: 24),
                     // Align(
@@ -60,6 +63,7 @@ class ProfileEditScreen extends StatelessWidget {
   }
 }
 
+//전체디자인수정예정
 class _ProfileImage extends StatelessWidget {
   final ProfileEditViewModel vm;
 
@@ -75,13 +79,11 @@ class _ProfileImage extends StatelessWidget {
           alignment: Alignment.bottomRight,
           children: [
             CircleAvatar(
-              radius: 60,
-              backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-                  ? NetworkImage(imageUrl)
+              radius: 80,
+              foregroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+                  ? NetworkImage(imageUrl!)
                   : null,
-              child: (imageUrl == null || imageUrl.isEmpty)
-                  ? const Icon(Icons.person, size: 60, color: iconColor)
-                  : null,
+              child: const Icon(Icons.person, size: 60),
             ),
             Positioned(
               right: 0,
@@ -136,29 +138,27 @@ class _ProfileForm extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('이름', style: contentFontStyle),
+        Text('닉네임', style: contentFontStyle),
         const SizedBox(height: 8),
         TextField(
           controller: vm.nickNameTextfield,
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: BackgroundColor,
             border: OutlineInputBorder(
-              //borderRadius: defaultBorder,
-              borderSide: const BorderSide(color: Colors.grey),
+              borderSide: const BorderSide(color: BorderColor),
             ),
             enabledBorder: OutlineInputBorder(
-              //borderRadius: defaultBorder,
-              borderSide: const BorderSide(color: Colors.grey),
+              borderSide: const BorderSide(color: BorderColor),
             ),
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
+              horizontal: 6,
               vertical: 12,
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         Text('전화번호', style: contentFontStyle),
         const SizedBox(height: 8),
         Row(
@@ -169,18 +169,16 @@ class _ProfileForm extends StatelessWidget {
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: BackgroundColor,
                   border: OutlineInputBorder(
-                    //borderRadius: defaultBorder,
-                    borderSide: const BorderSide(color: Colors.grey),
+                    borderSide: const BorderSide(color: BorderColor),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    //borderRadius: defaultBorder,
-                    borderSide: const BorderSide(color: Colors.grey),
+                    borderSide: const BorderSide(color: BorderColor),
                   ),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 6,
                     vertical: 12,
                   ),
                 ),
@@ -192,8 +190,8 @@ class _ProfileForm extends StatelessWidget {
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: 6,
+                    vertical: 6,
                   ),
                   side: const BorderSide(color: blueColor),
                   shape: RoundedRectangleBorder(borderRadius: defaultBorder),
@@ -226,8 +224,10 @@ class _SaveButton extends StatelessWidget {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: blueColor,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          foregroundColor: BackgroundColor,
+          padding: const EdgeInsets.symmetric(
+            vertical: 12,
+          ), //현재작으면CircularProgressIndicator때문에오버플러우에러남//전체수정하면서Center로옮기기//너무키우면키보드올라와서공간작아서오버플로우에러남
           shape: RoundedRectangleBorder(borderRadius: defaultBorder),
         ),
         onPressed: vm.isSaving
@@ -251,8 +251,8 @@ class _SaveButton extends StatelessWidget {
               },
         child: vm.isSaving
             ? const SizedBox(
-                height: 32,
-                width: 32,
+                height: 24, //일단이걸줄였음
+                width: 24,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : Text('저장'),
