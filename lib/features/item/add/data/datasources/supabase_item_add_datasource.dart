@@ -130,6 +130,7 @@ class SupabaseItemAddDatasource {
       description: entity.description,
       startPrice: entity.startPrice,
       instantPrice: entity.instantPrice,
+      auctionDurationHours: entity.auctionDurationHours,
       thumbnailUrl: imageUrls[thumbnailIndex],
       keywordTypeId: entity.keywordTypeId,
     );
