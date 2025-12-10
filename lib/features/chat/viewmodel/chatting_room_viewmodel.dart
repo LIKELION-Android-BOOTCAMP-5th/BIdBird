@@ -18,10 +18,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   bool isActive = false;
   XFile? image;
   RoomInfoEntity? roomInfo;
+  ItemInfoEntity? itemInfo;
+  AuctionInfoEntity? auctionInfo;
+  TradeInfoEntity? tradeInfo;
+  double? imageAspectRatio; // width / height
   final ImagePicker _picker = ImagePicker();
   final TextEditingController messageController = TextEditingController();
   List<ChatMessageEntity> messages = [];
   MessageType type = MessageType.text;
+  bool isSending = false;
 
   ChatRepositorie _repository = ChatRepositorie();
 
@@ -32,7 +37,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
   RealtimeChannel? _subscribeMessageChannel;
-  // RealtimeChannel? _itemsChannel;
+  RealtimeChannel? _itemsChannel;
+  RealtimeChannel? _auctionsChannel;
+  RealtimeChannel? _tradeChannel;
   // RealtimeChannel? _bidLogChannel;
 
   Future<void> getRoomId() async {
@@ -41,6 +48,10 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   Future<void> fetchRoomInfo() async {
     roomInfo = await _repository.fetchRoomInfo(itemId);
+    itemInfo = roomInfo?.item;
+    auctionInfo = roomInfo?.auction;
+    tradeInfo = roomInfo?.trade;
+    setupRealtimeRoomInfoSubscription();
     notifyListeners();
   }
 
@@ -58,10 +69,16 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
   Future<void> sendMessage() async {
+    if (isSending == true) return;
+    isSending = true;
     final currentRoomId = roomId;
     if (currentRoomId == null) {
       if (type == MessageType.text) {
-        if (messageController.text.isEmpty) return;
+        if (messageController.text.isEmpty) {
+          isSending = false;
+          notifyListeners();
+          return;
+        }
         try {
           roomId = await _repository.firstMessage(
             itemId: itemId,
@@ -70,6 +87,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           );
         } catch (e) {
           print("메세지 전송 실패");
+          isSending = false;
+          notifyListeners();
           return;
         }
         final chattings = await _repository.getMessages(roomId!);
@@ -78,13 +97,23 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         notifyListeners();
         setupRealtimeSubscription();
         init();
+        isSending = false;
+        notifyListeners();
       } else {
         final thisImage = image;
-        if (thisImage == null) return;
+        if (thisImage == null) {
+          isSending = false;
+          notifyListeners();
+          return;
+        }
         try {
           final imageUrl = await CloudinaryManager.shared
               .uploadImageToCloudinary(thisImage);
-          if (imageUrl == null) return;
+          if (imageUrl == null) {
+            isSending = false;
+            notifyListeners();
+            return;
+          }
           roomId = await _repository.firstMessage(
             itemId: itemId,
             messageType: type,
@@ -101,10 +130,16 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         notifyListeners();
         setupRealtimeSubscription();
         init();
+        isSending = false;
+        notifyListeners();
       }
     } else {
       if (type == MessageType.text) {
-        if (messageController.text.isEmpty) return;
+        if (messageController.text.isEmpty) {
+          isSending = false;
+          notifyListeners();
+          return;
+        }
         try {
           await _repository.sendTextMessage(
             currentRoomId,
@@ -112,24 +147,38 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           );
         } catch (e) {
           print('메세지 전송 실패 : ${e}');
+          isSending = false;
+          notifyListeners();
           return;
         }
         messageController.text = "";
+        isSending = false;
         notifyListeners();
       } else {
         final thisImage = image;
-        if (thisImage == null) return;
+        if (thisImage == null) {
+          isSending = false;
+          notifyListeners();
+          return;
+        }
         try {
           final imageUrl = await CloudinaryManager.shared
               .uploadImageToCloudinary(thisImage);
-          if (imageUrl == null) return;
+          if (imageUrl == null) {
+            isSending = false;
+            notifyListeners();
+            return;
+          }
           await _repository.sendImageMessage(currentRoomId, imageUrl);
         } catch (e) {
           print('메세지 전송 실패 : ${e}');
+          isSending = false;
+          notifyListeners();
           return;
         }
         image = null;
         type = MessageType.text;
+        isSending = false;
         notifyListeners();
       }
     }
@@ -183,6 +232,99 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     } else if (state == AppLifecycleState.resumed) {
       heartbeatManager.start(thisRoomId);
     }
+  }
+
+  void setupRealtimeRoomInfoSubscription() {
+    _itemsChannel = SupabaseManager.shared.supabase.channel(
+      'items_detail$itemId',
+    );
+    _itemsChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'items_detail',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: itemId,
+          ),
+          callback: (payload) {
+            final updateItem = payload.newRecord;
+            final ItemInfoEntity updateItemInfo = ItemInfoEntity.fromJson(
+              updateItem,
+            );
+            print("Change received : ${payload.toString()}");
+            itemInfo = updateItemInfo;
+            notifyListeners();
+          },
+        )
+        .subscribe();
+    print("_subscribeMessageChannel 채널 연결 되었습니다");
+
+    _auctionsChannel = SupabaseManager.shared.supabase.channel(
+      'auctions$itemId',
+    );
+    _auctionsChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'auctions',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: itemId,
+          ),
+          callback: (payload) {
+            final updateAuction = payload.newRecord;
+            final AuctionInfoEntity updateAuctionInfo =
+                AuctionInfoEntity.fromJson(updateAuction);
+            print("Change received : ${payload.toString()}");
+            auctionInfo = updateAuctionInfo;
+            notifyListeners();
+          },
+        )
+        .subscribe();
+    print("_auctionsChannel 채널 연결 되었습니다");
+    _tradeChannel = SupabaseManager.shared.supabase.channel(
+      'trade_status$itemId',
+    );
+    _tradeChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          table: 'trade_info',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: itemId,
+          ),
+
+          callback: (payload) {
+            final data = payload.newRecord ?? payload.oldRecord;
+            final userId = SupabaseManager.shared.supabase.auth.currentUser!.id;
+            if (data == null) return;
+            if (data['buyer_id'] != userId) {
+              return; // 조건 안 맞으면 무시
+            }
+            switch (payload.eventType) {
+              case PostgresChangeEvent.insert:
+                tradeInfo = TradeInfoEntity.fromJson(payload.newRecord);
+                break;
+
+              case PostgresChangeEvent.update:
+                tradeInfo = TradeInfoEntity.fromJson(payload.newRecord);
+                break;
+
+              case PostgresChangeEvent.delete:
+                tradeInfo = null;
+                break;
+              case PostgresChangeEvent.all:
+                break;
+            }
+            notifyListeners();
+          },
+        )
+        .subscribe();
+    print("_tradeChannel 채널 연결 되었습니다");
   }
 
   void setupRealtimeSubscription() {
@@ -241,7 +383,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (_subscribeMessageChannel != null)
       SupabaseManager.shared.supabase.removeChannel(_subscribeMessageChannel!);
     print("_subscribeMessageChannel 채널 닫혔습니다");
-    // if (_itemsChannel != null) _supabase.removeChannel(_itemsChannel!);
+    if (_itemsChannel != null)
+      SupabaseManager.shared.supabase.removeChannel(_itemsChannel!);
+    print("_itemsChannel 채널 닫혔습니다");
+    if (_auctionsChannel != null)
+      SupabaseManager.shared.supabase.removeChannel(_auctionsChannel!);
+    print("_auctionsChannel 채널 닫혔습니다");
+    if (_tradeChannel != null)
+      SupabaseManager.shared.supabase.removeChannel(_tradeChannel!);
+    print("_tradeChannel 채널 닫혔습니다");
     // if (_bidLogChannel != null) _supabase.removeChannel(_bidLogChannel!);
     super.dispose();
   }
@@ -254,7 +404,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (image == null) {
       return;
     }
-
+    final decoded = await decodeImageFromList(await image!.readAsBytes());
+    imageAspectRatio = decoded.width / decoded.height;
+    type = MessageType.image;
     notifyListeners();
   }
 
@@ -264,7 +416,16 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       imageQuality: 80,
     );
     if (image == null) return;
+    final decoded = await decodeImageFromList(await image!.readAsBytes());
+    imageAspectRatio = decoded.width / decoded.height;
+    type = MessageType.image;
+    notifyListeners();
+  }
 
+  void clearImage() {
+    image = null;
+    imageAspectRatio = null;
+    type = MessageType.text;
     notifyListeners();
   }
 }

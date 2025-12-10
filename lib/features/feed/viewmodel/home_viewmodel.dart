@@ -26,7 +26,6 @@ class HomeViewmodel extends ChangeNotifier {
   final userInputController = TextEditingController();
   // 글씨 지우면 검색모드 꺼지기
   bool isSearching = false;
-
   String currentSearchText = "";
 
   int? get selectedKeywordId {
@@ -38,12 +37,11 @@ class HomeViewmodel extends ChangeNotifier {
     }
   }
 
-  Timer? _debounce;
-
   //페이징 처리
   int _currentPage = 1;
   int get currentPage => _currentPage;
   //스크롤 컨트롤러
+  Timer? _debounce;
   ScrollController scrollController = ScrollController();
 
   //실시간 검색

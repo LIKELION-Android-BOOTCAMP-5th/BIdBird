@@ -174,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: isSelected
                                             ? Color(0xffe3ecfd)
-                                            : Color(0xffF3F4F6),
+                                            : Color(0xffe5e5e8),
                                         // foregroundColor: isSelected
                                         //     ? Colors.white
                                         //     : Colors.white,
@@ -405,6 +405,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         ],
                                                       ),
                                                     ),
+
+                                                    //현재 가격
                                                     Positioned(
                                                       bottom: 6,
                                                       right: 6,
@@ -443,6 +445,36 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         ],
                                                       ),
                                                     ),
+                                                    // 시간 만료 되면 나오는 UI
+                                                    if (DateTime.now().isAfter(
+                                                      item.finishTime,
+                                                    ))
+                                                      Positioned.fill(
+                                                        child: Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                color: Colors
+                                                                    .black54,
+                                                                borderRadius:
+                                                                    defaultBorder,
+                                                              ),
+                                                          child: Align(
+                                                            alignment: Alignment
+                                                                .center,
+                                                            child: Text(
+                                                              "종료된 상품입니다",
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 15,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
                                                   ],
                                                 ),
 
@@ -671,6 +703,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         ],
                                                       ),
                                                     ),
+
+                                                    // 현재 가격
                                                     Positioned(
                                                       bottom: 6,
                                                       right: 6,
@@ -709,6 +743,37 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         ],
                                                       ),
                                                     ),
+
+                                                    // 시간 만료 되면 나오는 UI
+                                                    if (DateTime.now().isAfter(
+                                                      item.finishTime,
+                                                    ))
+                                                      Positioned.fill(
+                                                        child: Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                                color: Colors
+                                                                    .black54,
+                                                                borderRadius:
+                                                                    defaultBorder,
+                                                              ),
+                                                          child: Align(
+                                                            alignment: Alignment
+                                                                .center,
+                                                            child: Text(
+                                                              "종료된 상품입니다",
+                                                              style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 15,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
                                                   ],
                                                 ),
 
@@ -751,23 +816,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             _FabMenuItem(
-                              label: '매물 등록하기',
-                              icon: Icons.check_circle_outline,
-                              onTap: () async {
-                                setState(() {
-                                  _fabMenuOpen = false;
-                                });
-
-                                final verified = await _ensureIdentityVerified(context);
-                                if (!verified) return;
-
-                                context.push(
-                                  '/add_item/item_registration_list',
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            _FabMenuItem(
                               label: '매물 작성',
                               icon: Icons.edit_outlined,
                               onTap: () async {
@@ -775,10 +823,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                   _fabMenuOpen = false;
                                 });
 
-                                final verified = await _ensureIdentityVerified(context);
+                                final verified = await _ensureIdentityVerified(
+                                  context,
+                                );
                                 if (!verified) return;
 
                                 context.push('/add_item');
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            _FabMenuItem(
+                              label: '매물 등록하기',
+                              icon: Icons.check_circle_outline,
+                              onTap: () async {
+                                setState(() {
+                                  _fabMenuOpen = false;
+                                });
+
+                                final verified = await _ensureIdentityVerified(
+                                  context,
+                                );
+                                if (!verified) return;
+
+                                context.push(
+                                  '/add_item/item_registration_list',
+                                );
                               },
                             ),
                           ],
