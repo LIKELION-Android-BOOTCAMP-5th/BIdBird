@@ -5,9 +5,9 @@ import 'package:bidbird/features/chat/model/room_info_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class NetworkApiChatDatasource {
+class ChatNetworkApiDatasource {
   final dio = Dio();
-  NetworkApiChatDatasource() {}
+  ChatNetworkApiDatasource() {}
   Future<List<ChattingRoomEntity>> fetchChattingRoomList() async {
     final response = await SupabaseManager.shared.supabase.functions.invoke(
       'chatting/roomList',
