@@ -4,8 +4,6 @@ import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dar
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../item_bid_win/model/item_bid_win_entity.dart';
-import '../../item_bid_win/screen/item_bid_win_screen.dart';
 import '../../../report/ui/report_screen.dart';
 import 'widgets/item_image_section.dart';
 import 'widgets/item_main_info_section.dart';
@@ -36,8 +34,6 @@ class _ItemDetailScaffold extends StatefulWidget {
 }
 
 class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
-  bool _hasPushedBidWin = false;
-
   @override
   Widget build(BuildContext context) {
     return Consumer<ItemDetailViewModel>(

@@ -39,6 +39,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   Future<bool> _ensureIdentityVerified() async {
     final gateway = IdentityVerificationGatewayImpl();
+    final ctx = context;
 
     // 1. 먼저 서버에서 CI 존재 여부 확인 (BuildContext 사용 없음)
     try {
@@ -51,15 +52,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       // CI 조회 실패 시에는 아래 본인인증 플로우로 유도
     }
 
-    // 2. 비동기 작업(hasCi) 이후에만 BuildContext 캡처
-    if (!mounted) return false;
-    final parentContext = context;
+    bool proceed = false;
 
-    bool passed = false;
-
-    // 3. CI 가 없을 때만 AskPopup 으로 본인인증 안내 후 웹뷰 진입
+    // 2. CI 가 없을 때만 AskPopup 으로 본인인증 안내
     await showDialog<void>(
-      context: parentContext,
+      context: ctx,
       barrierDismissible: true,
       builder: (dialogContext) {
         return AskPopup(
@@ -67,34 +64,45 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           noText: '취소',
           yesText: '확인',
           yesLogic: () async {
+            proceed = true;
             Navigator.of(dialogContext).pop();
-
-            try {
-              final success = await gateway.requestIdentityVerification(parentContext);
-              if (!success) {
-                if (!parentContext.mounted) return;
-                ScaffoldMessenger.of(parentContext).showSnackBar(
-                  const SnackBar(
-                    content: Text('본인 인증 후 이용 가능합니다.'),
-                  ),
-                );
-              }
-              passed = success;
-            } catch (e) {
-              if (!parentContext.mounted) return;
-              ScaffoldMessenger.of(parentContext).showSnackBar(
-                SnackBar(
-                  content: Text('본인 인증 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.\\n$e'),
-                ),
-              );
-              passed = false;
-            }
           },
         );
       },
     );
 
-    return passed;
+    if (!proceed) {
+      return false;
+    }
+
+    try {
+      final success = await gateway.requestIdentityVerification(ctx);
+      if (!ctx.mounted) {
+        return false;
+      }
+      if (!success) {
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(
+            content: Text('본인 인증 후 이용 가능합니다.'),
+          ),
+        );
+      }
+      return success;
+    } catch (e) {
+      if (!ctx.mounted) {
+        return false;
+      }
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        SnackBar(
+          content: Text('본인 인증 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.\n$e'),
+        ),
+      );
+      return false;
+    }
+    // 모든 경로가 값을 반환하도록 안전망
+    // (정상 흐름에서는 도달하지 않음)
+    // ignore: dead_code
+    return false;
   }
 
   @override
