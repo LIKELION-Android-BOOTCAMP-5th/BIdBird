@@ -12,7 +12,7 @@ class ItemsEntity {
   final int keyword_type;
   final String auction_end_at;
   final String created_at;
-  final bool is_agree;
+  final String? is_agreed;
   final String auction_start_at;
   final String? auction_stat;
   final int auction_duration_hours;
@@ -33,7 +33,7 @@ class ItemsEntity {
     required this.keyword_type,
     required this.auction_end_at,
     required this.created_at,
-    required this.is_agree,
+    required this.is_agreed,
     required this.auction_start_at,
     required this.auction_stat,
     required this.auction_duration_hours,
@@ -42,13 +42,13 @@ class ItemsEntity {
   });
 
   factory ItemsEntity.fromJson(Map<String, dynamic> json) {
-    final createdAtRaw = json['created_at']?.toString();
-    final createdAt = createdAtRaw != null
-        ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+    final isAgreedAtRaw = json['is_agreed']?.toString();
+    final isAgreedAt = isAgreedAtRaw != null
+        ? DateTime.tryParse(isAgreedAtRaw) ?? DateTime.now()
         : DateTime.now();
 
     final durationHours = (json['auction_duration_hours'] as int?) ?? 24;
-    final finishTime = createdAt.add(Duration(hours: durationHours));
+    final finishTime = isAgreedAt.add(Duration(hours: durationHours));
 
     final String id = (json['item_id'] ?? json['id'])?.toString() ?? '';
 
@@ -74,14 +74,14 @@ class ItemsEntity {
       thumbnail_image: (json['thumbnail_image'] ?? '') as String,
       start_price: (json['start_price'] as int?) ?? 0,
       buy_now_price: json['buy_now_price'] as int?,
-      current_price: (json['current_price'] as int?) ??
-          (json['start_price'] as int?) ?? 0,
+      current_price:
+          (json['current_price'] as int?) ?? (json['start_price'] as int?) ?? 0,
       bidding_count: biddingCount,
       status: (json['status'] ?? '') as String,
       keyword_type: (json['keyword_type'] as int?) ?? 0,
       auction_end_at: (json['auction_end_at'] ?? '') as String,
-      created_at: (json['created_at'] ?? createdAt.toIso8601String()) as String,
-      is_agree: (json['is_agree'] as bool?) ?? false,
+      created_at: (json['created_at']) as String,
+      is_agreed: (json['is_agreed'] ?? isAgreedAt.toIso8601String()) as String?,
       auction_start_at: (json['auction_start_at'] ?? '') as String,
       auction_stat: json['auction_stat'] as String?,
       auction_duration_hours: (json['auction_duration_hours'] as int?) ?? 24,

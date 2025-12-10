@@ -46,7 +46,9 @@ class HomeNetworkApiManager {
 
     final response = await dio.get(
       //최신순이 기본 설정
-      '${NetworkApiManager.supabaseUrl}/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
+      '${NetworkApiManager.supabaseUrl}/items_detail?select=*,auctions!inner(bid_count,auction_start_at)'
+      '&visibility_status=eq.true'
+      '&order=$orderBy&auctions.auction_start_at=not.is.null'
       '$filterQuery',
       options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
     );
@@ -84,7 +86,9 @@ class HomeNetworkApiManager {
 
     final response = await dio.get(
       //최신순이 기본 설정
-      '${NetworkApiManager.supabaseUrl}/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
+      '${NetworkApiManager.supabaseUrl}/items_detail?select=*,aucti ons!inner(bid_count,auction_start_at)'
+      '&visibility_status=eq.true'
+      '&order=$orderBy&auctions.auction_start_at=not.is.null'
       '$filterSearchText'
       '$filterQuery',
       options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
