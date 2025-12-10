@@ -51,6 +51,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     itemInfo = roomInfo?.item;
     auctionInfo = roomInfo?.auction;
     tradeInfo = roomInfo?.trade;
+    setupRealtimeRoomInfoSubscription();
     notifyListeners();
   }
 
@@ -233,6 +234,99 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     }
   }
 
+  void setupRealtimeRoomInfoSubscription() {
+    _itemsChannel = SupabaseManager.shared.supabase.channel(
+      'items_detail$itemId',
+    );
+    _itemsChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'items_detail',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: itemId,
+          ),
+          callback: (payload) {
+            final updateItem = payload.newRecord;
+            final ItemInfoEntity updateItemInfo = ItemInfoEntity.fromJson(
+              updateItem,
+            );
+            print("Change received : ${payload.toString()}");
+            itemInfo = updateItemInfo;
+            notifyListeners();
+          },
+        )
+        .subscribe();
+    print("_subscribeMessageChannel 채널 연결 되었습니다");
+
+    _auctionsChannel = SupabaseManager.shared.supabase.channel(
+      'auctions$itemId',
+    );
+    _auctionsChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'auctions',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: itemId,
+          ),
+          callback: (payload) {
+            final updateAuction = payload.newRecord;
+            final AuctionInfoEntity updateAuctionInfo =
+                AuctionInfoEntity.fromJson(updateAuction);
+            print("Change received : ${payload.toString()}");
+            auctionInfo = updateAuctionInfo;
+            notifyListeners();
+          },
+        )
+        .subscribe();
+    print("_auctionsChannel 채널 연결 되었습니다");
+    _tradeChannel = SupabaseManager.shared.supabase.channel(
+      'trade_status$itemId',
+    );
+    _tradeChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          table: 'trade_info',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'item_id',
+            value: itemId,
+          ),
+
+          callback: (payload) {
+            final data = payload.newRecord ?? payload.oldRecord;
+            final userId = SupabaseManager.shared.supabase.auth.currentUser!.id;
+            if (data == null) return;
+            if (data['buyer_id'] != userId) {
+              return; // 조건 안 맞으면 무시
+            }
+            switch (payload.eventType) {
+              case PostgresChangeEvent.insert:
+                tradeInfo = TradeInfoEntity.fromJson(payload.newRecord);
+                break;
+
+              case PostgresChangeEvent.update:
+                tradeInfo = TradeInfoEntity.fromJson(payload.newRecord);
+                break;
+
+              case PostgresChangeEvent.delete:
+                tradeInfo = null;
+                break;
+              case PostgresChangeEvent.all:
+                break;
+            }
+            notifyListeners();
+          },
+        )
+        .subscribe();
+    print("_tradeChannel 채널 연결 되었습니다");
+  }
+
   void setupRealtimeSubscription() {
     print("채널 구독 전 roomId 확인");
     print("roomId = ${roomId}");
@@ -289,7 +383,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (_subscribeMessageChannel != null)
       SupabaseManager.shared.supabase.removeChannel(_subscribeMessageChannel!);
     print("_subscribeMessageChannel 채널 닫혔습니다");
-    // if (_itemsChannel != null) _supabase.removeChannel(_itemsChannel!);
+    if (_itemsChannel != null)
+      SupabaseManager.shared.supabase.removeChannel(_itemsChannel!);
+    print("_itemsChannel 채널 닫혔습니다");
+    if (_auctionsChannel != null)
+      SupabaseManager.shared.supabase.removeChannel(_auctionsChannel!);
+    print("_auctionsChannel 채널 닫혔습니다");
+    if (_tradeChannel != null)
+      SupabaseManager.shared.supabase.removeChannel(_tradeChannel!);
+    print("_tradeChannel 채널 닫혔습니다");
     // if (_bidLogChannel != null) _supabase.removeChannel(_bidLogChannel!);
     super.dispose();
   }
