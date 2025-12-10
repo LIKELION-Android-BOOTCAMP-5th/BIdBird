@@ -109,7 +109,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
         builder: (context, viewModel, child) {
           return SafeArea(
             child: Scaffold(
-              appBar: AppBar(),
+              appBar: AppBar(
+                title: Text(viewModel.roomInfo?.seller.nickName ?? "로딩중"),
+              ),
               body: Column(
                 children: [
                   Expanded(
@@ -132,20 +134,31 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                     ),
                   ),
                   Row(
-                    spacing: 8,
                     children: [
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: iconColor,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: TextField(
-                            controller: viewModel.messageController,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: iconColor,
+                              borderRadius: defaultBorder,
+                            ),
+                            child: TextField(
+                              minLines: 1,
+                              maxLines: null,
+                              controller: viewModel.messageController,
+                              decoration: InputDecoration(
+                                hintText: "메시지를 입력하세요",
+                                suffixIcon: IconButton(
+                                  onPressed: () {},
+                                  icon: Icon(Icons.add),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -153,16 +166,21 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         onTap: () {
                           viewModel.sendMessage();
                         },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: iconColor,
+                              borderRadius: defaultBorder,
+                            ),
+                            child: Icon(Icons.send),
                           ),
-                          decoration: BoxDecoration(
-                            color: iconColor,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Text("전송"),
                         ),
                       ),
                     ],

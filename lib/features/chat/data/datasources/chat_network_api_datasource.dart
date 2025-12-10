@@ -1,29 +1,25 @@
+import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/model/chatting_room_entity.dart';
+import 'package:bidbird/features/chat/model/room_info_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class NetworkApiChatDatasource {
+class ChatNetworkApiDatasource {
   final dio = Dio();
-  NetworkApiChatDatasource() {}
+  ChatNetworkApiDatasource() {}
   Future<List<ChattingRoomEntity>> fetchChattingRoomList() async {
-    String authorizationKey =
-        SupabaseManager.shared.supabase.auth.currentSession?.accessToken != null
-        ? 'Bearer ${SupabaseManager.shared.supabase.auth.currentSession?.accessToken}'
-        : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5ZmdmaWNjZWpqZ3R2cG10a3p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwNTUwNjksImV4cCI6MjA3NzYzMTA2OX0.Ng9atODZnfRocZPtnIb74s6PLeIJ2HqqSaatj1HbRsc';
     final response = await SupabaseManager.shared.supabase.functions.invoke(
       'chatting/roomList',
       method: HttpMethod.get,
-      headers: {
-        'Authorization': authorizationKey,
-        'apikey': 'sb_publishable_NQq1CoDOtr9FkfOSod8VHA_aqMLFp0x',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: NetworkApiManager.headers,
     );
     if (response.data != null) {
       final List data = response.data;
       print("${data.runtimeType}");
+
       final List<ChattingRoomEntity> results = data.map((json) {
+        print("unread_count : ${json['count'] as int}");
         return ChattingRoomEntity.fromJson(json);
       }).toList();
 
@@ -33,26 +29,37 @@ class NetworkApiChatDatasource {
     }
   }
 
+  Future<RoomInfoEntity?> fetchRoomInfo(String itemId) async {
+    try {
+      final response = await SupabaseManager.shared.supabase.functions.invoke(
+        'chatting/roomInfo',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: {'itemId': itemId},
+      );
+      final data = response.data;
+      print("$data");
+      print("디버그 포인트");
+      final result = RoomInfoEntity.fromJson(data);
+      return result;
+    } catch (e) {
+      print("방 정보 가져오기 실패 : ${e}");
+      return null;
+    }
+  }
+
   Future<String?> firstMessage({
     required String itemId,
     String? message,
     required String message_type,
     String? imageUrl,
   }) async {
-    String authorizationKey =
-        SupabaseManager.shared.supabase.auth.currentSession?.accessToken != null
-        ? 'Bearer ${SupabaseManager.shared.supabase.auth.currentSession?.accessToken}'
-        : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5ZmdmaWNjZWpqZ3R2cG10a3p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwNTUwNjksImV4cCI6MjA3NzYzMTA2OX0.Ng9atODZnfRocZPtnIb74s6PLeIJ2HqqSaatj1HbRsc';
     if (message_type == "text") {
       try {
         final response = await SupabaseManager.shared.supabase.functions.invoke(
           'chatting/creatChattingRoom',
           method: HttpMethod.post,
-          headers: {
-            'Authorization': authorizationKey,
-            'apikey': 'sb_publishable_NQq1CoDOtr9FkfOSod8VHA_aqMLFp0x',
-            'Content-Type': 'application/json',
-          },
+          headers: NetworkApiManager.useThisHeaders(),
           body: {
             'itemId': itemId,
             'message': message,
@@ -70,11 +77,7 @@ class NetworkApiChatDatasource {
         final response = await SupabaseManager.shared.supabase.functions.invoke(
           'chatting/creatChattingRoom',
           method: HttpMethod.post,
-          headers: {
-            'Authorization': authorizationKey,
-            'apikey': 'sb_publishable_NQq1CoDOtr9FkfOSod8VHA_aqMLFp0x',
-            'Content-Type': 'application/json',
-          },
+          headers: NetworkApiManager.useThisHeaders(),
           body: {
             'itemId': itemId,
             'message_type': message_type,

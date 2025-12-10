@@ -1,8 +1,11 @@
 import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
-import 'package:bidbird/features/feed/repository/home_repository.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
+import 'package:bidbird/features/item/identity_verification/data/repository/identity_verification_gateway_impl.dart';
+import 'package:bidbird/features/item/identity_verification/screen/identity_verification_screen.dart';
+import 'package:bidbird/features/item/identity_verification/usecase/check_and_request_identity_verification_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +13,7 @@ import 'package:provider/provider.dart';
 import '../../../core/utils/extension/time_extension.dart';
 import '../../../core/utils/ui_set/border_radius_style.dart';
 import '../../../core/utils/ui_set/shadow_style.dart';
+import '../data/repository/home_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +24,49 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _fabMenuOpen = false;
+
+  Future<bool> _ensureIdentityVerified(BuildContext context) async {
+    final gateway = IdentityVerificationGatewayImpl();
+    final useCase = CheckAndRequestIdentityVerificationUseCase(gateway);
+
+    // 1) 먼저 서버에서 CI 여부 확인
+    final hasCi = await gateway.hasCi();
+    if (hasCi) {
+      // 이미 CI가 있으면 팝업 없이 바로 통과
+      return true;
+    }
+
+    // 2) CI가 없으면 본인인증 안내 팝업 노출
+    bool proceed = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AskPopup(
+          content: '본인 인증을 해주세요.',
+          yesText: '본인 인증하기',
+          noText: '취소',
+          yesLogic: () async {
+            proceed = true;
+            Navigator.of(dialogContext).pop();
+          },
+        );
+      },
+    );
+
+    if (!proceed) {
+      return false;
+    }
+
+    // 3) 팝업에서 "본인 인증하기"를 누른 경우에만 본인인증 화면으로 이동
+    final result = await Navigator.of(context, rootNavigator: true).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => IdentityVerificationScreen(useCase: useCase),
+      ),
+    );
+
+    return result ?? false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -656,10 +703,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             _FabMenuItem(
                               label: '매물 등록하기',
                               icon: Icons.check_circle_outline,
-                              onTap: () {
+                              onTap: () async {
                                 setState(() {
                                   _fabMenuOpen = false;
                                 });
+
+                                final verified = await _ensureIdentityVerified(context);
+                                if (!verified) return;
+
                                 context.push(
                                   '/add_item/item_registration_list',
                                 );
@@ -669,10 +720,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             _FabMenuItem(
                               label: '매물 작성',
                               icon: Icons.edit_outlined,
-                              onTap: () {
+                              onTap: () async {
                                 setState(() {
                                   _fabMenuOpen = false;
                                 });
+
+                                final verified = await _ensureIdentityVerified(context);
+                                if (!verified) return;
+
                                 context.push('/add_item');
                               },
                             ),

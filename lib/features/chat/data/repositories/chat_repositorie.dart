@@ -1,13 +1,14 @@
-import 'package:bidbird/features/chat/data/datasources/network_api_chat_datasource.dart';
-import 'package:bidbird/features/chat/data/datasources/supabase_chat_datasource.dart';
+import 'package:bidbird/features/chat/data/datasources/chat_network_api_datasource.dart';
+import 'package:bidbird/features/chat/data/datasources/chat_supabase_datasource.dart';
 import 'package:bidbird/features/chat/model/chat_message_entity.dart';
 import 'package:bidbird/features/chat/model/chatting_room_entity.dart';
+import 'package:bidbird/features/chat/model/room_info_entity.dart';
 import 'package:bidbird/features/chat/viewmodel/chatting_room_viewmodel.dart';
 
 class ChatRepositorie {
-  final NetworkApiChatDatasource _networkApiChatDatasource =
-      NetworkApiChatDatasource();
-  final SupabaseChatDatasource _chatDatasource = SupabaseChatDatasource();
+  final ChatNetworkApiDatasource _networkApiChatDatasource =
+      ChatNetworkApiDatasource();
+  final ChatSupabaseDatasource _chatDatasource = ChatSupabaseDatasource();
   Future<List<ChattingRoomEntity>> fetchChattingRoomList() async {
     return await _networkApiChatDatasource.fetchChattingRoomList();
   }
@@ -49,5 +50,9 @@ class ChatRepositorie {
           imageUrl: imageUrl,
         );
     }
+  }
+
+  Future<RoomInfoEntity?> fetchRoomInfo(String itemId) async {
+    return _networkApiChatDatasource.fetchRoomInfo(itemId);
   }
 }
