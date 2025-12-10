@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:flutter/material.dart';
@@ -16,9 +18,29 @@ class ItemImageSection extends StatefulWidget {
 class _ItemImageSectionState extends State<ItemImageSection> {
   int _currentPage = 0;
   final PageController _pageController = PageController();
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+
+      // 경매 종료 이후에는 타이머 중단
+      if (DateTime.now().isAfter(widget.item.finishTime)) {
+        timer.cancel();
+        setState(() {});
+        return;
+      }
+
+      setState(() {});
+    });
+  }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -81,11 +103,15 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: RedColor,
+                    color: DateTime.now().isAfter(widget.item.finishTime)
+                        ? Colors.black
+                        : RedColor,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    '${formatRemainingTime(widget.item.finishTime)} 남음',
+                    DateTime.now().isAfter(widget.item.finishTime)
+                        ? '경매 종료'
+                        : '${formatRemainingTime(widget.item.finishTime)} 남음',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
