@@ -4,17 +4,16 @@ import 'package:image_picker/image_picker.dart';
 class CloudinaryManager {
   static final CloudinaryManager _shared = CloudinaryManager();
   static CloudinaryManager get shared => _shared;
+
+  static final String cloudName = 'dn12so6sm';
+  static final String uploadPreset = 'bidbird_upload_preset'; // Unsigned 프리셋 이름
+  static final String url =
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
   //이미지 하나 짜리
   Future<String?> uploadImageToCloudinary(XFile inputImage) async {
     // Future<String?> uploadImageToCloudinary() async {
 
     final XFile image = inputImage;
-
-    if (image == null) return null;
-
-    String cloudName = 'dn12so6sm';
-    String uploadPreset = 'bidbird_upload_preset'; // Unsigned 프리셋 이름
-    String url = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 
     try {
       final String fileName = "${DateTime.now().millisecondsSinceEpoch}";
@@ -51,9 +50,6 @@ class CloudinaryManager {
 
     final List<XFile> images = ImageList;
     List<String> imageUrlList = [];
-    String cloudName = 'dn12so6sm';
-    String uploadPreset = 'bidbird_upload_preset'; // Unsigned 프리셋 이름
-    String url = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 
     try {
       if (images.length != 0) {
