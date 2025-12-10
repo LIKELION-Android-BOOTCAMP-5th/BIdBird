@@ -1,7 +1,7 @@
 import 'package:bidbird/core/models/items_entity.dart';
 
-import '../model/home_data.dart';
-import '../model/home_network_api_manager.dart';
+import '../../model/home_data.dart';
+import '../data_sources/home_network_api_datasource.dart';
 
 class HomeRepository {
   // 반환 형태가 무엇이 되어야 할까요?
