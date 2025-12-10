@@ -28,14 +28,19 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
   }
 
   Future<void> _loadDecryptedUser() async {
+    setState(() {
+      _loadingUser = true;
+    });
+
     try {
       final supabase = SupabaseManager.shared.supabase;
       final user = supabase.auth.currentUser;
 
+      // 로그인 유저가 없으면 결제 진행 불가로 처리
       if (user == null) {
         setState(() {
-          _buyerName = 'BidBird 사용자';
-          _buyerPhone = widget.request.buyerTel;
+          _buyerName = null;
+          _buyerPhone = null;
           _loadingUser = false;
         });
         return;
@@ -58,17 +63,26 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
         }
       }
 
+      // 이름 또는 전화번호가 없으면 결제 진행 중단
+      if (name == null || name.isEmpty || phone == null || phone.isEmpty) {
+        setState(() {
+          _buyerName = null;
+          _buyerPhone = null;
+          _loadingUser = false;
+        });
+        return;
+      }
+
       setState(() {
-        _buyerName = name?.isNotEmpty == true ? name : 'BidBird 사용자';
-        _buyerPhone =
-            phone?.isNotEmpty == true ? phone : widget.request.buyerTel;
+        _buyerName = name;
+        _buyerPhone = phone;
         _loadingUser = false;
       });
     } catch (e, st) {
       debugPrint('decrypt_user error: $e\n$st');
       setState(() {
-        _buyerName = 'BidBird 사용자';
-        _buyerPhone = widget.request.buyerTel;
+        _buyerName = null;
+        _buyerPhone = null;
         _loadingUser = false;
       });
     }
@@ -77,8 +91,8 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
   @override
   Widget build(BuildContext context) {
     const String storeId = 'store-241926a0-bfe1-48eb-b467-dab78eb18dc3';
-
-    const String channelKey = 'channel-key-c5942f42-8e1c-4c5d-8a22-675313898226';
+    const String channelKey =
+        'channel-key-c5942f42-8e1c-4c5d-8a22-675313898226';
 
     if (_loadingUser) {
       return const Scaffold(
@@ -88,8 +102,30 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
       );
     }
 
-    final String buyerName = _buyerName ?? 'BidBird 사용자';
-    final String buyerPhone = _buyerPhone ?? widget.request.buyerTel;
+    // 사용자 정보 로딩 실패 또는 부족한 경우 에러 UI 노출
+    if (_buyerName == null || _buyerPhone == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '사용자 정보를 불러오지 못했습니다.\n다시 시도해 주세요.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadDecryptedUser,
+                child: const Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final String buyerName = _buyerName!;
+    final String buyerPhone = _buyerPhone!;
 
     final String paymentId =
         'pay_${DateTime.now().millisecondsSinceEpoch}_${widget.request.itemId}';
