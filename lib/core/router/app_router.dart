@@ -11,6 +11,8 @@ import 'package:bidbird/features/item/current_trade/data/repository/current_trad
 import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
+import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
+import 'package:bidbird/features/item/item_bid_win/screen/item_bid_win_screen.dart';
 import 'package:bidbird/features/item/item_registration_detail/screen/item_registration_detail_screen.dart';
 import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:bidbird/features/item/item_registration_list/screen/item_registration_list_screen.dart';
@@ -24,6 +26,7 @@ import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
 import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
 import 'package:bidbird/features/mypage/ui/report_feedback_screen.dart';
 import 'package:bidbird/features/mypage/ui/terms_screen.dart';
+import 'package:bidbird/features/item/payment/screen/payment_history_screen.dart';
 import 'package:bidbird/features/mypage/ui/trade_history_screen.dart';
 import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
@@ -256,10 +259,31 @@ GoRouter createAppRouter(BuildContext context) {
         },
       ),
       GoRoute(
+        path: '/payments',
+        pageBuilder: (context, state) {
+          return const NoTransitionPage(child: PaymentHistoryScreen());
+        },
+      ),
+      GoRoute(
         path: '/item/:id',
         pageBuilder: (context, state) {
           final itemId = state.pathParameters["id"] ?? "";
           return NoTransitionPage(child: ItemDetailScreen(itemId: itemId));
+        },
+      ),
+      GoRoute(
+        path: '/item_bid_win',
+        pageBuilder: (context, state) {
+          final extra = state.extra;
+          final item = extra is ItemBidWinEntity ? extra : null;
+
+          if (item == null) {
+            return const NoTransitionPage(child: HomeScreen());
+          }
+
+          return NoTransitionPage(
+            child: ItemBidSuccessScreen(item: item),
+          );
         },
       ),
       GoRoute(

@@ -18,6 +18,8 @@ class ItemsEntity {
   final int auction_duration_hours;
   final int status_code;
   final DateTime finishTime;
+  final String? lastBidUserId;
+  final int? auctionStatusCode;
 
   ItemsEntity({
     required this.id,
@@ -39,6 +41,8 @@ class ItemsEntity {
     required this.auction_duration_hours,
     required this.status_code,
     required this.finishTime,
+    required this.lastBidUserId,
+    required this.auctionStatusCode,
   });
 
   factory ItemsEntity.fromJson(Map<String, dynamic> json) {
@@ -54,17 +58,31 @@ class ItemsEntity {
 
     int? biddingCount;
     final auctions = json['auctions'];
+    String? lastBidUserId;
+    int? auctionStatusCode;
+
     if (auctions is List && auctions.isNotEmpty) {
       final first = auctions.first;
+
       final dynamic rawBidCount = first['bid_count'];
       if (rawBidCount is int) {
         biddingCount = rawBidCount;
       } else if (rawBidCount is String) {
         biddingCount = int.tryParse(rawBidCount);
       }
+
+      lastBidUserId = first['last_bid_user_id'] as String?;
+      final dynamic rawStatusCode = first['auction_status_code'];
+      if (rawStatusCode is int) {
+        auctionStatusCode = rawStatusCode;
+      } else if (rawStatusCode is String) {
+        auctionStatusCode = int.tryParse(rawStatusCode);
+      }
     }
 
     biddingCount ??= json['bidding_count'] as int?;
+    lastBidUserId ??= json['last_bid_user_id'] as String?;
+    auctionStatusCode ??= json['auction_status_code'] as int?;
 
     return ItemsEntity(
       id: id,
@@ -87,6 +105,8 @@ class ItemsEntity {
       auction_duration_hours: (json['auction_duration_hours'] as int?) ?? 24,
       status_code: (json['status_code'] as int?) ?? 0,
       finishTime: finishTime,
+      lastBidUserId: lastBidUserId,
+      auctionStatusCode: auctionStatusCode,
     );
   }
 }

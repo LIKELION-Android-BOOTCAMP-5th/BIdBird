@@ -1,9 +1,13 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/chat/screen/chatting_room_screen.dart';
+import 'package:bidbird/features/item/payment/model/item_payment_request.dart';
+import 'package:bidbird/features/item/payment/screen/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../model/item_bid_win_entity.dart';
+import '../widget/item_bid_result_body.dart';
 
 class ItemBidSuccessScreen extends StatelessWidget {
   const ItemBidSuccessScreen({super.key, required this.item});
@@ -15,174 +19,100 @@ class ItemBidSuccessScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: BackgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Icon(
-              Icons.check_circle,
-              size: 72,
-              color: blueColor,
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              '낙찰 되었습니다!',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              '축하합니다! 낙찰되셨습니다.',
-              style: TextStyle(
-                fontSize: 13,
-                color: iconColor,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: defaultBorder,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: shadowHigh,
-                      offset: Offset(0, 4),
-                      blurRadius: 12,
+        child: ItemBidResultBody(
+          item: item,
+          title: '낙찰 되었습니다!',
+          subtitle: '축하합니다! 낙찰되셨습니다.',
+          icon: Icons.check_circle,
+          iconColor: blueColor,
+          onClose: () {
+            context.go('/item/${item.itemId}');
+          },
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () async {
+                  const buyerTel = '01012345678';
+                  const appScheme = 'bidbird';
+
+                  final request = ItemPaymentRequest(
+                    itemId: item.itemId,
+                    itemTitle: item.title,
+                    amount: item.winPrice,
+                    buyerTel: buyerTel,
+                    appScheme: appScheme,
+                  );
+
+                  final result = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PortonePaymentScreen(
+                        request: request,
+                      ),
                     ),
-                  ],
+                  );
+
+                  if (!context.mounted) return;
+
+                  if (result == true) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('결제가 완료되었습니다.'),
+                      ),
+                    );
+                  } else if (result == false) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('결제가 취소되었거나 실패했습니다.'),
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: blueColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: defaultBorder,
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 1,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: ImageBackgroundColor,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(defaultRadius),
-                            topRight: Radius.circular(defaultRadius),
-                          ),
-                        ),
-                        clipBehavior: Clip.hardEdge,
-                        child: item.images.isNotEmpty
-                            ? Image.network(
-                                item.images.first,
-                                fit: BoxFit.cover,
-                              )
-                            : const Center(
-                                child: Text(
-                                  '상품 이미지',
-                                  style: TextStyle(color: iconColor),
-                                ),
-                              ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            '낙찰가',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: iconColor,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${item.winPrice}원',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                child: const Text(
+                  '결제하기',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: 결제 플로우 연동
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: blueColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: defaultBorder,
-                        ),
-                      ),
-                      child: const Text(
-                        '결제하기',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChattingRoomScreen(itemId: item.itemId),
                     ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: textColor,
+                  side: const BorderSide(color: BorderColor),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: defaultBorder,
                   ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChattingRoomScreen(itemId: item.itemId),
-                          ),
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: textColor,
-                        side: const BorderSide(color: BorderColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: defaultBorder,
-                        ),
-                      ),
-                      child: const Text(
-                        '판매자에게 채팅하기',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                ),
+                child: const Text(
+                  '판매자에게 채팅하기',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
+                ),
               ),
             ),
           ],

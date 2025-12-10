@@ -2,7 +2,9 @@ import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
+import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
 import 'package:bidbird/features/item/identity_verification/data/repository/identity_verification_gateway_impl.dart';
 import 'package:bidbird/features/item/identity_verification/screen/identity_verification_screen.dart';
 import 'package:bidbird/features/item/identity_verification/usecase/check_and_request_identity_verification_usecase.dart';
@@ -230,8 +232,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   return GestureDetector(
                                     onTap: () {
-                                      // item_detail 페이지로 이동
-                                      context.push(('/item/${item.id}'));
+                                      final authVM =
+                                          context.read<AuthViewModel>();
+                                      final myUserId = authVM.user?.id;
+
+                                      final bool isWonByMe =
+                                          item.lastBidUserId != null &&
+                                              myUserId != null &&
+                                              item.lastBidUserId == myUserId &&
+                                              item.auctionStatusCode == 321;
+
+                                      if (isWonByMe) {
+                                        final winItem = ItemBidWinEntity(
+                                          itemId: item.id,
+                                          title: title,
+                                          images: [item.thumbnail_image],
+                                          winPrice: item.current_price,
+                                        );
+
+                                        context.push(
+                                          '/item_bid_win',
+                                          extra: winItem,
+                                        );
+                                      } else {
+                                        // item_detail 페이지로 이동
+                                        context.push('/item/${item.id}');
+                                      }
                                     },
                                     child: Column(
                                       children: [
@@ -472,8 +498,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   return GestureDetector(
                                     onTap: () {
-                                      // item_detail 페이지로 이동
-                                      context.push(('/item/${item.id}'));
+                                      final authVM =
+                                          context.read<AuthViewModel>();
+                                      final myUserId = authVM.user?.id;
+
+                                      final bool isWonByMe =
+                                          item.lastBidUserId != null &&
+                                              myUserId != null &&
+                                              item.lastBidUserId == myUserId &&
+                                              item.auctionStatusCode == 321;
+
+                                      if (isWonByMe) {
+                                        final winItem = ItemBidWinEntity(
+                                          itemId: item.id,
+                                          title: title,
+                                          images: [item.thumbnail_image],
+                                          winPrice: item.current_price,
+                                        );
+
+                                        context.push(
+                                          '/item_bid_win',
+                                          extra: winItem,
+                                        );
+                                      } else {
+                                        // item_detail 페이지로 이동
+                                        context.push('/item/${item.id}');
+                                      }
                                     },
                                     child: Column(
                                       children: [
