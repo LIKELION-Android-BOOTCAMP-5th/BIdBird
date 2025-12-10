@@ -48,7 +48,7 @@ class UserProfileScreen extends StatelessWidget {
                             children: [
                               CircleAvatar(
                                 radius: 32,
-                                backgroundColor: yellowColor,
+                                backgroundColor: BorderColor,
                                 backgroundImage: profile.avatarUrl.isNotEmpty
                                     ? NetworkImage(profile.avatarUrl)
                                     : null,
