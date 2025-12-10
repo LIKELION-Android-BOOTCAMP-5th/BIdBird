@@ -4,7 +4,6 @@ import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
-import 'package:bidbird/features/feed/repository/home_repository.dart';
 import 'package:bidbird/features/mypage/data/profile_repository.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 import 'package:cloudinary_flutter/cloudinary_context.dart';
@@ -14,6 +13,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'features/feed/data/repository/home_repository.dart';
 
 EventBus eventBus = EventBus();
 

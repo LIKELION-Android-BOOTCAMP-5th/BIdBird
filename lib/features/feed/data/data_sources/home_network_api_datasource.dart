@@ -1,8 +1,8 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/models/items_entity.dart';
 import 'package:dio/dio.dart';
 
-import 'home_data.dart';
+import '../../model/home_data.dart';
 
 class HomeNetworkApiManager {
   static final HomeNetworkApiManager _shared = HomeNetworkApiManager();
@@ -12,29 +12,11 @@ class HomeNetworkApiManager {
 
   HomeNetworkApiManager() {}
 
-  static final String supabaseUrl =
-      "https://mdwelwjletorehxsptqa.supabase.co/rest/v1";
-  static final String apikey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg';
-  static final Map<String, String> headers = {
-    'apikey': apikey,
-    'Authorization': SupabaseManager.shared.getAuthorizationKey(),
-    'Content-Type': 'application/json',
-  };
-
   Future<List<HomeCodeKeywordType>> getKeywordType() async {
     final response = await dio.get(
       //키워드 최신순으로 정렬
       'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/code_keyword_type?select=*&order=id.asc',
-      options: Options(
-        headers: {
-          'apikey':
-              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg',
-          'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg',
-          'Content-Type': 'application/json',
-        },
-      ),
+      options: Options(headers: NetworkApiManager.useThisHeaders()),
     );
     final List<dynamic> data = response.data;
     print("data 데이터 타입: ${data.runtimeType}");
@@ -72,15 +54,7 @@ class HomeNetworkApiManager {
       //최신순이 기본 설정
       'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
       '$filterQuery',
-      options: Options(
-        headers: {
-          'apikey':
-              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg',
-          'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg',
-          'Range': range,
-        },
-      ),
+      options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
     );
     final List<dynamic> data = response.data;
     print("data 데이터 타입: ${data.runtimeType}");
@@ -125,15 +99,7 @@ class HomeNetworkApiManager {
       'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
       '$filterSearchText'
       '$filterQuery',
-      options: Options(
-        headers: {
-          'apikey':
-              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg',
-          'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg',
-          'Range': range,
-        },
-      ),
+      options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
     );
     final List<dynamic> data = response.data;
     print("data 데이터 타입: ${data.runtimeType}");

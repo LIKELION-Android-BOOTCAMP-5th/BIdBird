@@ -1,7 +1,6 @@
 import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
-import 'package:bidbird/features/feed/repository/home_repository.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../core/utils/extension/time_extension.dart';
 import '../../../core/utils/ui_set/border_radius_style.dart';
 import '../../../core/utils/ui_set/shadow_style.dart';
+import '../data/repository/home_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
