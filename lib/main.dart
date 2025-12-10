@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
@@ -22,28 +24,40 @@ class SupabaseConfig {
 }
 
 void main() async {
+  // 1. 초기화는 한 번만!
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Supabase 초기화
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+
+  // Cloudinary 초기화
   CloudinaryContext.cloudinary = Cloudinary.fromCloudName(
     cloudName: 'dn12so6sm',
   );
-  WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase 초기화
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  final notificationSettings = await FirebaseManager.shared.fcm
-      .requestPermission(provisional: true);
-  final fcmToken = await FirebaseManager.shared.getFcmToken();
 
-  print("fcm 토큰 : ${fcmToken}");
+  // FCM 권한 요청
+  await FirebaseManager.shared.fcm.requestPermission(provisional: true);
 
-  try {
-    await FirebaseManager.initialize();
-    await FirebaseManager.handleInitialMessage();
-  } catch (e) {
-    debugPrint('푸시 알림 서비스 초기화 실패: $e');
-  }
+  // ⭐️ 2. APNS 토큰 지연 처리 (Timer 사용) ⭐️
+  // Firebase Messaging 초기화 및 토큰 가져오기 로직을 Timer로 감싸 2초 후 실행
+  Timer(const Duration(seconds: 2), () async {
+    try {
+      // APNS 토큰 대기 후 FCM 토큰 가져오기
+      final fcmToken = await FirebaseManager.shared.getFcmToken();
+      print("fcm 토큰 : $fcmToken");
+
+      // 초기 메시지 및 기타 FCM 초기화 작업
+      await FirebaseManager.handleInitialMessage();
+    } catch (e) {
+      debugPrint('푸시 알림 서비스 초기화 실패: $e');
+    }
+  });
 
   runApp(
     MultiProvider(
