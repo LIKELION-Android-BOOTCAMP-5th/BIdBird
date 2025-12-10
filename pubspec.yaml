@@ -52,6 +52,7 @@ dependencies:
   # intl -> 가격 표시 단위 설정할 때 필요한 것
   intl: ^0.20.2
   portone_flutter: ^0.12.0
+  portone_flutter_v2: ^1.0.0
 
 dev_dependencies:
   flutter_test:
