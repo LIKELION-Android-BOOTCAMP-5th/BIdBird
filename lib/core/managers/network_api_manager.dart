@@ -16,7 +16,7 @@ class NetworkApiManager {
 
   static final Map<String, String> headers = {
     'apikey': apikey,
-    'Authorization': SupabaseManager.shared.getAuthorizationKey(),
+    // 'Authorization': SupabaseManager.shared.getAuthorizationKey(),
     'Content-Type': 'application/json',
   };
 
@@ -25,7 +25,7 @@ class NetworkApiManager {
     final newHeaders = Map<String, String>.from(headers);
 
     if (range != null) newHeaders['Range'] = range;
-
+    newHeaders['Authorization'] = SupabaseManager.shared.getAuthorizationKey();
     return newHeaders;
   }
 
