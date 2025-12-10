@@ -2,7 +2,7 @@ import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/model/chat_message_entity.dart';
 
 /// 채팅 데이터 소스
-class SupabaseChatDatasource {
+class ChatSupabaseDatasource {
   static const String _chatRoomsTable = 'chatting_room';
   static const String _messagesTable = 'chatting_message';
 

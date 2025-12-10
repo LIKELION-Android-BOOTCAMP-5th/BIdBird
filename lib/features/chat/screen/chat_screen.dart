@@ -114,14 +114,14 @@ class ChatScreen extends StatelessWidget {
                           Expanded(
                             child: Text(
                               "${chattingRoom.user_nickname ?? "사용자"}",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                           Text(
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                             chattingRoom.last_message_send_at.toTimesAgo(),
                             style: TextStyle(
                               color: iconColor,
@@ -133,10 +133,13 @@ class ChatScreen extends StatelessWidget {
                       ),
                       Text(
                         chattingRoom.last_message,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: contentFontStyle,
                         textAlign: TextAlign.left,
                       ),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IntrinsicWidth(
                             child: Container(
@@ -164,7 +167,29 @@ class ChatScreen extends StatelessWidget {
                             ),
                           ),
                           if (chattingRoom.count! > 0)
-                            Text('${chattingRoom.count}'),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: blueColor,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Row(
+                                spacing: 3,
+                                children: [
+                                  Text(
+                                    "${chattingRoom.count ?? 0}",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ],
