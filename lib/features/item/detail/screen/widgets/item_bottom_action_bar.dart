@@ -3,12 +3,14 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../bottom_sheet_buy_now_input/model/check_bid_restriction_usecase.dart';
 import '../../../bottom_sheet_buy_now_input/data/repository/bid_restriction_gateway_impl.dart';
+import '../../../bottom_sheet_buy_now_input/model/check_bid_restriction_usecase.dart';
 import '../../../bottom_sheet_buy_now_input/screen/bottom_sheet_buy_now_input.dart';
 import '../../../bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
 import '../../../bottom_sheet_price_Input/screen/price_input_screen.dart';
 import '../../../bottom_sheet_price_Input/viewmodel/price_input_viewmodel.dart';
+import '../../../item_bid_win/model/item_bid_win_entity.dart';
+import '../../../item_bid_win/screen/item_bid_win_screen.dart';
 import '../../model/item_detail_entity.dart';
 import '../../viewmodel/item_detail_viewmodel.dart';
 
@@ -197,7 +199,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
         !isTopBidder &&
         !isBuyNowInProgress;
 
-    if (isAuctionEnded) {
+    // 경매가 완전히 끝난 상태(유찰/즉시구매 완료 등)
+    if (isAuctionEnded && statusCode != 321) {
       return Container(
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -214,6 +217,37 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               fontWeight: FontWeight.w600,
               color: TopBidderTextColor,
             ),
+          ),
+        ),
+      );
+    }
+
+    // 경매 낙찰(321) 상태에서, 내가 낙찰자인 경우 결제 버튼 노출
+    // 현재 화면의 ViewModel 에서 isTopBidder 가 true 인 상태를 낙찰자로 간주
+    if (statusCode == 321 && isTopBidder) {
+      final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
+
+      return ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ItemBidSuccessScreen(item: bidWinEntity),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: blueColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.7),
+          ),
+        ),
+        child: const Text(
+          '결제하러 가기',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       );
