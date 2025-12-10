@@ -57,6 +57,38 @@ class SupabaseChatDatasource {
     return null;
   }
 
+  Future<void> sendTextMessage(String roomId, String message) async {
+    final String? currentUserId =
+        SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return;
+    try {
+      await _supabase.from('chatting_message').insert({
+        'room_id': roomId,
+        'sender_id': currentUserId,
+        'message_type': 'text',
+        'text': message,
+      });
+    } catch (e) {
+      print('메시지 전송에 실패했습니다 : ${e}');
+    }
+  }
+
+  Future<void> sendImageMessage(String roomId, String imageUrl) async {
+    final String? currentUserId =
+        SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return;
+    try {
+      await _supabase.from('chatting_message').insert({
+        'room_id': roomId,
+        'sender_id': currentUserId,
+        'message_type': 'image',
+        'image_url': imageUrl,
+      });
+    } catch (e) {
+      print('메시지 전송에 실패했습니다 : ${e}');
+    }
+  }
+
   /// 채팅방 목록 조회
   // Future<Result<List<ChattingRoomEntity>>> getChatRooms(String userId) async {
   //   try {
