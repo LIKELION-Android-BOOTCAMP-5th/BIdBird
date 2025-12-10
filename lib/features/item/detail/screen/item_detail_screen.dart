@@ -4,6 +4,8 @@ import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dar
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../item_bid_win/model/item_bid_win_entity.dart';
+import '../../item_bid_win/screen/item_bid_win_screen.dart';
 import '../../../report/ui/report_screen.dart';
 import 'widgets/item_image_section.dart';
 import 'widgets/item_main_info_section.dart';
@@ -26,8 +28,15 @@ class ItemDetailScreen extends StatelessWidget {
   }
 }
 
-class _ItemDetailScaffold extends StatelessWidget {
+class _ItemDetailScaffold extends StatefulWidget {
   const _ItemDetailScaffold();
+
+  @override
+  State<_ItemDetailScaffold> createState() => _ItemDetailScaffoldState();
+}
+
+class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
+  bool _hasPushedBidWin = false;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +70,25 @@ class _ItemDetailScaffold extends StatelessWidget {
         final currentUser = supabase.auth.currentUser;
         final bool isMyItem =
             currentUser != null && currentUser.id == item.sellerId;
+
+        // 낙찰된 매물이고, 내가 낙찰자인 경우: 상세 진입 시 한 번만 낙찰 화면을 위에 띄움
+        final bool isAuctionWonByMe =
+            item.statusCode == 321 && (vm.isTopBidder == true);
+
+        if (isAuctionWonByMe && !_hasPushedBidWin) {
+          _hasPushedBidWin = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final bidWinEntity = ItemBidWinEntity.fromItemDetail(item);
+            Navigator.of(context).push(
+              PageRouteBuilder(
+                pageBuilder: (_, __, ___) => ItemBidSuccessScreen(item: bidWinEntity),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          });
+        }
 
         return Scaffold(
           backgroundColor: Colors.white,
