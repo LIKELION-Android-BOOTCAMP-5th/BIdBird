@@ -26,7 +26,7 @@ import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
 import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
 import 'package:bidbird/features/mypage/ui/report_feedback_screen.dart';
 import 'package:bidbird/features/mypage/ui/terms_screen.dart';
-import 'package:bidbird/features/item/payment/screen/payment_history_screen.dart';
+import 'package:bidbird/features/payment/payment_history/screen/payment_history_screen.dart';
 import 'package:bidbird/features/mypage/ui/trade_history_screen.dart';
 import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';

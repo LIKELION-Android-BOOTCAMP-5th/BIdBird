@@ -1,6 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/item/payment/data/repository/item_payment_gateway.dart';
-import 'package:bidbird/features/item/payment/model/item_payment_request.dart';
+import 'package:bidbird/features/payment/portone_payment/data/repository/item_payment_gateway.dart';
+import 'package:bidbird/features/payment/portone_payment/model/item_payment_request.dart';
 import 'package:flutter/foundation.dart';
 
 class ItemPaymentGatewayImpl implements ItemPaymentGateway {

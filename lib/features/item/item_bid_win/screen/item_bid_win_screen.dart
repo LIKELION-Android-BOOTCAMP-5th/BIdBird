@@ -1,8 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/chat/screen/chatting_room_screen.dart';
-import 'package:bidbird/features/item/payment/model/item_payment_request.dart';
-import 'package:bidbird/features/item/payment/screen/portone_payment_screen.dart';
+import 'package:bidbird/features/payment/portone_payment/model/item_payment_request.dart';
+import 'package:bidbird/features/payment/portone_payment/screen/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
