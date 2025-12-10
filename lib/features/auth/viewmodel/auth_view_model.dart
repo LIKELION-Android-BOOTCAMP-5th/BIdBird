@@ -1,14 +1,26 @@
 import 'dart:async';
 
-import 'package:bidbird/core/supabase_manager.dart';
+import 'package:bidbird/core/managers/firebase_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/models/user_entity.dart';
+import '../../../main.dart';
+
 class AuthViewModel extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
+  UserEntity? _user;
+  UserEntity? get user => _user;
   late StreamSubscription<AuthState> _subscription;
+
+  AuthViewModel() {
+    // Supabase 인증 상태 구독
+    _subscription = _subscribeAuthEvent();
+  }
 
   // 로그아웃 함수 (빠른 반응 + 백그라운드 처리)
   Future<void> logout({VoidCallback? onLoggedOut}) async {
@@ -32,6 +44,21 @@ class AuthViewModel extends ChangeNotifier {
         debugPrint('⚠️ Google logout error: $e');
       }
 
+      try {
+        final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+        print("useId  : $userId");
+        if (userId == null) {
+          return;
+        }
+
+        await SupabaseManager.shared.supabase
+            .from('users')
+            .update({'device_token': '', 'device_type': 'logOut'})
+            .eq('id', userId);
+      } catch (e) {
+        debugPrint('FCM 초기화: $e');
+      }
+
       // Supabase 세션 로그아웃
       await SupabaseManager.shared.supabase.auth.signOut();
     } catch (e) {
@@ -39,5 +66,52 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     debugPrint('✅ Background logout completed');
+  }
+
+  //  Supabase 인증 상태 구독
+  StreamSubscription<AuthState> _subscribeAuthEvent() {
+    return SupabaseManager.shared.supabase.auth.onAuthStateChange.listen((
+      data,
+    ) async {
+      final AuthChangeEvent event = data.event;
+      final Session? session = data.session;
+
+      _isLoggedIn = session != null;
+      if (_isLoggedIn && session != null) {
+        // 인증 상태 변경 시 사용자 정보 가져오기
+        _user = await SupabaseManager.shared.fetchUser(session.user.id);
+        await FirebaseManager.setupFCMTokenAtLogin();
+      }
+      eventBus.fire(LoginEventBus());
+      notifyListeners();
+
+      debugPrint('[AuthVM] event: $event, session: $session');
+    });
+  }
+
+  //  추가된 함수: 최신 사용자 정보를 수동으로 가져와 갱신
+  Future<void> fetchUser() async {
+    final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) {
+      debugPrint('[AuthVM] fetchUser: Current user is null.');
+      _user = null;
+      notifyListeners();
+      return;
+    }
+
+    try {
+      // SupabaseManager의 fetchUser를 재사용하여 최신 프로필 정보 갱신
+      _user = await SupabaseManager.shared.fetchUser(currentUserId);
+      debugPrint(
+        '[AuthVM] fetchUser: User profile updated (nick_name: ${_user?.nick_name})',
+      );
+    } catch (e) {
+      debugPrint('[AuthVM] fetchUser failed to update user profile: $e');
+      // 갱신 실패 시 _user는 기존 값을 유지하거나 null로 처리할 수 있습니다.
+      // 여기서는 갱신 실패하더라도 현재 _user 값을 유지합니다.
+    }
+
+    // GoRouter 리디렉션 로직이 사용자 갱신을 감지하도록 notifyListeners 호출
+    notifyListeners();
   }
 }

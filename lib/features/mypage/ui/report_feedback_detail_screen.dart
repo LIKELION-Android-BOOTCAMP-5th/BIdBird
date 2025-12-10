@@ -1,0 +1,173 @@
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
+import 'package:bidbird/core/utils/ui_set/icons_style.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
+
+class ReportFeedbackDetailScreen extends StatelessWidget {
+  final ReportFeedbackModel? report;
+  final String feedbackId;
+
+  const ReportFeedbackDetailScreen({
+    super.key,
+    required this.feedbackId,
+    this.report,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final data = report;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text('신고 상세'),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: data == null
+            ? _MissingReport(feedbackId: feedbackId)
+            : _DetailBody(report: data),
+      ),
+    );
+  }
+}
+
+class _DetailBody extends StatelessWidget {
+  final ReportFeedbackModel report;
+
+  const _DetailBody({required this.report});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(report.reportTypeName),
+                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
+                    Text('신고 대상: ${report.targetUserNickname}'),
+                    if ((report.itemTitle ?? '').isNotEmpty)
+                      Text('관련 상품: ${report.itemTitle}'),
+                    const SizedBox(height: 8),
+                    Text(_formatFullDate(report.createdAt)),
+                  ],
+                ),
+              ),
+              _ReportStatus(status: report.status),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 24),
+          _InfoSection(title: '신고 내용', content: report.content),
+          const SizedBox(height: 16),
+          _InfoSection(
+            title: '관리자 답변',
+            content: report.feedback ?? '관리자 답변이 등록되지 않았습니다.',
+          ),
+        ],
+      ),
+    );
+  }
+
+  //utc수정해야함
+  String _formatFullDate(DateTime date) {
+    final month = date.month.toString();
+    final day = date.day.toString();
+    final hour = date.hour;
+    final minute = date.minute.toString().padLeft(2, '0');
+    final second = date.second.toString().padLeft(2, '0');
+    final period = hour >= 12 ? '오후' : '오전';
+    final hour12 = hour % 12 == 0 ? 12 : hour % 12;
+    return '${date.year}. $month. $day. $period $hour12:$minute:$second';
+  }
+}
+
+class _InfoSection extends StatelessWidget {
+  final String title;
+  final String content;
+
+  const _InfoSection({required this.title, required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: BorderColor,
+            borderRadius: defaultBorder,
+          ),
+          child: Text(content),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReportStatus extends StatelessWidget {
+  final int status;
+
+  const _ReportStatus({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: getReportStatusColor(status),
+        borderRadius: defaultBorder,
+      ),
+      child: Text(getReportStatusString(status)),
+    );
+  }
+}
+
+class _MissingReport extends StatelessWidget {
+  final String feedbackId;
+
+  const _MissingReport({required this.feedbackId});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Icon(Icons.info_outline),
+            const SizedBox(height: 12),
+            Text(
+              '신고 상세 정보를 찾을 수 없습니다.\n(feedbackId: $feedbackId)',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
