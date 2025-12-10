@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:bidbird/core/models/items_entity.dart';
 import 'package:flutter/widgets.dart';
 
+import '../data/repository/home_repository.dart';
 import '../model/home_data.dart';
-import '../repository/home_repository.dart';
 
 //최신순, 오래된순, 좋아요순 처리할 때 쓸 것
 enum OrderByType { newFirst, oldFirst, likesFirst }

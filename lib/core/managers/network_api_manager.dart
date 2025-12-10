@@ -9,13 +9,39 @@ class NetworkApiManager {
 
   NetworkApiManager() {}
 
+  //위에것은 걍 정의하는 것임
   static final String supabaseUrl =
       "https://mdwelwjletorehxsptqa.supabase.co/rest/v1";
-  static final String apikey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg';
-  static final Map<String, dynamic> headers = {
+  static final String apikey = 'sb_publishable_NQq1CoDOtr9FkfOSod8VHA_aqMLFp0x';
+
+  static final Map<String, String> headers = {
     'apikey': apikey,
-    'Authorization': SupabaseManager.shared.getAuthorizationKey(),
+    // 'Authorization': SupabaseManager.shared.getAuthorizationKey(),
     'Content-Type': 'application/json',
   };
+
+  //이것만 사용하세요!!!!!!!!!!!!!!!!!!!!!!!11
+  static Map<String, String> useThisHeaders({String? range}) {
+    final newHeaders = Map<String, String>.from(headers);
+
+    if (range != null) newHeaders['Range'] = range;
+    newHeaders['Authorization'] = SupabaseManager.shared.getAuthorizationKey();
+    return newHeaders;
+  }
+
+  //페이징 계산 로직
+  static String useThisPagingLogic({
+    required int currentIndex,
+    required int perPage,
+  }) {
+    int startIndex = currentIndex - 1;
+    int endIndex = perPage - 1;
+
+    // 현재 페이지가 첫 페이지가 아니라면
+    if (currentIndex != 1) {
+      endIndex = (currentIndex * perPage) - 1;
+      startIndex = (currentIndex - 1) * perPage;
+    }
+    return "$startIndex-$endIndex";
+  }
 }

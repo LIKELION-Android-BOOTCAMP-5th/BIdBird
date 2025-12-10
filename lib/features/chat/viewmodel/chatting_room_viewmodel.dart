@@ -4,6 +4,7 @@ import 'package:bidbird/core/managers/heartbeat_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repositorie.dart';
 import 'package:bidbird/features/chat/model/chat_message_entity.dart';
+import 'package:bidbird/features/chat/model/room_info_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,6 +17,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   String itemId;
   bool isActive = false;
   XFile? image;
+  RoomInfoEntity? roomInfo;
   final ImagePicker _picker = ImagePicker();
   final TextEditingController messageController = TextEditingController();
   List<ChatMessageEntity> messages = [];
@@ -25,6 +27,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   ChattingRoomViewmodel({required this.itemId}) {
     print("뷰모델 생성");
+    fetchRoomInfo();
     fetchMessage();
   }
 
@@ -34,6 +37,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   Future<void> getRoomId() async {
     roomId = await _repository.getRoomId(itemId);
+  }
+
+  Future<void> fetchRoomInfo() async {
+    roomInfo = await _repository.fetchRoomInfo(itemId);
+    notifyListeners();
   }
 
   Future<void> fetchMessage() async {
@@ -134,6 +142,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     print("init roomId check : $thisRoomId");
     if (thisRoomId == null) return;
     await chattingRoomService.enterRoom(thisRoomId);
+
     heartbeatManager.start(thisRoomId);
     isActive = true;
     notifyListeners();
