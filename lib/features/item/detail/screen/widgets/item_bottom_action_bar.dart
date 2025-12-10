@@ -225,16 +225,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 경매 낙찰(321) 상태에서, 내가 낙찰자인 경우 결제 버튼 노출
     // 현재 화면의 ViewModel 에서 isTopBidder 가 true 인 상태를 낙찰자로 간주
     if (statusCode == 321 && isTopBidder) {
-      final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-
       return ElevatedButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ItemBidSuccessScreen(item: bidWinEntity),
-            ),
-          );
+          // TODO: 결제 화면으로 이동하는 로직 연동
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: blueColor,
