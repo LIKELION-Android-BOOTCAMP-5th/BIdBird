@@ -28,4 +28,20 @@ class NetworkApiManager {
 
     return newHeaders;
   }
+
+  //페이징 계산 로직
+  static String useThisPagingLogic({
+    required int currentIndex,
+    required int perPage,
+  }) {
+    int startIndex = currentIndex - 1;
+    int endIndex = perPage - 1;
+
+    // 현재 페이지가 첫 페이지가 아니라면
+    if (currentIndex != 1) {
+      endIndex = (currentIndex * perPage) - 1;
+      startIndex = (currentIndex - 1) * perPage;
+    }
+    return "$startIndex-$endIndex";
+  }
 }
