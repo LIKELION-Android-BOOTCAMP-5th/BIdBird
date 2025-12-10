@@ -71,25 +71,6 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
         final bool isMyItem =
             currentUser != null && currentUser.id == item.sellerId;
 
-        // 낙찰된 매물이고, 내가 낙찰자인 경우: 상세 진입 시 한 번만 낙찰 화면을 위에 띄움
-        final bool isAuctionWonByMe =
-            item.statusCode == 321 && (vm.isTopBidder == true);
-
-        if (isAuctionWonByMe && !_hasPushedBidWin) {
-          _hasPushedBidWin = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            final bidWinEntity = ItemBidWinEntity.fromItemDetail(item);
-            Navigator.of(context).push(
-              PageRouteBuilder(
-                pageBuilder: (_, __, ___) => ItemBidSuccessScreen(item: bidWinEntity),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-              ),
-            );
-          });
-        }
-
         return Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
