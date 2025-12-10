@@ -60,6 +60,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
     final isMyItem = widget.isMyItem;
     final isBidRestricted = _isBidRestricted;
+    final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
 
     const disabledStatusesForBuyNow = {
       300,
@@ -70,7 +71,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     };
     final bool showBuyNow =
         widget.item.buyNowPrice > 0 &&
-        !disabledStatusesForBuyNow.contains(_statusCode);
+        !disabledStatusesForBuyNow.contains(_statusCode) &&
+        !isTimeOver;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -178,8 +180,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   Widget _buildBidButton(bool isTopBidder) {
     final int statusCode = _statusCode ?? 0;
 
-    final bool isAuctionEnded =
-        statusCode == 321 || statusCode == 322 || statusCode == 323;
+    final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
+
+    final bool isAuctionEnded = isTimeOver ||
+        statusCode == 321 ||
+        statusCode == 322 ||
+        statusCode == 323;
 
     final bool isAuctionActive = statusCode == 310;
     final bool isBuyNowInProgress = statusCode == 311;
@@ -332,8 +338,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 1) 이미 최고 입찰자인 경우
     if (isTopBidder) {
       reason = '최고 입찰자입니다';
+    } else if (isTimeOver) {
+      // 2) 경매 시간이 지난 경우
+      reason = '경매가 종료되었습니다.';
     } else {
-      // 2) 상태 코드별 상세 사유
+      // 3) 상태 코드별 상세 사유
       switch (statusCode) {
         case 300:
           reason = '경매가 아직 시작되지 않았습니다';

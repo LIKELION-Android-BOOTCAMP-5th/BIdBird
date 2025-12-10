@@ -1,11 +1,12 @@
 String formatRemainingTime(DateTime finishTime) {
   final diff = finishTime.difference(DateTime.now());
   if (diff.isNegative) {
-    return '00:00';
+    return '00:00:00';
   }
   final hours = diff.inHours;
   final minutes = diff.inMinutes % 60;
-  return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+  final seconds = diff.inSeconds % 60;
+  return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
 }
 
 String formatPrice(int price) {
