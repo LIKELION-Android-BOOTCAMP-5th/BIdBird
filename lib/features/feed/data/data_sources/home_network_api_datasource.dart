@@ -15,7 +15,7 @@ class HomeNetworkApiManager {
   Future<List<HomeCodeKeywordType>> getKeywordType() async {
     final response = await dio.get(
       //키워드 최신순으로 정렬
-      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/code_keyword_type?select=*&order=id.asc',
+      '${NetworkApiManager.supabaseUrl}/code_keyword_type?select=*&order=id.asc',
       options: Options(headers: NetworkApiManager.useThisHeaders()),
     );
     final List<dynamic> data = response.data;
@@ -33,16 +33,10 @@ class HomeNetworkApiManager {
     int perPage = 8,
     int? keywordType,
   }) async {
-    int startIndex = currentIndex - 1;
-    int endIndex = perPage - 1;
-
-    // 현재 페이지가 첫 페이지가 아니라면
-    if (currentIndex != 1) {
-      endIndex = (currentIndex * perPage) - 1;
-      startIndex = (currentIndex - 1) * perPage;
-    }
-
-    final String range = "${startIndex}-${endIndex}";
+    final String range = NetworkApiManager.useThisPagingLogic(
+      currentIndex: currentIndex,
+      perPage: perPage,
+    );
 
     String filterQuery = "";
     //110 이 전체 카테고리 코드
@@ -52,7 +46,7 @@ class HomeNetworkApiManager {
 
     final response = await dio.get(
       //최신순이 기본 설정
-      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
+      '${NetworkApiManager.supabaseUrl}/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
       '$filterQuery',
       options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
     );
@@ -72,16 +66,10 @@ class HomeNetworkApiManager {
     int? keywordType,
     String? userInputSearchText,
   }) async {
-    int startIndex = currentIndex - 1;
-    int endIndex = perPage - 1;
-
-    // 현재 페이지가 첫 페이지가 아니라면
-    if (currentIndex != 1) {
-      endIndex = (currentIndex * perPage) - 1;
-      startIndex = (currentIndex - 1) * perPage;
-    }
-
-    final String range = "${startIndex}-${endIndex}";
+    final String range = NetworkApiManager.useThisPagingLogic(
+      currentIndex: currentIndex,
+      perPage: perPage,
+    );
 
     String filterQuery = "";
     //110 이 전체 카테고리 코드
@@ -96,7 +84,7 @@ class HomeNetworkApiManager {
 
     final response = await dio.get(
       //최신순이 기본 설정
-      'https://mdwelwjletorehxsptqa.supabase.co/rest/v1/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
+      '${NetworkApiManager.supabaseUrl}/items_detail?select=*,auctions!inner(bid_count,auction_start_at)&order=$orderBy&auctions.auction_start_at=not.is.null'
       '$filterSearchText'
       '$filterQuery',
       options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
