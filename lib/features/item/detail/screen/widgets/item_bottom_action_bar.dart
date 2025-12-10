@@ -9,8 +9,11 @@ import '../../../bottom_sheet_buy_now_input/screen/bottom_sheet_buy_now_input.da
 import '../../../bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
 import '../../../bottom_sheet_price_Input/screen/price_input_screen.dart';
 import '../../../bottom_sheet_price_Input/viewmodel/price_input_viewmodel.dart';
+import '../../../identity_verification/data/repository/identity_verification_gateway_impl.dart';
+import '../../../identity_verification/usecase/check_and_request_identity_verification_usecase.dart';
 import '../../../item_bid_win/model/item_bid_win_entity.dart';
 import '../../../item_bid_win/screen/item_bid_win_screen.dart';
+import '../../../../../core/widgets/components/pop_up/ask_popup.dart';
 import '../../model/item_detail_entity.dart';
 import '../../viewmodel/item_detail_viewmodel.dart';
 
@@ -34,6 +37,51 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   final CheckBidRestrictionUseCase _checkBidRestrictionUseCase =
       CheckBidRestrictionUseCase(BidRestrictionGatewayImpl());
+
+  Future<bool> _ensureIdentityVerified() async {
+    bool passed = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AskPopup(
+          content: '본인 인증을 해주세요',
+          noText: '취소',
+          yesText: '확인',
+          yesLogic: () async {
+            Navigator.of(dialogContext).pop();
+
+            final gateway = IdentityVerificationGatewayImpl();
+            final useCase = CheckAndRequestIdentityVerificationUseCase(gateway);
+
+            try {
+              final result = await useCase(context);
+              if (!result) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('본인 인증 후 이용 가능합니다.'),
+                  ),
+                );
+              }
+              passed = result;
+            } catch (e) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('본인 인증 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.\\n$e'),
+                ),
+              );
+              passed = false;
+            }
+          },
+        );
+      },
+    );
+
+    return passed;
+  }
 
   @override
   void initState() {
@@ -326,7 +374,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     if (showBidButton) {
       return OutlinedButton(
-        onPressed: () {
+        onPressed: () async {
+          final passed = await _ensureIdentityVerified();
+          if (!passed) return;
+          if (!mounted) return;
+
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
@@ -420,7 +472,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   Widget _buildBuyNowButton() {
     return ElevatedButton(
-      onPressed: () {
+      onPressed: () async {
+        final passed = await _ensureIdentityVerified();
+        if (!passed) return;
+        if (!mounted) return;
+
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
