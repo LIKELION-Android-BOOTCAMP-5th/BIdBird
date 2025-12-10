@@ -1,11 +1,17 @@
-import 'package:bidbird/core/firebase_manager.dart';
-import 'package:bidbird/core/firebase_options.dart';
+import 'dart:async';
+
+import 'package:bidbird/core/managers/firebase_manager.dart';
+import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/feed/repository/home_repository.dart';
+import 'package:bidbird/features/mypage/data/profile_repository.dart';
+import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
+import 'package:cloudinary_flutter/cloudinary_context.dart';
+import 'package:cloudinary_url_gen/cloudinary.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,18 +24,40 @@ class SupabaseConfig {
 }
 
 void main() async {
+  // 1. 초기화는 한 번만!
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Supabase 초기화
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  final notificationSettings = await FirebaseManager.shared.fcm
-      .requestPermission(provisional: true);
-  final fcmToken = await FirebaseManager.shared.getFcmToken();
+  // Cloudinary 초기화
+  CloudinaryContext.cloudinary = Cloudinary.fromCloudName(
+    cloudName: 'dn12so6sm',
+  );
 
-  print("fcm 토큰 : ${fcmToken}");
+  // Firebase 초기화
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // FCM 권한 요청
+  await FirebaseManager.shared.fcm.requestPermission(provisional: true);
+
+  // ⭐️ 2. APNS 토큰 지연 처리 (Timer 사용) ⭐️
+  // Firebase Messaging 초기화 및 토큰 가져오기 로직을 Timer로 감싸 2초 후 실행
+  Timer(const Duration(seconds: 2), () async {
+    try {
+      // APNS 토큰 대기 후 FCM 토큰 가져오기
+      final fcmToken = await FirebaseManager.shared.getFcmToken();
+      print("fcm 토큰 : $fcmToken");
+
+      // 초기 메시지 및 기타 FCM 초기화 작업
+      await FirebaseManager.handleInitialMessage();
+    } catch (e) {
+      debugPrint('푸시 알림 서비스 초기화 실패: $e');
+    }
+  });
 
   runApp(
     MultiProvider(
@@ -39,6 +67,12 @@ void main() async {
             return AuthViewModel();
           },
         ),
+        ChangeNotifierProvider(
+          create: (context) {
+            return ProfileViewModel(ProfileRepository());
+          },
+        ),
+        Provider(create: (context) => HomeRepository()),
       ],
       child: const MyApp(),
     ),
@@ -74,29 +108,14 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
 
         scaffoldBackgroundColor: Color(0xFFF5F5F5),
-        appBarTheme: AppBarTheme(backgroundColor: Color(0xFFF5F5F5)),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFFF5F5F5),
+          //아래 두 줄 스크롤 시 appBar 색 바뀌는 현상 해결
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+        ),
       ),
       routerConfig: _router,
     );
   }
-}
-
-// 애니메이션 없이 페이지를 전환해주는 클래스
-class NoTransitionPage<T> extends CustomTransitionPage<T> {
-  const NoTransitionPage({required super.child, super.key})
-    : super(
-        transitionDuration: Duration.zero, // 전환 시간 0
-        reverseTransitionDuration: Duration.zero, // 역전환 시간 0
-        transitionsBuilder: _noTransitionBuilder,
-      );
-}
-
-// 애니메이션 없이 child만 반환하는 빌더
-Widget _noTransitionBuilder(
-  BuildContext context,
-  Animation<double> animation,
-  Animation<double> secondaryAnimation,
-  Widget child,
-) {
-  return child;
 }

@@ -1,0 +1,154 @@
+import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
+import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../item_bid_win/model/item_bid_win_entity.dart';
+import '../../item_bid_win/screen/item_bid_win_screen.dart';
+import '../../../report/ui/report_screen.dart';
+import 'widgets/item_image_section.dart';
+import 'widgets/item_main_info_section.dart';
+import 'widgets/item_description_section.dart';
+import 'widgets/item_bottom_action_bar.dart';
+
+class ItemDetailScreen extends StatelessWidget {
+  const ItemDetailScreen({super.key, required this.itemId});
+
+  final String itemId;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<ItemDetailViewModel>(
+      create: (_) => ItemDetailViewModel(itemId: itemId)
+        ..loadItemDetail()
+        ..setupRealtimeSubscription(),
+      child: const _ItemDetailScaffold(),
+    );
+  }
+}
+
+class _ItemDetailScaffold extends StatefulWidget {
+  const _ItemDetailScaffold();
+
+  @override
+  State<_ItemDetailScaffold> createState() => _ItemDetailScaffoldState();
+}
+
+class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
+  bool _hasPushedBidWin = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ItemDetailViewModel>(
+      builder: (context, vm, _) {
+        if (vm.isLoading) {
+          return const Scaffold(
+            body: SafeArea(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
+        if (vm.error != null || vm.itemDetail == null) {
+          return const Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: Text(
+                  '매물 정보를 불러올 수 없습니다.',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ),
+            ),
+          );
+        }
+
+        final ItemDetail item = vm.itemDetail!;
+
+        // 현재 로그인 유저와 판매자 비교해서 내 매물 여부 판단
+        final supabase = SupabaseManager.shared.supabase;
+        final currentUser = supabase.auth.currentUser;
+        final bool isMyItem =
+            currentUser != null && currentUser.id == item.sellerId;
+
+        // 낙찰된 매물이고, 내가 낙찰자인 경우: 상세 진입 시 한 번만 낙찰 화면을 위에 띄움
+        final bool isAuctionWonByMe =
+            item.statusCode == 321 && (vm.isTopBidder == true);
+
+        if (isAuctionWonByMe && !_hasPushedBidWin) {
+          _hasPushedBidWin = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final bidWinEntity = ItemBidWinEntity.fromItemDetail(item);
+            Navigator.of(context).push(
+              PageRouteBuilder(
+                pageBuilder: (_, __, ___) => ItemBidSuccessScreen(item: bidWinEntity),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          });
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            title: const Text('상세 보기'),
+            actions: [
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ReportScreen(),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.only(right: 12, left: 4),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(
+                  Icons.report_gmailerrorred_outlined,
+                  color: Colors.red,
+                  size: 18,
+                ),
+                label: const Text(
+                  '신고',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ItemImageSection(item: item),
+                        const SizedBox(height: 8),
+                        ItemMainInfoSection(item: item, isMyItem: isMyItem),
+                        const SizedBox(height: 0),
+                        ItemDescriptionSection(item: item),
+                      ],
+                    ),
+                  ),
+                ),
+                ItemBottomActionBar(item: item, isMyItem: isMyItem),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

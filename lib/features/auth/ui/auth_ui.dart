@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:bidbird/core/supabase_manager.dart';
-import 'package:bidbird/core/utils/ui_set/colors.dart';
-import 'package:bidbird/core/utils/ui_set/fonts.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +53,6 @@ class LoginScreen extends StatelessWidget {
                         } catch (e) {
                           return;
                         }
-                        context.go('/home');
                       },
                       child: Text(
                         'Google 계정으로 계속하기',

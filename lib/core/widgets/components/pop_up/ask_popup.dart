@@ -1,20 +1,19 @@
-import 'package:bidbird/core/utils/ui_set/colors.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
-import '../../../utils/ui_set/fonts.dart';
+import '../../../utils/ui_set/fonts_style.dart';
 
 class AskPopup extends StatelessWidget {
   final String content;
-  final String noText;
+  final String? noText;
   final String yesText;
   final TextStyle inputContentTextStyle;
   final Future<void> Function() yesLogic;
 
   const AskPopup({
-    //기본값
     super.key,
     this.content = '계속하시겠습니까?',
-    this.noText = '취소',
+    this.noText,
     this.yesText = '확인',
     this.inputContentTextStyle = contentFontStyle,
     required this.yesLogic,
@@ -24,68 +23,81 @@ class AskPopup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10), // 팝업 모서리
-      ),
-      insetPadding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 20,
-      ), // 외부 여백
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Padding(
-        padding: const EdgeInsets.all(10), // 내부 여백
-        child: Container(
-          height: 200,
+        padding: const EdgeInsets.all(10),
+        child: SizedBox(
+          height: 150,
           child: Center(
             child: Column(
-              mainAxisSize: MainAxisSize.min, // 높이 조절
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(child: const SizedBox(height: 20)), // 내용, 버튼 사이 간격
-                // // 본문 텍스트
+                const Expanded(child: SizedBox(height: 20)),
+
+                // 내용 텍스트
                 Text(
                   content,
                   textAlign: TextAlign.center,
                   style: inputContentTextStyle,
                 ),
 
-                Expanded(child: const SizedBox(height: 20)), // 내용, 버튼 사이 간격
+                const Expanded(child: SizedBox(height: 20)),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 확인 버튼
-                    Expanded(
-                      child: FilledButton(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all(blueColor),
+                // 버튼 영역
+                if (noText == null)
+                  // 확인 하나만
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(blueColor),
+                          ),
+                          onPressed: () async {
+                            await yesLogic();
+                          },
+                          child: Text(yesText),
                         ),
-                        onPressed: () async {
-                          await yesLogic();
-                        }, // 다음으로 넘어가기?
-                        child: Text(yesText),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    // 취소버튼
-                    Expanded(
-                      child: FilledButton(
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all(
-                            Colors.grey.shade100,
+                    ],
+                  )
+                else
+                  // 확인 + 취소
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(blueColor),
+                          ),
+                          onPressed: () async {
+                            await yesLogic();
+                          },
+                          child: Text(yesText),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(
+                              Colors.grey.shade100,
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            noText!,
+                            style: const TextStyle(color: Colors.black),
                           ),
                         ),
-
-                        onPressed: () {
-                          Navigator.pop(context); // 팝업 닫기
-                        },
-                        child: Text(
-                          noText,
-                          style: TextStyle(color: Colors.black),
-                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),

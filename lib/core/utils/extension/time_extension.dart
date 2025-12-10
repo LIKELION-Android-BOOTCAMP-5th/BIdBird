@@ -34,3 +34,13 @@ extension DateTimeToString on DateTime {
     return "${this.year}년 ${this.month}월 ${this.day} 일";
   }
 }
+
+String formatRemainingTime(DateTime finishTime) {
+  final diff = finishTime.difference(DateTime.now());
+  if (diff.isNegative) {
+    return '00:00';
+  }
+  final hours = diff.inHours;
+  final minutes = diff.inMinutes % 60;
+  return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+}
