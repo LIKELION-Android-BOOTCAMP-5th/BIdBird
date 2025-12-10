@@ -25,29 +25,43 @@ class IdentityVerificationGatewayImpl implements IdentityVerificationGateway {
   }
 
   @override
-  Future<String> requestIdentityVerification(BuildContext context) async {
-    final ci = await Navigator.of(context).push<String>(
+  Future<bool> requestIdentityVerification(BuildContext context) async {
+    // 포트원 위젯을 통해 imp_uid 수신
+    final impUid = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (_) => const KgInicisIdentityWebViewScreen(),
       ),
     );
-
-    return ci ?? '';
-  }
-
-  @override
-  Future<void> saveCi(String ci) async {
-    final supabase = SupabaseManager.shared.supabase;
-    final user = supabase.auth.currentUser;
-
-    if (user == null) {
-      return;
+    if (impUid == null || impUid.isEmpty) {
+      return false;
     }
 
+    // Supabase Edge Function(identity-complete)에 imp_uid 전달
     try {
-      await supabase.from('users').update({'CI': ci}).eq('id', user.id);
+      final supabase = SupabaseManager.shared.supabase;
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        return false;
+      }
+
+      final response = await supabase.functions.invoke(
+        'identity-complete',
+        body: {
+          'imp_uid': impUid,
+          'user_id': user.id,
+        },
+      );
+
+      // Edge Function에서 { success: true } 형태로 응답한다고 가정
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return true;
+      }
+
+      return false;
     } catch (e) {
-      // 실패해도 앱이 죽지 않도록 예외는 넘김
+      // 함수 호출 실패 시 인증 실패로 간주
+      return false;
     }
   }
 }
