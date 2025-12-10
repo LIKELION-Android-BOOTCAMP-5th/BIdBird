@@ -24,6 +24,9 @@ import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
 import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
 import 'package:bidbird/features/mypage/ui/report_feedback_screen.dart';
 import 'package:bidbird/features/mypage/ui/terms_screen.dart';
+import 'package:bidbird/features/mypage/ui/trade_history_screen.dart';
+import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
+import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
 import 'package:flutter/material.dart';
@@ -174,7 +177,14 @@ GoRouter createAppRouter(BuildContext context) {
               GoRoute(
                 path: '/trade',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MypageScreen());
+                  return NoTransitionPage(
+                    child: ChangeNotifierProvider(
+                      create: (_) => TradeHistoryViewModel(
+                        repository: TradeHistoryRepository(),
+                      )..loadPage(reset: true),
+                      child: const TradeHistoryScreen(),
+                    ),
+                  );
                 },
               ),
               GoRoute(
