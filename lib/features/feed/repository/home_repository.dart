@@ -1,13 +1,13 @@
 import 'package:bidbird/core/models/items_entity.dart';
 
-import '../../../core/managers/network_api_manager.dart';
 import '../model/home_data.dart';
+import '../model/home_network_api_manager.dart';
 
 class HomeRepository {
   // 반환 형태가 무엇이 되어야 할까요?
   // List<Task>
   Future<List<HomeCodeKeywordType>> getKeywordType() async {
-    return await NetworkApiManager.shared.getKeywordType();
+    return await HomeNetworkApiManager.shared.getKeywordType();
   }
 
   Future<List<ItemsEntity>> fetchItems(
@@ -15,7 +15,7 @@ class HomeRepository {
     int currentIndex = 1,
     int? keywordType,
   }) async {
-    return await NetworkApiManager.shared.getItems(
+    return await HomeNetworkApiManager.shared.getItems(
       orderBy,
       currentIndex: currentIndex,
       keywordType: keywordType,
@@ -28,7 +28,7 @@ class HomeRepository {
     int? keywordType,
     String? userInputSearchText,
   }) async {
-    return await NetworkApiManager.shared.getSearchResults(
+    return await HomeNetworkApiManager.shared.getSearchResults(
       orderBy,
       currentIndex: currentIndex,
       keywordType: keywordType,
