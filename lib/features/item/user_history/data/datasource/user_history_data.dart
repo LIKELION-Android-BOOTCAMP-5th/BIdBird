@@ -128,30 +128,35 @@ class _StatusInfo {
 }
 
 _StatusInfo _mapAuctionTradeStatus(int? auctionCode, int? tradeCode) {
-  // trade_status_code 우선
-  if (tradeCode == 550) {
-    return _StatusInfo('거래 완료', tradeSaleDoneColor);
-  }
-  if (tradeCode == 520) {
-    return _StatusInfo('구매 완료', tradePurchaseDoneColor);
-  }
-  if (tradeCode == 510) {
-    return _StatusInfo('결제 대기', tradeBidPendingColor);
+  // trade_status_code 기준으로 우선 판단
+  // ● 진행 중으로 볼 상태들 → '판매중'
+  //   - 결제 대기(510) 포함
+  // ● 그 외 완료/종료 코드들 → '거래 종료'
+
+  if (tradeCode != null) {
+    if (tradeCode == 510) {
+      return _StatusInfo('판매중', tradeBidPendingColor);
+    }
+    // 520(구매 완료), 550(거래 완료) 등 기타 trade 종료 상태
+    return _StatusInfo('거래 종료', tradeSaleDoneColor);
   }
 
-  // 그 외에는 auction_status_code 기준
+  // trade_code 가 없을 때는 auction_status_code 로 판단
   switch (auctionCode) {
+    // 경매 대기/진행/즉시구매 진행 중 → 판매중
     case 300: // 경매 대기
     case 310: // 경매 진행 중
     case 311: // 즉시 구매 진행 중
-      return _StatusInfo('입찰 중', tradeBidPendingColor);
+      return _StatusInfo('판매중', tradeBidPendingColor);
+
+    // 낙찰/구매 완료/유찰 등 → 거래 종료
     case 321: // 낙찰
-      return _StatusInfo('판매 완료', tradeSaleDoneColor);
     case 322: // 즉시 구매 완료
-      return _StatusInfo('구매 완료', tradePurchaseDoneColor);
     case 323: // 유찰
-      return _StatusInfo('유찰', tradeBlockedColor);
+      return _StatusInfo('거래 종료', tradeSaleDoneColor);
+
     default:
-      return _StatusInfo('입찰 중', tradeBidPendingColor);
+      // 알 수 없는 상태도 기본적으로 진행 중으로 취급
+      return _StatusInfo('판매중', tradeBidPendingColor);
   }
 }
