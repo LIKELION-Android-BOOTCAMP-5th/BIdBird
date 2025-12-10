@@ -21,6 +21,13 @@ class SupabaseManager {
     debugPrint("SupabaseManager init");
   }
 
+  String getAuthorizationKey() {
+    String authorizationKey = supabase.auth.currentSession?.accessToken != null
+        ? 'Bearer ${supabase.auth.currentSession?.accessToken}'
+        : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5ZmdmaWNjZWpqZ3R2cG10a3p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwNTUwNjksImV4cCI6MjA3NzYzMTA2OX0.Ng9atODZnfRocZPtnIb74s6PLeIJ2HqqSaatj1HbRsc';
+    return authorizationKey;
+  }
+
   Future<void> googleSignIn() async {
     const webClientId =
         '966757848850-cscnd3oli3ts6c8e6ch6p1ev485b9ej5.apps.googleusercontent.com';

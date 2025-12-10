@@ -129,13 +129,14 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   // Call when view appears
   Future<void> init() async {
+    print("init");
     final thisRoomId = roomId;
-    if (thisRoomId != null) {
-      await chattingRoomService.enterRoom(thisRoomId);
-      heartbeatManager.start(thisRoomId);
-      isActive = true;
-      notifyListeners();
-    }
+    print("init roomId check : $thisRoomId");
+    if (thisRoomId == null) return;
+    await chattingRoomService.enterRoom(thisRoomId);
+    heartbeatManager.start(thisRoomId);
+    isActive = true;
+    notifyListeners();
   }
 
   // Call when view disappears
