@@ -31,6 +31,7 @@ class ReportFeedbackRepository {
     return reports;
   }
 
+  //개별아이템에대한당겨서새로고침기능을추가하는경우필요함
   // Future<ReportFeedbackModel?> fetchReportById(String id) async {
   //   if (id.isEmpty) return null;
 
