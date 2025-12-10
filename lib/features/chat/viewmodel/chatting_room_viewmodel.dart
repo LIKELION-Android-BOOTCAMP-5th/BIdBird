@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/chatting_room_service.dart';
+import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/managers/heartbeat_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repositorie.dart';
@@ -12,7 +13,7 @@ enum MessageType { text, image }
 class ChattingRoomViewmodel extends ChangeNotifier {
   final ChattingRoomService _chattingRoomService = ChattingRoomService();
   String? roomId;
-  String? itemId;
+  String itemId;
   bool isActive = false;
   XFile? image;
   final ImagePicker _picker = ImagePicker();
@@ -32,11 +33,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   // RealtimeChannel? _bidLogChannel;
 
   Future<void> getRoomId() async {
-    roomId = await _repository.getRoomId(itemId!);
+    roomId = await _repository.getRoomId(itemId);
   }
 
   Future<void> fetchMessage() async {
-    roomId = await _repository.getRoomId(itemId!);
+    roomId = await _repository.getRoomId(itemId);
     print("뷰모델에서 채팅방 id = ${roomId}");
     print("뷰모델에서 메세지 fetch");
     if (roomId != null) {
@@ -44,8 +45,85 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       messages.addAll(chattings);
       notifyListeners();
       setupRealtimeSubscription();
-      print("_subscribeMessageChannel 채널 연결 되었습니다");
       init();
+    }
+  }
+
+  Future<void> sendMessage() async {
+    final currentRoomId = roomId;
+    if (currentRoomId == null) {
+      if (type == MessageType.text) {
+        if (messageController.text.isEmpty) return;
+        try {
+          roomId = await _repository.firstMessage(
+            itemId: itemId,
+            messageType: type,
+            message: messageController.text,
+          );
+        } catch (e) {
+          print("메세지 전송 실패");
+          return;
+        }
+        final chattings = await _repository.getMessages(roomId!);
+        messages.addAll(chattings);
+        messageController.text = "";
+        notifyListeners();
+        setupRealtimeSubscription();
+        init();
+      } else {
+        final thisImage = image;
+        if (thisImage == null) return;
+        try {
+          final imageUrl = await CloudinaryManager.shared
+              .uploadImageToCloudinary(thisImage);
+          if (imageUrl == null) return;
+          roomId = await _repository.firstMessage(
+            itemId: itemId,
+            messageType: type,
+            imageUrl: imageUrl,
+          );
+        } catch (e) {
+          print("메세지 전송 실패");
+          return;
+        }
+        final chattings = await _repository.getMessages(roomId!);
+        messages.addAll(chattings);
+        image = null;
+        type = MessageType.text;
+        notifyListeners();
+        setupRealtimeSubscription();
+        init();
+      }
+    } else {
+      if (type == MessageType.text) {
+        if (messageController.text.isEmpty) return;
+        try {
+          await _repository.sendTextMessage(
+            currentRoomId,
+            messageController.text,
+          );
+        } catch (e) {
+          print('메세지 전송 실패 : ${e}');
+          return;
+        }
+        messageController.text = "";
+        notifyListeners();
+      } else {
+        final thisImage = image;
+        if (thisImage == null) return;
+        try {
+          final imageUrl = await CloudinaryManager.shared
+              .uploadImageToCloudinary(thisImage);
+          if (imageUrl == null) return;
+          await _repository.sendImageMessage(currentRoomId, imageUrl);
+        } catch (e) {
+          print('메세지 전송 실패 : ${e}');
+          return;
+        }
+        image = null;
+        type = MessageType.text;
+        notifyListeners();
+      }
     }
   }
 
@@ -98,6 +176,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
   void setupRealtimeSubscription() {
+    print("채널 구독 전 roomId 확인");
+    print("roomId = ${roomId}");
     _subscribeMessageChannel = SupabaseManager.shared.supabase.channel(
       'chatting_message$roomId',
     );
@@ -121,6 +201,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           },
         )
         .subscribe();
+    print("_subscribeMessageChannel 채널 연결 되었습니다");
   }
 
   // RealtimeChannel _subscribeMessageEvent() {

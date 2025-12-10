@@ -8,9 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ChattingRoomScreen extends StatefulWidget {
-  final String? itemId;
+  final String itemId;
 
-  const ChattingRoomScreen({super.key, this.itemId});
+  const ChattingRoomScreen({super.key, required this.itemId});
 
   @override
   State<ChattingRoomScreen> createState() => _ChattingRoomScreenState();
@@ -59,52 +59,54 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     );
   }
 
+  late ChattingRoomViewmodel viewModel;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    viewModel = ChattingRoomViewmodel(itemId: widget.itemId);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
+    // Provider가 만들어졌다면 leaveRoom 실행
+
+    if (viewModel.roomId != null) {
+      viewModel.leaveRoom();
+    }
+    super.dispose();
+  }
+
+  // 화면에 들어왔을 때
+  @override
+  void didPush() {
+    if (viewModel.roomId != null) {
+      viewModel.enterRoom();
+    }
+  }
+
+  // 뒤로가기(pop)했을 때
+  @override
+  void didPop() {
+    if (viewModel.roomId != null) {
+      viewModel.leaveRoom();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => ChattingRoomViewmodel(itemId: widget.itemId),
+    return ChangeNotifierProvider.value(
+      value: viewModel,
       child: Consumer<ChattingRoomViewmodel>(
         builder: (context, viewModel, child) {
-          @override
-          void initState() {
-            super.initState();
-            WidgetsBinding.instance.addObserver(this);
-          }
-
-          @override
-          void didChangeDependencies() {
-            super.didChangeDependencies();
-            routeObserver.subscribe(this, ModalRoute.of(context)!);
-          }
-
-          @override
-          void dispose() {
-            routeObserver.unsubscribe(this);
-            WidgetsBinding.instance.removeObserver(this);
-            // Provider가 만들어졌다면 leaveRoom 실행
-
-            if (viewModel.roomId != null) {
-              viewModel.leaveRoom();
-            }
-            super.dispose();
-          }
-
-          // 화면에 들어왔을 때
-          @override
-          void didPush() {
-            if (viewModel.roomId != null) {
-              viewModel.enterRoom();
-            }
-          }
-
-          // 뒤로가기(pop)했을 때
-          @override
-          void didPop() {
-            if (viewModel.roomId != null) {
-              viewModel.leaveRoom();
-            }
-          }
-
           return SafeArea(
             child: Scaffold(
               appBar: AppBar(),
@@ -148,7 +150,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         ),
                       ),
                       InkWell(
-                        onTap: () {},
+                        onTap: () {
+                          viewModel.sendMessage();
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
