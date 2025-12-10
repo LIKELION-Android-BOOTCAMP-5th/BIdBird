@@ -2,8 +2,10 @@ import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
+import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../item_detail_utils.dart';
 
@@ -14,6 +16,19 @@ class ItemDescriptionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<ItemDetailViewModel>();
+    final sellerProfile = vm.sellerProfile;
+
+    final String avatarUrl = (sellerProfile?['profile_image_url'] as String?) ?? '';
+    final String sellerNickname =
+        (sellerProfile?['nick_name'] as String?)?.trim().isNotEmpty == true
+            ? (sellerProfile?['nick_name'] as String).trim()
+            : item.sellerTitle;
+    final double sellerRating =
+        (sellerProfile?['rating'] as num?)?.toDouble() ?? item.sellerRating;
+    final int sellerReviewCount =
+        (sellerProfile?['review_count'] as int?) ?? item.sellerReviewCount;
+
     return Column(
       children: [
         Padding(
@@ -30,10 +45,14 @@ class ItemDescriptionSection extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 20,
-                      backgroundColor: yellowColor,
-                      child: Icon(Icons.person, color: BackgroundColor),
+                      backgroundColor: BorderColor,
+                      backgroundImage:
+                          avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      child: avatarUrl.isNotEmpty
+                          ? null
+                          : const Icon(Icons.person, color: BackgroundColor),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -41,7 +60,7 @@ class ItemDescriptionSection extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            item.sellerTitle,
+                            sellerNickname,
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -57,7 +76,7 @@ class ItemDescriptionSection extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${item.sellerRating.toStringAsFixed(1)} (${item.sellerReviewCount})',
+                                '${sellerRating.toStringAsFixed(1)} (${sellerReviewCount})',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: iconColor,
