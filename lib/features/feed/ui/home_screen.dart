@@ -28,6 +28,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<bool> _ensureIdentityVerified(BuildContext context) async {
     final gateway = IdentityVerificationGatewayImpl();
     final useCase = CheckAndRequestIdentityVerificationUseCase(gateway);
+
+    // 1) 먼저 서버에서 CI 여부 확인
+    final hasCi = await gateway.hasCi();
+    if (hasCi) {
+      // 이미 CI가 있으면 팝업 없이 바로 통과
+      return true;
+    }
+
+    // 2) CI가 없으면 본인인증 안내 팝업 노출
     bool proceed = false;
 
     await showDialog<void>(
@@ -49,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return false;
     }
 
+    // 3) 팝업에서 "본인 인증하기"를 누른 경우에만 본인인증 화면으로 이동
     final result = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         builder: (_) => IdentityVerificationScreen(useCase: useCase),

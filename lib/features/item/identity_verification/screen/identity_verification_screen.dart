@@ -1,5 +1,3 @@
-// identity_verification_screen.dart
-
 import 'package:flutter/material.dart';
 
 import '../usecase/check_and_request_identity_verification_usecase.dart';
