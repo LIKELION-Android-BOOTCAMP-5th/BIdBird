@@ -132,7 +132,7 @@ class _MypageItemList extends StatelessWidget {
           icon: Icons.receipt_long,
           title: '거래 내역',
           onTap: () {
-            //
+            context.go('/mypage/trade');
           },
         ),
         _Item(
