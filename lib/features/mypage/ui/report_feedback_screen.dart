@@ -1,10 +1,13 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
-import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
+import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
+import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
+import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
 
 class ReportFeedbackScreen extends StatelessWidget {
   const ReportFeedbackScreen({super.key});
