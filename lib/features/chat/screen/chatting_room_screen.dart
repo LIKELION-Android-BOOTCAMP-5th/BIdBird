@@ -4,6 +4,8 @@ import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:bidbird/features/chat/screen/widgets/message_bubble.dart';
 import 'package:bidbird/features/chat/viewmodel/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
@@ -166,9 +168,12 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                 borderRadius: defaultBorder,
                                 child:
                                     viewModel.itemInfo?.thumbnailImage != null
-                                    ? Image.network(
-                                        viewModel.itemInfo?.thumbnailImage ??
+                                    ? CachedNetworkImage(
+                                        imageUrl: viewModel
+                                                .itemInfo?.thumbnailImage ??
                                             "",
+                                        cacheManager:
+                                            ItemImageCacheManager.instance,
                                         fit: BoxFit.cover,
                                       )
                                     : const Icon(

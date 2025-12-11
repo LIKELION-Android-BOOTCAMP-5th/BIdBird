@@ -1,6 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/widgets/trade_status_chip.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/utils/ui_set/border_radius_style.dart';
@@ -61,7 +63,11 @@ class HistoryCard extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(defaultRadius),
                       child: (thumbnailUrl != null && thumbnailUrl!.isNotEmpty)
-                          ? Image.network(thumbnailUrl!, fit: BoxFit.cover)
+                          ? CachedNetworkImage(
+                              imageUrl: thumbnailUrl!,
+                              cacheManager: ItemImageCacheManager.instance,
+                              fit: BoxFit.cover,
+                            )
                           : Container(
                               color: BackgroundColor,
                               child: const Icon(

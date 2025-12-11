@@ -3,6 +3,8 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/user_history/data/repository/user_history_repository.dart';
 import 'package:bidbird/features/item/user_history/model/user_history_entity.dart';
 import 'package:bidbird/features/item/widgets/trade_status_chip.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class UserTradeHistoryScreen extends StatelessWidget {
@@ -55,11 +57,14 @@ class UserTradeHistoryScreen extends StatelessWidget {
                           child:
                               trade.thumbnailUrl != null &&
                                   trade.thumbnailUrl!.isNotEmpty
-                              ? Image.network(
-                                  trade.thumbnailUrl!,
+                              ? CachedNetworkImage(
+                                  imageUrl: trade.thumbnailUrl!,
+                                  cacheManager:
+                                      ItemImageCacheManager.instance,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(color: BackgroundColor),
+                                  errorWidget:
+                                      (context, error, stackTrace) =>
+                                          Container(color: BackgroundColor),
                                 )
                               : Container(color: BackgroundColor),
                         ),

@@ -3,6 +3,8 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/features/mypage/model/trade_history_model.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -464,10 +466,11 @@ class _Thumbnail extends StatelessWidget {
         height: 64,
         color: BackgroundColor,
         child: hasImage
-            ? Image.network(
-                url!,
+            ? CachedNetworkImage(
+                imageUrl: url!,
+                cacheManager: ItemImageCacheManager.instance,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
+                errorWidget: (_, __, ___) =>
                     const Icon(Icons.image_outlined, color: BorderColor),
               )
             : const Icon(Icons.image_outlined, color: BorderColor),
