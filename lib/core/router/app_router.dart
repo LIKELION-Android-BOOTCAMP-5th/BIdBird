@@ -19,19 +19,28 @@ import 'package:bidbird/features/item/item_registration_list/model/item_registra
 import 'package:bidbird/features/item/item_registration_list/screen/item_registration_list_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
 import 'package:bidbird/features/item/user_profile_history/screen/user_history_screen.dart';
-import 'package:bidbird/features/mypage/data/report_feedback_repository.dart';
-import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
-import 'package:bidbird/features/mypage/ui/cs_screen.dart';
+import 'package:bidbird/features/payment/payment_history/screen/payment_history_screen.dart';
+
+import 'package:bidbird/features/mypage/data/blacklist_repository.dart';
 import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
 import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
-import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
-import 'package:bidbird/features/mypage/ui/report_feedback_screen.dart';
-import 'package:bidbird/features/mypage/ui/terms_screen.dart';
-import 'package:bidbird/features/payment/payment_history/screen/payment_history_screen.dart';
+import 'package:bidbird/features/mypage/ui/favorites_screen.dart';
+import 'package:bidbird/features/mypage/viewmodel/favorites_viewmodel.dart';
+import 'package:bidbird/features/mypage/data/favorites_repository.dart';
 import 'package:bidbird/features/mypage/ui/trade_history_screen.dart';
-import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
+import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
+import 'package:bidbird/features/mypage/ui/cs_screen.dart';
+import 'package:bidbird/features/mypage/ui/terms_screen.dart';
+import 'package:bidbird/features/report/ui/report_screen.dart';
+import 'package:bidbird/features/mypage/ui/report_feedback_screen.dart';
+import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
 import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
+import 'package:bidbird/features/mypage/data/report_feedback_repository.dart';
+import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
+import 'package:bidbird/features/mypage/ui/blacklist_screen.dart';
+import 'package:bidbird/features/mypage/viewmodel/blacklist_viewmodel.dart';
+
 import 'package:bidbird/features/report/ui/report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -175,7 +184,14 @@ GoRouter createAppRouter(BuildContext context) {
               GoRoute(
                 path: '/favorite',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MypageScreen());
+                  return NoTransitionPage(
+                    child: ChangeNotifierProvider(
+                      create: (_) =>
+                          FavoritesViewModel(repository: FavoritesRepository())
+                            ..loadFavorites(),
+                      child: const FavoritesScreen(),
+                    ),
+                  );
                 },
               ),
               GoRoute(
@@ -239,7 +255,14 @@ GoRouter createAppRouter(BuildContext context) {
               GoRoute(
                 path: '/black_list',
                 pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MypageScreen());
+                  return NoTransitionPage(
+                    child: ChangeNotifierProvider(
+                      create: (_) =>
+                          BlacklistViewModel(repository: BlacklistRepository())
+                            ..loadBlacklist(),
+                      child: const BlacklistScreen(),
+                    ),
+                  );
                 },
               ),
               GoRoute(
@@ -263,18 +286,14 @@ GoRouter createAppRouter(BuildContext context) {
         path: '/payments',
         pageBuilder: (context, state) {
           final String? itemId = state.uri.queryParameters['itemId'];
-          return NoTransitionPage(
-            child: PaymentHistoryScreen(itemId: itemId),
-          );
+          return NoTransitionPage(child: PaymentHistoryScreen(itemId: itemId));
         },
       ),
       GoRoute(
         path: '/item/:itemId/relist',
         pageBuilder: (context, state) {
           final itemId = state.pathParameters['itemId'] ?? '';
-          return NoTransitionPage(
-            child: ItemRelistScreen(itemId: itemId),
-          );
+          return NoTransitionPage(child: ItemRelistScreen(itemId: itemId));
         },
       ),
       GoRoute(
@@ -294,9 +313,7 @@ GoRouter createAppRouter(BuildContext context) {
             return const NoTransitionPage(child: HomeScreen());
           }
 
-          return NoTransitionPage(
-            child: ItemBidSuccessScreen(item: item),
-          );
+          return NoTransitionPage(child: ItemBidSuccessScreen(item: item));
         },
       ),
       GoRoute(

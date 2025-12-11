@@ -125,7 +125,7 @@ class _MypageItemList extends StatelessWidget {
           icon: Icons.favorite_border,
           title: '관심 목록',
           onTap: () {
-            //
+            context.go('/mypage/favorite');
           },
         ),
         _Item(
@@ -146,7 +146,7 @@ class _MypageItemList extends StatelessWidget {
           icon: Icons.block,
           title: '블랙리스트',
           onTap: () {
-            //
+            context.go('/mypage/black_list');
           },
         ),
         const Spacer(),

@@ -4,6 +4,7 @@ import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/features/mypage/model/trade_history_model.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class TradeHistoryScreen extends StatelessWidget {
@@ -343,60 +344,67 @@ class _HistoryItem extends StatelessWidget {
           pricePrefix: '가격',
         );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: defaultBorder,
-        border: Border.all(color: BorderColor.withValues(alpha: 0.25)),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Thumbnail(url: item.thumbnailUrl),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.title,
-                        style: const TextStyle(fontSize: 15),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _Status(label: displayInfo.label, color: displayInfo.color),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  priceLabel,
-                  style: const TextStyle(fontSize: 13, color: textColor),
-                ),
-                if (buyNowText != null)
-                  Column(
+    return GestureDetector(
+      onTap: () {
+        if (item.itemId.isNotEmpty) {
+          context.push('/item/${item.itemId}');
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: defaultBorder,
+          border: Border.all(color: BorderColor.withValues(alpha: 0.25)),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _Thumbnail(url: item.thumbnailUrl),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 2),
-                      Text(
-                        buyNowText,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: BorderColor,
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: const TextStyle(fontSize: 15),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      _Status(label: displayInfo.label, color: displayInfo.color),
                     ],
                   ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    priceLabel,
+                    style: const TextStyle(fontSize: 13, color: textColor),
+                  ),
+                  if (buyNowText != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 2),
+                        Text(
+                          buyNowText,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: BorderColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
