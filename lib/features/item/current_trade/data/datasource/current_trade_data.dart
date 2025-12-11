@@ -14,55 +14,22 @@ class CurrentTradeDatasource {
     if (user == null) return [];
 
     try {
-      final logRows = await _supabase
-          .from('auctions_status_log')
-          .select('bid_status_id, user_id, bid_price, auction_log_code, created_at')
-          .eq('user_id', user.id)
-          .inFilter('auction_log_code', [410, 411, 430, 431])
+      // 입찰 내역: auctions 테이블에서 현재 사용자가 마지막 입찰자인 경매만 조회
+      final auctionRows = await _supabase
+          .from('auctions')
+          .select(
+            'auction_id, item_id, current_price, auction_status_code, trade_status_code, created_at',
+          )
+          .eq('last_bid_user_id', user.id)
           .order('created_at', ascending: false);
 
-      final tradeRows = await _supabase
-          .from('trade_status')
-          .select('trade_id, item_id, price, trade_status_code, created_at')
-          .eq('buyer_id', user.id)
-          .eq('trade_status_code', 510);
+      if (auctionRows.isEmpty) return [];
 
-      if (logRows.isEmpty && tradeRows.isEmpty) return [];
-
-      final Set<String> auctionIds = {};
-      for (final row in logRows) {
-        final id = row['bid_status_id']?.toString();
-        if (id != null && id.isNotEmpty) {
-          auctionIds.add(id);
-        }
-      }
-
-      final Map<String, Map<String, dynamic>> auctionsById = {};
-      if (auctionIds.isNotEmpty) {
-        final auctionsRows = await _supabase
-            .from('auctions')
-            .select(
-                'auction_id, item_id, current_price, auction_status_code, trade_status_code')
-            .inFilter('auction_id', auctionIds.toList());
-
-        for (final row in auctionsRows) {
-          final id = row['auction_id']?.toString();
-          if (id != null) {
-            auctionsById[id] = row;
-          }
-        }
-      }
-
+      // 필요한 item_id만 모아서 items_detail에서 제목/썸네일 조회
       final Set<String> itemIds = {};
-      for (final auction in auctionsById.values) {
-        final itemId = auction['item_id']?.toString();
-        if (itemId != null) {
-          itemIds.add(itemId);
-        }
-      }
-      for (final row in tradeRows) {
+      for (final row in auctionRows) {
         final itemId = row['item_id']?.toString();
-        if (itemId != null) {
+        if (itemId != null && itemId.isNotEmpty) {
           itemIds.add(itemId);
         }
       }
@@ -76,99 +43,66 @@ class CurrentTradeDatasource {
 
         for (final row in itemRows) {
           final id = row['item_id']?.toString();
-          if (id != null) {
+          if (id != null && id.isNotEmpty) {
             itemsById[id] = row;
           }
         }
       }
 
-      final List<Map<String, dynamic>> merged = [];
-
-      for (final row in logRows) {
-        final auctionId = row['bid_status_id']?.toString();
-        final auction = auctionsById[auctionId] ?? <String, dynamic>{};
-        final int auctionStatusCode =
-            (auction['auction_status_code'] as int?) ?? 0;
-        final int tradeStatusCode =
-            (auction['trade_status_code'] as int?) ?? 0;
-        final itemId = auction['item_id']?.toString() ?? '';
-        if (itemId.isEmpty) continue;
-
-        final item = itemsById[itemId] ?? <String, dynamic>{};
-        final int code = (row['auction_log_code'] as int?) ?? 0;
-        String status;
-        switch (code) {
-          case 410:
-            status = '경매 진행 중';
-            break;
-          case 411:
-            status = '상위 입찰';
-            break;
-          case 430:
-            status = '입찰 낙찰';
-            break;
-          case 431:
-            // 즉시 구매 시도 로그이지만, 실제 경매/거래 상태에 따라 보정
-            if (auctionStatusCode == 310) {
-              // 즉시구매 실패 등으로 다시 경매 진행 중인 경우
-              status = '경매 진행 중';
-            } else if (auctionStatusCode == 322 ||
-                tradeStatusCode == 520 ||
-                tradeStatusCode == 550) {
-              // 즉시 구매가 최종적으로 완료/거래 완료된 경우
-              status = '즉시 구매 완료';
-            } else {
-              // 그 외에는 기본적으로 즉시 구매 낙찰로 취급
-              status = '즉시 구매 낙찰';
-            }
-            break;
-          default:
-            status = '';
+      // auctions의 경매/거래 상태 코드 기준으로 상태 문자열 생성
+      String _buildStatus({required int auctionCode, required int tradeCode}) {
+        if (tradeCode == 550) {
+          return '거래 완료';
+        } else if (tradeCode == 520) {
+          return '결제 완료';
+        } else if (tradeCode == 510) {
+          return '결제 대기';
         }
 
-        merged.add(<String, dynamic>{
-          'item_id': itemId,
-          'title': item['title']?.toString() ?? '',
-          'price': row['bid_price'] as int? ?? 0,
-          'thumbnail': item['thumbnail_image']?.toString(),
-          'status': status,
-          'created_at': row['created_at']?.toString(),
-        });
+        switch (auctionCode) {
+          case 300:
+            return '경매 대기';
+          case 310:
+            return '경매 진행 중';
+          case 311:
+            return '즉시 구매 진행 중';
+          case 321:
+            return '입찰 낙찰';
+          case 322:
+            return '즉시 구매 완료';
+          case 323:
+            return '유찰';
+          default:
+            return '';
+        }
       }
 
-      for (final row in tradeRows) {
+      final List<BidHistoryItem> results = [];
+
+      for (final row in auctionRows) {
         final itemId = row['item_id']?.toString() ?? '';
         if (itemId.isEmpty) continue;
-        final item = itemsById[itemId] ?? <String, dynamic>{};
 
-        merged.add(<String, dynamic>{
-          'item_id': itemId,
-          'title': item['title']?.toString() ?? '',
-          'price': row['price'] as int? ?? 0,
-          'thumbnail': item['thumbnail_image']?.toString(),
-          'status': '결제 대기',
-          'created_at': row['created_at']?.toString(),
-        });
+        final item = itemsById[itemId] ?? <String, dynamic>{};
+        final auctionCode = row['auction_status_code'] as int? ?? 0;
+        final tradeCode = row['trade_status_code'] as int? ?? 0;
+
+        results.add(
+          BidHistoryItem(
+            itemId: itemId,
+            title: item['title']?.toString() ?? '',
+            price: row['current_price'] as int? ?? 0,
+            thumbnailUrl: item['thumbnail_image']?.toString(),
+            status: _buildStatus(
+              auctionCode: auctionCode,
+              tradeCode: tradeCode,
+            ),
+          ),
+        );
       }
 
-      merged.sort((a, b) {
-        final ta = DateTime.tryParse(a['created_at']?.toString() ?? '');
-        final tb = DateTime.tryParse(b['created_at']?.toString() ?? '');
-        if (ta == null || tb == null) return 0;
-        return tb.compareTo(ta);
-      });
-
-      return merged
-          .map(
-            (row) => BidHistoryItem(
-              itemId: row['item_id']?.toString() ?? '',
-              title: row['title']?.toString() ?? '',
-              price: row['price'] as int? ?? 0,
-              thumbnailUrl: row['thumbnail']?.toString(),
-              status: row['status']?.toString() ?? '',
-            ),
-          )
-          .toList();
+      // DB 쿼리에서 이미 created_at 내림차순 정렬, 그대로 사용
+      return results;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Error fetching bid history: $e');
@@ -229,10 +163,11 @@ class CurrentTradeDatasource {
 
       return itemIds.map((itemId) {
         final item = itemsById[itemId] ?? <String, dynamic>{};
-        final auctionCode = auctionCodeByItemId[itemId];
-        final tradeCode = tradeCodeByItemId[itemId];
+        final auctionCode = auctionCodeByItemId[itemId] ?? 0;
+        final tradeCode = tradeCodeByItemId[itemId] ?? 0;
         final createdAt = item['created_at']?.toString() ?? '';
 
+        // 입찰 내역과 동일한 규칙으로 상태 문자열 생성
         String status;
         if (tradeCode == 550) {
           status = '거래 완료';
@@ -252,7 +187,7 @@ class CurrentTradeDatasource {
               status = '즉시 구매 진행 중';
               break;
             case 321:
-              status = '낙찰';
+              status = '입찰 낙찰';
               break;
             case 322:
               status = '즉시 구매 완료';

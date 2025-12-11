@@ -49,16 +49,11 @@ class SupabaseItemAddDatasource {
       throw Exception('경매 기간을 설정해주세요.');
     }
 
-    // 편집 모드(editingItemId != null)에서는 기존 아이템을 업데이트만 하고,
-    // 신규 등록 시에만 register_item RPC를 통해 새로운 아이템을 생성합니다.
     late final String itemId;
 
     if (editingItemId != null) {
       itemId = editingItemId;
 
-      // 기존 아이템 기본 정보 업데이트
-      // 프론트에서는 경매 기간을 "시간" 단위(4, 12, 24 등)로 관리하고,
-      // items_detail.auction_duration_hours 컬럼도 동일하게 시간 단위로 보관합니다.
       await _supabase.from('items_detail').update(<String, dynamic>{
         'title': entity.title,
         'description': entity.description,
@@ -68,7 +63,6 @@ class SupabaseItemAddDatasource {
         'auction_duration_hours': entity.auctionDurationHours,
       }).eq('item_id', itemId);
 
-      // 기존 이미지 삭제 (기존 아이템 기준)
       await _supabase.from('item_images').delete().eq('item_id', itemId);
     } else {
       final dynamic result = await _supabase.rpc(
