@@ -1,10 +1,12 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/model/chat_message_entity.dart';
+import 'package:bidbird/features/chat/model/chatting_notification_set_entity.dart';
 
 /// 채팅 데이터 소스
 class ChatSupabaseDatasource {
   static const String _chatRoomsTable = 'chatting_room';
   static const String _messagesTable = 'chatting_message';
+  static const String _roomUserTable = 'chatting_room_users';
 
   final _supabase = SupabaseManager.shared.supabase;
 
@@ -87,6 +89,66 @@ class ChatSupabaseDatasource {
     } catch (e) {
       print('메시지 전송에 실패했습니다 : ${e}');
     }
+  }
+
+  Future<ChattingNotificationSetEntity?> getRoomNotificationSetting(
+    String roomId,
+  ) async {
+    final String? currentUserId =
+        SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return null;
+    try {
+      final response = await SupabaseManager.shared.supabase
+          .from(_roomUserTable)
+          .select('*')
+          .eq('room_id', roomId)
+          .eq('user_id', currentUserId)
+          .maybeSingle();
+      if (response != null) {
+        final data = ChattingNotificationSetEntity.fromJson(response);
+        return data;
+      }
+    } catch (e) {
+      print("알림 셋팅 불러오기 실패 : ${e}");
+      return null;
+    }
+    return null;
+  }
+
+  Future<void> notificationOn(String roomId) async {
+    final String? currentUserId =
+        SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return;
+
+    try {
+      await _supabase
+          .from(_roomUserTable)
+          .update({'is_notification_on': true})
+          .eq('room_id', roomId)
+          .eq('user_id', currentUserId);
+    } catch (e) {
+      print('푸시알림 키는데 실패했습니다 : ${e}');
+      return;
+    }
+    return;
+  }
+
+  Future<void> notificationOff(String roomId) async {
+    final String? currentUserId =
+        SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return;
+
+    try {
+      await _supabase
+          .from(_roomUserTable)
+          .update({'is_notification_on': false})
+          .eq('room_id', roomId)
+          .eq('user_id', currentUserId);
+    } catch (e) {
+      print('푸시알림 키는데 실패했습니다 : ${e}');
+      return;
+    }
+    return;
   }
 
   /// 채팅방 목록 조회

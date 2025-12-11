@@ -48,6 +48,25 @@ class ChatNetworkApiDatasource {
     }
   }
 
+  Future<RoomInfoEntity?> fetchRoomInfoWithRoomId(String roomId) async {
+    try {
+      final response = await SupabaseManager.shared.supabase.functions.invoke(
+        'chatting/roomInfoWithRoomId',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: {'roomId': roomId},
+      );
+      final data = response.data;
+      print("$data");
+      print("디버그 포인트");
+      final result = RoomInfoEntity.fromJson(data);
+      return result;
+    } catch (e) {
+      print("방 정보 가져오기 실패 : ${e}");
+      return null;
+    }
+  }
+
   Future<String?> firstMessage({
     required String itemId,
     String? message,

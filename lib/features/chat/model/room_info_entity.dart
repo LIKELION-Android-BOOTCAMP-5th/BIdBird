@@ -5,13 +5,13 @@
 class RoomInfoEntity {
   final ItemInfoEntity item;
   final AuctionInfoEntity auction;
-  final SellerEntity seller;
+  final OpponentEntity opponent;
   TradeInfoEntity? trade;
 
   RoomInfoEntity({
     required this.item,
     required this.auction,
-    required this.seller,
+    required this.opponent,
     required this.trade,
   });
 
@@ -19,7 +19,7 @@ class RoomInfoEntity {
     return RoomInfoEntity(
       item: ItemInfoEntity.fromJson(json["item"]),
       auction: AuctionInfoEntity.fromJson(json["auction"]),
-      seller: SellerEntity.fromJson(json["opponent"]),
+      opponent: OpponentEntity.fromJson(json["opponent"]),
       trade: json["trade"] != null
           ? TradeInfoEntity.fromJson(json["trade"])
           : null,
@@ -112,17 +112,17 @@ class AuctionInfoEntity {
 }
 
 // ==========================================================
-// OpponentEntity
+// OpponentEntity 상대방
 // ==========================================================
 
-class SellerEntity {
+class OpponentEntity {
   final String? profileImage;
   final String nickName;
 
-  SellerEntity({required this.profileImage, required this.nickName});
+  OpponentEntity({required this.profileImage, required this.nickName});
 
-  factory SellerEntity.fromJson(Map<String, dynamic> json) {
-    return SellerEntity(
+  factory OpponentEntity.fromJson(Map<String, dynamic> json) {
+    return OpponentEntity(
       profileImage: json['profile_image'] as String?,
       nickName: json['nick_name'] as String,
     );
