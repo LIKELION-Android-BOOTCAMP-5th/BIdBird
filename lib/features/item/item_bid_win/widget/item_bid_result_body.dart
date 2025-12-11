@@ -1,5 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../model/item_bid_win_entity.dart';
@@ -87,8 +89,9 @@ class ItemBidResultBody extends StatelessWidget {
                     ),
                     clipBehavior: Clip.hardEdge,
                     child: item.images.isNotEmpty
-                        ? Image.network(
-                      item.images.first,
+                        ? CachedNetworkImage(
+                      imageUrl: item.images.first,
+                      cacheManager: ItemImageCacheManager.instance,
                       fit: BoxFit.cover,
                     )
                         : Center(

@@ -54,9 +54,13 @@ dependencies:
   intl: ^0.20.2
   portone_flutter: ^0.12.0
   portone_flutter_v2: ^1.0.0
+  cached_network_image: ^3.3.1
+  flutter_cache_manager: ^3.3.2
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to

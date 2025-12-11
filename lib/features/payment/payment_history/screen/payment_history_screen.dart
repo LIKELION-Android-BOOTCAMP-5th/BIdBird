@@ -1,5 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/payment/payment_history/data/payment_history_repository.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -156,8 +158,9 @@ class _PaymentDetailBody extends StatelessWidget {
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
-                      ? Image.network(
-                          item.thumbnailUrl!,
+                      ? CachedNetworkImage(
+                          imageUrl: item.thumbnailUrl!,
+                          cacheManager: ItemImageCacheManager.instance,
                           fit: BoxFit.cover,
                         )
                       : Container(

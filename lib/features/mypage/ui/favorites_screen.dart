@@ -4,6 +4,8 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/features/mypage/model/favorites_model.dart';
 import 'package:bidbird/features/mypage/viewmodel/favorites_viewmodel.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -139,8 +141,9 @@ class _Item extends StatelessWidget {
             ClipRRect(
               borderRadius: defaultBorder,
               child: item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
-                  ? Image.network(
-                      item.thumbnailUrl!,
+                  ? CachedNetworkImage(
+                      imageUrl: item.thumbnailUrl!,
+                      cacheManager: ItemImageCacheManager.instance,
                       width: 80,
                       height: 80,
                       fit: BoxFit.cover,

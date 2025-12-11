@@ -103,10 +103,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       );
       return false;
     }
-    // 모든 경로가 값을 반환하도록 안전망
-    // (정상 흐름에서는 도달하지 않음)
-    // ignore: dead_code
-    return false;
   }
 
   @override

@@ -1,6 +1,8 @@
 import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
@@ -290,8 +292,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       child: ClipRRect(
                                                         borderRadius:
                                                             defaultBorder,
-                                                        child: Image.network(
-                                                          item.thumbnail_image,
+                                                        child: CachedNetworkImage(
+                                                          imageUrl:
+                                                              item.thumbnail_image,
+                                                          cacheManager:
+                                                              ItemImageCacheManager
+                                                                  .instance,
                                                           fit: BoxFit.cover,
                                                         ),
                                                       ),

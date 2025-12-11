@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/features/chat/model/chat_message_entity.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// 메시지 버블 위젯
@@ -63,8 +65,9 @@ class MessageBubble extends StatelessWidget {
 
                       return AspectRatio(
                         aspectRatio: aspectRatio,
-                        child: Image.network(
-                          message.image_url!,
+                        child: CachedNetworkImage(
+                          imageUrl: message.image_url!,
+                          cacheManager: ItemImageCacheManager.instance,
                           fit: BoxFit.cover,
                         ),
                       );

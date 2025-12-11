@@ -2,7 +2,9 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/features/item/item_registration_detail/viewmodel/item_registration_detail_viewmodel.dart';
 import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -112,7 +114,20 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           children: [
             Positioned.fill(
               child: item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
-                  ? Image.network(item.thumbnailUrl!, fit: BoxFit.cover)
+                  ? CachedNetworkImage(
+                      imageUrl: item.thumbnailUrl!,
+                      cacheManager: ItemImageCacheManager.instance,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => const Center(
+                        child: Text(
+                          '이미지 없음',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                    )
                   : const Center(
                       child: Text(
                         '이미지 없음',

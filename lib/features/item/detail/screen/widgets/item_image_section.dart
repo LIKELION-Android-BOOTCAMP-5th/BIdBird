@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../item_detail_utils.dart';
@@ -67,21 +69,25 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                   },
                   itemCount: images.length,
                   itemBuilder: (context, index) {
+                    final imageUrl = images[index];
+
                     return Container(
                       width: double.infinity,
                       color: ImageBackgroundColor,
-                      child: Image.network(
-                        images[index],
+                      child: CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        cacheManager: ItemImageCacheManager.instance,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Text(
-                              '상품 사진',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          );
-                        },
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        errorWidget: (context, url, error) => const Center(
+                          child: Text(
+                            '상품 사진',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
                       ),
                     );
                   },

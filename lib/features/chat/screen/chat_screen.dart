@@ -1,7 +1,6 @@
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/features/chat/viewmodel/chat_list_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -92,7 +91,7 @@ class ChatScreen extends StatelessWidget {
               spacing: 8,
               children: [
                 CircleAvatar(
-                  radius: 32,
+                  radius: 24,
                   backgroundColor: yellowColor,
                   backgroundImage: chattingRoom.profile_image != null
                       ? NetworkImage(chattingRoom.profile_image!)
@@ -100,8 +99,8 @@ class ChatScreen extends StatelessWidget {
                   child: chattingRoom.profile_image != null
                       ? null
                       : SizedBox(
-                          width: 35,
-                          height: 35,
+                          width: 28,
+                          height: 28,
                           child: FittedBox(
                             child: Icon(Icons.person, color: BackgroundColor),
                           ),
@@ -115,11 +114,12 @@ class ChatScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              "${chattingRoom.user_nickname ?? "사용자"}",
+                              chattingRoom.item_title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -137,37 +137,15 @@ class ChatScreen extends StatelessWidget {
                         chattingRoom.last_message,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: contentFontStyle,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 13,
+                        ),
                         textAlign: TextAlign.left,
                       ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          IntrinsicWidth(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black45,
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Row(
-                                spacing: 3,
-                                children: [
-                                  Text(
-                                    "${chattingRoom.item_title}",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                           if (chattingRoom.count! > 0)
                             Container(
                               padding: const EdgeInsets.symmetric(
