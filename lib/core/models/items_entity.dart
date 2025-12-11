@@ -48,13 +48,27 @@ class ItemsEntity {
   });
 
   factory ItemsEntity.fromJson(Map<String, dynamic> json) {
+    // is_agreed 기본값 계산용 (없으면 현재 시간 사용)
     final isAgreedAtRaw = json['is_agreed']?.toString();
     final isAgreedAt = isAgreedAtRaw != null
         ? DateTime.tryParse(isAgreedAtRaw) ?? DateTime.now()
         : DateTime.now();
 
-    final durationHours = (json['auction_duration_hours'] as int?) ?? 24;
-    final finishTime = isAgreedAt.add(Duration(hours: durationHours));
+    // 종료 시간은 auction_end_at 컬럼을 직접 사용
+    final auctionEndRaw = json['auction_end_at']?.toString();
+    DateTime finishTime;
+    if (auctionEndRaw != null && auctionEndRaw.isNotEmpty) {
+      finishTime = DateTime.tryParse(auctionEndRaw) ?? DateTime.now();
+    } else {
+      // auction_end_at 이 없는 경우 기존 로직(동의 시각 + duration)으로 보정
+      final isAgreedAtRaw = json['is_agreed']?.toString();
+      final isAgreedAt = isAgreedAtRaw != null
+          ? DateTime.tryParse(isAgreedAtRaw) ?? DateTime.now()
+          : DateTime.now();
+
+      final durationHours = (json['auction_duration_hours'] as int?) ?? 24;
+      finishTime = isAgreedAt.add(Duration(hours: durationHours));
+    }
 
     final String id = (json['item_id'] ?? json['id'])?.toString() ?? '';
 

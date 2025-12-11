@@ -421,9 +421,13 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             if (!context.mounted) return;
 
             if (result == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('결제가 완료되었습니다.'),
+              // 즉시 구매 결제 성공 시에도 결제 완료 화면으로 이동
+              final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PaymentCompleteScreen(item: bidWinEntity),
                 ),
               );
             } else if (result == false) {
