@@ -99,30 +99,50 @@ class MessageBubble extends StatelessWidget {
       ),
     );
 
+    // 시간 표시가 필요 없으면 버블만 출력
+    if (!showTime) {
+      return Align(
+        alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.72,
+          ),
+          child: bubble,
+        ),
+      );
+    }
+
+    // showTime == true 인 경우, 버블 옆(가운데 높이)에 시간 표시
+    final timeText = Text(
+      _formatTime(message.created_at),
+      style: TextStyle(
+        color: Colors.grey[500],
+        fontSize: 11,
+      ),
+    );
+
     return Align(
       alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-        child: IntrinsicWidth(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: isCurrentUser
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            children: [
-              bubble,
-              if (showTime) ...[
-                const SizedBox(height: 2),
-                Text(
-                  _formatTime(message.created_at),
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ],
-          ),
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.72,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: isCurrentUser
+              ? [
+                  timeText,
+                  const SizedBox(width: 6),
+                  Flexible(child: bubble),
+                ]
+              : [
+                  Flexible(child: bubble),
+                  const SizedBox(width: 6),
+                  timeText,
+                ],
         ),
       ),
     );
