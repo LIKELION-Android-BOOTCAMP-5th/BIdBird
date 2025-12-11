@@ -57,17 +57,15 @@ class SupabaseItemAddDatasource {
       itemId = editingItemId;
 
       // 기존 아이템 기본 정보 업데이트
-      // 프론트에서는 경매 기간을 "시간" 단위로 관리하고,
-      // DB의 auction_duration_hours 컬럼은 실제로 "분" 단위 값을 보관합니다.
-      // 신규 등록(register_item RPC) 시에도 minutes 로 전달하고 있으므로,
-      // 수정(update) 시에도 동일하게 minutes 로 저장하도록 변환합니다.
+      // 프론트에서는 경매 기간을 "시간" 단위(4, 12, 24 등)로 관리하고,
+      // items_detail.auction_duration_hours 컬럼도 동일하게 시간 단위로 보관합니다.
       await _supabase.from('items_detail').update(<String, dynamic>{
         'title': entity.title,
         'description': entity.description,
         'start_price': entity.startPrice,
         'buy_now_price': entity.instantPrice > 0 ? entity.instantPrice : null,
         'keyword_type': entity.keywordTypeId,
-        'auction_duration_hours': entity.auctionDurationHours * 60,
+        'auction_duration_hours': entity.auctionDurationHours,
       }).eq('item_id', itemId);
 
       // 기존 이미지 삭제 (기존 아이템 기준)
@@ -88,6 +86,10 @@ class SupabaseItemAddDatasource {
       );
 
       itemId = result.toString();
+
+      await _supabase.from('items_detail').update(<String, dynamic>{
+        'auction_duration_hours': entity.auctionDurationHours,
+      }).eq('item_id', itemId);
     }
 
     final List<Map<String, dynamic>> imageRows = <Map<String, dynamic>>[];
