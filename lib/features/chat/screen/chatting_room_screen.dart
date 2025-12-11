@@ -24,7 +24,6 @@ class ChattingRoomScreen extends StatefulWidget {
 
 class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     with RouteAware, WidgetsBindingObserver {
-  bool _fabMenuOpen = false;
 
   void _showImageSourceSheet(
     BuildContext context,
@@ -118,8 +117,41 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
         builder: (context, viewModel, child) {
           return SafeArea(
             child: Scaffold(
+              backgroundColor: BackgroundColor,
               appBar: AppBar(
-                title: Text(viewModel.roomInfo?.opponent.nickName ?? "로딩중"),
+                backgroundColor: Colors.white,
+                surfaceTintColor: Colors.white,
+                elevation: 0.5,
+                titleSpacing: 0,
+                title: Row(
+                  children: [
+                    const SizedBox(width: 4),
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: yellowColor,
+                      child: Text(
+                        (viewModel.roomInfo?.opponent.nickName ?? '로딩중')
+                            .substring(0, 1),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        viewModel.roomInfo?.opponent.nickName ?? "로딩중",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 actions: [
                   PopupMenuButton(
                     color: BorderColor,
@@ -146,8 +178,20 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
               body: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                     child: Container(
+                      decoration: BoxDecoration(
+                        color: BackgroundColor,
+                        borderRadius: defaultBorder,
+                        boxShadow: const [
+                          BoxShadow(
+                            color: shadowLow,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(12),
                       child: Row(
                         spacing: 16,
                         children: [
@@ -230,35 +274,55 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                       },
                     ),
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+                    color: Colors.transparent,
+                    child: Row(
+                      children: [
+                        Expanded(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
+                              horizontal: 12,
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: BorderColor,
+                              color: Colors.white,
                               borderRadius: defaultBorder,
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: shadowLow,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: viewModel.image == null
                                 ? TextField(
                                     minLines: 1,
                                     maxLines: null,
                                     controller: viewModel.messageController,
+                                    style: const TextStyle(fontSize: 14),
                                     decoration: InputDecoration(
                                       hintText: "메시지를 입력하세요",
+                                      border: InputBorder.none,
+                                      isCollapsed: true,
+                                      contentPadding: EdgeInsets.zero,
                                       suffixIcon: IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                          minWidth: 32,
+                                          minHeight: 32,
+                                        ),
                                         onPressed: () {
                                           _showImageSourceSheet(
                                             context,
                                             viewModel,
                                           );
                                         },
-                                        icon: Icon(Icons.add),
+                                        icon: const Icon(
+                                          Icons.add,
+                                          size: 20,
+                                        ),
                                       ),
                                     ),
                                   )
@@ -268,8 +332,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                         borderRadius: defaultBorder,
                                         child: AspectRatio(
                                           aspectRatio:
-                                              viewModel.imageAspectRatio ??
-                                              1, // 동적으로 계산됨
+                                              viewModel.imageAspectRatio ?? 1,
                                           child: Image.file(
                                             File(viewModel.image!.path),
                                             fit: BoxFit.cover,
@@ -278,22 +341,19 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                           ),
                                         ),
                                       ),
-                                      // 삭제 버튼 (오른쪽 상단)
                                       Positioned(
                                         top: 6,
                                         right: 6,
                                         child: GestureDetector(
                                           onTap: () {
-                                            viewModel
-                                                .clearImage(); // ViewModel 기능 추가해야 함
+                                            viewModel.clearImage();
                                           },
                                           child: Container(
                                             width: 28,
                                             height: 28,
                                             decoration: BoxDecoration(
-                                              color: Colors.black.withOpacity(
-                                                0.5,
-                                              ),
+                                              color: Colors.black
+                                                  .withValues(alpha: 0.5),
                                               shape: BoxShape.circle,
                                             ),
                                             child: const Icon(
@@ -308,33 +368,42 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                   ),
                           ),
                         ),
-                      ),
-                      InkWell(
-                        onTap: () {
-                          if (!viewModel.isSending) {
-                            viewModel.sendMessage();
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: () {
+                            if (!viewModel.isSending) {
+                              viewModel.sendMessage();
+                            }
+                          },
                           child: Container(
-                            width: 60,
-                            height: 60,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
+                            width: 44,
+                            height: 44,
+                            decoration: const BoxDecoration(
                               color: blueColor,
-                              borderRadius: defaultBorder,
+                              shape: BoxShape.circle,
                             ),
-                            child: viewModel.isSending
-                                ? CircularProgressIndicator()
-                                : Icon(Icons.send, color: BackgroundColor),
+                            child: Center(
+                              child: viewModel.isSending
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.send,
+                                      color: Colors.white,
+                                    ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),

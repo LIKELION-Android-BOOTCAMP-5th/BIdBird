@@ -147,31 +147,6 @@ GoRouter createAppRouter(BuildContext context) {
             pageBuilder: (context, state) {
               return const NoTransitionPage(child: ChatScreen());
             },
-            routes: [
-              GoRoute(
-                path: '/room',
-                pageBuilder: (context, state) {
-                  final String thisItemId =
-                      state.uri.queryParameters["itemId"] ?? "null";
-                  final String? thisRoomId =
-                      state.uri.queryParameters["roomId"] ?? null;
-                  return NoTransitionPage(
-                    child: ChattingRoomScreen(
-                      itemId: thisItemId,
-                      roomId: thisRoomId,
-                    ),
-                  );
-                },
-                routes: [
-                  GoRoute(
-                    path: '/trade_report',
-                    pageBuilder: (context, state) {
-                      return const NoTransitionPage(child: ReportScreen());
-                    },
-                  ),
-                ],
-              ),
-            ],
           ),
           GoRoute(
             path: '/mypage',
@@ -278,6 +253,21 @@ GoRouter createAppRouter(BuildContext context) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/chat/room',
+        pageBuilder: (context, state) {
+          final String thisItemId =
+              state.uri.queryParameters["itemId"] ?? "null";
+          final String? thisRoomId =
+              state.uri.queryParameters["roomId"] ?? null;
+          return NoTransitionPage(
+            child: ChattingRoomScreen(
+              itemId: thisItemId,
+              roomId: thisRoomId,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/payment',
