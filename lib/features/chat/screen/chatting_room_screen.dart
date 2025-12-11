@@ -181,7 +181,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: BackgroundColor,
+                        color: Colors.grey[300],
                         borderRadius: defaultBorder,
                         boxShadow: const [
                           BoxShadow(
@@ -199,7 +199,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             width: 60,
                             height: 60,
                             decoration: BoxDecoration(
-                              color: BackgroundColor,
+                              color: Colors.grey[300],
                               border: Border.all(
                                 color: iconColor.withValues(alpha: 0.2),
                                 width: 1,
@@ -267,15 +267,27 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             .currentUser
                             ?.id;
                         final isCurrentUser = message.sender_id == userId;
+
+                        // 같은 사람이 연속해서 보낸 메시지 중 마지막인지 여부
+                        final bool isLastFromSameSender;
+                        if (index == viewModel.messages.length - 1) {
+                          isLastFromSameSender = true;
+                        } else {
+                          final nextMessage = viewModel.messages[index + 1];
+                          isLastFromSameSender =
+                              nextMessage.sender_id != message.sender_id;
+                        }
+
                         return MessageBubble(
                           message: message,
                           isCurrentUser: isCurrentUser,
+                          showTime: isLastFromSameSender,
                         );
                       },
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+                    padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
                     color: Colors.transparent,
                     child: Row(
                       children: [
@@ -283,10 +295,10 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
-                              vertical: 4,
+                              vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Colors.grey[300],
                               borderRadius: defaultBorder,
                               boxShadow: const [
                                 BoxShadow(
@@ -299,30 +311,22 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             child: viewModel.image == null
                                 ? TextField(
                                     minLines: 1,
-                                    maxLines: null,
+                                    maxLines: 1,
                                     controller: viewModel.messageController,
-                                    style: const TextStyle(fontSize: 14),
-                                    decoration: InputDecoration(
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                    ),
+                                    textAlignVertical: TextAlignVertical.center,
+                                    decoration: const InputDecoration(
                                       hintText: "메시지를 입력하세요",
                                       border: InputBorder.none,
                                       isCollapsed: true,
-                                      contentPadding: EdgeInsets.zero,
-                                      suffixIcon: IconButton(
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(
-                                          minWidth: 32,
-                                          minHeight: 32,
-                                        ),
-                                        onPressed: () {
-                                          _showImageSourceSheet(
-                                            context,
-                                            viewModel,
-                                          );
-                                        },
-                                        icon: const Icon(
-                                          Icons.add,
-                                          size: 20,
-                                        ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        vertical: 8,
+                                      ),
+                                      suffixIcon: Icon(
+                                        Icons.add,
+                                        size: 20,
                                       ),
                                     ),
                                   )
