@@ -15,7 +15,7 @@ class BidRestrictionDatasource {
     }
 
     final row = await _supabase
-        .from('bid_restriction')
+        .from('restriction_user')
         .select('fail_count')
         .eq('user_id', user.id)
         .maybeSingle();

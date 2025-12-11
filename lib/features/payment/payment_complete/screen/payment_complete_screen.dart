@@ -20,7 +20,7 @@ class PaymentCompleteScreen extends StatelessWidget {
         child: ItemBidResultBody(
           item: item,
           title: '결제가 완료되었습니다!',
-          subtitle: '주문하신 상품이 곧 준비됩니다.',
+          subtitle: '판매자에게 결제 완료가 전달되었습니다.',
           icon: Icons.check_circle,
           iconColor: blueColor,
           onClose: () {

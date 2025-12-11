@@ -1,16 +1,20 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/features/payment/portone_payment/data/repository/item_payment_gateway.dart';
 import 'package:bidbird/features/payment/portone_payment/data/repository/item_payment_gateway_impl.dart';
 import 'package:bidbird/features/payment/portone_payment/model/item_payment_request.dart';
+import 'package:bidbird/features/payment/portone_payment/portone_payment_config.dart';
 import 'package:flutter/material.dart';
 import 'package:portone_flutter_v2/portone_flutter_v2.dart';
 
 class PortonePaymentScreen extends StatefulWidget {
-  const PortonePaymentScreen({
+  PortonePaymentScreen({
     super.key,
     required this.request,
-  });
+    ItemPaymentGateway? gateway,
+  }) : gateway = gateway ?? ItemPaymentGatewayImpl();
 
   final ItemPaymentRequest request;
+  final ItemPaymentGateway gateway;
 
   @override
   State<PortonePaymentScreen> createState() => _PortonePaymentScreenState();
@@ -36,6 +40,8 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
       final supabase = SupabaseManager.shared.supabase;
       final user = supabase.auth.currentUser;
 
+      debugPrint('[PortonePayment] current user: \\${user?.id}');
+
       // 로그인 유저가 없으면 결제 진행 불가로 처리
       if (user == null) {
         setState(() {
@@ -46,8 +52,15 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
         return;
       }
 
-      final response = await supabase.functions.invoke('decrypt_user');
+      final response = await supabase.functions.invoke(
+        'decrypt_user',
+        body: <String, dynamic>{
+          'user_id': user.id,
+        },
+      );
       final data = response.data;
+
+      debugPrint('[PortonePayment] decrypt_user response: \\${response.data}');
 
       String? name;
       String? phone;
@@ -90,10 +103,6 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const String storeId = 'store-241926a0-bfe1-48eb-b467-dab78eb18dc3';
-    const String channelKey =
-        'channel-key-c5942f42-8e1c-4c5d-8a22-675313898226';
-
     if (_loadingUser) {
       return const Scaffold(
         body: Center(
@@ -127,24 +136,9 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
     final String buyerName = _buyerName!;
     final String buyerPhone = _buyerPhone!;
 
-    final String paymentId =
-        'pay_${DateTime.now().millisecondsSinceEpoch}_${widget.request.itemId}';
-
-    final customer = Customer(
-      fullName: buyerName,
-      phoneNumber: buyerPhone,
-    );
-
-    final paymentRequest = PaymentRequest(
-      storeId: storeId,
-      paymentId: paymentId,
-      orderName: widget.request.itemTitle,
-      totalAmount: widget.request.amount,
-      currency: PaymentCurrency.KRW,
-      channelKey: channelKey,
-      payMethod: PaymentPayMethod.card,
-      appScheme: widget.request.appScheme,
-      customer: customer,
+    final paymentRequest = _buildPaymentRequest(
+      buyerName: buyerName,
+      buyerPhone: buyerPhone,
     );
 
     return Scaffold(
@@ -154,7 +148,7 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
           child: CircularProgressIndicator(),
         ),
         callback: (PaymentResponse result) async {
-          final success = await ItemPaymentGatewayImpl().handlePaymentResult(
+          final success = await widget.gateway.handlePaymentResult(
             result: result.toJson(),
             request: widget.request,
           );
@@ -167,6 +161,31 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
           Navigator.of(context).pop(false);
         },
       ),
+    );
+  }
+
+  PaymentRequest _buildPaymentRequest({
+    required String buyerName,
+    required String buyerPhone,
+  }) {
+    final String paymentId =
+        'pay_${DateTime.now().millisecondsSinceEpoch}_${widget.request.itemId}';
+
+    final customer = Customer(
+      fullName: buyerName,
+      phoneNumber: buyerPhone,
+    );
+
+    return PaymentRequest(
+      storeId: PortonePaymentConfig.storeId,
+      paymentId: paymentId,
+      orderName: widget.request.itemTitle,
+      totalAmount: widget.request.amount,
+      currency: PaymentCurrency.KRW,
+      channelKey: PortonePaymentConfig.channelKey,
+      payMethod: PaymentPayMethod.card,
+      appScheme: widget.request.appScheme,
+      customer: customer,
     );
   }
 }

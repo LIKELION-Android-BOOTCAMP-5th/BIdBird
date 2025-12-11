@@ -61,6 +61,14 @@
                 <string>com.googleusercontent.apps.966757848850-1cj4f09hqn0nlfk1e2l3i0rbs82gqtos</string>
             </array>
         </dict>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>bidbird</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>bidbird</string>
+            </array>
+        </dict>
     </array>
 </dict>
 </plist>

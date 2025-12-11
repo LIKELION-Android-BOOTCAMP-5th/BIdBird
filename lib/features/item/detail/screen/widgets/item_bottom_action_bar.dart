@@ -1,5 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/features/payment/portone_payment/model/item_payment_request.dart';
+import 'package:bidbird/features/payment/portone_payment/screen/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -329,9 +331,49 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     if (isBuyNowInProgress && !isBuyNowCompleted) {
       if (isTopBidder) {
         return ElevatedButton(
-          onPressed: () {
-            debugPrint('[ItemBottomActionBar] 결제하러 가기 버튼 탭');
-            // TODO: 결제 화면으로 이동하는 로직 연동
+          onPressed: () async {
+            const buyerTel = '01012345678';
+            const appScheme = 'bidbird';
+
+            final request = ItemPaymentRequest(
+              itemId: widget.item.itemId,
+              itemTitle: widget.item.itemTitle,
+              amount: widget.item.buyNowPrice,
+              buyerTel: buyerTel,
+              appScheme: appScheme,
+            );
+
+            final result = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PortonePaymentScreen(request: request),
+              ),
+            );
+
+            if (!context.mounted) return;
+
+            if (result == true) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('결제가 완료되었습니다.'),
+                ),
+              );
+            } else if (result == false) {
+              showDialog<void>(
+                context: context,
+                barrierDismissible: true,
+                builder: (dialogContext) {
+                  return AskPopup(
+                    content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
+                    noText: '닫기',
+                    yesText: '확인',
+                    yesLogic: () async {
+                      Navigator.of(dialogContext).pop();
+                    },
+                  );
+                },
+              );
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: blueColor,

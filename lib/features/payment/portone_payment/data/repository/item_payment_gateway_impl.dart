@@ -26,6 +26,7 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
         body: <String, dynamic>{
           'payment_type': 'auction',
           'item_id': request.itemId,
+          'amount': request.amount,
           'txId': result['txId'] ?? result['transactionId'],
           'paymentId': result['paymentId'],
         },
