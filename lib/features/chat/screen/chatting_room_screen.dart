@@ -325,7 +325,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               avatarWidget,
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 0),
                               Expanded(
                                 child: MessageBubble(
                                   message: message,
@@ -370,16 +370,24 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                       fontSize: 16,
                                     ),
                                     textAlignVertical: TextAlignVertical.center,
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       hintText: "메시지를 입력하세요",
                                       border: InputBorder.none,
                                       isCollapsed: true,
-                                      contentPadding: EdgeInsets.symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                         vertical: 8,
                                       ),
-                                      suffixIcon: Icon(
-                                        Icons.add,
-                                        size: 20,
+                                      suffixIcon: IconButton(
+                                        icon: const Icon(
+                                          Icons.add,
+                                          size: 20,
+                                        ),
+                                        onPressed: () {
+                                          _showImageSourceSheet(
+                                            context,
+                                            viewModel,
+                                          );
+                                        },
                                       ),
                                     ),
                                   )
