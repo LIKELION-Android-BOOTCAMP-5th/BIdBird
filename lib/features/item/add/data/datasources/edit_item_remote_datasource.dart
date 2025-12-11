@@ -35,8 +35,9 @@ class EditItemRemoteDataSource {
       startPrice: (row['start_price'] as num?)?.toInt() ?? 0,
       buyNowPrice: (row['buy_now_price'] as num?)?.toInt() ?? 0,
       keywordTypeId: (row['keyword_type'] as num?)?.toInt() ?? 0,
+      // items_detail.auction_duration_hours 컬럼은 실제 시간 값(4, 12, 24 등)을 그대로 보관합니다.
       auctionDurationHours:
-          (((row['auction_duration_hours'] as num?)?.toInt() ?? 240) ~/ 60),
+          (row['auction_duration_hours'] as num?)?.toInt() ?? 4,
       imageUrls: imageUrls,
     );
   }

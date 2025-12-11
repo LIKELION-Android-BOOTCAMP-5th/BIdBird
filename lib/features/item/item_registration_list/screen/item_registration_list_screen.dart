@@ -15,7 +15,16 @@ class RegistrationScreen extends StatelessWidget {
       child: Consumer<RegistrationViewModel>(
         builder: (context, viewModel, _) {
           return Scaffold(
-            appBar: AppBar(title: const Text('매물 등록 확인'), centerTitle: true),
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new),
+                onPressed: () {
+                  context.go('/home');
+                },
+              ),
+              title: const Text('매물 등록 확인'),
+              centerTitle: true,
+            ),
             backgroundColor: BackgroundColor,
             body: SafeArea(child: _buildBody(context, viewModel)),
           );
