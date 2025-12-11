@@ -1,5 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/features/chat/screen/chatting_room_screen.dart';
+import 'package:bidbird/features/payment/payment_complete/screen/payment_complete_screen.dart';
 import 'package:bidbird/features/payment/portone_payment/model/item_payment_request.dart';
 import 'package:bidbird/features/payment/portone_payment/screen/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
@@ -135,6 +137,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final isMyItem = widget.isMyItem;
     final isBidRestricted = _isBidRestricted;
     final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
+    final int? tradeStatusCode = widget.item.tradeStatusCode;
+    final bool isTradePaid = tradeStatusCode == 520;
 
     const disabledStatusesForBuyNow = {
       300,
@@ -146,7 +150,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final bool showBuyNow =
         widget.item.buyNowPrice > 0 &&
         !disabledStatusesForBuyNow.contains(_statusCode) &&
-        !isTimeOver;
+        !isTimeOver &&
+        !isTradePaid;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -253,6 +258,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   Widget _buildBidButton(bool isTopBidder) {
     final int statusCode = _statusCode ?? 0;
+    final int? tradeStatusCode = widget.item.tradeStatusCode;
+    final bool isTradePaid = tradeStatusCode == 520;
 
     final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
 
@@ -294,9 +301,75 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       );
     }
 
-    // 경매 낙찰(321) 상태에서, 내가 낙찰자인 경우 결제 버튼 노출
+    // 경매 낙찰(321) 상태이고, 결제가 이미 완료(520)된 경우:
+    // 좌측: 결제 내역 보기 / 우측: 판매자와 연락하기 버튼 노출
+    if (statusCode == 321 && isTopBidder && isTradePaid) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PaymentCompleteScreen(
+                      item: ItemBidWinEntity.fromItemDetail(widget.item),
+                    ),
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: blueColor),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.7),
+                ),
+              ),
+              child: Text(
+                '결제 내역 보기',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: blueColor,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChattingRoomScreen(
+                      itemId: widget.item.itemId,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: blueColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.7),
+                ),
+              ),
+              child: const Text(
+                '판매자 연락',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 경매 낙찰(321) 상태에서, 내가 낙찰자이고 아직 결제가 완료되지 않은 경우에만 결제 버튼 노출
     // 현재 화면의 ViewModel 에서 isTopBidder 가 true 인 상태를 낙찰자로 간주
-    if (statusCode == 321 && isTopBidder) {
+    if (statusCode == 321 && isTopBidder && !isTradePaid) {
       final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
 
       return ElevatedButton(
