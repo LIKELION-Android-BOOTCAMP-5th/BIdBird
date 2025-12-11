@@ -19,6 +19,21 @@ class ChatRepositorie {
     return await _chatDatasource.getMessages(chattingRoomId);
   }
 
+  Future<List<ChatMessageEntity>> getOlderMessages(
+    String chattingRoomId,
+    String beforeCreatedAtIso, {
+    int limit = 50,
+  }) async {
+    print(
+      "리포지토리에서 이전 메세지 fetch, beforeCreatedAt = $beforeCreatedAtIso",
+    );
+    return await _chatDatasource.getOlderMessages(
+      roomId: chattingRoomId,
+      beforeCreatedAtIso: beforeCreatedAtIso,
+      limit: limit,
+    );
+  }
+
   Future<String?> getRoomId(String itemId) async {
     return await _chatDatasource.getRoomId(itemId);
   }

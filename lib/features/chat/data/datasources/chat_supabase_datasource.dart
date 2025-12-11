@@ -39,6 +39,41 @@ class ChatSupabaseDatasource {
     return List.empty();
   }
 
+  Future<List<ChatMessageEntity>> getOlderMessages({
+    required String roomId,
+    required String beforeCreatedAtIso,
+    int limit = 50,
+  }) async {
+    print(
+      "SupabaseChatDatasource RPC get_chat_messages_before, beforeCreatedAt = $beforeCreatedAtIso",
+    );
+    try {
+      final response = await SupabaseManager.shared.supabase.rpc(
+        'get_chat_messages_before',
+        params: <String, dynamic>{
+          'p_room_id': roomId,
+          'p_before': beforeCreatedAtIso,
+          'p_limit': limit,
+        },
+      );
+
+      if (response is! List) {
+        return List.empty();
+      }
+
+      final data = response.cast<Map<String, dynamic>>();
+      final results = data
+          .map((json) => ChatMessageEntity.fromJson(json))
+          .toList();
+
+      // 함수에서 created_at desc 로 내려주므로, UI에서는 asc 로 보이게 뒤집기
+      return results.reversed.toList();
+    } catch (e) {
+      print('이전 메세지 불러오기 실패 : $e');
+      return List.empty();
+    }
+  }
+
   Future<String?> getRoomId(String itemId) async {
     final String? currentUserId =
         SupabaseManager.shared.supabase.auth.currentUser?.id;
