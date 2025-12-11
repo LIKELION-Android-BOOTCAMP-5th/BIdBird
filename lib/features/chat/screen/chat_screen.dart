@@ -62,7 +62,9 @@ class ChatScreen extends StatelessWidget {
         final chattingRoom = viewModel.chattingRoomList[index];
         return GestureDetector(
           onTap: () {
-            context.push('/chat/room?itemId=${chattingRoom.item_id}');
+            context.push(
+              '/chat/room?itemId=${chattingRoom.item_id}&roomId=${chattingRoom.id}',
+            );
           },
           child: Container(
             decoration: BoxDecoration(
