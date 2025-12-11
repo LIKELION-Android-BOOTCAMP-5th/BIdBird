@@ -67,13 +67,16 @@ class ItemDetailDatasource {
     final minBidStep = ItemDetailPriceHelper.calculateBidStep(currentPrice);
 
     // auction_end_at 이 없으면 items_detail 의 created_at + duration 로 보정
-    if (finishTime == null) {
+    DateTime effectiveFinishTime;
+    if (finishTime != null) {
+      effectiveFinishTime = finishTime;
+    } else {
       final createdAtRaw = row['created_at']?.toString();
       final createdAt = createdAtRaw != null
           ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
           : DateTime.now();
       final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
-      finishTime = createdAt.add(Duration(hours: durationHours));
+      effectiveFinishTime = createdAt.add(Duration(hours: durationHours));
     }
 
     return ItemDetail(
@@ -81,7 +84,7 @@ class ItemDetailDatasource {
       sellerId: sellerId,
       itemTitle: row['title']?.toString() ?? '',
       itemImages: images,
-      finishTime: finishTime!,
+      finishTime: effectiveFinishTime,
       sellerTitle: sellerTitle,
       buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
       biddingCount: biddingCount,
