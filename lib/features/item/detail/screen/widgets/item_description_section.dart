@@ -76,7 +76,7 @@ class ItemDescriptionSection extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${sellerRating.toStringAsFixed(1)} (${sellerReviewCount})',
+                                '${sellerRating.toStringAsFixed(1)} ($sellerReviewCount)',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: iconColor,

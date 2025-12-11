@@ -45,7 +45,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   Future<bool> _ensureIdentityVerified() async {
     final gateway = IdentityVerificationGatewayImpl();
-    final ctx = context;
 
     // 1. 먼저 서버에서 CI 존재 여부 확인 (BuildContext 사용 없음)
     try {
@@ -61,8 +60,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     bool proceed = false;
 
     // 2. CI 가 없을 때만 AskPopup 으로 본인인증 안내
+    if (!mounted) return false;
     await showDialog<void>(
-      context: ctx,
+      context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
         return AskPopup(
@@ -82,12 +82,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     }
 
     try {
-      final success = await gateway.requestIdentityVerification(ctx);
-      if (!ctx.mounted) {
-        return false;
-      }
+      if (!mounted) return false;
+
+      final success = await gateway.requestIdentityVerification(context);
+      if (!mounted) return false;
       if (!success) {
-        ScaffoldMessenger.of(ctx).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('본인 인증 후 이용 가능합니다.'),
           ),
@@ -95,10 +95,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       }
       return success;
     } catch (e) {
-      if (!ctx.mounted) {
-        return false;
-      }
-      ScaffoldMessenger.of(ctx).showSnackBar(
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('본인 인증 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.\n$e'),
         ),
@@ -450,7 +448,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               ),
             );
 
-            if (!context.mounted) return;
+            if (!mounted) return;
 
             if (result == true) {
               // 즉시 구매 결제 성공 시에도 결제 완료 화면으로 이동

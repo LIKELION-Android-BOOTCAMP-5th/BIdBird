@@ -38,7 +38,6 @@ class ItemDetailViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> get bidHistory => _bidHistory;
 
   RealtimeChannel? _bidStatusChannel;
-  RealtimeChannel? _bidLogChannel;
 
   Future<void> loadItemDetail() async {
     _isLoading = true;
@@ -126,17 +125,11 @@ class ItemDetailViewModel extends ChangeNotifier {
         )
         .subscribe();
 
-    // bid_log 는 더 이상 사용하지 않으므로 채널 생성 안 함
-    if (_bidLogChannel != null) {
-      _supabase.removeChannel(_bidLogChannel!);
-      _bidLogChannel = null;
-    }
   }
 
   @override
   void dispose() {
     if (_bidStatusChannel != null) _supabase.removeChannel(_bidStatusChannel!);
-    if (_bidLogChannel != null) _supabase.removeChannel(_bidLogChannel!);
     super.dispose();
   }
 }
