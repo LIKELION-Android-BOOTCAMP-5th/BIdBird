@@ -261,7 +261,10 @@ GoRouter createAppRouter(BuildContext context) {
       GoRoute(
         path: '/payments',
         pageBuilder: (context, state) {
-          return const NoTransitionPage(child: PaymentHistoryScreen());
+          final String? itemId = state.uri.queryParameters['itemId'];
+          return NoTransitionPage(
+            child: PaymentHistoryScreen(itemId: itemId),
+          );
         },
       ),
       GoRoute(

@@ -5,6 +5,7 @@ import 'package:bidbird/features/payment/payment_complete/screen/payment_complet
 import 'package:bidbird/features/payment/portone_payment/model/item_payment_request.dart';
 import 'package:bidbird/features/payment/portone_payment/screen/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../bottom_sheet_buy_now_input/data/repository/bid_restriction_gateway_impl.dart';
@@ -302,21 +303,15 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     }
 
     // 경매 낙찰(321) 상태이고, 결제가 이미 완료(520)된 경우:
-    // 좌측: 결제 내역 보기 / 우측: 판매자와 연락하기 버튼 노출
+    // 좌측: 결제 내역 보기(결제 상세 화면) / 우측: 판매자와 연락하기 버튼 노출
     if (statusCode == 321 && isTopBidder && isTradePaid) {
       return Row(
         children: [
           Expanded(
             child: OutlinedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PaymentCompleteScreen(
-                      item: ItemBidWinEntity.fromItemDetail(widget.item),
-                    ),
-                  ),
-                );
+                // 해당 매물의 결제 상세 내역 화면으로 이동
+                context.go('/payments?itemId=${widget.item.itemId}');
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: blueColor),

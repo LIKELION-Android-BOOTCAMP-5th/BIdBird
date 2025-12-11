@@ -24,7 +24,7 @@ class PaymentCompleteScreen extends StatelessWidget {
           icon: Icons.check_circle,
           iconColor: blueColor,
           onClose: () {
-            context.go('/item/${item.itemId}');
+            Navigator.of(context).pop();
           },
           actions: [
             SizedBox(
@@ -32,8 +32,10 @@ class PaymentCompleteScreen extends StatelessWidget {
               height: 48,
               child: ElevatedButton(
                 onPressed: () {
-                  // TODO: 결제 내역 페이지로 이동
-                  context.go('/payments');
+                  // 결제한 해당 매물의 결제 내역만 보기
+                  // 이 화면은 Navigator.push로 쌓여 있으므로 먼저 pop 후, 결제 상세 화면으로 이동
+                  Navigator.of(context).pop();
+                  context.go('/payments?itemId=${item.itemId}');
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: blueColor,
@@ -55,13 +57,14 @@ class PaymentCompleteScreen extends StatelessWidget {
             TextButton(
               onPressed: () {
                 // 홈으로 이동
-                context.go('/');
+                context.go('/home');
               },
               child: const Text(
                 '홈으로 이동',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
+                  color: Colors.black,
                 ),
               ),
             ),
