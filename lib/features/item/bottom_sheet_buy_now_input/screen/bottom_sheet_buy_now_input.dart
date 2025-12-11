@@ -52,10 +52,10 @@ class BuyNowInputBottomSheet extends StatelessWidget {
               onPressed: () async {
                 final messenger = ScaffoldMessenger.of(context);
                 final parentContext = context;
-                if (buyNowPrice < 10000 || buyNowPrice > 1400000) {
+                if (buyNowPrice < 10000 || buyNowPrice > 5000000) {
                   messenger.showSnackBar(
                     const SnackBar(
-                      content: Text('즉시 구매가는 10,000원 이상 1,400,000원 이하만 가능합니다.'),
+                      content: Text('즉시 구매가는 10,000원 이상 5,000,000원 이하만 가능합니다.'),
                     ),
                   );
                   return;
