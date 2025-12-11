@@ -534,7 +534,7 @@ class FirebaseManager {
         // 친구 요청 페이지나 알림 목록 페이지로 이동
         final String itemId = deepLinkData['item_id']?.toString() ?? '0';
         final String roomId = deepLinkData['room_id']?.toString() ?? '0';
-        return '/chat/room?itemId=$itemId&roomId=';
+        return '/chat/room?itemId=$itemId&roomId=$roomId';
       case 'NEW_ITEM':
       case 'NEW_BID':
         // 게시물 ID를 사용하여 해당 게시물 상세 페이지로 이동

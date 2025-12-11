@@ -56,6 +56,7 @@ GoRouter createAppRouter(BuildContext context) {
     observers: [
       routeObserver, // ← 여기!!
     ],
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/login',
     refreshListenable: authVM,
     redirect: (BuildContext context, GoRouterState state) {
