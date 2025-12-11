@@ -20,10 +20,10 @@ class ItemDescriptionSection extends StatelessWidget {
     final sellerProfile = vm.sellerProfile;
 
     final String avatarUrl = (sellerProfile?['profile_image_url'] as String?) ?? '';
+    final String rawNickname =
+        (sellerProfile?['nick_name'] as String?)?.trim() ?? '';
     final String sellerNickname =
-        (sellerProfile?['nick_name'] as String?)?.trim().isNotEmpty == true
-            ? (sellerProfile?['nick_name'] as String).trim()
-            : item.sellerTitle;
+        rawNickname.isNotEmpty ? rawNickname : '닉네임 없음';
     final double sellerRating =
         (sellerProfile?['rating'] as num?)?.toDouble() ?? item.sellerRating;
     final int sellerReviewCount =
