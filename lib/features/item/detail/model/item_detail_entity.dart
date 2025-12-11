@@ -14,6 +14,7 @@ class ItemDetail {
     required this.sellerRating,
     required this.sellerReviewCount,
     required this.statusCode,
+    this.tradeStatusCode,
   });
 
   final String itemId;
@@ -30,6 +31,7 @@ class ItemDetail {
   final double sellerRating;
   final int sellerReviewCount;
   final int statusCode;
+  final int? tradeStatusCode;
 }
 
 class SellerRatingSummary {

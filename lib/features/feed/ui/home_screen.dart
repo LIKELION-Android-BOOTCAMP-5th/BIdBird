@@ -242,12 +242,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                               item.lastBidUserId == myUserId &&
                                               item.auctionStatusCode == 321;
 
-                                      if (isWonByMe) {
+                                      final bool isTradePaid =
+                                          item.tradeStatusCode == 520;
+
+                                      if (isWonByMe && !isTradePaid) {
                                         final winItem = ItemBidWinEntity(
                                           itemId: item.id,
                                           title: title,
                                           images: [item.thumbnail_image],
                                           winPrice: item.current_price,
+                                          tradeStatusCode:
+                                              item.tradeStatusCode,
                                         );
 
                                         context.push(
@@ -540,12 +545,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                               item.lastBidUserId == myUserId &&
                                               item.auctionStatusCode == 321;
 
-                                      if (isWonByMe) {
+                                      final bool isTradePaid =
+                                          item.tradeStatusCode == 520;
+
+                                      if (isWonByMe && !isTradePaid) {
                                         final winItem = ItemBidWinEntity(
                                           itemId: item.id,
                                           title: title,
                                           images: [item.thumbnail_image],
                                           winPrice: item.current_price,
+                                          tradeStatusCode:
+                                              item.tradeStatusCode,
                                         );
 
                                         context.push(

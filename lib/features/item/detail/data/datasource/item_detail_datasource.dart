@@ -41,11 +41,12 @@ class ItemDetailDatasource {
     int biddingCount = 0;
     int currentPrice = 0;
     int statusCode = 0;
+    int? tradeStatusCode;
 
     try {
       final auctionRow = await _supabase
           .from('auctions')
-          .select('current_price, bid_count, auction_status_code')
+          .select('current_price, bid_count, auction_status_code, trade_status_code')
           .eq('item_id', itemId)
           .eq('round', 1)
           .maybeSingle();
@@ -54,6 +55,7 @@ class ItemDetailDatasource {
         currentPrice = (auctionRow['current_price'] as int?) ?? 0;
         biddingCount = (auctionRow['bid_count'] as int?) ?? 0;
         statusCode = (auctionRow['auction_status_code'] as int?) ?? 0;
+        tradeStatusCode = auctionRow['trade_status_code'] as int?;
       }
     } catch (e) {
       debugPrint('[ItemDetailDatasource] fetch auction info error: $e');
@@ -78,6 +80,7 @@ class ItemDetailDatasource {
       sellerReviewCount: ratingSummary?.reviewCount ??
           (row['seller_review_count'] as int?) ?? 0,
       statusCode: statusCode,
+      tradeStatusCode: tradeStatusCode,
     );
   }
 
