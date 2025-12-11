@@ -119,13 +119,44 @@ class TradeHistoryRepository {
       throw Exception('로그인 정보가 없습니다.');
     }
 
-    final logRows = await _client
+    final rawLogRows = await _client
         .from('auctions_status_log')
         .select(
           'bid_status_id, user_id, bid_price, auction_log_code, created_at',
         )
         .eq('user_id', user.id)
         .order('created_at', ascending: false);
+
+    final Map<String, Map<String, dynamic>> latestLogByAuctionId = {};
+
+    for (final dynamic row in rawLogRows) {
+      if (row is! Map<String, dynamic>) continue;
+
+      final String? auctionId = row['bid_status_id']?.toString();
+      if (auctionId == null || auctionId.isEmpty) continue;
+
+      final existing = latestLogByAuctionId[auctionId];
+      if (existing == null) {
+        latestLogByAuctionId[auctionId] = row;
+        continue;
+      }
+
+      final prevCreated = DateTime.tryParse(
+        existing['created_at']?.toString() ?? '',
+      );
+      final curCreated = DateTime.tryParse(
+        row['created_at']?.toString() ?? '',
+      );
+
+      if (prevCreated == null) {
+        latestLogByAuctionId[auctionId] = row;
+      } else if (curCreated != null && curCreated.isAfter(prevCreated)) {
+        latestLogByAuctionId[auctionId] = row;
+      }
+    }
+
+    final List<Map<String, dynamic>> logRows =
+        latestLogByAuctionId.values.toList();
 
     final tradeRows = await _client
         .from('trade_status')
