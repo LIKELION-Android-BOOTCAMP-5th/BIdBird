@@ -38,6 +38,7 @@ class ItemBottomActionBar extends StatefulWidget {
 class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   int? _statusCode;
   bool _isBidRestricted = false;
+  bool _hasShownRelistPopup = false;
 
   final CheckBidRestrictionUseCase _checkBidRestrictionUseCase =
       CheckBidRestrictionUseCase(BidRestrictionGatewayImpl());
@@ -136,10 +137,40 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final isFavorite = itemDetailViewModel?.isFavorite ?? false;
     final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
     final isMyItem = widget.isMyItem;
-    final isBidRestricted = _isBidRestricted;
+    final bool isBidRestricted = _isBidRestricted;
     final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
     final int? tradeStatusCode = widget.item.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
+
+    // 내 매물 + 유찰(323) 상태일 때, 한 번만 재등록 팝업 노출
+    if (widget.isMyItem && (_statusCode == 323) && !_hasShownRelistPopup) {
+      _hasShownRelistPopup = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog<void>(
+          context: context,
+          barrierDismissible: true,
+          builder: (dialogContext) {
+            return AskPopup(
+              content: '해당 매물이 유찰되었습니다.\n재등록 하시겠습니까?',
+              noText: '취소',
+              yesText: '재등록',
+              yesLogic: () async {
+                Navigator.of(dialogContext).pop();
+                if (!context.mounted) return;
+                // 기존 매물 등록 화면을 "수정 모드"로 열어서
+                // 현재 매물 정보를 그대로 가져와 재등록할 수 있게 함
+                context.push(
+                  '/add_item',
+                  extra: widget.item.itemId,
+                );
+              },
+            );
+          },
+        );
+      });
+    }
 
     const disabledStatusesForBuyNow = {
       300,
