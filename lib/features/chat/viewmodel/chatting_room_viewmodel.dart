@@ -32,6 +32,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   bool isSending = false;
   final ScrollController scrollController = ScrollController();
   ChattingNotificationSetEntity? notificationSetting;
+  bool isLoadingMore = false;
+  bool hasMore = true;
 
   ChatRepositorie _repository = ChatRepositorie();
 
@@ -44,24 +46,12 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     scrollController.addListener(() async {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
 
-      // _debounce = Timer(const Duration(milliseconds: 300), () {
-      //   final double offset = scrollController.offset;
-      //
-      //   if (offset < 50) {
-      //     if (buttonIsWorking) {
-      //       buttonIsWorking = false;
-      //       notifyListeners();
-      //     }
-      //   } else {
-      //     if (!buttonIsWorking) {
-      //       buttonIsWorking = true;
-      //       notifyListeners();
-      //     }
-      //   }
-      // });
-
-      if (scrollController.offset ==
-          scrollController.position.maxScrollExtent) {}
+      // 리스트 상단 근처에 도달했을 때 이전 메시지 로딩 (디바운스 적용)
+      _debounce = Timer(const Duration(milliseconds: 150), () {
+        if (scrollController.offset <= 40) {
+          loadMoreMessages();
+        }
+      });
     });
   }
 
@@ -88,8 +78,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   Future<void> fetchMessage() async {
     final currentRoomId = roomId;
     if (currentRoomId != null) {
-      final chattings = await _repository.getMessages(roomId!);
+      final chattings = await _repository.getMessages(currentRoomId);
       messages.addAll(chattings);
+      hasMore = chattings.length >= 50;
       notifyListeners();
       setupRealtimeSubscription();
       init();
@@ -501,6 +492,43 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     image = null;
     imageAspectRatio = null;
     type = MessageType.text;
+    notifyListeners();
+  }
+
+  Future<void> loadMoreMessages() async {
+    if (!hasMore || isLoadingMore || messages.isEmpty) {
+      return;
+    }
+
+    final currentRoomId = roomId;
+    if (currentRoomId == null) return;
+
+    isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      final oldestMessage = messages.first;
+      final beforeCreatedAtIso = oldestMessage.created_at;
+
+      final olderMessages = await _repository.getOlderMessages(
+        currentRoomId,
+        beforeCreatedAtIso,
+        limit: 50,
+      );
+
+      if (olderMessages.isEmpty) {
+        hasMore = false;
+      } else {
+        messages.insertAll(0, olderMessages);
+        if (olderMessages.length < 50) {
+          hasMore = false;
+        }
+      }
+    } catch (e) {
+      print('이전 메시지 로딩 실패: $e');
+    }
+
+    isLoadingMore = false;
     notifyListeners();
   }
 }
