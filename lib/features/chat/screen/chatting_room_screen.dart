@@ -207,6 +207,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                   ),
                   Expanded(
                     child: ListView.builder(
+                      controller: viewModel.scrollController,
                       itemCount: viewModel.messages.length,
                       itemBuilder: (context, index) {
                         final message = viewModel.messages[index];
