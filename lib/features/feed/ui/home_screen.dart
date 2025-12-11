@@ -303,66 +303,39 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       ),
                                                     ),
 
-                                                    // 잔여 시간
+                                                    // 잔여 시간 (상세 화면과 동일 스타일)
                                                     Positioned(
                                                       top: 8,
                                                       left: 8,
-                                                      right: 8,
-                                                      // 가로 폭을 비율로 주기 위한 UI
-                                                      child: Align(
-                                                        alignment: Alignment
-                                                            .centerRight,
-                                                        child: FractionallySizedBox(
-                                                          widthFactor: 0.60,
-                                                          child: Container(
-                                                            padding:
-                                                                const EdgeInsets.symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 4,
-                                                                ),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                                  color:
-                                                                      RedColor,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        15,
-                                                                      ),
-                                                                ),
-                                                            child: Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .center,
-                                                              spacing: 3,
-                                                              children: [
-                                                                Icon(
-                                                                  Icons
-                                                                      .access_alarm,
-                                                                  size: 12,
-                                                                  color: Colors
-                                                                      .white,
-                                                                ),
-                                                                Flexible(
-                                                                  child: Text(
-                                                                    formatRemainingTime(
-                                                                      item.finishTime,
-                                                                    ),
-                                                                    style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontSize:
-                                                                          12,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: DateTime.now()
+                                                                  .isAfter(
+                                                            item.finishTime,
+                                                          )
+                                                              ? Colors.black
+                                                              : RedColor,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(4),
+                                                        ),
+                                                        child: Text(
+                                                          DateTime.now()
+                                                                  .isAfter(
+                                                            item.finishTime,
+                                                          )
+                                                              ? '경매 종료'
+                                                              : '${formatRemainingTime(item.finishTime)} 남음',
+                                                          style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w600,
                                                           ),
                                                         ),
                                                       ),
@@ -606,66 +579,39 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       ),
                                                     ),
 
-                                                    // 잔여 시간
+                                                    // 잔여 시간 (상세 화면과 동일 스타일)
                                                     Positioned(
                                                       top: 8,
                                                       left: 8,
-                                                      right: 8,
-                                                      // 가로 폭을 비율로 주기 위한 UI
-                                                      child: Align(
-                                                        alignment: Alignment
-                                                            .centerRight,
-                                                        child: FractionallySizedBox(
-                                                          widthFactor: 0.60,
-                                                          child: Container(
-                                                            padding:
-                                                                const EdgeInsets.symmetric(
-                                                                  horizontal: 8,
-                                                                  vertical: 4,
-                                                                ),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                                  color:
-                                                                      RedColor,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        15,
-                                                                      ),
-                                                                ),
-                                                            child: Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .center,
-                                                              spacing: 3,
-                                                              children: [
-                                                                Icon(
-                                                                  Icons
-                                                                      .access_alarm,
-                                                                  size: 12,
-                                                                  color: Colors
-                                                                      .white,
-                                                                ),
-                                                                Flexible(
-                                                                  child: Text(
-                                                                    formatRemainingTime(
-                                                                      item.finishTime,
-                                                                    ),
-                                                                    style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontSize:
-                                                                          12,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                        decoration: BoxDecoration(
+                                                          color: DateTime.now()
+                                                                  .isAfter(
+                                                            item.finishTime,
+                                                          )
+                                                              ? Colors.black
+                                                              : RedColor,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(4),
+                                                        ),
+                                                        child: Text(
+                                                          DateTime.now()
+                                                                  .isAfter(
+                                                            item.finishTime,
+                                                          )
+                                                              ? '경매 종료'
+                                                              : '${formatRemainingTime(item.finishTime)} 남음',
+                                                          style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w600,
                                                           ),
                                                         ),
                                                       ),
