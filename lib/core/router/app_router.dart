@@ -11,6 +11,7 @@ import 'package:bidbird/features/item/current_trade/data/repository/current_trad
 import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
+import 'package:bidbird/features/item/relist/screen/item_relist_screen.dart';
 import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
 import 'package:bidbird/features/item/item_bid_win/screen/item_bid_win_screen.dart';
 import 'package:bidbird/features/item/item_registration_detail/screen/item_registration_detail_screen.dart';
@@ -264,6 +265,15 @@ GoRouter createAppRouter(BuildContext context) {
           final String? itemId = state.uri.queryParameters['itemId'];
           return NoTransitionPage(
             child: PaymentHistoryScreen(itemId: itemId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/item/:itemId/relist',
+        pageBuilder: (context, state) {
+          final itemId = state.pathParameters['itemId'] ?? '';
+          return NoTransitionPage(
+            child: ItemRelistScreen(itemId: itemId),
           );
         },
       ),

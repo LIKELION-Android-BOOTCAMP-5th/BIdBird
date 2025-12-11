@@ -134,17 +134,20 @@ class ItemAddViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 대표 이미지는 selectedImages[0] 으로 간주합니다.
   void setPrimaryImage(int index) {
     if (index < 0 || index >= selectedImages.length) return;
     primaryImageIndex = index;
     notifyListeners();
   }
 
-  /// 기존 매물을 수정하기 위해 items / item_images 데이터를 폼에 채웁니다.
   Future<void> startEdit(String itemId) async {
     editingItemId = itemId;
     try {
+
+      if (keywordTypes.isEmpty) {
+        await fetchKeywordTypes();
+      }
+
       final editItem = await _getEditItemUseCase(itemId);
 
       titleController.text = editItem.title;
