@@ -1,6 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/payment/payment_history/data/payment_history_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
   const PaymentHistoryScreen({super.key, this.itemId});
@@ -253,7 +254,9 @@ class _PaymentDetailBody extends StatelessWidget {
             height: 48,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                // 결제 상세 확인 후 해당 매물 상세 화면으로 이동
+                // go_router를 사용하므로 context.go를 통해 item 상세 라우트로 이동
+                context.go('/item/${item.itemId}');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: blueColor,
