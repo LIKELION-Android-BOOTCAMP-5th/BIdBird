@@ -38,7 +38,6 @@ class ItemDetailViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> get bidHistory => _bidHistory;
 
   RealtimeChannel? _bidStatusChannel;
-  RealtimeChannel? _itemsChannel;
   RealtimeChannel? _bidLogChannel;
 
   Future<void> loadItemDetail() async {
@@ -127,25 +126,6 @@ class ItemDetailViewModel extends ChangeNotifier {
         )
         .subscribe();
 
-    // items_detail: 제목, 설명, 썸네일 등 변경 감지
-    _itemsChannel = _supabase.channel('items_detail_$itemId');
-    _itemsChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'items_detail',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'item_id',
-            value: itemId,
-          ),
-          callback: (payload) {
-            debugPrint('[ItemDetailViewModel] items_detail 변경 감지');
-            loadItemDetail();
-          },
-        )
-        .subscribe();
-
     // bid_log 는 더 이상 사용하지 않으므로 채널 생성 안 함
     if (_bidLogChannel != null) {
       _supabase.removeChannel(_bidLogChannel!);
@@ -156,7 +136,6 @@ class ItemDetailViewModel extends ChangeNotifier {
   @override
   void dispose() {
     if (_bidStatusChannel != null) _supabase.removeChannel(_bidStatusChannel!);
-    if (_itemsChannel != null) _supabase.removeChannel(_itemsChannel!);
     if (_bidLogChannel != null) _supabase.removeChannel(_bidLogChannel!);
     super.dispose();
   }
