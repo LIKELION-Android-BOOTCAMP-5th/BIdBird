@@ -151,9 +151,12 @@ class MessageBubble extends StatelessWidget {
   /// 원본 이미지 width/height 읽어오기
   Future<Size> _getImageSize(String url) async {
     final completer = Completer<Size>();
-    final img = Image.network(url);
+    final provider = CachedNetworkImageProvider(
+      url,
+      cacheManager: ItemImageCacheManager.instance,
+    );
 
-    img.image
+    provider
         .resolve(const ImageConfiguration())
         .addListener(
           ImageStreamListener((ImageInfo info, bool _) {
