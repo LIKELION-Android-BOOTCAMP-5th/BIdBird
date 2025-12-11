@@ -175,38 +175,33 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                       child: Row(
                         spacing: 16,
                         children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              border: Border.all(
-                                color: iconColor.withValues(alpha: 0.2),
-                                width: 1,
-                              ),
-                              borderRadius: defaultBorder,
-                            ),
-                            child: AspectRatio(
-                              aspectRatio: 1,
-                              child: ClipRRect(
+                          if (viewModel.itemInfo?.thumbnailImage != null &&
+                              viewModel.itemInfo!.thumbnailImage!.isNotEmpty)
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                border: Border.all(
+                                  color: iconColor.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
                                 borderRadius: defaultBorder,
-                                child:
-                                    viewModel.itemInfo?.thumbnailImage != null
-                                    ? CachedNetworkImage(
-                                        imageUrl: viewModel
-                                                .itemInfo?.thumbnailImage ??
-                                            "",
-                                        cacheManager:
-                                            ItemImageCacheManager.instance,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : const Icon(
-                                        Icons.camera_alt_outlined,
-                                        color: Colors.grey,
-                                      ),
+                              ),
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: ClipRRect(
+                                  borderRadius: defaultBorder,
+                                  child: CachedNetworkImage(
+                                    imageUrl:
+                                        viewModel.itemInfo!.thumbnailImage!,
+                                    cacheManager:
+                                        ItemImageCacheManager.instance,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

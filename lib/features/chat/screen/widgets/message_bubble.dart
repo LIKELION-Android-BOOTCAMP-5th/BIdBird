@@ -31,6 +31,7 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String? imageUrlForMessage = message.thumbnail_url ?? message.image_url;
     final bubble = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
@@ -63,35 +64,41 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
 
-          if (message.message_type == "image")
+          if (message.message_type == "image" && imageUrlForMessage != null)
             LayoutBuilder(
               builder: (context, constraints) {
-                return FutureBuilder<Size>(
-                  future: _getImageSize(message.image_url!),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return Container(
-                        width: constraints.maxWidth,
-                        height: 150,
+                return ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: constraints.maxWidth,
+                    // 너무 큰 이미지는 줄이고, 세로는 적당한 최대 높이 제한
+                    maxHeight: 280,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrlForMessage,
+                      cacheManager: ItemImageCacheManager.instance,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
                         color: Colors.grey[200],
                         child: const Center(
-                          child: CircularProgressIndicator(),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         ),
-                      );
-                    }
-
-                    final imageSize = snapshot.data!;
-                    final aspectRatio = imageSize.width / imageSize.height;
-
-                    return AspectRatio(
-                      aspectRatio: aspectRatio,
-                      child: CachedNetworkImage(
-                        imageUrl: message.image_url!,
-                        cacheManager: ItemImageCacheManager.instance,
-                        fit: BoxFit.cover,
                       ),
-                    );
-                  },
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey[200],
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.broken_image_outlined,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
@@ -146,27 +153,5 @@ class MessageBubble extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// 원본 이미지 width/height 읽어오기
-  Future<Size> _getImageSize(String url) async {
-    final completer = Completer<Size>();
-    final provider = CachedNetworkImageProvider(
-      url,
-      cacheManager: ItemImageCacheManager.instance,
-    );
-
-    provider
-        .resolve(const ImageConfiguration())
-        .addListener(
-          ImageStreamListener((ImageInfo info, bool _) {
-            final myImage = info.image;
-            completer.complete(
-              Size(myImage.width.toDouble(), myImage.height.toDouble()),
-            );
-          }),
-        );
-
-    return completer.future;
   }
 }

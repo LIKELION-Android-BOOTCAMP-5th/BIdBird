@@ -35,7 +35,7 @@ class ItemInfoEntity {
   final String itemId;
   final String sellerId;
   final String title;
-  final String thumbnailImage;
+  final String? thumbnailImage;
 
   ItemInfoEntity({
     required this.itemId,
@@ -49,7 +49,7 @@ class ItemInfoEntity {
       itemId: json['item_id'] as String,
       sellerId: json['seller_id'] as String,
       title: json['title'] as String,
-      thumbnailImage: json['thumbnail_image'] as String,
+      thumbnailImage: json['thumbnail_image'] as String?,
     );
   }
 }
