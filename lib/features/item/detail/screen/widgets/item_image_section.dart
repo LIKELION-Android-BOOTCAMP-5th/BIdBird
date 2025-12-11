@@ -20,29 +20,14 @@ class ItemImageSection extends StatefulWidget {
 class _ItemImageSectionState extends State<ItemImageSection> {
   int _currentPage = 0;
   final PageController _pageController = PageController();
-  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-
-      // 경매 종료 이후에는 타이머 중단
-      if (DateTime.now().isAfter(widget.item.finishTime)) {
-        timer.cancel();
-        setState(() {});
-        return;
-      }
-
-      setState(() {});
-    });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -103,28 +88,7 @@ class _ItemImageSectionState extends State<ItemImageSection> {
               Positioned(
                 top: 16,
                 left: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: DateTime.now().isAfter(widget.item.finishTime)
-                        ? Colors.black
-                        : RedColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    DateTime.now().isAfter(widget.item.finishTime)
-                        ? '경매 종료'
-                        : '${formatRemainingTime(widget.item.finishTime)} 남음',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                child: _RemainingTimeBadge(finishTime: widget.item.finishTime),
               ),
             ],
           ),
@@ -154,6 +118,66 @@ class _ItemImageSectionState extends State<ItemImageSection> {
         border: Border.all(
           color: isActive ? Colors.black : const Color(0xFFBDBDBD),
           width: isActive ? 1.5 : 1,
+        ),
+      ),
+    );
+  }
+}
+
+class _RemainingTimeBadge extends StatefulWidget {
+  const _RemainingTimeBadge({required this.finishTime});
+
+  final DateTime finishTime;
+
+  @override
+  State<_RemainingTimeBadge> createState() => _RemainingTimeBadgeState();
+}
+
+class _RemainingTimeBadgeState extends State<_RemainingTimeBadge> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+
+      if (DateTime.now().isAfter(widget.finishTime)) {
+        timer.cancel();
+      }
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFinished = DateTime.now().isAfter(widget.finishTime);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: isFinished ? Colors.black : RedColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        isFinished
+            ? '경매 종료'
+            : '${formatRemainingTime(widget.finishTime)} 남음',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

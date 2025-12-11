@@ -572,8 +572,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       child: ClipRRect(
                                                         borderRadius:
                                                             defaultBorder,
-                                                        child: Image.network(
-                                                          item.thumbnail_image,
+                                                        child: CachedNetworkImage(
+                                                          imageUrl:
+                                                              item.thumbnail_image,
+                                                          cacheManager:
+                                                              ItemImageCacheManager
+                                                                  .instance,
                                                           fit: BoxFit.cover,
                                                         ),
                                                       ),
