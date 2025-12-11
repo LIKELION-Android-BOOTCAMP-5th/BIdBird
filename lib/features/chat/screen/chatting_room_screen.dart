@@ -12,8 +12,9 @@ import 'package:provider/provider.dart';
 
 class ChattingRoomScreen extends StatefulWidget {
   final String itemId;
+  final String? roomId;
 
-  const ChattingRoomScreen({super.key, required this.itemId});
+  const ChattingRoomScreen({super.key, required this.itemId, this.roomId});
 
   @override
   State<ChattingRoomScreen> createState() => _ChattingRoomScreenState();
@@ -67,7 +68,10 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    viewModel = ChattingRoomViewmodel(itemId: widget.itemId);
+    viewModel = ChattingRoomViewmodel(
+      itemId: widget.itemId,
+      roomId: widget.roomId,
+    );
   }
 
   @override
@@ -113,19 +117,26 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
           return SafeArea(
             child: Scaffold(
               appBar: AppBar(
-                title: Text(viewModel.roomInfo?.seller.nickName ?? "로딩중"),
+                title: Text(viewModel.roomInfo?.opponent.nickName ?? "로딩중"),
                 actions: [
                   PopupMenuButton(
                     color: BorderColor,
                     iconColor: textColor,
                     itemBuilder: (context) => [
+                      PopupMenuItem(onTap: () {}, child: Text("차단")),
+                      PopupMenuItem(onTap: () {}, child: Text("신고")),
                       PopupMenuItem(
                         onTap: () {
-                          // viewModel.startEdit(commentIndex);
+                          if (viewModel.notificationSetting != null) {
+                            viewModel.notificationToggle();
+                          }
                         },
-                        child: Text("수정"),
+                        child: Text(
+                          viewModel.notificationSetting != null
+                              ? "알림 설정 : ${viewModel.notificationSetting?.is_notification_on == true ? "ON" : "OFF"}"
+                              : "알림 설정 불가능",
+                        ),
                       ),
-                      PopupMenuItem(onTap: () {}, child: Text("삭제")),
                     ],
                   ),
                 ],

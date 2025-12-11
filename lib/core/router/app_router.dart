@@ -11,36 +11,33 @@ import 'package:bidbird/features/item/current_trade/data/repository/current_trad
 import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
-import 'package:bidbird/features/item/relist/screen/item_relist_screen.dart';
 import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
 import 'package:bidbird/features/item/item_bid_win/screen/item_bid_win_screen.dart';
 import 'package:bidbird/features/item/item_registration_detail/screen/item_registration_detail_screen.dart';
 import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:bidbird/features/item/item_registration_list/screen/item_registration_list_screen.dart';
+import 'package:bidbird/features/item/relist/screen/item_relist_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
 import 'package:bidbird/features/item/user_profile_history/screen/user_history_screen.dart';
-import 'package:bidbird/features/payment/payment_history/screen/payment_history_screen.dart';
-
 import 'package:bidbird/features/mypage/data/blacklist_repository.dart';
-import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
-import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
-import 'package:bidbird/features/mypage/ui/favorites_screen.dart';
-import 'package:bidbird/features/mypage/viewmodel/favorites_viewmodel.dart';
 import 'package:bidbird/features/mypage/data/favorites_repository.dart';
-import 'package:bidbird/features/mypage/ui/trade_history_screen.dart';
-import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
-import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
-import 'package:bidbird/features/mypage/ui/cs_screen.dart';
-import 'package:bidbird/features/mypage/ui/terms_screen.dart';
-import 'package:bidbird/features/report/ui/report_screen.dart';
-import 'package:bidbird/features/mypage/ui/report_feedback_screen.dart';
-import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
-import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
 import 'package:bidbird/features/mypage/data/report_feedback_repository.dart';
+import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
 import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
 import 'package:bidbird/features/mypage/ui/blacklist_screen.dart';
+import 'package:bidbird/features/mypage/ui/cs_screen.dart';
+import 'package:bidbird/features/mypage/ui/favorites_screen.dart';
+import 'package:bidbird/features/mypage/ui/mypage_screen.dart';
+import 'package:bidbird/features/mypage/ui/profile_edit_screen.dart';
+import 'package:bidbird/features/mypage/ui/report_feedback_detail_screen.dart';
+import 'package:bidbird/features/mypage/ui/report_feedback_screen.dart';
+import 'package:bidbird/features/mypage/ui/terms_screen.dart';
+import 'package:bidbird/features/mypage/ui/trade_history_screen.dart';
 import 'package:bidbird/features/mypage/viewmodel/blacklist_viewmodel.dart';
-
+import 'package:bidbird/features/mypage/viewmodel/favorites_viewmodel.dart';
+import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
+import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
+import 'package:bidbird/features/payment/payment_history/screen/payment_history_screen.dart';
 import 'package:bidbird/features/report/ui/report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -50,6 +47,7 @@ import '../models/user_entity.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 GoRouter createAppRouter(BuildContext context) {
   final AuthViewModel authVM = context.read<AuthViewModel>();
@@ -154,8 +152,13 @@ GoRouter createAppRouter(BuildContext context) {
                 pageBuilder: (context, state) {
                   final String thisItemId =
                       state.uri.queryParameters["itemId"] ?? "null";
+                  final String? thisRoomId =
+                      state.uri.queryParameters["roomId"] ?? null;
                   return NoTransitionPage(
-                    child: ChattingRoomScreen(itemId: thisItemId),
+                    child: ChattingRoomScreen(
+                      itemId: thisItemId,
+                      roomId: thisRoomId,
+                    ),
                   );
                 },
                 routes: [

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:bidbird/core/managers/chatting_room_service.dart';
 import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/managers/heartbeat_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repositorie.dart';
 import 'package:bidbird/features/chat/model/chat_message_entity.dart';
+import 'package:bidbird/features/chat/model/chatting_notification_set_entity.dart';
 import 'package:bidbird/features/chat/model/room_info_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,13 +30,39 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   List<ChatMessageEntity> messages = [];
   MessageType type = MessageType.text;
   bool isSending = false;
+  final ScrollController scrollController = ScrollController();
+  ChattingNotificationSetEntity? notificationSetting;
 
   ChatRepositorie _repository = ChatRepositorie();
 
-  ChattingRoomViewmodel({required this.itemId}) {
+  ChattingRoomViewmodel({required this.itemId, required this.roomId}) {
     print("뷰모델 생성");
     fetchRoomInfo();
     fetchMessage();
+
+    Timer? _debounce;
+    scrollController.addListener(() async {
+      if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+      // _debounce = Timer(const Duration(milliseconds: 300), () {
+      //   final double offset = scrollController.offset;
+      //
+      //   if (offset < 50) {
+      //     if (buttonIsWorking) {
+      //       buttonIsWorking = false;
+      //       notifyListeners();
+      //     }
+      //   } else {
+      //     if (!buttonIsWorking) {
+      //       buttonIsWorking = true;
+      //       notifyListeners();
+      //     }
+      //   }
+      // });
+
+      if (scrollController.offset ==
+          scrollController.position.maxScrollExtent) {}
+    });
   }
 
   RealtimeChannel? _subscribeMessageChannel;
@@ -42,12 +71,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   RealtimeChannel? _tradeChannel;
   // RealtimeChannel? _bidLogChannel;
 
-  Future<void> getRoomId() async {
-    roomId = await _repository.getRoomId(itemId);
-  }
-
   Future<void> fetchRoomInfo() async {
-    roomInfo = await _repository.fetchRoomInfo(itemId);
+    final currentRoomId = roomId;
+    if (currentRoomId != null) {
+      roomInfo = await _repository.fetchRoomInfoWithRoomId(currentRoomId);
+    } else {
+      roomInfo = await _repository.fetchRoomInfo(itemId);
+    }
     itemInfo = roomInfo?.item;
     auctionInfo = roomInfo?.auction;
     tradeInfo = roomInfo?.trade;
@@ -56,15 +86,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
   Future<void> fetchMessage() async {
-    roomId = await _repository.getRoomId(itemId);
-    print("뷰모델에서 채팅방 id = ${roomId}");
-    print("뷰모델에서 메세지 fetch");
-    if (roomId != null) {
+    final currentRoomId = roomId;
+    if (currentRoomId != null) {
       final chattings = await _repository.getMessages(roomId!);
       messages.addAll(chattings);
       notifyListeners();
       setupRealtimeSubscription();
       init();
+    } else {
+      print("불러오기 실패");
     }
   }
 
@@ -191,7 +221,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     print("init roomId check : $thisRoomId");
     if (thisRoomId == null) return;
     await chattingRoomService.enterRoom(thisRoomId);
-
+    await getRoomNotificationSetting();
     heartbeatManager.start(thisRoomId);
     isActive = true;
     notifyListeners();
@@ -231,6 +261,51 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       heartbeatManager.stop();
     } else if (state == AppLifecycleState.resumed) {
       heartbeatManager.start(thisRoomId);
+    }
+  }
+
+  Future<void> getRoomNotificationSetting() async {
+    final thisRoomId = roomId;
+    if (thisRoomId == null) return;
+    notificationSetting = await _repository.getRoomNotificationSetting(
+      thisRoomId,
+    );
+    notifyListeners();
+  }
+
+  Future<void> notificationToggle() async {
+    final thisRoomId = roomId;
+    if (thisRoomId == null || notificationSetting == null) return;
+    if (notificationSetting?.is_notification_on == true) {
+      await notificationOff();
+    } else {
+      await notificationOn();
+    }
+  }
+
+  Future<void> notificationOff() async {
+    final thisRoomId = roomId;
+    if (thisRoomId == null || notificationSetting == null) return;
+    notificationSetting?.is_notification_on = false;
+    notifyListeners();
+    try {
+      _repository.notificationOff(thisRoomId);
+    } catch (e) {
+      notificationSetting?.is_notification_on = true;
+      notifyListeners();
+    }
+  }
+
+  Future<void> notificationOn() async {
+    final thisRoomId = roomId;
+    if (thisRoomId == null || notificationSetting == null) return;
+    notificationSetting?.is_notification_on = true;
+    notifyListeners();
+    try {
+      _repository.notificationOn(thisRoomId);
+    } catch (e) {
+      notificationSetting?.is_notification_on = false;
+      notifyListeners();
     }
   }
 

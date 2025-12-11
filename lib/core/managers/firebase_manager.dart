@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/router/app_router.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 
 class FirebaseManager {
   static final FirebaseManager _shared = FirebaseManager();
@@ -38,7 +41,15 @@ class FirebaseManager {
         return;
       }
 
+      // iOS 포그라운드 알림 표시 설정 (iOS에서 포그라운드 알림 팝업을 띄우기 위해 필수)
+      await _fcm.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
       await _initializeLocalNotifications();
+      // 알림 채널 설정(안드로이드만인가??)
       await _createStaticChannels();
       await _setupIOSCategories();
       await _setupFCMToken();
@@ -48,7 +59,7 @@ class FirebaseManager {
     }
   }
 
-  //
+  //  기본 설정
   static Future<void> _initializeLocalNotifications() async {
     // 안드로이드 설정
     const AndroidInitializationSettings androidSettings =
@@ -89,6 +100,7 @@ class FirebaseManager {
     }
   }
 
+  //========================================= 채널 관련 시작=================================================
   // 알림 채널 설정(안드로이드만인가??)
   static Future<void> _createStaticChannels() async {
     if (!Platform.isAndroid) return;
@@ -157,6 +169,14 @@ class FirebaseManager {
       playSound: true,
     );
 
+    const AndroidNotificationChannel fcmChannel = AndroidNotificationChannel(
+      'fcm_notification_channel',
+      '일반 알림',
+      description: '포그라운드 FCM 알림용 채널입니다.',
+      importance: Importance.max,
+      playSound: true,
+    );
+
     await androidPlugin.createNotificationChannel(generalChannel);
     await androidPlugin.createNotificationChannel(commentChannel);
     await androidPlugin.createNotificationChannel(likeChannel);
@@ -164,8 +184,10 @@ class FirebaseManager {
     await androidPlugin.createNotificationChannel(followChannel);
     await androidPlugin.createNotificationChannel(postChannel);
     await androidPlugin.createNotificationChannel(messageChannel);
+    await androidPlugin.createNotificationChannel(fcmChannel);
   }
 
+  // 동적 체널 생성자(채팅방)
   static Future<String> createChatRoomChannel(String roomId) async {
     if (!Platform.isAndroid) return 'chat_room_$roomId';
 
@@ -196,7 +218,10 @@ class FirebaseManager {
   static Future<void> _setupIOSCategories() async {
     if (!Platform.isIOS) return;
   }
+  //========================================= 채널 관련 끝==================================================
 
+  //=====================================================================================================
+  // FCM 토큰 관련
   static Future<void> _setupFCMToken() async {
     try {
       String? token = await _fcm.getToken(
@@ -216,7 +241,7 @@ class FirebaseManager {
     }
   }
 
-  // 로그인떄 사용할 생각
+  // 로그인 상태 리스너에 넣어놨음.
   static Future<void> setupFCMTokenAtLogin() async {
     try {
       String? token = await _fcm.getToken(
@@ -265,24 +290,85 @@ class FirebaseManager {
       debugPrint('FCM 토큰 저장 실패: $e');
     }
   }
+  // ================================================================================
+
+  // ====================================리스너 =======================================
 
   static void _setupMessageHandlers() {
-    // 앱 접속중
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      if (message.notification != null) {
-        await _showLocalNotification(message);
-      }
+    print('=== _setupMessageHandlers START ===');
+    // // 앱 접속중
+    // FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+    //   if (message.notification != null) {
+    //     // await _showLocalNotification(message);
+    //   }
+    // });
+
+    //포그라운드 메시지 (앱 실행 중)
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('=== FOREGROUND MESSAGE RECEIVED ===');
+
+      sendLocalPushFromFCM(message);
     });
+
     // 푸시알림
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       _handleNotificationTap(message);
     });
+
+    // 앱이 완전히 종료(Terminated) 상태일 때 알림을 탭하면 메시지를 가져옴
+    _fcm.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        print('=== INITIAL MESSAGE (TERMINATED) ===');
+        // handleRemoteMessageRouting(message);
+        _handleNotificationTap(message);
+      }
+    });
   }
 
+  // FCM 메시지를 받아 로컬 푸시
+  static void sendLocalPushFromFCM(RemoteMessage message) async {
+    final Map<String, dynamic> fcmData = message.data;
+
+    final String title = message.notification?.title ?? "새로운 알림";
+    final String body = message.notification?.body ?? "알림 내용";
+
+    //데이터 파싱
+    final String payloadString = jsonEncode(fcmData);
+
+    NotificationDetails details = const NotificationDetails(
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+      android: AndroidNotificationDetails(
+        // 채널 ID는 FCM과 Local Notification이 동일한 채널을 사용하도록 일관성 있게 유지하는 것이 좋음
+        'fcm_notification_channel',
+        '일반 알림',
+        channelDescription: "새로운 알림 및 업데이트", //채널설명
+        importance: Importance.max, //중요도
+        priority: Priority.high,
+      ),
+    );
+
+    await _localNotifications.show(
+      // 알림 ID는 고유해야 하기때문에 데이터베이스의 alarm_id를 사용
+      int.tryParse(fcmData['alarm_id'] ?? '1') ?? 1,
+      title,
+      body,
+      details,
+      payload: payloadString,
+    );
+
+    print('로컬알림 발송. 데이터: $payloadString');
+  }
+
+  // 앱 접속중에 작동하는 로직
   static Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
 
+    //===========플랫폼 별로 채널 작동 로직 시작==============
     AndroidNotificationDetails? androidDetails;
     DarwinNotificationDetails? iosDetails;
 
@@ -309,7 +395,8 @@ class FirebaseManager {
         presentSound: true,
       );
     }
-
+    //===========플랫폼 별로 채널 작동 로직 끝===============
+    //===========앱 안에서 알림 보여주기 ===================
     final details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
@@ -361,6 +448,7 @@ class FirebaseManager {
     return channelNames[channelId] ?? '알림';
   }
 
+  // 채널 관련 코드
   static String _getChannelDescription(String channelId) {
     // 동적 채널
     if (channelId.startsWith('chat_room_')) {
@@ -380,13 +468,41 @@ class FirebaseManager {
     return descriptions[channelId] ?? '알림을 받습니다.';
   }
 
-  static void _onNotificationTapped(NotificationResponse response) {
+  static void _onNotificationTapped(NotificationResponse notificationResponse) {
     // Deep linking 처리 필요시 구현
+    final String? payload = notificationResponse.payload;
+
+    if (payload != null && payload.isNotEmpty) {
+      try {
+        //데이터 파싱
+        final Map<String, dynamic> fcmData = jsonDecode(payload);
+
+        final String alarmType = fcmData['alarm_type'] ?? 'UNKNOWN';
+
+        //alarm_id, post_id, friend_id 등의 정보를 포함한 최종 라우트 생성
+        //안드로이드에서 로컬푸시생성시 반드시 고유한 아이디가 필요해서 alarm테이블의 기본키를 사용할것
+        final String targetRoute = _generateRoute(alarmType, fcmData);
+
+        //GoRouter를 사용하여 해당 경로로 이동 (push 대신 go를 사용할 수도 있음)
+        rootNavigatorKey.currentContext?.push(targetRoute);
+
+        print('알림탭. 경로: $targetRoute');
+      } catch (e) {
+        print('알림처리중 에러: $e');
+      }
+    }
   }
 
   static void _handleNotificationTap(RemoteMessage message) {
-    final data = message.data;
+    final fcmData = message.data;
     // Deep linking 처리 필요시 구현
+
+    final String alarmType = fcmData['alarm_type']?.toString() ?? 'UNKNOWN';
+
+    // _generateRoute 함수를 사용하여 알림 타입과 데이터에 맞는 라우팅 경로 생성
+    final String targetRoute = _generateRoute(alarmType, fcmData);
+    rootNavigatorKey.currentContext?.push(targetRoute);
+    print('FCM 탭으로 라우팅 성공: $targetRoute');
   }
 
   static Future<String?> getToken() async {
@@ -406,6 +522,30 @@ class FirebaseManager {
     RemoteMessage? initialMessage = await _fcm.getInitialMessage();
     if (initialMessage != null) {
       _handleNotificationTap(initialMessage);
+    }
+  }
+
+  static String _generateRoute(
+    String alarmType,
+    Map<String, dynamic> deepLinkData,
+  ) {
+    switch (alarmType) {
+      case 'NEW_CHAT':
+        // 친구 요청 페이지나 알림 목록 페이지로 이동
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        final String roomId = deepLinkData['room_id']?.toString() ?? '0';
+        return '/chat/room?itemId=$itemId&roomId=';
+      case 'NEW_ITEM':
+      case 'NEW_BID':
+        // 게시물 ID를 사용하여 해당 게시물 상세 페이지로 이동
+        final String postId = deepLinkData['post_id']?.toString() ?? '0';
+        return '/post_detail_page/$postId';
+      case 'NEW_FRIEND':
+        // 친구 목록 페이지로 이동
+        final String friendId = deepLinkData['friend_id']?.toString() ?? '0';
+        return '/friend/feed/$friendId';
+      default:
+        return '/home';
     }
   }
 }

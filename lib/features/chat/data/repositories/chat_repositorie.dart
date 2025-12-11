@@ -1,6 +1,7 @@
 import 'package:bidbird/features/chat/data/datasources/chat_network_api_datasource.dart';
 import 'package:bidbird/features/chat/data/datasources/chat_supabase_datasource.dart';
 import 'package:bidbird/features/chat/model/chat_message_entity.dart';
+import 'package:bidbird/features/chat/model/chatting_notification_set_entity.dart';
 import 'package:bidbird/features/chat/model/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/model/room_info_entity.dart';
 import 'package:bidbird/features/chat/viewmodel/chatting_room_viewmodel.dart';
@@ -54,5 +55,23 @@ class ChatRepositorie {
 
   Future<RoomInfoEntity?> fetchRoomInfo(String itemId) async {
     return _networkApiChatDatasource.fetchRoomInfo(itemId);
+  }
+
+  Future<RoomInfoEntity?> fetchRoomInfoWithRoomId(String roomId) async {
+    return _networkApiChatDatasource.fetchRoomInfoWithRoomId(roomId);
+  }
+
+  Future<ChattingNotificationSetEntity?> getRoomNotificationSetting(
+    String roomId,
+  ) async {
+    return _chatDatasource.getRoomNotificationSetting(roomId);
+  }
+
+  Future<void> notificationOff(String roomId) async {
+    await _chatDatasource.notificationOff(roomId);
+  }
+
+  Future<void> notificationOn(String roomId) async {
+    await _chatDatasource.notificationOn(roomId);
   }
 }

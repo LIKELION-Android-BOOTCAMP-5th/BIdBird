@@ -54,7 +54,7 @@ void main() async {
       print("fcm 토큰 : $fcmToken");
 
       // 초기 메시지 및 기타 FCM 초기화 작업
-      await FirebaseManager.handleInitialMessage();
+      await FirebaseManager.initialize();
     } catch (e) {
       debugPrint('푸시 알림 서비스 초기화 실패: $e');
     }
