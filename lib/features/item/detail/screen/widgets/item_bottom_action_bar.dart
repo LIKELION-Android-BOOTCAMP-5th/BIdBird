@@ -311,7 +311,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             child: OutlinedButton(
               onPressed: () {
                 // 해당 매물의 결제 상세 내역 화면으로 이동
-                context.go('/payments?itemId=${widget.item.itemId}');
+                // 기존 상세 화면을 스택에 유지하기 위해 push 사용
+                context.push('/payments?itemId=${widget.item.itemId}');
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: blueColor),
