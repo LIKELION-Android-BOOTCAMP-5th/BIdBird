@@ -66,7 +66,6 @@ class ItemDetailDatasource {
 
     final minBidStep = ItemDetailPriceHelper.calculateBidStep(currentPrice);
 
-    // auction_end_at 이 없으면 items_detail 의 created_at + duration 로 보정
     DateTime effectiveFinishTime;
     if (finishTime != null) {
       effectiveFinishTime = finishTime;
