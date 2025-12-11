@@ -17,7 +17,8 @@ class ChatSupabaseDatasource {
           .from(_messagesTable)
           .select('*')
           .eq('room_id', chattingRoomId)
-          .order('created_at', ascending: true);
+          .order('created_at', ascending: false)
+          .limit(50);
       print("data 데이터 타입: ${response.runtimeType}");
       print("$response");
       if (response.isNotEmpty) {
@@ -26,7 +27,10 @@ class ChatSupabaseDatasource {
         final List<ChatMessageEntity> results = data.map((json) {
           return ChatMessageEntity.fromJson(json);
         }).toList();
-        return results;
+
+        // Supabase에서 최신 메시지 기준 내림차순으로 가져왔으므로
+        // UI에서는 예전 -> 최신 순으로 보이도록 뒤집어서 반환
+        return results.reversed.toList();
       }
     } catch (e) {
       print("불러오기 실패 : ${e}");
