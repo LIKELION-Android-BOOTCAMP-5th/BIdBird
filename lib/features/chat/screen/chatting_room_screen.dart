@@ -123,34 +123,14 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                 surfaceTintColor: Colors.white,
                 elevation: 0.5,
                 titleSpacing: 0,
-                title: Row(
-                  children: [
-                    const SizedBox(width: 4),
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: yellowColor,
-                      child: Text(
-                        (viewModel.roomInfo?.opponent.nickName ?? '로딩중')
-                            .substring(0, 1),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        viewModel.roomInfo?.opponent.nickName ?? "로딩중",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                title: Text(
+                  viewModel.roomInfo?.opponent.nickName ?? "로딩중",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 actions: [
                   PopupMenuButton(
@@ -268,7 +248,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             ?.id;
                         final isCurrentUser = message.sender_id == userId;
 
-                        // 같은 사람이 연속해서 보낸 메시지 중 마지막인지 여부
+                        // 같은 사람이 연속해서 보낸 메시지 중 마지막인지 여부 (시간 표시용)
                         final bool isLastFromSameSender;
                         if (index == viewModel.messages.length - 1) {
                           isLastFromSameSender = true;
@@ -278,10 +258,83 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               nextMessage.sender_id != message.sender_id;
                         }
 
-                        return MessageBubble(
-                          message: message,
-                          isCurrentUser: isCurrentUser,
-                          showTime: isLastFromSameSender,
+                        // 같은 사람이 연속해서 보낸 메시지 중 첫 번째인지 여부 (아바타 표시용)
+                        final bool isFirstFromSameSender;
+                        if (index == 0) {
+                          isFirstFromSameSender = true;
+                        } else {
+                          final prevMessage = viewModel.messages[index - 1];
+                          isFirstFromSameSender =
+                              prevMessage.sender_id != message.sender_id;
+                        }
+
+                        // 같은 사람이 연속 보낸 경우 위 여백을 더 타이트하게
+                        if (isCurrentUser) {
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              top: isFirstFromSameSender ? 6 : 2,
+                            ),
+                            child: MessageBubble(
+                              message: message,
+                              isCurrentUser: true,
+                              showTime: isLastFromSameSender,
+                            ),
+                          );
+                        }
+
+                        // 상대방 메시지: 왼쪽에 프로필, 오른쪽에 말풍선
+                        const double avatarSize = 36;
+                        final opponent = viewModel.roomInfo?.opponent;
+
+                        Widget avatarWidget;
+                        if (isFirstFromSameSender) {
+                          if (opponent?.profileImage != null &&
+                              opponent!.profileImage!.isNotEmpty) {
+                            avatarWidget = CircleAvatar(
+                              radius: avatarSize / 2,
+                              backgroundImage:
+                                  NetworkImage(opponent.profileImage!),
+                            );
+                          } else {
+                            avatarWidget = CircleAvatar(
+                              radius: avatarSize / 2,
+                              backgroundColor: yellowColor,
+                              child: Text(
+                                opponent?.nickName.substring(0, 1) ?? '익',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                          }
+                        } else {
+                          avatarWidget = const SizedBox(
+                            width: avatarSize,
+                            height: avatarSize,
+                          );
+                        }
+
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            left: 8,
+                            right: 8,
+                            top: isFirstFromSameSender ? 6 : 2,
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              avatarWidget,
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: MessageBubble(
+                                  message: message,
+                                  isCurrentUser: false,
+                                  showTime: isLastFromSameSender,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),
