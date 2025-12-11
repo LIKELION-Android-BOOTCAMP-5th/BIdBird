@@ -93,6 +93,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       notifyListeners();
       setupRealtimeSubscription();
       init();
+    } else {
+      print("불러오기 실패");
     }
   }
 

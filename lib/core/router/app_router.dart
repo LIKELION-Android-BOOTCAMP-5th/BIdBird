@@ -149,7 +149,7 @@ GoRouter createAppRouter(BuildContext context) {
                   final String thisItemId =
                       state.uri.queryParameters["itemId"] ?? "null";
                   final String? thisRoomId =
-                      state.uri.queryParameters["thisRoomId"] ?? null;
+                      state.uri.queryParameters["roomId"] ?? null;
                   return NoTransitionPage(
                     child: ChattingRoomScreen(
                       itemId: thisItemId,
