@@ -20,12 +20,8 @@ class ItemDetailDatasource {
 
     final Map<String, dynamic> row = result.first as Map<String, dynamic>;
 
-    final createdAtRaw = row['created_at']?.toString();
-    final createdAt = createdAtRaw != null
-        ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
-        : DateTime.now();
-    final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
-    final finishTime = createdAt.add(Duration(hours: durationHours));
+    // 종료 시간은 auctions 테이블의 auction_end_at 기준으로 계산
+    DateTime? finishTime;
 
     final String sellerId = row['seller_id']?.toString() ?? '';
     String sellerTitle = await _fetchSellerName(sellerId, row);
@@ -46,7 +42,9 @@ class ItemDetailDatasource {
     try {
       final auctionRow = await _supabase
           .from('auctions')
-          .select('current_price, bid_count, auction_status_code, trade_status_code')
+          .select(
+            'current_price, bid_count, auction_status_code, trade_status_code, auction_end_at',
+          )
           .eq('item_id', itemId)
           .eq('round', 1)
           .maybeSingle();
@@ -56,6 +54,11 @@ class ItemDetailDatasource {
         biddingCount = (auctionRow['bid_count'] as int?) ?? 0;
         statusCode = (auctionRow['auction_status_code'] as int?) ?? 0;
         tradeStatusCode = auctionRow['trade_status_code'] as int?;
+
+        final endRaw = auctionRow['auction_end_at']?.toString();
+        if (endRaw != null && endRaw.isNotEmpty) {
+          finishTime = DateTime.tryParse(endRaw);
+        }
       }
     } catch (e) {
       debugPrint('[ItemDetailDatasource] fetch auction info error: $e');
@@ -63,12 +66,22 @@ class ItemDetailDatasource {
 
     final minBidStep = ItemDetailPriceHelper.calculateBidStep(currentPrice);
 
+    // auction_end_at 이 없으면 items_detail 의 created_at + duration 로 보정
+    if (finishTime == null) {
+      final createdAtRaw = row['created_at']?.toString();
+      final createdAt = createdAtRaw != null
+          ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+          : DateTime.now();
+      final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
+      finishTime = createdAt.add(Duration(hours: durationHours));
+    }
+
     return ItemDetail(
       itemId: row['item_id']?.toString() ?? itemId,
       sellerId: sellerId,
       itemTitle: row['title']?.toString() ?? '',
       itemImages: images,
-      finishTime: finishTime,
+      finishTime: finishTime!,
       sellerTitle: sellerTitle,
       buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
       biddingCount: biddingCount,
