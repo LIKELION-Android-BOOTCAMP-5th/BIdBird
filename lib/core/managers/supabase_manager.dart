@@ -1,14 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/user_entity.dart';
 
 class SupabaseManager {
-  // 이유 - 밖에서 shared를 null등 건드리지 못하게
-  // 오 일단 생성이 되었다.
   static final SupabaseManager _shared = SupabaseManager();
 
   static SupabaseManager get shared => _shared;
@@ -57,6 +58,33 @@ class SupabaseManager {
       provider: OAuthProvider.google,
       idToken: idToken,
       accessToken: accessToken,
+    );
+  }
+
+  /// Performs Apple sign in on iOS or macOS
+  Future<AuthResponse> signInWithApple() async {
+    final rawNonce = supabase.auth.generateRawNonce();
+    final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: hashedNonce,
+    );
+
+    final idToken = credential.identityToken;
+    if (idToken == null) {
+      throw const AuthException(
+        'Could not find ID Token from generated credential.',
+      );
+    }
+
+    return supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: idToken,
+      nonce: rawNonce,
     );
   }
 

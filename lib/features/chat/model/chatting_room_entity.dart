@@ -25,7 +25,7 @@ class ChattingRoomEntity {
       item_id: json['item_id'] as String,
       user_id: json['user_id'] as String,
       profile_image: json['profile_image'] as String?,
-      user_nickname: json['user_nickname'] as String ?? "사용자",
+      user_nickname: json['user_nickname'] as String? ?? "사용자",
       last_message: json['last_message'] as String,
       last_message_send_at: json['last_message_send_at'] as String,
       item_title: json['item_title'] as String,
