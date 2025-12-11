@@ -4,10 +4,10 @@ import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
-import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
 import 'package:bidbird/features/item/identity_verification/data/repository/identity_verification_gateway_impl.dart';
 import 'package:bidbird/features/item/identity_verification/screen/identity_verification_screen.dart';
 import 'package:bidbird/features/item/identity_verification/usecase/check_and_request_identity_verification_usecase.dart';
+import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -85,10 +85,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     if (viewModel.searchButton == false)
-                      Image.asset(
-                        'assets/logos/bidbird_text_logo.png',
-                        width: 100,
-                        height: 100,
+                      GestureDetector(
+                        onTap: () {
+                          viewModel.handleRefresh();
+                        },
+                        child: Image.asset(
+                          'assets/logos/bidbird_text_logo.png',
+                          width: 100,
+                          height: 100,
+                        ),
                       )
                     else
                       SearchBar(
@@ -232,15 +237,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   return GestureDetector(
                                     onTap: () {
-                                      final authVM =
-                                          context.read<AuthViewModel>();
+                                      final authVM = context
+                                          .read<AuthViewModel>();
                                       final myUserId = authVM.user?.id;
 
                                       final bool isWonByMe =
                                           item.lastBidUserId != null &&
-                                              myUserId != null &&
-                                              item.lastBidUserId == myUserId &&
-                                              item.auctionStatusCode == 321;
+                                          myUserId != null &&
+                                          item.lastBidUserId == myUserId &&
+                                          item.auctionStatusCode == 321;
 
                                       final bool isTradePaid =
                                           item.tradeStatusCode == 520;
@@ -535,15 +540,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   return GestureDetector(
                                     onTap: () {
-                                      final authVM =
-                                          context.read<AuthViewModel>();
+                                      final authVM = context
+                                          .read<AuthViewModel>();
                                       final myUserId = authVM.user?.id;
 
                                       final bool isWonByMe =
                                           item.lastBidUserId != null &&
-                                              myUserId != null &&
-                                              item.lastBidUserId == myUserId &&
-                                              item.auctionStatusCode == 321;
+                                          myUserId != null &&
+                                          item.lastBidUserId == myUserId &&
+                                          item.auctionStatusCode == 321;
 
                                       final bool isTradePaid =
                                           item.tradeStatusCode == 520;

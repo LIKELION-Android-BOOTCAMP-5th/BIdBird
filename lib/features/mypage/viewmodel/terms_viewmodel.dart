@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class TermsItem {
   final String title;
   final String body;

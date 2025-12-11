@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -15,7 +13,7 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Colors.white,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -31,10 +29,10 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   SizedBox(
-                    height: 52,
+                    height: 56,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: blueColor,
+                        backgroundColor: Color(0xffF2F2F2),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8.7),
@@ -54,11 +52,59 @@ class LoginScreen extends StatelessWidget {
                           return;
                         }
                       },
-                      child: Text(
-                        'Google 계정으로 계속하기',
-                        style: titleFontStyle.copyWith(
-                          fontSize: 18,
-                          color: Colors.white,
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset('assets/logos/google_logo.png'),
+                            Text(
+                              'Sign in with Google',
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: Color(0xff1F1F1F),
+                                fontFamily: 'GoogleFont',
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  SizedBox(
+                    height: 56,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.7),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+                        SupabaseManager.shared.signInWithApple();
+                      },
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset('assets/logos/apple_logo.png'),
+                            Text(
+                              'Sign in with Apple',
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                                fontFamily: 'GoogleFont',
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                          ],
                         ),
                       ),
                     ),
