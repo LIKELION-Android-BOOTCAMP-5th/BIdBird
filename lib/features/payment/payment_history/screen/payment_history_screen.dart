@@ -254,8 +254,13 @@ class _PaymentDetailBody extends StatelessWidget {
             height: 48,
             child: ElevatedButton(
               onPressed: () {
-                // 결제 상세 확인 후 해당 매물 상세 화면으로 이동
-                // go_router를 사용하므로 context.go를 통해 item 상세 라우트로 이동
+                // 1순위: 스택에 이전 화면이 있으면 단순히 뒤로가기
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                  return;
+                }
+
+                // 2순위: 딥링크 등으로 단독 진입한 경우에는 해당 매물 상세로 이동
                 context.go('/item/${item.itemId}');
               },
               style: ElevatedButton.styleFrom(
