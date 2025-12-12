@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -37,37 +38,13 @@ class ItemAddScreen extends StatelessWidget {
   }
 
   void _showImageSourceSheet(BuildContext context, ItemAddViewModel viewModel) {
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(defaultRadius),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('갤러리에서 선택'),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await viewModel.pickImagesFromGallery();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined),
-                title: const Text('사진 찍기'),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await viewModel.pickImageFromCamera();
-                },
-              ),
-            ],
-          ),
-        );
+    ImageSourceBottomSheet.show(
+      context,
+      onGalleryTap: () async {
+        await viewModel.pickImagesFromGallery();
+      },
+      onCameraTap: () async {
+        await viewModel.pickImageFromCamera();
       },
     );
   }
