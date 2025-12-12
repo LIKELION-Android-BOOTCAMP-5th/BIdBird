@@ -40,8 +40,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
       _viewModel = ChatListViewmodel(context);
       _isViewModelInitialized = true;
     }
-    
-    // 채팅 리스트 화면이 보일 때 주기적으로 리스트 새로고침
+
     final currentRoute = GoRouterState.of(context).uri.toString();
     if (currentRoute == '/chat') {
       _startPeriodicRefresh();
@@ -61,15 +60,14 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
 
   void _startPeriodicRefresh() {
     _stopPeriodicRefresh();
-    // 2초마다 리스트를 새로고침 (leaveRoom 완료 후 업데이트 반영)
-    _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         _stopPeriodicRefresh();
         return;
       }
       // ignore: avoid_print
       print("주기적 리스트 새로고침 (2초마다)");
-      _refreshListIfNeeded();
+      _refreshListOnce();
     });
   }
 
@@ -90,14 +88,19 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
   @override
   void didPopNext() {
     // ignore: avoid_print
-    print("didPopNext: 채팅 리스트 새로고침 시작");
-    _refreshListIfNeeded();
+    print("didPopNext: 채팅방에서 나옴 - leaveRoom 완료 후 서버 업데이트 반영 대기");
+    // leaveRoom()이 완료되고 서버에서 unread_count가 업데이트될 시간을 주기 위해
+    // 지연 후 한 번만 새로고침 (서버 처리 지연 대비)
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _refreshListOnce();
+      }
+    });
   }
 
   void _refreshListIfNeeded() {
     if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
-    
-    // 너무 자주 새로고침하지 않도록 제한 (500ms 이내 중복 방지)
+
     final now = DateTime.now();
     if (_lastRefreshTime != null && 
         now.difference(_lastRefreshTime!).inMilliseconds < 500) {
@@ -107,72 +110,21 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
     }
     _lastRefreshTime = now;
     
+    _refreshListOnce();
+  }
+
+  void _refreshListOnce() {
+    if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
+    
     // ignore: avoid_print
     print("채팅 리스트 새로고침 시작");
-    
-    // 즉시 한 번 업데이트 (실시간 업데이트와 함께)
     _viewModel!.reloadList();
-    
-    // 첫 번째 재시도: 200ms 후
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted && _isViewModelInitialized && _viewModel != null) {
-        // ignore: avoid_print
-        print("채팅 리스트 새로고침: 첫 번째 재시도 (200ms)");
-        _viewModel!.reloadList();
-      }
-    });
-    
-    // 두 번째 재시도: 500ms 후
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && _isViewModelInitialized && _viewModel != null) {
-        // ignore: avoid_print
-        print("채팅 리스트 새로고침: 두 번째 재시도 (500ms)");
-        _viewModel!.reloadList();
-      }
-    });
-    
-    // 세 번째 재시도: 1000ms 후 (서버 처리 지연 대비)
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (mounted && _isViewModelInitialized && _viewModel != null) {
-        // ignore: avoid_print
-        print("채팅 리스트 새로고침: 세 번째 재시도 (1000ms)");
-        _viewModel!.reloadList();
-      }
-    });
-    
-    // 네 번째 재시도: 2000ms 후 (서버 처리 지연 대비)
-    Future.delayed(const Duration(milliseconds: 2000), () {
-      if (mounted && _isViewModelInitialized && _viewModel != null) {
-        // ignore: avoid_print
-        print("채팅 리스트 새로고침: 네 번째 재시도 (2000ms)");
-        _viewModel!.reloadList();
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // 경로 변경 감지 (build에서 확인)
+    // 경로 추적 (로깅용)
     final currentRoute = GoRouterState.of(context).uri.toString();
-    
-    // 채팅 리스트 화면이 보일 때마다 리스트 새로고침 (경로가 /chat일 때)
-    if (currentRoute == '/chat') {
-      // ignore: avoid_print
-      print("채팅 리스트 화면 표시: 경로=$currentRoute, 이전 경로=$_previousRoute");
-      
-      // 이전 경로가 채팅방이었거나, 처음 로드되는 경우 리스트 새로고침
-      if (_previousRoute == null || 
-          _previousRoute!.startsWith('/chat/room') || 
-          _previousRoute != currentRoute) {
-        // ignore: avoid_print
-        print("경로 변경 감지 (build): 리스트 새로고침 시작");
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            _refreshListIfNeeded();
-          }
-        });
-      }
-    }
     _previousRoute = currentRoute;
     
     // ViewModel이 아직 초기화되지 않았으면 로딩 표시
@@ -213,13 +165,6 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
     if (viewModel.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    //
-    // if (viewModel.error != null) {
-    //   return Center(
-    //     child: Text(viewModel.error!, style: const TextStyle(fontSize: 14)),
-    //   );
-    // }
-    //
     if (viewModel.chattingRoomList.isEmpty) {
       return const Center(child: Text('참여 중인 채팅방이 없습니다.'));
     }

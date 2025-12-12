@@ -351,10 +351,12 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
 
                         // 메시지 읽음 여부 확인
                         bool isRead = false;
+                        bool isUnread = false;
                         
                         if (isCurrentUser && userId != null) {
                           // 내가 보낸 메시지: 상대방이 읽었는지 확인
                           // 가장 최근에 읽은 내 메시지 하나에만 읽음 표시
+                          // 마지막 내 메시지가 아직 읽지 않았다면 안읽음 표시
                           
                           // 상대방이 읽은 가장 최근 내 메시지의 인덱스 찾기
                           int? lastReadMyMessageIndex;
@@ -374,9 +376,18 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             }
                           }
                           
-                          // 현재 메시지가 가장 최근에 읽은 내 메시지인지 확인
-                          if (lastReadMyMessageIndex != null && index == lastReadMyMessageIndex) {
-                            isRead = true;
+                          // 상대방 메시지를 찾지 못했다면 (마지막 메시지가 내 메시지)
+                          // 마지막 내 메시지가 아직 읽지 않은 것
+                          if (lastReadMyMessageIndex == null) {
+                            // 마지막 메시지가 내 메시지인지 확인
+                            if (index == viewModel.messages.length - 1) {
+                              isUnread = true;
+                            }
+                          } else {
+                            // 상대방 메시지를 찾았다면, 가장 최근에 읽은 내 메시지에만 읽음 표시
+                            if (index == lastReadMyMessageIndex) {
+                              isRead = true;
+                            }
                           }
                         }
                         // 상대방이 보낸 메시지는 읽음 표시 없음 (isRead는 이미 false)
@@ -392,6 +403,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               isCurrentUser: true,
                               showTime: isLastFromSameSender,
                               isRead: isRead,
+                              isUnread: isUnread,
                             ),
                           );
                         } else {
