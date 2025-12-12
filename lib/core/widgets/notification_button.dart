@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-class notificationButton extends StatelessWidget {
-  const notificationButton({super.key});
+class NotificationButton extends StatelessWidget {
+  const NotificationButton({super.key});
 
   @override
   Widget build(BuildContext context) {

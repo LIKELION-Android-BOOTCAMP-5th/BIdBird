@@ -1,8 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -23,14 +23,7 @@ class MypageScreen extends StatelessWidget {
       appBar: AppBar(
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('마이페이지'),
-            Image.asset(
-              'assets/icons/alarm_icon.png',
-              width: iconSize.width,
-              height: iconSize.height,
-            ),
-          ],
+          children: [const Text('마이페이지'), NotificationButton()],
         ),
         backgroundColor: theme.appBarTheme.backgroundColor,
       ),

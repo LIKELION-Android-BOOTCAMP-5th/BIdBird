@@ -4,7 +4,7 @@ import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/icons_style.dart';
+import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -17,13 +17,14 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBindingObserver {
+class _ChatScreenState extends State<ChatScreen>
+    with RouteAware, WidgetsBindingObserver {
   String? _previousRoute;
   DateTime? _lastRefreshTime;
   Timer? _periodicRefreshTimer;
   ChatListViewmodel? _viewModel;
   bool _isViewModelInitialized = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +35,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
   void didChangeDependencies() {
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context)!);
-    
+
     // ViewModel을 한 번만 생성하여 실시간 구독이 끊기지 않도록 함
     if (!_isViewModelInitialized) {
       _viewModel = ChatListViewmodel(context);
@@ -71,20 +72,20 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
     if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
 
     final now = DateTime.now();
-    if (_lastRefreshTime != null && 
+    if (_lastRefreshTime != null &&
         now.difference(_lastRefreshTime!).inMilliseconds < 500) {
       // ignore: avoid_print
       print("새로고침 스킵: 너무 최근에 새로고침됨");
       return;
     }
     _lastRefreshTime = now;
-    
+
     _refreshListOnce();
   }
 
   void _refreshListOnce() {
     if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
-    
+
     // ignore: avoid_print
     print("채팅 리스트 새로고침 시작");
     _viewModel!.reloadList();
@@ -94,13 +95,15 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
   Widget build(BuildContext context) {
     // 경로 변경 감지 (채팅방에서 나올 때)
     final currentRoute = GoRouterState.of(context).uri.toString();
-    
+
     // 채팅 리스트 화면으로 돌아왔을 때 (채팅방에서 나왔을 때)
     if (currentRoute == '/chat') {
       final previousRoute = _previousRoute;
       if (previousRoute != null && previousRoute.startsWith('/chat/room')) {
         // ignore: avoid_print
-        print("경로 변경 감지 (build): 채팅방($previousRoute)에서 채팅 리스트($currentRoute)로 복귀 - 즉시 리스트 새로고침");
+        print(
+          "경로 변경 감지 (build): 채팅방($previousRoute)에서 채팅 리스트($currentRoute)로 복귀 - 즉시 리스트 새로고침",
+        );
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             // 즉시 한 번만 새로고침
@@ -109,16 +112,14 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
         });
       }
     }
-    
+
     _previousRoute = currentRoute;
-    
+
     // ViewModel이 아직 초기화되지 않았으면 로딩 표시
     if (!_isViewModelInitialized || _viewModel == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    
+
     // ViewModel을 한 번만 생성하여 실시간 구독이 끊기지 않도록 함
     return ChangeNotifierProvider.value(
       value: _viewModel!,
@@ -128,14 +129,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
             appBar: AppBar(
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('채팅'),
-                  Image.asset(
-                    'assets/icons/alarm_icon.png',
-                    width: iconSize.width,
-                    height: iconSize.height,
-                  ),
-                ],
+                children: [Text('채팅'), NotificationButton()],
               ),
             ),
             backgroundColor: BackgroundColor,
@@ -194,11 +188,13 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: BorderColor,
-                  backgroundImage: chattingRoom.profileImage != null &&
+                  backgroundImage:
+                      chattingRoom.profileImage != null &&
                           chattingRoom.profileImage!.isNotEmpty
                       ? NetworkImage(chattingRoom.profileImage!)
                       : null,
-                  child: chattingRoom.profileImage != null &&
+                  child:
+                      chattingRoom.profileImage != null &&
                           chattingRoom.profileImage!.isNotEmpty
                       ? null
                       : const Icon(Icons.person, color: BackgroundColor),

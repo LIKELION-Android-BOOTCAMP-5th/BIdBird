@@ -1,12 +1,12 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
+import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/item/widgets/history_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/utils/ui_set/border_radius_style.dart';
-import '../../../../core/utils/ui_set/icons_style.dart';
 import '../viewmodel/current_trade_viewmodel.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
@@ -32,14 +32,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       appBar: AppBar(
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('현재 거래 내역'),
-            Image.asset(
-              'assets/icons/alarm_icon.png',
-              width: iconSize.width,
-              height: iconSize.height,
-            ),
-          ],
+          children: [const Text('현재 거래 내역'), NotificationButton()],
         ),
       ),
       body: SafeArea(
