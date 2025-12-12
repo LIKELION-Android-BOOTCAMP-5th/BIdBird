@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/models/items_entity.dart';
 import 'package:flutter/widgets.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/repository/home_repository.dart';
 import '../model/home_data.dart';
@@ -20,6 +22,49 @@ class HomeViewmodel extends ChangeNotifier {
   bool buttonIsWorking = false;
   OrderByType type = OrderByType.newFirst;
   String selectKeyword = "전체";
+
+  //리얼타임
+  RealtimeChannel? _actionRealtime;
+
+  void setupRealtimeSubscription() {
+    _actionRealtime = SupabaseManager.shared.supabase.channel(
+      'HomeActionChanel',
+    );
+
+    _actionRealtime!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'auctions',
+          callback: (payload) {
+            final newData = payload.newRecord;
+
+            final itemId = newData['item_id'];
+            final index = _Items.indexWhere((e) => e.item_id == itemId);
+            if (index == -1) return;
+
+            final item = _Items[index];
+
+            // 1) bid_count 업데이트
+            item.auctions.bid_count =
+                newData['bid_count'] ?? item.auctions.bid_count;
+
+            // 2) current_price 업데이트
+            item.auctions.current_price =
+                newData['current_price'] ?? item.auctions.current_price;
+
+            // 3) finishTime 업데이트
+            final endAt = newData['auction_end_at']?.toString();
+            if (endAt != null && endAt.isNotEmpty) {
+              item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
+            }
+
+            sortItemsByFinishTime();
+            notifyListeners();
+          },
+        )
+        .subscribe();
+  }
 
   //검색 기능 관련
   bool searchButton = false;
@@ -84,6 +129,9 @@ class HomeViewmodel extends ChangeNotifier {
       }
     });
     fetchItems();
+
+    //리얼 타임
+    setupRealtimeSubscription();
   }
 
   //[메모리 누수] scrollController, Timer 정지
@@ -92,6 +140,10 @@ class HomeViewmodel extends ChangeNotifier {
     scrollController.dispose();
     _debounce?.cancel();
     _searchDebounce?.cancel();
+
+    if (_actionRealtime != null) {
+      SupabaseManager.shared.supabase.removeChannel(_actionRealtime!);
+    }
     // TODO: implement dispose
     super.dispose();
   }
