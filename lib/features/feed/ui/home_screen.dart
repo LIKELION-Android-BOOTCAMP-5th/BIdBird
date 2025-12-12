@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:bidbird/features/identity_verification/widget/identity_verification_helper.dart';
@@ -93,11 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               height: iconSize.height,
                             ),
                           ),
-                          Image.asset(
-                            'assets/icons/alarm_icon.png',
-                            width: iconSize.width,
-                            height: iconSize.height,
-                          ),
+                          NotificationButton(),
                         ],
                       ),
                     ),
