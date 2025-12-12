@@ -54,7 +54,15 @@ class ChatListViewmodel extends ChangeNotifier {
 
   void setupRealtimeSubscription() {
     final currentId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-    if (currentId == null) return;
+    if (currentId == null) {
+      // ignore: avoid_print
+      print("실시간 구독 설정 실패: currentId가 null");
+      return;
+    }
+    
+    // ignore: avoid_print
+    print("실시간 구독 설정 시작: currentId=$currentId");
+    
     _isBuyerChannel = SupabaseManager.shared.supabase.channel(
       'chattingRoomByBuyer',
     );
@@ -69,6 +77,8 @@ class ChatListViewmodel extends ChangeNotifier {
             value: currentId,
           ),
           callback: (payload) {
+            // ignore: avoid_print
+            print("실시간 업데이트: chatting_room (buyer) 변경 감지");
             reloadList();
           },
         )
@@ -88,6 +98,8 @@ class ChatListViewmodel extends ChangeNotifier {
             value: currentId,
           ),
           callback: (payload) {
+            // ignore: avoid_print
+            print("실시간 업데이트: chatting_room (seller) 변경 감지");
             reloadList();
           },
         )
@@ -109,8 +121,14 @@ class ChatListViewmodel extends ChangeNotifier {
             value: currentId,
           ),
           callback: (payload) {
+            // ignore: avoid_print
+            print("실시간 업데이트: chatting_room_users 테이블 변경 감지");
             final data = payload.newRecord;
-            if (data == null) return;
+            if (data == null) {
+              // ignore: avoid_print
+              print("실시간 업데이트: newRecord가 null");
+              return;
+            }
             
             // unread_count가 변경되면 해당 채팅방의 정보만 업데이트
             final roomId = data['room_id'] as String?;
@@ -154,13 +172,16 @@ class ChatListViewmodel extends ChangeNotifier {
                 // ignore: avoid_print
                 print("unread_count 변경 없음: $oldUnreadCount == $unreadCount");
               }
+            } else {
+              // ignore: avoid_print
+              print("실시간 업데이트: roomId가 null");
             }
           },
         )
         .subscribe();
     
     // ignore: avoid_print
-    print("실시간 구독 설정 완료: chatting_room_users 테이블 감시 시작");
+    print("실시간 구독 설정 완료: chatting_room_users 테이블 감시 시작 (user_id=$currentId)");
   }
 
   @override

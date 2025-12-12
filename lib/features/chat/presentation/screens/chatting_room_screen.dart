@@ -352,51 +352,34 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         // 메시지 읽음 여부 확인
                         bool isRead = false;
                         
-                        if (isCurrentUser) {
+                        if (isCurrentUser && userId != null) {
                           // 내가 보낸 메시지: 상대방이 읽었는지 확인
-                          // 내 메시지 이후에 다른 메시지가 있으면 상대방이 읽었다고 간주
-                          if (index < viewModel.messages.length - 1) {
-                            // 내 메시지 이후에 다른 메시지가 있으면 읽음
-                            isRead = true;
-                          } else {
-                            // 내 메시지가 마지막 메시지인 경우, 상대방이 읽었는지 확인
-                            // 상대방이 내 메시지 이후에 메시지를 보냈거나, 일정 시간이 지났으면 읽음
-                            try {
-                              final messageTime = DateTime.parse(message.createdAt).toLocal();
-                              final now = DateTime.now();
-                              final timeDiff = now.difference(messageTime);
-                              
-                              // 메시지를 보낸 후 3초 이상 지났으면 읽었다고 간주
-                              // (실제로는 상대방의 lastMessageAt을 확인해야 하지만, 현재 구조에서는 불가능)
-                              if (timeDiff.inSeconds >= 3) {
-                                isRead = true;
+                          // 가장 최근에 읽은 내 메시지 하나에만 읽음 표시
+                          
+                          // 상대방이 읽은 가장 최근 내 메시지의 인덱스 찾기
+                          int? lastReadMyMessageIndex;
+                          
+                          // 메시지 리스트를 역순으로 확인
+                          for (int i = viewModel.messages.length - 1; i >= 0; i--) {
+                            // 상대방 메시지를 찾으면, 그 이전의 마지막 내 메시지가 가장 최근에 읽은 메시지
+                            if (viewModel.messages[i].senderId != userId) {
+                              // 상대방 메시지 이전의 내 메시지 찾기
+                              for (int j = i - 1; j >= 0; j--) {
+                                if (viewModel.messages[j].senderId == userId) {
+                                  lastReadMyMessageIndex = j;
+                                  break;
+                                }
                               }
-                            } catch (e) {
-                              isRead = false;
+                              break;
                             }
                           }
-                        } else {
-                          // 상대방이 보낸 메시지: 내가 읽었는지 확인
-                          // 가장 최근에 읽은 메시지 하나에만 읽음 표시
-                          if (viewModel.roomInfo != null) {
-                            final unreadCount = viewModel.roomInfo!.unreadCount;
-                            
-                            // unreadCount가 0이면 모든 메시지를 읽었으므로 마지막 메시지에만 표시
-                            if (unreadCount == 0) {
-                              // 마지막 메시지에만 읽음 표시
-                              if (index == viewModel.messages.length - 1) {
-                                isRead = true;
-                              }
-                            } else {
-                              // unreadCount가 N이면, 최신 메시지부터 N개가 읽지 않은 메시지
-                              // 가장 최근에 읽은 메시지는 index == messages.length - unreadCount - 1
-                              final lastReadIndex = viewModel.messages.length - unreadCount - 1;
-                              if (index == lastReadIndex && lastReadIndex >= 0) {
-                                isRead = true;
-                              }
-                            }
+                          
+                          // 현재 메시지가 가장 최근에 읽은 내 메시지인지 확인
+                          if (lastReadMyMessageIndex != null && index == lastReadMyMessageIndex) {
+                            isRead = true;
                           }
                         }
+                        // 상대방이 보낸 메시지는 읽음 표시 없음 (isRead는 이미 false)
 
                         // 같은 사람이 연속 보낸 경우 위 여백을 더 타이트하게
                         if (isCurrentUser) {
