@@ -12,7 +12,7 @@ class ProfileViewModel extends ChangeNotifier {
   String? errorMessage; //나중에팝업으로쓸것
 
   ProfileViewModel(this._repository) {
-    loadProfile(); //쵸기로딩
+    loadProfile(); //생성자에서 쵸기로딩 // main에서 ..loadProfile()하지 않아도 됨
   }
 
   Future<void> loadProfile() async {

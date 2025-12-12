@@ -32,7 +32,7 @@ class ProfileRepository {
 
   Future<void> updateProfile({
     String? nickName,
-    String? phoneNumber,
+    // String? phoneNumber,
     String? profileImageUrl,
   }) async {
     final user = _client.auth.currentUser;
@@ -46,9 +46,9 @@ class ProfileRepository {
     if (nickName != null) {
       updateData['nick_name'] = nickName;
     }
-    if (phoneNumber != null) {
-      updateData['phone_number'] = phoneNumber;
-    }
+    // if (phoneNumber != null) {
+    //   updateData['phone_number'] = phoneNumber;
+    // }
     if (profileImageUrl != null) {
       updateData['profile_image'] = profileImageUrl;
     }
@@ -64,7 +64,6 @@ class ProfileRepository {
     }
   }
 
-  //delete만들기
   Future<void> unregisterUser() async {
     final user = _client.auth.currentUser;
 
@@ -72,15 +71,15 @@ class ProfileRepository {
       throw Exception('Failed unregisterUser'); //나중에팝업으로쓸것
     }
 
-    try {
-      await _client
-          .from('users')
-          .update({
-            'unregister_at': DateTime.now().millisecondsSinceEpoch,
-          }) //밀리세컨드//사용자기기
-          .eq('id', user.id); //추가로할처리들체크하고추가//한번에처리해야함
-    } catch (e) {
-      throw Exception('Failed unregisterUser: $e'); //나중에팝업으로쓸것
-    }
+    // try {
+    //   await _client
+    //       .from('users')
+    //       .update({
+    //         'unregister_at': DateTime.now().millisecondsSinceEpoch,
+    //       }) //밀리세컨드//사용자기기
+    //       .eq('id', user.id); //추가로할처리들체크하고추가//한번에처리해야함
+    // } catch (e) {
+    //   throw Exception('Failed unregisterUser: $e'); //나중에팝업으로쓸것
+    // }
   }
 }

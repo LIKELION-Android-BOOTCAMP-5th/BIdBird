@@ -1,3 +1,5 @@
+import 'dart:io'; //File경로/FileImage프리뷰
+
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
@@ -40,17 +42,23 @@ class ProfileEditScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
+                  //Column을 Column + Expanded + SingleChildScrollView + Column로바꿔봄//오버플로우방지
                   children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 24),
+                            _ProfileImage(vm: vm),
+                            const SizedBox(height: 48),
+                            _ProfileForm(vm: vm),
+                            const SizedBox(height: 12),
+                            _UnregisterLink(vm: vm),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 24),
-                    _ProfileImage(vm: vm),
-                    const SizedBox(height: 48),
-                    _ProfileForm(vm: vm),
-                    // const SizedBox(height: 24),
-                    // Align(
-                    //   alignment: Alignment.centerRight,
-                    //   child: _UnregisterButton(vm: vm),
-                    // ),
-                    const Spacer(),
                     _SaveButton(vm: vm),
                   ],
                 ),
@@ -63,7 +71,61 @@ class ProfileEditScreen extends StatelessWidget {
   }
 }
 
-//전체디자인수정예정
+class _UnregisterLink extends StatelessWidget {
+  final ProfileEditViewModel vm;
+
+  const _UnregisterLink({required this.vm});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: () async {
+          bool didRequest = false;
+
+          await showDialog(
+            context: context,
+            builder: (dialogContext) {
+              return AskPopup(
+                content: '회원탈퇴 하시겠습니까? \n복구가능 기간은 30일입니다.',
+                yesText: '확인',
+                noText: '취소',
+                yesLogic: () async {
+                  await vm.unregisterUser();
+                  didRequest = true;
+                  Navigator.of(dialogContext).pop();
+                },
+              );
+            },
+          );
+
+          if (!didRequest || !context.mounted) {
+            return;
+          }
+
+          final unregisterError = vm.errorMessage;
+          final content = unregisterError ?? '회원탈퇴가 완료되었습니다.';
+
+          await showDialog(
+            context: context,
+            builder: (dialogContext) {
+              return AskPopup(
+                content: content,
+                yesText: '확인',
+                yesLogic: () async {
+                  Navigator.of(dialogContext).pop();
+                },
+              );
+            },
+          );
+        },
+        child: Text('회원탈퇴'),
+      ),
+    );
+  }
+}
+
 class _ProfileImage extends StatelessWidget {
   final ProfileEditViewModel vm;
 
@@ -71,7 +133,15 @@ class _ProfileImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = vm.profileImageUrl;
+    final profileImageUrl = vm.profileImageUrl;
+    final selectedProfileImage = vm.selectedProfileImage;
+    ImageProvider? profileImage;
+
+    if (selectedProfileImage != null) {
+      profileImage = FileImage(File(selectedProfileImage.path));
+    } else if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
+      profileImage = NetworkImage(profileImageUrl);
+    }
 
     return Column(
       children: [
@@ -80,10 +150,10 @@ class _ProfileImage extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 80,
-              foregroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-                  ? NetworkImage(imageUrl!)
+              foregroundImage: profileImage,
+              child: profileImage == null
+                  ? const Icon(Icons.person, size: 60)
                   : null,
-              child: const Icon(Icons.person, size: 60),
             ),
             Positioned(
               right: 0,
@@ -92,9 +162,9 @@ class _ProfileImage extends StatelessWidget {
                 onTap: vm.isUploadingImage
                     ? null
                     : () async {
-                        await vm.pickAndUploadProfileImage();
-                        final error = vm.errorMessage;
-                        if (error != null && context.mounted) {
+                        await vm.pickProfileImage();
+                        final errorMessage = vm.errorMessage;
+                        if (errorMessage != null && context.mounted) {
                           //에러팝업
                         }
                       },
@@ -158,55 +228,6 @@ class _ProfileForm extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        Text('전화번호', style: contentFontStyle),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: vm.phoneTextfield,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: BackgroundColor,
-                  border: OutlineInputBorder(
-                    borderSide: const BorderSide(color: BorderColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: BorderColor),
-                  ),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              height: 40,
-              child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 6,
-                  ),
-                  side: const BorderSide(color: blueColor),
-                  shape: RoundedRectangleBorder(borderRadius: defaultBorder),
-                ),
-                onPressed: () {
-                  // 재인증
-                },
-                child: Text(
-                  '재인증',
-                  style: buttonFontStyle.copyWith(color: blueColor),
-                ),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -234,20 +255,48 @@ class _SaveButton extends StatelessWidget {
             ? null
             : () async {
                 await vm.saveProfileChanges();
-                final error = vm.errorMessage;
-                if (error != null) {
-                  if (context.mounted) {
-                    //에러팝업
-                  }
+                final errorMessage = vm.errorMessage;
+                if (!context.mounted) return; //await후에다시context쓰려면이렇게해야함
+
+                if (errorMessage != null) {
+                  final content = errorMessage == '닉네임을 입력하세요.'
+                      ? '닉네임을 입력하세요.'
+                      : '정보 수정이 실패하였습니다.';
+
+                  await showDialog(
+                    context: context,
+                    builder: (dialogContext) {
+                      return AskPopup(
+                        content: content,
+                        yesText: '확인',
+                        yesLogic: () async {
+                          Navigator.of(dialogContext).pop();
+                        },
+                      );
+                    },
+                  );
                   return;
                 }
 
-                if (context.mounted) {
-                  await context
-                      .read<ProfileViewModel>()
-                      .loadProfile(); // 마이페이지프로필갱신
-                  context.pop();
-                }
+                await context
+                    .read<ProfileViewModel>()
+                    .loadProfile(); // 마이페이지프로필갱신
+
+                if (!context.mounted) return; //await후에다시context쓰려면이렇게해야함
+
+                await showDialog(
+                  context: context,
+                  builder: (dialogContext) {
+                    return AskPopup(
+                      content: '정보 수정이 완료되었습니다.',
+                      yesText: '확인',
+                      yesLogic: () async {
+                        Navigator.of(dialogContext).pop();
+                        context.go('/mypage');
+                      },
+                    );
+                  },
+                );
               },
         child: vm.isSaving
             ? const SizedBox(
