@@ -133,44 +133,40 @@ class ChatListViewmodel extends ChangeNotifier {
             // unread_count가 변경되면 해당 채팅방의 정보만 업데이트
             final roomId = data['room_id'] as String?;
             final unreadCount = data['unread_count'] as int? ?? 0;
-            final oldUnreadCount = payload.oldRecord?['unread_count'] as int? ?? 0;
+            final oldUnreadCount = payload.oldRecord?['unread_count'] as int?;
             
             // ignore: avoid_print
             print("실시간 업데이트 트리거: roomId=$roomId, oldCount=$oldUnreadCount, newCount=$unreadCount");
             
             if (roomId != null) {
-              // unread_count가 변경되었을 때만 업데이트
-              if (unreadCount != oldUnreadCount) {
+              // oldRecord가 null이거나 unread_count가 변경되었을 때 업데이트
+              // oldRecord가 null인 경우는 INSERT 이벤트이거나 oldRecord가 전달되지 않은 경우
+              if (oldUnreadCount == null || unreadCount != oldUnreadCount) {
                 // ignore: avoid_print
                 print("unread_count 변경 감지: $oldUnreadCount -> $unreadCount, 리스트 새로고침 시작");
                 
                 // unread_count가 0이 되면 즉시 업데이트 (읽음 처리 완료)
                 if (unreadCount == 0) {
-                  // 읽음 처리 완료 시 즉시 업데이트 (지연 없이)
+                  // ignore: avoid_print
+                  print("unread_count가 0이 됨 - 즉시 리스트 새로고침");
+                  // 읽음 처리 완료 시 즉시 업데이트
                   reloadList();
-                  // 추가로 200ms, 500ms, 1000ms 후에도 한 번 더 확인 (서버 처리 지연 대비)
-                  Future.delayed(const Duration(milliseconds: 200), () {
-                    // ignore: avoid_print
-                    print("실시간 업데이트: 200ms 후 재확인");
-                    reloadList();
-                  });
-                  Future.delayed(const Duration(milliseconds: 500), () {
-                    // ignore: avoid_print
-                    print("실시간 업데이트: 500ms 후 재확인");
-                    reloadList();
-                  });
-                  Future.delayed(const Duration(milliseconds: 1000), () {
-                    // ignore: avoid_print
-                    print("실시간 업데이트: 1000ms 후 재확인");
-                    reloadList();
-                  });
                 } else {
                   // unread_count가 증가한 경우 즉시 업데이트
+                  // ignore: avoid_print
+                  print("unread_count 증가: $oldUnreadCount -> $unreadCount - 즉시 리스트 새로고침");
                   reloadList();
                 }
               } else {
                 // ignore: avoid_print
                 print("unread_count 변경 없음: $oldUnreadCount == $unreadCount");
+                // oldCount와 newCount가 같아도, unread_count가 0이고 oldRecord가 null이 아닌 경우
+                // 이미 읽음 처리된 상태이므로 리스트를 새로고침하여 UI 업데이트 보장
+                if (unreadCount == 0 && oldUnreadCount != null) {
+                  // ignore: avoid_print
+                  print("unread_count가 이미 0이지만 리스트 새로고침 (UI 업데이트 보장)");
+                  reloadList();
+                }
               }
             } else {
               // ignore: avoid_print
