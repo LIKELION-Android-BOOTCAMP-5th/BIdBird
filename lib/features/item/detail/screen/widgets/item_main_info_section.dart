@@ -1,6 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/features/chat/screen/chatting_room_screen.dart';
+import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:flutter/material.dart';
 

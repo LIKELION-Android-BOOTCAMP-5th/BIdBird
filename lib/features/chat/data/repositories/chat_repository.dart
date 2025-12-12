@@ -1,32 +1,32 @@
 import 'package:bidbird/features/chat/data/datasources/chat_network_api_datasource.dart';
 import 'package:bidbird/features/chat/data/datasources/chat_supabase_datasource.dart';
-import 'package:bidbird/features/chat/model/chat_message_entity.dart';
-import 'package:bidbird/features/chat/model/chatting_notification_set_entity.dart';
-import 'package:bidbird/features/chat/model/chatting_room_entity.dart';
-import 'package:bidbird/features/chat/model/room_info_entity.dart';
-import 'package:bidbird/features/chat/viewmodel/chatting_room_viewmodel.dart';
+import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
+import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart';
+import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
 
-class ChatRepositorie {
+class ChatRepositoryImpl implements ChatRepository {
   final ChatNetworkApiDatasource _networkApiChatDatasource =
       ChatNetworkApiDatasource();
   final ChatSupabaseDatasource _chatDatasource = ChatSupabaseDatasource();
+  @override
   Future<List<ChattingRoomEntity>> fetchChattingRoomList() async {
     return await _networkApiChatDatasource.fetchChattingRoomList();
   }
 
+  @override
   Future<List<ChatMessageEntity>> getMessages(String chattingRoomId) async {
-    print("리포지토리에서 메세지 fetch");
     return await _chatDatasource.getMessages(chattingRoomId);
   }
 
+  @override
   Future<List<ChatMessageEntity>> getOlderMessages(
     String chattingRoomId,
     String beforeCreatedAtIso, {
     int limit = 50,
   }) async {
-    print(
-      "리포지토리에서 이전 메세지 fetch, beforeCreatedAt = $beforeCreatedAtIso",
-    );
     return await _chatDatasource.getOlderMessages(
       roomId: chattingRoomId,
       beforeCreatedAtIso: beforeCreatedAtIso,
@@ -34,18 +34,22 @@ class ChatRepositorie {
     );
   }
 
+  @override
   Future<String?> getRoomId(String itemId) async {
     return await _chatDatasource.getRoomId(itemId);
   }
 
+  @override
   Future<void> sendImageMessage(String roomId, String imageUrl) async {
     await _chatDatasource.sendImageMessage(roomId, imageUrl);
   }
 
+  @override
   Future<void> sendTextMessage(String roomId, String message) async {
     await _chatDatasource.sendTextMessage(roomId, message);
   }
 
+  @override
   Future<String?> firstMessage({
     required String itemId,
     String? message,
@@ -68,24 +72,29 @@ class ChatRepositorie {
     }
   }
 
+  @override
   Future<RoomInfoEntity?> fetchRoomInfo(String itemId) async {
     return _networkApiChatDatasource.fetchRoomInfo(itemId);
   }
 
+  @override
   Future<RoomInfoEntity?> fetchRoomInfoWithRoomId(String roomId) async {
     return _networkApiChatDatasource.fetchRoomInfoWithRoomId(roomId);
   }
 
+  @override
   Future<ChattingNotificationSetEntity?> getRoomNotificationSetting(
     String roomId,
   ) async {
     return _chatDatasource.getRoomNotificationSetting(roomId);
   }
 
+  @override
   Future<void> notificationOff(String roomId) async {
     await _chatDatasource.notificationOff(roomId);
   }
 
+  @override
   Future<void> notificationOn(String roomId) async {
     await _chatDatasource.notificationOn(roomId);
   }

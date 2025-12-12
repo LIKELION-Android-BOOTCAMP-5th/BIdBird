@@ -6,8 +6,8 @@ import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:bidbird/features/chat/screen/widgets/message_bubble.dart';
-import 'package:bidbird/features/chat/viewmodel/chatting_room_viewmodel.dart';
+import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
+import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -86,10 +86,15 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
   void dispose() {
     routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
-    // Provider가 만들어졌다면 leaveRoom 실행
-
-    if (viewModel.roomId != null) {
-      viewModel.leaveRoom();
+    // 채팅방을 나갈 때 읽음 처리를 위해 disposeViewModel 호출
+    if (viewModel.roomId != null && viewModel.isActive) {
+      // disposeViewModel에서 leaveRoom을 호출하여 읽음 처리
+      // dispose는 동기 메서드이므로 Future를 기다릴 수 없지만, 
+      // disposeViewModel 내부에서 leaveRoom이 완료될 때까지 기다리도록 처리
+      viewModel.disposeViewModel().catchError((e) {
+        // ignore: avoid_print
+        print("dispose에서 disposeViewModel 실패: $e");
+      });
     }
     super.dispose();
   }
@@ -106,7 +111,34 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
   @override
   void didPop() {
     if (viewModel.roomId != null) {
-      viewModel.leaveRoom();
+      // dispose에서도 leaveRoom이 호출되지만, 명시적으로 호출하여 읽음 처리 보장
+      // leaveRoom이 완료되도록 기다림 (비동기이지만 완료를 보장)
+      viewModel.leaveRoom().then((_) {
+        // leaveRoom 완료 후 약간의 지연을 두고 실시간 업데이트가 반영되도록 함
+        // ignore: avoid_print
+        print("didPop: leaveRoom 완료");
+      }).catchError((e) {
+        // ignore: avoid_print
+        print("didPop: leaveRoom 실패: $e");
+      });
+    }
+  }
+  
+  // 화면이 비활성화될 때 (다른 화면으로 이동)
+  @override
+  void didPushNext() {
+    if (viewModel.roomId != null) {
+      // 다른 화면으로 이동할 때도 읽음 처리
+      viewModel.disposeViewModel();
+    }
+  }
+  
+  // 이전 화면에서 돌아왔을 때
+  @override
+  void didPopNext() {
+    if (viewModel.roomId != null) {
+      // 다시 돌아왔을 때 enterRoom 호출
+      viewModel.enterRoom();
     }
   }
 
@@ -118,7 +150,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
         builder: (context, viewModel, child) {
           return SafeArea(
             child: Scaffold(
-              backgroundColor: BackgroundColor,
+              backgroundColor: chatBackgroundColor,
               appBar: AppBar(
                 backgroundColor: Colors.white,
                 surfaceTintColor: Colors.white,
@@ -148,7 +180,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         },
                         child: Text(
                           viewModel.notificationSetting != null
-                              ? "알림 설정 : ${viewModel.notificationSetting?.is_notification_on == true ? "ON" : "OFF"}"
+                              ? "알림 설정 : ${viewModel.notificationSetting?.isNotificationOn == true ? "ON" : "OFF"}"
                               : "알림 설정 불가능",
                         ),
                       ),
@@ -158,85 +190,110 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
               ),
               body: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: defaultBorder,
-                        boxShadow: const [
-                          BoxShadow(
-                            color: shadowLow,
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        spacing: 16,
-                        children: [
-                          if (viewModel.itemInfo?.thumbnailImage != null &&
-                              viewModel.itemInfo!.thumbnailImage!.isNotEmpty)
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                border: Border.all(
-                                  color: iconColor.withValues(alpha: 0.2),
-                                  width: 1,
+                  // 매물 정보 섹션
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: chatItemCardBackground,
+                      boxShadow: const [
+                        BoxShadow(
+                          color: shadowLow,
+                          blurRadius: 2,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      spacing: 16,
+                      children: [
+                        if (viewModel.itemInfo?.thumbnailImage != null &&
+                            viewModel.itemInfo!.thumbnailImage!.isNotEmpty)
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: ImageBackgroundColor,
+                              borderRadius: defaultBorder,
+                            ),
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: ClipRRect(
+                                borderRadius: defaultBorder,
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      viewModel.itemInfo!.thumbnailImage!,
+                                  cacheManager:
+                                      ItemImageCacheManager.instance,
+                                  fit: BoxFit.cover,
                                 ),
+                              ),
+                            ),
+                          )
+                        else
+                          SizedBox(
+                            width: 60,
+                            height: 60,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: ImageBackgroundColor,
                                 borderRadius: defaultBorder,
                               ),
-                              child: AspectRatio(
-                                aspectRatio: 1,
-                                child: ClipRRect(
-                                  borderRadius: defaultBorder,
-                                  child: CachedNetworkImage(
-                                    imageUrl:
-                                        viewModel.itemInfo!.thumbnailImage!,
-                                    cacheManager:
-                                        ItemImageCacheManager.instance,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  viewModel.itemInfo?.title ?? "로딩중",
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  viewModel.auctionInfo?.currentPrice == null
-                                      ? "로딩중"
-                                      : "${formatPrice(viewModel.auctionInfo!.currentPrice)}원",
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                viewModel.itemInfo?.title ?? "로딩중",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: chatTextColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                viewModel.auctionInfo?.currentPrice == null
+                                    ? "로딩중"
+                                    : "${formatPrice(viewModel.auctionInfo!.currentPrice)}원",
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: chatTextColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: viewModel.messages.length,
+                    child: AnimatedOpacity(
+                      opacity: viewModel.isScrollPositionReady ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 0), // 즉시 표시 (애니메이션 없음)
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollEndNotification) {
+                          // 초기 로드가 아닐 때만 스크롤 처리 (사용자가 수동으로 스크롤한 경우)
+                          // 스크롤이 끝났을 때 roomInfo를 업데이트하여 unreadCount 변경 감지 (디바운스 적용)
+                          viewModel.fetchRoomInfoDebounced();
+                        }
+                        return false;
+                      },
+                      child: ListView.builder(
+                        controller: viewModel.scrollController,
+                        itemCount: viewModel.messages.length,
+                          reverse: false,
+                          cacheExtent: 0,
+                          padding: const EdgeInsets.only(bottom: 16),
+                          physics: viewModel.listViewPhysics ?? const ClampingScrollPhysics(),
                       itemBuilder: (context, index) {
                         final message = viewModel.messages[index];
                         final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-                        final isCurrentUser = message.sender_id == userId;
+                        final isCurrentUser = message.senderId == userId;
 
                         // 같은 사람이 연속해서 보낸 메시지 중 마지막인지 여부 (시간 표시용)
                         final bool isLastFromSameSender;
@@ -245,7 +302,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         } else {
                           final nextMessage = viewModel.messages[index + 1];
                           isLastFromSameSender =
-                              nextMessage.sender_id != message.sender_id;
+                              nextMessage.senderId != message.senderId;
                         }
 
                         // 같은 사람이 연속해서 보낸 메시지 중 첫 번째인지 여부 (아바타 표시용)
@@ -255,7 +312,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         } else {
                           final prevMessage = viewModel.messages[index - 1];
                           isFirstFromSameSender =
-                              prevMessage.sender_id != message.sender_id;
+                              prevMessage.senderId != message.senderId;
                         }
 
                         // 날짜 구분 표시 여부 계산
@@ -263,10 +320,10 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         DateTime? previousDate;
                         try {
                           currentDate =
-                              DateTime.parse(message.created_at).toLocal();
+                              DateTime.parse(message.createdAt).toLocal();
                           if (index > 0) {
                             previousDate = DateTime.parse(
-                              viewModel.messages[index - 1].created_at,
+                              viewModel.messages[index - 1].createdAt,
                             ).toLocal();
                           }
                         } catch (_) {
@@ -292,16 +349,66 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
 
                         Widget messageWidget;
 
+                        // 메시지 읽음 여부 확인
+                        bool isRead = false;
+                        
+                        if (isCurrentUser) {
+                          // 내가 보낸 메시지: 상대방이 읽었는지 확인
+                          // 내 메시지 이후에 다른 메시지가 있으면 상대방이 읽었다고 간주
+                          if (index < viewModel.messages.length - 1) {
+                            // 내 메시지 이후에 다른 메시지가 있으면 읽음
+                            isRead = true;
+                          } else {
+                            // 내 메시지가 마지막 메시지인 경우, 상대방이 읽었는지 확인
+                            // 상대방이 내 메시지 이후에 메시지를 보냈거나, 일정 시간이 지났으면 읽음
+                            try {
+                              final messageTime = DateTime.parse(message.createdAt).toLocal();
+                              final now = DateTime.now();
+                              final timeDiff = now.difference(messageTime);
+                              
+                              // 메시지를 보낸 후 3초 이상 지났으면 읽었다고 간주
+                              // (실제로는 상대방의 lastMessageAt을 확인해야 하지만, 현재 구조에서는 불가능)
+                              if (timeDiff.inSeconds >= 3) {
+                                isRead = true;
+                              }
+                            } catch (e) {
+                              isRead = false;
+                            }
+                          }
+                        } else {
+                          // 상대방이 보낸 메시지: 내가 읽었는지 확인
+                          // 가장 최근에 읽은 메시지 하나에만 읽음 표시
+                          if (viewModel.roomInfo != null) {
+                            final unreadCount = viewModel.roomInfo!.unreadCount;
+                            
+                            // unreadCount가 0이면 모든 메시지를 읽었으므로 마지막 메시지에만 표시
+                            if (unreadCount == 0) {
+                              // 마지막 메시지에만 읽음 표시
+                              if (index == viewModel.messages.length - 1) {
+                                isRead = true;
+                              }
+                            } else {
+                              // unreadCount가 N이면, 최신 메시지부터 N개가 읽지 않은 메시지
+                              // 가장 최근에 읽은 메시지는 index == messages.length - unreadCount - 1
+                              final lastReadIndex = viewModel.messages.length - unreadCount - 1;
+                              if (index == lastReadIndex && lastReadIndex >= 0) {
+                                isRead = true;
+                              }
+                            }
+                          }
+                        }
+
                         // 같은 사람이 연속 보낸 경우 위 여백을 더 타이트하게
                         if (isCurrentUser) {
                           messageWidget = Padding(
                             padding: EdgeInsets.only(
-                              top: isFirstFromSameSender ? 6 : 2,
+                              top: isFirstFromSameSender ? 10 : 4,
                             ),
                             child: MessageBubble(
                               message: message,
                               isCurrentUser: true,
                               showTime: isLastFromSameSender,
+                              isRead: isRead,
                             ),
                           );
                         } else {
@@ -311,26 +418,17 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
 
                           Widget avatarWidget;
                           if (isFirstFromSameSender) {
-                            if (opponent?.profileImage != null &&
-                                opponent!.profileImage!.isNotEmpty) {
+                            final String? profileImageUrl = opponent?.profileImage;
                               avatarWidget = CircleAvatar(
                                 radius: avatarSize / 2,
-                                backgroundImage:
-                                    NetworkImage(opponent.profileImage!),
+                              backgroundColor: BorderColor,
+                              backgroundImage: profileImageUrl != null && profileImageUrl.isNotEmpty
+                                  ? NetworkImage(profileImageUrl)
+                                  : null,
+                              child: profileImageUrl != null && profileImageUrl.isNotEmpty
+                                  ? null
+                                  : const Icon(Icons.person, color: BackgroundColor),
                               );
-                            } else {
-                              avatarWidget = CircleAvatar(
-                                radius: avatarSize / 2,
-                                backgroundColor: yellowColor,
-                                child: Text(
-                                  opponent?.nickName.substring(0, 1) ?? '익',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              );
-                            }
                           } else {
                             avatarWidget = const SizedBox(
                               width: avatarSize,
@@ -342,7 +440,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             padding: EdgeInsets.only(
                               left: 8,
                               right: 8,
-                              top: isFirstFromSameSender ? 6 : 2,
+                              top: isFirstFromSameSender ? 10 : 4,
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,6 +452,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                     message: message,
                                     isCurrentUser: false,
                                     showTime: isLastFromSameSender,
+                                    isRead: isRead,
                                   ),
                                 ),
                               ],
@@ -377,6 +476,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
 
                         return messageWidget;
                       },
+                        ),
+                      ),
                     ),
                   ),
                   Container(
@@ -391,8 +492,12 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.grey[300],
+                              color: chatInputBackground,
                               borderRadius: defaultBorder,
+                              border: Border.all(
+                                color: chatPlusIconColor,
+                                width: 1,
+                              ),
                               boxShadow: const [
                                 BoxShadow(
                                   color: shadowLow,
@@ -408,10 +513,14 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                     controller: viewModel.messageController,
                                     style: const TextStyle(
                                       fontSize: 16,
+                                      color: chatTextColor,
                                     ),
                                     textAlignVertical: TextAlignVertical.center,
                                     decoration: InputDecoration(
                                       hintText: "메시지를 입력하세요",
+                                      hintStyle: TextStyle(
+                                        color: chatTimeTextColor,
+                                      ),
                                       border: InputBorder.none,
                                       isCollapsed: true,
                                       contentPadding: const EdgeInsets.symmetric(
@@ -421,6 +530,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                         icon: const Icon(
                                           Icons.add,
                                           size: 20,
+                                          color: chatPlusIconColor,
                                         ),
                                         onPressed: () {
                                           _showImageSourceSheet(
@@ -484,7 +594,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             width: 44,
                             height: 44,
                             decoration: const BoxDecoration(
-                              color: blueColor,
+                              color: brandBlue,
                               shape: BoxShape.circle,
                             ),
                             child: Center(
