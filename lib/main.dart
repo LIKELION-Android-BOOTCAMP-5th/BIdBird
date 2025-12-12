@@ -1,17 +1,18 @@
 import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/mypage/data/profile_repository.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
+import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
 import 'package:cloudinary_flutter/cloudinary_context.dart';
 import 'package:cloudinary_url_gen/cloudinary.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -78,6 +79,11 @@ void main() async {
           },
         ),
         Provider(create: (context) => HomeRepository()),
+        ChangeNotifierProvider(
+          create: (context) {
+            return NotificationViewmodel(context);
+          },
+        ),
       ],
       child: const MyApp(),
     ),
@@ -91,7 +97,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AuthViewModel authVM = context.read<AuthViewModel>();
-
+    final NotificationViewmodel notifyVM = context
+        .read<NotificationViewmodel>();
     // 1. authVM - 데이터 상태를 바꾼다
     // 2. 고 라우터 refreshListenable 에 authVM 이 연동되어 있다.
     // 3. authVM 의 데이터 변수가 바뀌면

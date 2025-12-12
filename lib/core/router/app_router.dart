@@ -37,8 +37,8 @@ import 'package:bidbird/features/mypage/viewmodel/blacklist_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/favorites_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
+import 'package:bidbird/features/notification/screen/notification_screen.dart';
 import 'package:bidbird/features/payment/payment_history/screen/payment_history_screen.dart';
-import 'package:bidbird/features/report/ui/report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -262,10 +262,7 @@ GoRouter createAppRouter(BuildContext context) {
           final String? thisRoomId =
               state.uri.queryParameters["roomId"] ?? null;
           return NoTransitionPage(
-            child: ChattingRoomScreen(
-              itemId: thisItemId,
-              roomId: thisRoomId,
-            ),
+            child: ChattingRoomScreen(itemId: thisItemId, roomId: thisRoomId),
           );
         },
       ),
@@ -313,7 +310,7 @@ GoRouter createAppRouter(BuildContext context) {
       GoRoute(
         path: '/notifications',
         pageBuilder: (context, state) {
-          return const NoTransitionPage(child: HomeScreen());
+          return const NoTransitionPage(child: NotificationScreen());
         },
       ),
       GoRoute(

@@ -8,7 +8,23 @@ class NotificationRepository {
   final SupabaseNotificationDatasource _supabaseNotificationDatasource =
       SupabaseNotificationDatasource();
 
-  Future<List<NotificationEntity>> fetchUser(String userId) async {
-    return await _supabaseNotificationDatasource.fetchUser(userId);
+  Future<List<NotificationEntity>> fetchNotify(String userId) async {
+    return await _supabaseNotificationDatasource.fetchNotify(userId);
+  }
+
+  Future<void> checkNotification(String id) async {
+    await _supabaseNotificationDatasource.checkNotification(id);
+  }
+
+  Future<void> checkAllNotification() async {
+    await _supabaseNotificationDatasource.checkAllNotification();
+  }
+
+  Future<void> deleteNotification(String id) async {
+    await _supabaseNotificationDatasource.deleteNotification(id);
+  }
+
+  Future<void> deleteAllNotification() async {
+    await _supabaseNotificationDatasource.deleteAllNotification();
   }
 }
