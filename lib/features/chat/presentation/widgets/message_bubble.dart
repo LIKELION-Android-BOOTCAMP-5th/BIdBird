@@ -133,8 +133,8 @@ class MessageBubble extends StatelessWidget {
       style: timeAndReadStyle,
     );
 
-    // 읽음 표시 (상대방이 보낸 메시지를 내가 읽었을 때만 표시)
-    final readIndicator = !isCurrentUser && isRead
+    // 읽음 표시 (내가 보낸 메시지를 상대방이 읽었을 때만 표시)
+    final readIndicator = isCurrentUser && isRead
         ? Text(
             '읽음',
             style: timeAndReadStyle,
@@ -153,13 +153,6 @@ class MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: isCurrentUser
               ? [
-                  timeText,
-                  const SizedBox(width: 6),
-                  Flexible(child: bubble),
-                ]
-              : [
-                  Flexible(child: bubble),
-                  const SizedBox(width: 6),
                   // 시간과 읽음을 같은 높이에 수평 정렬
                   // IntrinsicHeight를 사용하여 정확한 높이 정렬
                   IntrinsicHeight(
@@ -175,6 +168,13 @@ class MessageBubble extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  Flexible(child: bubble),
+                ]
+              : [
+                  Flexible(child: bubble),
+                  const SizedBox(width: 6),
+                  timeText,
                 ],
         ),
       ),

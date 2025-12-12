@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
@@ -18,6 +20,9 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBindingObserver {
   String? _previousRoute;
   DateTime? _lastRefreshTime;
+  Timer? _periodicRefreshTimer;
+  ChatListViewmodel? _viewModel;
+  bool _isViewModelInitialized = false;
   
   @override
   void initState() {
@@ -29,13 +34,48 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
   void didChangeDependencies() {
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context)!);
+    
+    // ViewModel을 한 번만 생성하여 실시간 구독이 끊기지 않도록 함
+    if (!_isViewModelInitialized) {
+      _viewModel = ChatListViewmodel(context);
+      _isViewModelInitialized = true;
+    }
+    
+    // 채팅 리스트 화면이 보일 때 주기적으로 리스트 새로고침
+    final currentRoute = GoRouterState.of(context).uri.toString();
+    if (currentRoute == '/chat') {
+      _startPeriodicRefresh();
+    } else {
+      _stopPeriodicRefresh();
+    }
   }
 
   @override
   void dispose() {
+    _stopPeriodicRefresh();
     routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
+    // ViewModel dispose는 Provider가 자동으로 처리
     super.dispose();
+  }
+
+  void _startPeriodicRefresh() {
+    _stopPeriodicRefresh();
+    // 2초마다 리스트를 새로고침 (leaveRoom 완료 후 업데이트 반영)
+    _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!mounted) {
+        _stopPeriodicRefresh();
+        return;
+      }
+      // ignore: avoid_print
+      print("주기적 리스트 새로고침 (2초마다)");
+      _refreshListIfNeeded();
+    });
+  }
+
+  void _stopPeriodicRefresh() {
+    _periodicRefreshTimer?.cancel();
+    _periodicRefreshTimer = null;
   }
 
   @override
@@ -55,7 +95,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
   }
 
   void _refreshListIfNeeded() {
-    if (!mounted) return;
+    if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
     
     // 너무 자주 새로고침하지 않도록 제한 (500ms 이내 중복 방지)
     final now = DateTime.now();
@@ -67,47 +107,45 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
     }
     _lastRefreshTime = now;
     
-    final viewModel = context.read<ChatListViewmodel>();
-    
     // ignore: avoid_print
     print("채팅 리스트 새로고침 시작");
     
     // 즉시 한 번 업데이트 (실시간 업데이트와 함께)
-    viewModel.reloadList();
+    _viewModel!.reloadList();
     
     // 첫 번째 재시도: 200ms 후
     Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) {
+      if (mounted && _isViewModelInitialized && _viewModel != null) {
         // ignore: avoid_print
         print("채팅 리스트 새로고침: 첫 번째 재시도 (200ms)");
-        viewModel.reloadList();
+        _viewModel!.reloadList();
       }
     });
     
     // 두 번째 재시도: 500ms 후
     Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
+      if (mounted && _isViewModelInitialized && _viewModel != null) {
         // ignore: avoid_print
         print("채팅 리스트 새로고침: 두 번째 재시도 (500ms)");
-        viewModel.reloadList();
+        _viewModel!.reloadList();
       }
     });
     
     // 세 번째 재시도: 1000ms 후 (서버 처리 지연 대비)
     Future.delayed(const Duration(milliseconds: 1000), () {
-      if (mounted) {
+      if (mounted && _isViewModelInitialized && _viewModel != null) {
         // ignore: avoid_print
         print("채팅 리스트 새로고침: 세 번째 재시도 (1000ms)");
-        viewModel.reloadList();
+        _viewModel!.reloadList();
       }
     });
     
     // 네 번째 재시도: 2000ms 후 (서버 처리 지연 대비)
     Future.delayed(const Duration(milliseconds: 2000), () {
-      if (mounted) {
+      if (mounted && _isViewModelInitialized && _viewModel != null) {
         // ignore: avoid_print
         print("채팅 리스트 새로고침: 네 번째 재시도 (2000ms)");
-        viewModel.reloadList();
+        _viewModel!.reloadList();
       }
     });
   }
@@ -116,22 +154,37 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
   Widget build(BuildContext context) {
     // 경로 변경 감지 (build에서 확인)
     final currentRoute = GoRouterState.of(context).uri.toString();
-    if (_previousRoute != null && 
-        _previousRoute!.startsWith('/chat/room') && 
-        currentRoute == '/chat') {
-      // 채팅방에서 채팅 리스트로 돌아왔을 때
+    
+    // 채팅 리스트 화면이 보일 때마다 리스트 새로고침 (경로가 /chat일 때)
+    if (currentRoute == '/chat') {
       // ignore: avoid_print
-      print("경로 변경 감지 (build): 채팅방 -> 채팅 리스트, 리스트 새로고침 시작");
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _refreshListIfNeeded();
-        }
-      });
+      print("채팅 리스트 화면 표시: 경로=$currentRoute, 이전 경로=$_previousRoute");
+      
+      // 이전 경로가 채팅방이었거나, 처음 로드되는 경우 리스트 새로고침
+      if (_previousRoute == null || 
+          _previousRoute!.startsWith('/chat/room') || 
+          _previousRoute != currentRoute) {
+        // ignore: avoid_print
+        print("경로 변경 감지 (build): 리스트 새로고침 시작");
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _refreshListIfNeeded();
+          }
+        });
+      }
     }
     _previousRoute = currentRoute;
     
-    return ChangeNotifierProvider(
-      create: (context) => ChatListViewmodel(context),
+    // ViewModel이 아직 초기화되지 않았으면 로딩 표시
+    if (!_isViewModelInitialized || _viewModel == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    
+    // ViewModel을 한 번만 생성하여 실시간 구독이 끊기지 않도록 함
+    return ChangeNotifierProvider.value(
+      value: _viewModel!,
       child: Consumer<ChatListViewmodel>(
         builder: (context, viewModel, child) {
           return Scaffold(
