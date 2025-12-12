@@ -16,7 +16,6 @@ class MypageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final vm = context.watch<ProfileViewModel>();
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -33,7 +32,7 @@ class MypageScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _MypageProfile(vm: vm),
+              _MypageProfile(),
               const SizedBox(height: 24),
               Expanded(child: _MypageItemList()),
             ],
@@ -45,13 +44,9 @@ class MypageScreen extends StatelessWidget {
 }
 
 class _MypageProfile extends StatelessWidget {
-  final ProfileViewModel vm;
-
-  const _MypageProfile({required this.vm});
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context); //쓴적이없음
+    final vm = context.watch<ProfileViewModel>();
 
     //처음프로필로딩할떄나옴
     if (vm.isLoading) {
@@ -66,7 +61,7 @@ class _MypageProfile extends StatelessWidget {
 
     final profile = vm.profile;
     final nickName = profile?.nickName ?? '닉네임을 등록하세요';
-    final phoneNumber = profile?.phoneNumber ?? '전화번호를 등록하세요';
+    // final phoneNumber = profile?.phoneNumber ?? '전화번호를 등록하세요';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -74,7 +69,7 @@ class _MypageProfile extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            radius: 30,
+            radius: 32,
 
             backgroundImage:
                 (profile?.profileImageUrl != null &&
@@ -84,17 +79,18 @@ class _MypageProfile extends StatelessWidget {
             child:
                 (profile?.profileImageUrl == null ||
                     profile!.profileImageUrl!.isEmpty)
-                ? const Icon(Icons.person, color: iconColor, size: 30)
+                ? const Icon(Icons.person, color: iconColor, size: 32)
                 : null,
           ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(nickName),
-              const SizedBox(height: 4),
-              Text(phoneNumber),
-            ],
+          const SizedBox(width: 24),
+          Expanded(
+            child: Text(
+              nickName,
+              style: contentFontStyle.copyWith(color: BackgroundColor),
+            ),
+
+            // const SizedBox(height: 4),
+            // Text(phoneNumber),
           ),
         ],
       ),

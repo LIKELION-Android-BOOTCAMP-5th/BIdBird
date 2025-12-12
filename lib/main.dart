@@ -78,6 +78,11 @@ void main() async {
             return ProfileViewModel(ProfileRepository());
           },
         ),
+        // 프로필정보가 필요한 곳에서 다음과 같이 사용하세요
+        // final profileVm = context.watch<ProfileViewModel>();
+        // final profile = profileVm.profile;
+        // final nickName = profile?.nickName ?? '';
+        // final profileImageUrl = profile?.profileImageUrl;
         Provider(create: (context) => HomeRepository()),
         ChangeNotifierProvider(
           create: (context) {
