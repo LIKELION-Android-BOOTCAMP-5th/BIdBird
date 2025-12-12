@@ -16,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../../../core/utils/extension/money_extension.dart';
 import '../../../core/utils/ui_set/border_radius_style.dart';
 import '../../../core/utils/ui_set/shadow_style.dart';
+import '../../item/detail/screen/item_detail_utils.dart';
 import '../data/repository/home_repository.dart';
 import 'home_timer_section.dart';
 
@@ -253,13 +254,36 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       child: ClipRRect(
                                                         borderRadius:
                                                             defaultBorder,
-                                                        child: CachedNetworkImage(
-                                                          imageUrl: item
-                                                              .thumbnail_image,
-                                                          cacheManager:
-                                                              ItemImageCacheManager
-                                                                  .instance,
-                                                          fit: BoxFit.cover,
+                                                        child: Builder(
+                                                          builder: (context) {
+                                                            final bool isVideo = isVideoFile(item.thumbnail_image);
+                                                            final String displayUrl = isVideo
+                                                                ? getVideoThumbnailUrl(item.thumbnail_image)
+                                                                : item.thumbnail_image;
+                                                            
+                                                            return CachedNetworkImage(
+                                                              imageUrl: displayUrl,
+                                                              cacheManager:
+                                                                  ItemImageCacheManager
+                                                                      .instance,
+                                                              fit: BoxFit.cover,
+                                                              placeholder: (context, url) => Container(
+                                                                color: ImageBackgroundColor,
+                                                                child: const Center(
+                                                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                                                ),
+                                                              ),
+                                                              errorWidget: (context, url, error) => Container(
+                                                                color: ImageBackgroundColor,
+                                                                child: const Center(
+                                                                  child: Icon(
+                                                                    Icons.image_not_supported,
+                                                                    color: iconColor,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
                                                         ),
                                                       ),
                                                     ),
@@ -511,13 +535,36 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       child: ClipRRect(
                                                         borderRadius:
                                                             defaultBorder,
-                                                        child: CachedNetworkImage(
-                                                          imageUrl: item
-                                                              .thumbnail_image,
-                                                          cacheManager:
-                                                              ItemImageCacheManager
-                                                                  .instance,
-                                                          fit: BoxFit.cover,
+                                                        child: Builder(
+                                                          builder: (context) {
+                                                            final bool isVideo = isVideoFile(item.thumbnail_image);
+                                                            final String displayUrl = isVideo
+                                                                ? getVideoThumbnailUrl(item.thumbnail_image)
+                                                                : item.thumbnail_image;
+                                                            
+                                                            return CachedNetworkImage(
+                                                              imageUrl: displayUrl,
+                                                              cacheManager:
+                                                                  ItemImageCacheManager
+                                                                      .instance,
+                                                              fit: BoxFit.cover,
+                                                              placeholder: (context, url) => Container(
+                                                                color: ImageBackgroundColor,
+                                                                child: const Center(
+                                                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                                                ),
+                                                              ),
+                                                              errorWidget: (context, url, error) => Container(
+                                                                color: ImageBackgroundColor,
+                                                                child: const Center(
+                                                                  child: Icon(
+                                                                    Icons.image_not_supported,
+                                                                    color: iconColor,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
                                                         ),
                                                       ),
                                                     ),

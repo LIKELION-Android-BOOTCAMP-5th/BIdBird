@@ -69,21 +69,23 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                           : null,
                       child: Container(
                         width: double.infinity,
+                        height: double.infinity,
                         color: ImageBackgroundColor,
                         child: Stack(
                           children: [
-                            CachedNetworkImage(
-                              imageUrl: thumbnailUrl,
-                              cacheManager: ItemImageCacheManager.instance,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => const Center(
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                              errorWidget: (context, url, error) => const Center(
-                                child: Text(
-                                  '상품 사진',
-                                  style: TextStyle(color: Colors.grey),
+                            Positioned.fill(
+                              child: CachedNetworkImage(
+                                imageUrl: thumbnailUrl,
+                                cacheManager: ItemImageCacheManager.instance,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                                errorWidget: (context, url, error) => const Center(
+                                  child: Text(
+                                    '상품 사진',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
                                 ),
                               ),
                             ),
