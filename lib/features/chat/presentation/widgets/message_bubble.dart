@@ -11,6 +11,7 @@ class MessageBubble extends StatelessWidget {
   final bool isCurrentUser;
   final bool showTime;
   final bool isRead; // 읽음 여부
+  final bool isUnread; // 안읽음 여부 (마지막 내 메시지가 읽지 않았을 때)
 
   const MessageBubble({
     super.key,
@@ -18,6 +19,7 @@ class MessageBubble extends StatelessWidget {
     required this.isCurrentUser,
     this.showTime = true,
     this.isRead = false,
+    this.isUnread = false,
   });
 
   String _formatTime(String isoString) {
@@ -133,13 +135,21 @@ class MessageBubble extends StatelessWidget {
       style: timeAndReadStyle,
     );
 
-    // 읽음 표시 (내가 보낸 메시지를 상대방이 읽었을 때만 표시)
-    final readIndicator = isCurrentUser && isRead
-        ? Text(
-            '읽음',
-            style: timeAndReadStyle,
-          )
-        : const SizedBox.shrink();
+    // 읽음/안읽음 표시 (내가 보낸 메시지에만 표시)
+    Widget? readStatusIndicator;
+    if (isCurrentUser) {
+      if (isRead) {
+        readStatusIndicator = Text(
+          '읽음',
+          style: timeAndReadStyle,
+        );
+      } else if (isUnread) {
+        readStatusIndicator = Text(
+          '안읽음',
+          style: timeAndReadStyle,
+        );
+      }
+    }
 
     return Align(
       alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -153,7 +163,7 @@ class MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: isCurrentUser
               ? [
-                  // 시간과 읽음을 같은 높이에 수평 정렬
+                  // 시간과 읽음/안읽음을 같은 높이에 수평 정렬
                   // IntrinsicHeight를 사용하여 정확한 높이 정렬
                   IntrinsicHeight(
                     child: Row(
@@ -161,9 +171,9 @@ class MessageBubble extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         timeText,
-                        if (isRead) ...[
+                        if (readStatusIndicator != null) ...[
                           const SizedBox(width: 4),
-                          readIndicator,
+                          readStatusIndicator,
                         ],
                       ],
                     ),
