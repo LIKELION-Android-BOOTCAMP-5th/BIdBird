@@ -40,40 +40,15 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
       _viewModel = ChatListViewmodel(context);
       _isViewModelInitialized = true;
     }
-
-    final currentRoute = GoRouterState.of(context).uri.toString();
-    if (currentRoute == '/chat') {
-      _startPeriodicRefresh();
-    } else {
-      _stopPeriodicRefresh();
-    }
   }
 
   @override
   void dispose() {
-    _stopPeriodicRefresh();
+    _periodicRefreshTimer?.cancel();
     routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     // ViewModel dispose는 Provider가 자동으로 처리
     super.dispose();
-  }
-
-  void _startPeriodicRefresh() {
-    _stopPeriodicRefresh();
-    _periodicRefreshTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        _stopPeriodicRefresh();
-        return;
-      }
-      // ignore: avoid_print
-      print("주기적 리스트 새로고침 (2초마다)");
-      _refreshListOnce();
-    });
-  }
-
-  void _stopPeriodicRefresh() {
-    _periodicRefreshTimer?.cancel();
-    _periodicRefreshTimer = null;
   }
 
   @override
@@ -88,14 +63,8 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
   @override
   void didPopNext() {
     // ignore: avoid_print
-    print("didPopNext: 채팅방에서 나옴 - leaveRoom 완료 후 서버 업데이트 반영 대기");
-    // leaveRoom()이 완료되고 서버에서 unread_count가 업데이트될 시간을 주기 위해
-    // 지연 후 한 번만 새로고침 (서버 처리 지연 대비)
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        _refreshListOnce();
-      }
-    });
+    print("didPopNext: 채팅방에서 나옴 - 즉시 리스트 새로고침");
+    _refreshListOnce();
   }
 
   void _refreshListIfNeeded() {
@@ -123,8 +92,24 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware, WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
-    // 경로 추적 (로깅용)
+    // 경로 변경 감지 (채팅방에서 나올 때)
     final currentRoute = GoRouterState.of(context).uri.toString();
+    
+    // 채팅 리스트 화면으로 돌아왔을 때 (채팅방에서 나왔을 때)
+    if (currentRoute == '/chat') {
+      final previousRoute = _previousRoute;
+      if (previousRoute != null && previousRoute.startsWith('/chat/room')) {
+        // ignore: avoid_print
+        print("경로 변경 감지 (build): 채팅방($previousRoute)에서 채팅 리스트($currentRoute)로 복귀 - 즉시 리스트 새로고침");
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            // 즉시 한 번만 새로고침
+            _refreshListOnce();
+          }
+        });
+      }
+    }
+    
     _previousRoute = currentRoute;
     
     // ViewModel이 아직 초기화되지 않았으면 로딩 표시
