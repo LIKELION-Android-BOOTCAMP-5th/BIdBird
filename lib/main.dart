@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
@@ -44,6 +45,9 @@ void main() async {
 
   // FCM 권한 요청
   await FirebaseManager.shared.fcm.requestPermission(provisional: true);
+
+  // 한국어 날짜 포맷 초기화
+  await initializeDateFormatting('ko', null);
 
   // ⭐️ 2. APNS 토큰 지연 처리 (Timer 사용) ⭐️
   // Firebase Messaging 초기화 및 토큰 가져오기 로직을 Timer로 감싸 2초 후 실행
