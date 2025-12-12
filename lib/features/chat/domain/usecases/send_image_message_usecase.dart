@@ -9,6 +9,3 @@ class SendImageMessageUseCase {
     await _repository.sendImageMessage(roomId, imageUrl);
   }
 }
-
-
-

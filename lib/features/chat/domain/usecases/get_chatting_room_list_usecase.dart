@@ -10,6 +10,3 @@ class GetChattingRoomListUseCase {
     return await _repository.fetchChattingRoomList();
   }
 }
-
-
-

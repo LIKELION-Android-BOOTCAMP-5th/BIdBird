@@ -1,12 +1,12 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/item/item_time_utils.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/features/chat/presentation/widgets/full_screen_image_viewer.dart';
 import 'package:bidbird/features/chat/presentation/widgets/full_screen_video_viewer.dart';
-import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 /// 메시지 버블 위젯
 class MessageBubble extends StatelessWidget {
@@ -25,14 +25,6 @@ class MessageBubble extends StatelessWidget {
     this.isUnread = false,
   });
 
-  String _formatTime(String isoString) {
-    try {
-      final dt = DateTime.parse(isoString).toLocal();
-      return DateFormat('HH:mm').format(dt);
-    } catch (_) {
-      return '';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +180,7 @@ class MessageBubble extends StatelessWidget {
           );
           
           final timeText = Text(
-            _formatTime(message.createdAt),
+            formatTimeFromIso(message.createdAt),
             style: timeAndReadStyle,
           );
 
@@ -306,7 +298,7 @@ class MessageBubble extends StatelessWidget {
     );
     
     final timeText = Text(
-      _formatTime(message.createdAt),
+      formatTimeFromIso(message.createdAt),
       style: timeAndReadStyle,
     );
 

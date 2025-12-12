@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_time_utils.dart';
 import 'package:bidbird/features/item/current_trade/model/current_trade_entity.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -206,7 +207,7 @@ class CurrentTradeDatasource {
           price: priceByItemId[itemId] ?? 0,
           thumbnailUrl: item['thumbnail_image']?.toString(),
           status: status,
-          date: CurrentTradeDateFormatter.format(createdAt),
+          date: formatDateTimeFromIso(createdAt),
         );
       }).toList();
     } catch (e) {

@@ -10,6 +10,3 @@ class GetMessagesUseCase {
     return await _repository.getMessages(chattingRoomId);
   }
 }
-
-
-

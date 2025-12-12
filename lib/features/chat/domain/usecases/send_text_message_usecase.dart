@@ -9,6 +9,3 @@ class SendTextMessageUseCase {
     await _repository.sendTextMessage(roomId, message);
   }
 }
-
-
-

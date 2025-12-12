@@ -1,6 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
-import 'package:bidbird/features/item/item_bid_win/widget/item_bid_result_body.dart';
+import 'package:bidbird/core/utils/payment/payment_texts.dart';
+import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
+import 'package:bidbird/core/widgets/item/bid_win/item_bid_result_body.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,8 +20,8 @@ class PaymentCompleteScreen extends StatelessWidget {
       body: SafeArea(
         child: ItemBidResultBody(
           item: item,
-          title: '결제가 완료되었습니다!',
-          subtitle: '판매자에게 결제 완료가 전달되었습니다.',
+          title: PaymentTexts.paymentCompleteTitle,
+          subtitle: PaymentTexts.paymentCompleteSubtitle,
           icon: Icons.check_circle,
           iconColor: blueColor,
           onClose: () {
@@ -44,7 +45,7 @@ class PaymentCompleteScreen extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  '결제 내역 보기',
+                  PaymentTexts.viewHistory,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -60,7 +61,7 @@ class PaymentCompleteScreen extends StatelessWidget {
                 context.go('/home');
               },
               child: const Text(
-                '홈으로 이동',
+                PaymentTexts.goHome,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,

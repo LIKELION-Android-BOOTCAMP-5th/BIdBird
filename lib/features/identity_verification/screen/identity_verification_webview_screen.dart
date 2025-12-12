@@ -1,3 +1,4 @@
+import 'package:bidbird/core/config/portone_config.dart';
 import 'package:flutter/material.dart';
 import 'package:portone_flutter/iamport_certification.dart';
 import 'package:portone_flutter/model/certification_data.dart';
@@ -5,18 +6,16 @@ import 'package:portone_flutter/model/certification_data.dart';
 class KgInicisIdentityWebViewScreen extends StatelessWidget {
   const KgInicisIdentityWebViewScreen({super.key});
 
-  static const _userCode = 'imp83681831';
-
   @override
   Widget build(BuildContext context) {
     return IamportCertification(
       appBar: null,
       initialChild: const Center(child: CircularProgressIndicator()),
-      userCode: _userCode,
+      userCode: PortoneConfig.userCode,
       data: CertificationData(
-        pg: 'inicis_unified',
+        pg: PortoneConfig.pg,
         merchantUid: 'cert_${DateTime.now().millisecondsSinceEpoch}',
-        mRedirectUrl: 'https://example.com',
+        mRedirectUrl: PortoneConfig.redirectUrl,
       ),
       callback: (Map<String, String> result) async {
         final success = result['success'] == 'true';

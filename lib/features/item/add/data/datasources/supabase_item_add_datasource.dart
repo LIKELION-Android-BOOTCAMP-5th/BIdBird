@@ -1,6 +1,9 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_registration_constants.dart';
+import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
+import 'package:bidbird/core/utils/item/item_registration_validator.dart';
 import 'package:bidbird/features/item/add/model/item_add_entity.dart';
-import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
+import 'package:bidbird/features/item/registration/list/model/item_registration_entity.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,36 +21,19 @@ class SupabaseItemAddDatasource {
   }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
-      throw Exception('로그인 정보가 없습니다. 다시 로그인 해주세요.');
-    }
-    if (imageUrls.isEmpty) {
-      throw Exception('이미지는 최소 1장이 필요합니다.');
-    }
-    if (imageUrls.length > 10) {
-      throw Exception('이미지는 최대 10장까지 등록 가능합니다.');
+      throw Exception(ItemRegistrationErrorMessages.loginRequired);
     }
 
-    if (entity.title.trim().isEmpty) {
-      throw Exception('제목을 입력해주세요.');
-    }
-    if (entity.title.length > 20) {
-      throw Exception('제목은 20자 이하여야 합니다.');
-    }
-    if (entity.description.isNotEmpty && entity.description.length > 1000) {
-      throw Exception('본문은 1000자 이하여야 합니다.');
-    }
-    if (entity.startPrice < 10000) {
-      throw Exception('시작 가격은 10,000원 이상이어야 합니다.');
-    }
-    if (entity.instantPrice > 0 && entity.instantPrice <= entity.startPrice) {
-      throw Exception('즉시 구매가는 시작 가격보다 커야 합니다.');
-    }
-    if (entity.keywordTypeId <= 0) {
-      throw Exception('카테고리를 선택해주세요.');
-    }
-    if (entity.auctionDurationHours <= 0) {
-      throw Exception('경매 기간을 설정해주세요.');
-    }
+    // 공통 검증 로직 사용
+    ItemRegistrationValidator.validateForServer(
+      title: entity.title,
+      description: entity.description,
+      keywordTypeId: entity.keywordTypeId,
+      startPrice: entity.startPrice,
+      instantPrice: entity.instantPrice,
+      imageUrls: imageUrls,
+      auctionDurationHours: entity.auctionDurationHours,
+    );
 
     late final String itemId;
 
@@ -87,7 +73,7 @@ class SupabaseItemAddDatasource {
     }
 
     final List<Map<String, dynamic>> imageRows = <Map<String, dynamic>>[];
-    for (int i = 0; i < imageUrls.length && i < 10; i++) {
+    for (int i = 0; i < imageUrls.length && i < ItemImageLimits.maxImageCount; i++) {
       imageRows.add(<String, dynamic>{
         'item_id': itemId,
         'image_url': imageUrls[i],

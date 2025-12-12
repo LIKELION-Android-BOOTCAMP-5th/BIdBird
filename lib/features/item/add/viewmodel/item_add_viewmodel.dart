@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/utils/item/item_registration_constants.dart';
+import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
+import 'package:bidbird/core/utils/item/item_registration_validator.dart';
+import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -39,11 +44,11 @@ class ItemAddViewModel extends ChangeNotifier {
   List<XFile> selectedImages = <XFile>[];
   final List<Map<String, dynamic>> keywordTypes = <Map<String, dynamic>>[];
 
-  final List<String> durations = <String>['4시간', '12시간', '24시간'];
+  final List<String> durations = ItemAuctionDurationConstants.durationOptions;
 
   String? editingItemId;
   int? selectedKeywordTypeId;
-  String selectedDuration = '4시간';
+  String selectedDuration = ItemAuctionDurationConstants.defaultDurationOption;
   bool agreed = false;
   bool isLoadingKeywords = false;
   bool isSubmitting = false;
@@ -79,7 +84,7 @@ class ItemAddViewModel extends ChangeNotifier {
         selectedKeywordTypeId = null;
       }
     } catch (e) {
-      throw Exception('카테고리를 불러오는 중 오류가 발생했습니다: $e');
+      throw Exception(ItemRegistrationErrorMessages.categoryLoadError(e));
     } finally {
       isLoadingKeywords = false;
       notifyListeners();
@@ -186,13 +191,7 @@ class ItemAddViewModel extends ChangeNotifier {
       selectedKeywordTypeId = editItem.keywordTypeId;
 
       final int durationHours = editItem.auctionDurationHours;
-      if (durationHours == 12) {
-        selectedDuration = '12시간';
-      } else if (durationHours == 24) {
-        selectedDuration = '24시간';
-      } else {
-        selectedDuration = '4시간';
-      }
+      selectedDuration = formatAuctionDurationForDisplay(durationHours);
 
       notifyListeners();
 
@@ -233,63 +232,22 @@ class ItemAddViewModel extends ChangeNotifier {
   }
 
   String? validate() {
-    final String title = titleController.text.trim();
-    final String description = descriptionController.text.trim();
-
-    if (title.isEmpty) {
-      return '제목을 입력해주세요.';
-    }
-
-    if (title.length > 20) {
-      return '제목은 20자 이하로 입력해주세요.';
-    }
-
-    if (selectedKeywordTypeId == null) {
-      return '카테고리를 선택해주세요.';
-    }
-
     final int? startPrice = int.tryParse(
       startPriceController.text.replaceAll(',', ''),
     );
-    final int? instantPrice = int.tryParse(
-      instantPriceController.text.replaceAll(',', ''),
+    final int? instantPrice = useInstantPrice
+        ? int.tryParse(instantPriceController.text.replaceAll(',', ''))
+        : null;
+
+    return ItemRegistrationValidator.validateForUI(
+      title: titleController.text,
+      description: descriptionController.text,
+      keywordTypeId: selectedKeywordTypeId,
+      startPrice: startPrice,
+      instantPrice: instantPrice,
+      useInstantPrice: useInstantPrice,
+      images: selectedImages,
     );
-
-    if (startPrice == null) {
-      return '시작가를 숫자로 입력해주세요.';
-    }
-
-    if (startPrice < 10000 || startPrice > 5000000) {
-      return '시작가는 10,000원 이상 5,000,000원 이하로 입력해주세요.';
-    }
-
-    if (useInstantPrice) {
-      if (instantPrice == null) {
-        return '즉시 입찰가를 숫자로 입력해주세요.';
-      }
-
-      if (instantPrice < 10000 || instantPrice > 5000000) {
-        return '즉시 입찰가는 10,000원 이상 5,000,000원 이하로 입력해주세요.';
-      }
-
-      if (instantPrice <= startPrice) {
-        return '즉시 입찰가는 시작가보다 높아야 합니다.';
-      }
-    }
-
-    if (selectedImages.isEmpty) {
-      return '상품 이미지를 최소 1장 이상 선택해주세요.';
-    }
-
-    if (description.isEmpty) {
-      return '상품 설명을 입력해주세요.';
-    }
-
-    if (description.length > 1000) {
-      return '상품 설명은 1000자 이하로 입력해주세요.';
-    }
-
-    return null;
   }
 
   void setSelectedKeywordTypeId(int? id) {
@@ -310,20 +268,6 @@ class ItemAddViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  String formatNumber(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.isEmpty) return '';
-
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      final reverseIndex = digits.length - i;
-      buffer.write(digits[i]);
-      if (reverseIndex > 1 && reverseIndex % 3 == 1 && i != digits.length - 1) {
-        buffer.write(',');
-      }
-    }
-    return buffer.toString();
-  }
 
   Future<void> submit(BuildContext context) async {
     final navigator = Navigator.of(context);
@@ -381,18 +325,7 @@ class ItemAddViewModel extends ChangeNotifier {
 
     try {
       final DateTime now = DateTime.now();
-
-      int auctionHours = 4;
-      switch (selectedDuration) {
-        case '12시간':
-          auctionHours = 12;
-          break;
-        case '24시간':
-          auctionHours = 24;
-          break;
-        default:
-          auctionHours = 4;
-      }
+      final int auctionHours = parseAuctionDuration(selectedDuration);
 
       final DateTime auctionStartAt = now;
       final DateTime auctionEndAt = now.add(Duration(hours: auctionHours));
@@ -402,7 +335,7 @@ class ItemAddViewModel extends ChangeNotifier {
       if (imageUrls.isEmpty) {
         if (context.mounted) {
           scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text('이미지 업로드에 실패했습니다. 다시 시도해주세요.')),
+            const SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
           );
         }
         return;
@@ -456,7 +389,7 @@ class ItemAddViewModel extends ChangeNotifier {
     } catch (e) {
       if (context.mounted) {
         scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text('등록 중 오류가 발생했습니다: $e')),
+          SnackBar(content: Text(ItemRegistrationErrorMessages.registrationError(e))),
         );
       }
     } finally {
