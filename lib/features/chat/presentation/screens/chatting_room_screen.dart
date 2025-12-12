@@ -6,10 +6,12 @@ import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
+import 'package:bidbird/core/widgets/video_player_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -38,6 +40,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
       },
       onCameraTap: () async {
         await viewModel.pickImageFromCamera();
+      },
+      onVideoTap: () async {
+        await viewModel.pickVideoFromGallery();
       },
     );
   }
@@ -427,7 +432,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
 
                           messageWidget = Padding(
                             padding: EdgeInsets.only(
-                              left: 8,
+                              left: 0,
                               right: 8,
                               top: isFirstFromSameSender ? 10 : 4,
                             ),
@@ -435,7 +440,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 avatarWidget,
-                                const SizedBox(width: 0),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: MessageBubble(
                                     message: message,
@@ -544,12 +549,31 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                         child: AspectRatio(
                                           aspectRatio:
                                               viewModel.imageAspectRatio ?? 1,
-                                          child: Image.file(
-                                            File(viewModel.image!.path),
-                                            fit: BoxFit.cover,
-                                            width: 150,
-                                            height: 150,
-                                          ),
+                                          child: isVideoFile(viewModel.image!.path)
+                                              ? VideoPlayerWidget(
+                                                  videoPath: viewModel.image!.path,
+                                                  autoPlay: false,
+                                                  showControls: true,
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : Image.file(
+                                                  File(viewModel.image!.path),
+                                                  fit: BoxFit.cover,
+                                                  width: 150,
+                                                  height: 150,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Container(
+                                                      color: Colors.grey[300],
+                                                      child: const Center(
+                                                        child: Icon(
+                                                          Icons.error_outline,
+                                                          color: Colors.grey,
+                                                          size: 32,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
                                         ),
                                       ),
                                       Positioned(

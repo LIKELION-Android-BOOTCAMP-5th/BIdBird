@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:bidbird/core/widgets/video_player_widget.dart';
+import 'package:bidbird/features/chat/presentation/widgets/full_screen_video_viewer.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -55,23 +57,50 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                   itemCount: images.length,
                   itemBuilder: (context, index) {
                     final imageUrl = images[index];
+                    final bool isVideo = isVideoFile(imageUrl);
+                    final thumbnailUrl = isVideo ? getVideoThumbnailUrl(imageUrl) : imageUrl;
 
-                    return Container(
-                      width: double.infinity,
-                      color: ImageBackgroundColor,
-                      child: CachedNetworkImage(
-                        imageUrl: imageUrl,
-                        cacheManager: ItemImageCacheManager.instance,
+                    return GestureDetector(
+                      onTap: isVideo
+                          ? () {
+                              // 전체 화면 비디오 플레이어로 재생
+                              FullScreenVideoViewer.show(context, imageUrl);
+                            }
+                          : null,
+                      child: Container(
                         width: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        errorWidget: (context, url, error) => const Center(
-                          child: Text(
-                            '상품 사진',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                        color: ImageBackgroundColor,
+                        child: Stack(
+                          children: [
+                            CachedNetworkImage(
+                              imageUrl: thumbnailUrl,
+                              cacheManager: ItemImageCacheManager.instance,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              errorWidget: (context, url, error) => const Center(
+                                child: Text(
+                                  '상품 사진',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                            ),
+                            if (isVideo)
+                              Positioned.fill(
+                                child: Container(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.play_circle_filled,
+                                      color: Colors.white,
+                                      size: 64,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     );

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// 사진 추가를 위한 바텀 시트 컴포넌트
-/// 
-/// 세련된 디자인의 바텀 시트로, 갤러리에서 선택하거나 사진을 찍을 수 있는 옵션을 제공합니다.
 class ImageSourceBottomSheet extends StatelessWidget {
   const ImageSourceBottomSheet({
     super.key,
     required this.onGalleryTap,
     required this.onCameraTap,
+    this.onVideoTap,
   });
 
   final VoidCallback onGalleryTap;
   final VoidCallback onCameraTap;
+  final VoidCallback? onVideoTap;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +18,6 @@ class ImageSourceBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 드래그 인디케이터
           Container(
             margin: const EdgeInsets.only(top: 8),
             width: 28,
@@ -46,6 +44,15 @@ class ImageSourceBottomSheet extends StatelessWidget {
               onCameraTap();
             },
           ),
+          if (onVideoTap != null)
+            _ImageSourceActionItem(
+              icon: Icons.videocam_outlined,
+              label: '동영상 선택',
+              onTap: () {
+                Navigator.of(context).pop();
+                onVideoTap!();
+              },
+            ),
           const SizedBox(height: 8),
         ],
       ),
@@ -57,6 +64,7 @@ class ImageSourceBottomSheet extends StatelessWidget {
     BuildContext context, {
     required VoidCallback onGalleryTap,
     required VoidCallback onCameraTap,
+    VoidCallback? onVideoTap,
   }) {
     showModalBottomSheet<void>(
       context: context,
@@ -69,6 +77,7 @@ class ImageSourceBottomSheet extends StatelessWidget {
       builder: (context) => ImageSourceBottomSheet(
         onGalleryTap: onGalleryTap,
         onCameraTap: onCameraTap,
+        onVideoTap: onVideoTap,
       ),
     );
   }
@@ -91,7 +100,6 @@ class _ImageSourceActionItem extends StatefulWidget {
 
 class _ImageSourceActionItemState extends State<_ImageSourceActionItem>
     with SingleTickerProviderStateMixin {
-  bool _isPressed = false;
   late AnimationController _controller;
   late Animation<Color?> _colorAnimation;
 
@@ -118,16 +126,13 @@ class _ImageSourceActionItemState extends State<_ImageSourceActionItem>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) {
-        setState(() => _isPressed = true);
         _controller.forward();
       },
       onTapUp: (_) {
-        setState(() => _isPressed = false);
         _controller.reverse();
         widget.onTap();
       },
       onTapCancel: () {
-        setState(() => _isPressed = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(

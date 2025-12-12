@@ -46,6 +46,9 @@ class ItemAddScreen extends StatelessWidget {
       onCameraTap: () async {
         await viewModel.pickImageFromCamera();
       },
+      onVideoTap: () async {
+        await viewModel.pickVideoFromGallery();
+      },
     );
   }
 

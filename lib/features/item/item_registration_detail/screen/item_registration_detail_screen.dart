@@ -1,5 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
+import 'package:bidbird/features/chat/presentation/widgets/full_screen_video_viewer.dart';
+import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
 import 'package:bidbird/features/item/item_registration_detail/viewmodel/item_registration_detail_viewmodel.dart';
 import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
@@ -80,7 +82,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildImageSection(),
+                          _buildImageSection(context),
                           const SizedBox(height: 16),
                           _buildInfoCard(
                             startPriceText,
@@ -101,7 +103,13 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection() {
+  Widget _buildImageSection(BuildContext context) {
+    final thumbnailUrl = item.thumbnailUrl;
+    final bool isVideo = thumbnailUrl != null && isVideoFile(thumbnailUrl);
+    final displayUrl = isVideo && thumbnailUrl != null 
+        ? getVideoThumbnailUrl(thumbnailUrl) 
+        : thumbnailUrl;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.black,
@@ -113,19 +121,44 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(
-              child: item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: item.thumbnailUrl!,
-                      cacheManager: ItemImageCacheManager.instance,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      errorWidget: (context, url, error) => const Center(
-                        child: Text(
-                          '이미지 없음',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
+              child: displayUrl != null && displayUrl.isNotEmpty
+                  ? GestureDetector(
+                      onTap: isVideo && thumbnailUrl != null
+                          ? () {
+                              // 전체 화면 비디오 플레이어로 재생
+                              FullScreenVideoViewer.show(context, thumbnailUrl);
+                            }
+                          : null,
+                      child: Stack(
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: displayUrl,
+                            cacheManager: ItemImageCacheManager.instance,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorWidget: (context, url, error) => const Center(
+                              child: Text(
+                                '이미지 없음',
+                                style: TextStyle(color: Colors.white, fontSize: 16),
+                              ),
+                            ),
+                          ),
+                          if (isVideo)
+                            Positioned.fill(
+                              child: Container(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.play_circle_filled,
+                                    color: Colors.white,
+                                    size: 64,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     )
                   : const Center(

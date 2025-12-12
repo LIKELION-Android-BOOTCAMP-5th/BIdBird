@@ -6,83 +6,122 @@ class CloudinaryManager {
   static CloudinaryManager get shared => _shared;
 
   static final String cloudName = 'dn12so6sm';
-  static final String uploadPreset = 'bidbird_upload_preset'; // Unsigned 프리셋 이름
-  static final String url =
+  static final String uploadPreset = 'bidbird_upload_preset';
+  static final String imageUploadUrl =
       'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
-  //이미지 하나 짜리
+  static final String videoUploadUrl =
+      'https://api.cloudinary.com/v1_1/$cloudName/video/upload';
+
   Future<String?> uploadImageToCloudinary(XFile inputImage) async {
-    // Future<String?> uploadImageToCloudinary() async {
-
-    final XFile image = inputImage;
-
     try {
-      final String fileName = "${DateTime.now().millisecondsSinceEpoch}";
-      String filePath = image.path;
-      FormData formData = FormData.fromMap({
+      final filePath = inputImage.path;
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      
+      final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(
           filePath,
-          filename: '${fileName}.jpg',
+          filename: fileName,
         ),
         'upload_preset': uploadPreset,
       });
 
-      Dio dio = Dio();
-      Response response = await dio.post(url, data: formData);
+      final dio = Dio();
+      final response = await dio.post(
+        imageUploadUrl,
+        data: formData,
+      ).timeout(
+        const Duration(seconds: 30),
+      );
 
       if (response.statusCode == 200) {
-        // 업로드 성공, 이미지 URL 반환
-        print('Image uploaded successfully: ${response.data['secure_url']}');
-        return response.data['secure_url'];
+        return response.data['secure_url'] as String?;
       } else {
-        print('Image upload failed with status: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print('Error uploading image: $e');
       return null;
     }
   }
 
   Future<List<String>> uploadImageListToCloudinary(
-    List<XFile> ImageList,
+    List<XFile> imageList,
   ) async {
-    // Future<String?> uploadImageToCloudinary() async {
-
-    final List<XFile> images = ImageList;
+    final List<XFile> images = imageList;
     List<String> imageUrlList = [];
 
     try {
-      if (images.length != 0) {
+      if (images.isNotEmpty) {
         for (var image in images) {
-          final String fileName = "${DateTime.now().millisecondsSinceEpoch}";
-          String filePath = image.path;
-          FormData formData = FormData.fromMap({
-            'file': await MultipartFile.fromFile(
-              filePath,
-              filename: '${fileName}.jpg',
-            ),
-            'upload_preset': uploadPreset,
-          });
-
-          Dio dio = Dio();
-          Response response = await dio.post(url, data: formData);
-
-          if (response.statusCode == 200) {
-            // 업로드 성공, 이미지 URL 반환
-            print(
-              'Image uploaded successfully: ${response.data['secure_url']}',
-            );
-            imageUrlList.add(response.data['secure_url']);
+          final url = await uploadImageToCloudinary(image);
+          if (url != null) {
+            imageUrlList.add(url);
           } else {
-            print('Image upload failed with status: ${response.statusCode}');
             return List.empty();
           }
         }
       }
     } catch (e) {
-      print('Error uploading image: $e');
       return List.empty();
     }
     return imageUrlList;
+  }
+
+  Future<String?> uploadVideoToCloudinary(XFile inputVideo) async {
+    try {
+      final filePath = inputVideo.path;
+
+      final extension = filePath.split('.').last.toLowerCase();
+      final videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'];
+      final fileExtension = videoExtensions.contains(extension) ? extension : 'mp4';
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+      
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        ),
+        'upload_preset': uploadPreset,
+        'resource_type': 'video',
+      });
+
+      final dio = Dio();
+      final response = await dio.post(
+        videoUploadUrl,
+        data: formData,
+      ).timeout(
+        const Duration(minutes: 5),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data['secure_url'] as String?;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<List<String>> uploadVideoListToCloudinary(
+    List<XFile> videoList,
+  ) async {
+    final List<XFile> videos = videoList;
+    List<String> videoUrlList = [];
+
+    try {
+      if (videos.isNotEmpty) {
+        for (var video in videos) {
+          final url = await uploadVideoToCloudinary(video);
+          if (url != null) {
+            videoUrlList.add(url);
+          } else {
+            return List.empty();
+          }
+        }
+      }
+    } catch (e) {
+      return List.empty();
+    }
+    return videoUrlList;
   }
 }
