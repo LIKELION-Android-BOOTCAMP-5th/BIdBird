@@ -110,6 +110,23 @@ class HomeViewmodel extends ChangeNotifier {
       return "likes_count.desc";
   }
 
+  //판매 중인 아이템 위로 보내는 로직
+  void sortItemsByFinishTime() {
+    final now = DateTime.now();
+
+    _Items.sort((a, b) {
+      final bool aActive = a.finishTime.isAfter(now); // a가 아직 종료 안됐는가?
+      final bool bActive = b.finishTime.isAfter(now); // b가 아직 종료 안됐는가?
+
+      // 진행 중(finishTime > now) 먼저
+      if (aActive && !bActive) return -1; // a 먼저
+      if (!aActive && bActive) return 1; // b 먼저
+
+      // 둘 다 진행중이거나 둘 다 종료 → 기존 정렬 유지
+      return 0;
+    });
+  }
+
   Future<void> fetchItems() async {
     String orderBy = setOrderBy(type);
     _Items = await _homeRepository.fetchItems(
@@ -117,6 +134,7 @@ class HomeViewmodel extends ChangeNotifier {
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
     );
+    sortItemsByFinishTime();
     notifyListeners();
   }
 
@@ -129,6 +147,7 @@ class HomeViewmodel extends ChangeNotifier {
       orderBy,
       currentIndex: _currentPage,
     );
+    sortItemsByFinishTime();
     notifyListeners();
   }
 
@@ -154,6 +173,8 @@ class HomeViewmodel extends ChangeNotifier {
     }
 
     _Items.addAll(newFetchPosts);
+
+    sortItemsByFinishTime();
     notifyListeners();
   }
 
@@ -182,6 +203,8 @@ class HomeViewmodel extends ChangeNotifier {
       );
     }
 
+    sortItemsByFinishTime();
+
     notifyListeners();
   }
 
@@ -206,6 +229,8 @@ class HomeViewmodel extends ChangeNotifier {
       keywordType: selectedKeywordId,
       userInputSearchText: userInput,
     );
+
+    sortItemsByFinishTime();
 
     notifyListeners();
   }
@@ -233,6 +258,9 @@ class HomeViewmodel extends ChangeNotifier {
     );
 
     _Items.addAll(moreItems);
+
+    sortItemsByFinishTime();
+
     notifyListeners();
   }
 }
