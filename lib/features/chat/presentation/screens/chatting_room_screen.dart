@@ -528,6 +528,13 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                           vertical: 12,
                                         ),
                                       ),
+                                      onSubmitted: (value) {
+                                        if (!viewModel.isSending && value.trim().isNotEmpty) {
+                                          // 키보드 닫기
+                                          FocusScope.of(context).unfocus();
+                                          viewModel.sendMessage();
+                                        }
+                                      },
                                     ),
                                   )
                                 : Stack(
@@ -576,6 +583,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                           InkWell(
                             onTap: () {
                               if (!viewModel.isSending) {
+                                // 키보드 닫기
+                                FocusScope.of(context).unfocus();
                                 viewModel.sendMessage();
                               }
                             },
