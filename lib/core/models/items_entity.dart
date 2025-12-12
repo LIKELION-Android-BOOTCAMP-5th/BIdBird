@@ -12,8 +12,9 @@ class ItemsEntity {
   final String? is_agreed;
   final bool visibility_status;
   final int auction_duration_hours;
-  final DateTime finishTime;
-  final Auctions auctions;
+
+  DateTime finishTime;
+  Auctions auctions;
 
   ItemsEntity({
     required this.item_id,
@@ -96,13 +97,13 @@ class ItemsEntity {
 }
 
 class Auctions {
-  final int bid_count;
-  final int current_price;
-  final String auction_end_at;
-  final String auction_start_at;
-  final String last_bid_user_id;
-  final int? trade_status_code;
-  final int auction_status_code;
+  int bid_count;
+  int current_price;
+  String auction_end_at;
+  String auction_start_at;
+  String last_bid_user_id;
+  int? trade_status_code;
+  int auction_status_code;
 
   Auctions({
     required this.bid_count,
