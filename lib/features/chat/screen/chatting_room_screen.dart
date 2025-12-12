@@ -10,6 +10,7 @@ import 'package:bidbird/features/chat/screen/widgets/message_bubble.dart';
 import 'package:bidbird/features/chat/viewmodel/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class ChattingRoomScreen extends StatefulWidget {
@@ -231,16 +232,10 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                   ),
                   Expanded(
                     child: ListView.builder(
-                      controller: viewModel.scrollController,
                       itemCount: viewModel.messages.length,
                       itemBuilder: (context, index) {
                         final message = viewModel.messages[index];
-                        final userId = SupabaseManager
-                            .shared
-                            .supabase
-                            .auth
-                            .currentUser
-                            ?.id;
+                        final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
                         final isCurrentUser = message.sender_id == userId;
 
                         // 같은 사람이 연속해서 보낸 메시지 중 마지막인지 여부 (시간 표시용)
@@ -263,9 +258,43 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               prevMessage.sender_id != message.sender_id;
                         }
 
+                        // 날짜 구분 표시 여부 계산
+                        DateTime? currentDate;
+                        DateTime? previousDate;
+                        try {
+                          currentDate =
+                              DateTime.parse(message.created_at).toLocal();
+                          if (index > 0) {
+                            previousDate = DateTime.parse(
+                              viewModel.messages[index - 1].created_at,
+                            ).toLocal();
+                          }
+                        } catch (_) {
+                          currentDate = null;
+                          previousDate = null;
+                        }
+
+                        bool isSameDay(DateTime a, DateTime b) {
+                          return a.year == b.year &&
+                              a.month == b.month &&
+                              a.day == b.day;
+                        }
+
+                        final bool showDateHeader;
+                        if (currentDate == null) {
+                          showDateHeader = false;
+                        } else if (previousDate == null) {
+                          // 첫 번째 메시지는 항상 날짜 표시
+                          showDateHeader = true;
+                        } else {
+                          showDateHeader = !isSameDay(currentDate, previousDate);
+                        }
+
+                        Widget messageWidget;
+
                         // 같은 사람이 연속 보낸 경우 위 여백을 더 타이트하게
                         if (isCurrentUser) {
-                          return Padding(
+                          messageWidget = Padding(
                             padding: EdgeInsets.only(
                               top: isFirstFromSameSender ? 6 : 2,
                             ),
@@ -275,62 +304,78 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               showTime: isLastFromSameSender,
                             ),
                           );
-                        }
+                        } else {
+                          // 상대방 메시지: 왼쪽에 프로필, 오른쪽에 말풍선
+                          const double avatarSize = 36;
+                          final opponent = viewModel.roomInfo?.opponent;
 
-                        // 상대방 메시지: 왼쪽에 프로필, 오른쪽에 말풍선
-                        const double avatarSize = 36;
-                        final opponent = viewModel.roomInfo?.opponent;
-
-                        Widget avatarWidget;
-                        if (isFirstFromSameSender) {
-                          if (opponent?.profileImage != null &&
-                              opponent!.profileImage!.isNotEmpty) {
-                            avatarWidget = CircleAvatar(
-                              radius: avatarSize / 2,
-                              backgroundImage:
-                                  NetworkImage(opponent.profileImage!),
-                            );
-                          } else {
-                            avatarWidget = CircleAvatar(
-                              radius: avatarSize / 2,
-                              backgroundColor: yellowColor,
-                              child: Text(
-                                opponent?.nickName.substring(0, 1) ?? '익',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                          Widget avatarWidget;
+                          if (isFirstFromSameSender) {
+                            if (opponent?.profileImage != null &&
+                                opponent!.profileImage!.isNotEmpty) {
+                              avatarWidget = CircleAvatar(
+                                radius: avatarSize / 2,
+                                backgroundImage:
+                                    NetworkImage(opponent.profileImage!),
+                              );
+                            } else {
+                              avatarWidget = CircleAvatar(
+                                radius: avatarSize / 2,
+                                backgroundColor: yellowColor,
+                                child: Text(
+                                  opponent?.nickName.substring(0, 1) ?? '익',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
+                              );
+                            }
+                          } else {
+                            avatarWidget = const SizedBox(
+                              width: avatarSize,
+                              height: avatarSize,
                             );
                           }
-                        } else {
-                          avatarWidget = const SizedBox(
-                            width: avatarSize,
-                            height: avatarSize,
+
+                          messageWidget = Padding(
+                            padding: EdgeInsets.only(
+                              left: 8,
+                              right: 8,
+                              top: isFirstFromSameSender ? 6 : 2,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                avatarWidget,
+                                const SizedBox(width: 0),
+                                Expanded(
+                                  child: MessageBubble(
+                                    message: message,
+                                    isCurrentUser: false,
+                                    showTime: isLastFromSameSender,
+                                  ),
+                                ),
+                              ],
+                            ),
                           );
                         }
 
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            left: 8,
-                            right: 8,
-                            top: isFirstFromSameSender ? 6 : 2,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        if (showDateHeader && currentDate != null) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              avatarWidget,
-                              const SizedBox(width: 0),
-                              Expanded(
-                                child: MessageBubble(
-                                  message: message,
-                                  isCurrentUser: false,
-                                  showTime: isLastFromSameSender,
-                                ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                child: _ChatDateSeparator(date: currentDate),
                               ),
+                              messageWidget,
                             ],
-                          ),
-                        );
+                          );
+                        }
+
+                        return messageWidget;
                       },
                     ),
                   ),
@@ -470,6 +515,49 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ChatDateSeparator extends StatelessWidget {
+  const _ChatDateSeparator({required this.date});
+
+  final DateTime date;
+
+  String _formatKoreanDate(DateTime dt) {
+    // 예: 2025년 11월 7일 금요일
+    final formatter = DateFormat('yyyy년 M월 d일 EEEE', 'ko');
+    return formatter.format(dt);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xffBDBDBD),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 14,
+              color: Colors.grey[700],
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _formatKoreanDate(date),
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
