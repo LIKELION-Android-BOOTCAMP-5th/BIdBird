@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/payment/payment_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PaymentHistoryItem {
@@ -33,8 +34,8 @@ class PaymentHistoryItem {
   /// payments.tx_id (PG 트랜잭션 ID)
   final String? txId;
 
-  bool get isAuctionWin => statusCode == 321;
-  bool get isInstantBuy => statusCode == 322;
+  bool get isAuctionWin => statusCode == PaymentStatusCodes.auctionWin;
+  bool get isInstantBuy => statusCode == PaymentStatusCodes.instantBuy;
 }
 
 class PaymentHistoryRepository {
@@ -73,7 +74,7 @@ class PaymentHistoryRepository {
 
     if (itemIds.isEmpty) return [];
 
-    // 3. auctions에서 상태 코드 조회 (321: 경매 낙찰, 322: 즉시 구매)
+    // 3. auctions에서 상태 코드 조회
     final auctionsRows = await _client
         .from('auctions')
         .select('item_id, item_status_code')

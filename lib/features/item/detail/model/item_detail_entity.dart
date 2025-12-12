@@ -67,31 +67,3 @@ class SellerRatingSummary {
   }
 }
 
-class ItemDetailPriceHelper {
-  static int calculateBidStep(int currentPrice) {
-    if (currentPrice <= 100000) {
-      return 1000;
-    }
-
-    final priceStr = currentPrice.toString();
-    if (priceStr.length >= 3) {
-      return int.parse(priceStr.substring(0, priceStr.length - 2));
-    }
-
-    return 1000;
-  }
-
-  static String formatPrice(int price) {
-    final buffer = StringBuffer();
-    final text = price.toString();
-    for (int i = 0; i < text.length; i++) {
-      final reverseIndex = text.length - i;
-      buffer.write(text[i]);
-      if (reverseIndex > 1 && reverseIndex % 3 == 1) {
-        buffer.write(',');
-      }
-    }
-    return buffer.toString();
-  }
-}
-

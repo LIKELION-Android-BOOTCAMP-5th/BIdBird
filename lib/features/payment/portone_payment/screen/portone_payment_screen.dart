@@ -1,8 +1,9 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/payment/payment_error_messages.dart';
+import 'package:bidbird/core/config/portone_config.dart';
 import 'package:bidbird/features/payment/portone_payment/data/repository/item_payment_gateway.dart';
 import 'package:bidbird/features/payment/portone_payment/data/repository/item_payment_gateway_impl.dart';
 import 'package:bidbird/features/payment/portone_payment/model/item_payment_request.dart';
-import 'package:bidbird/features/payment/portone_payment/portone_payment_config.dart';
 import 'package:flutter/material.dart';
 import 'package:portone_flutter_v2/portone_flutter_v2.dart';
 
@@ -118,14 +119,14 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '사용자 정보를 불러오지 못했습니다.\n다시 시도해 주세요.',
+              Text(
+                PaymentErrorMessages.loadUserInfoFailed,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _loadDecryptedUser,
-                child: const Text('다시 시도'),
+                child: const Text(PaymentErrorMessages.retry),
               ),
             ],
           ),
@@ -148,13 +149,14 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
           child: CircularProgressIndicator(),
         ),
         callback: (PaymentResponse result) async {
+          final navigatorContext = context;
           final success = await widget.gateway.handlePaymentResult(
             result: result.toJson(),
             request: widget.request,
           );
 
           if (!mounted) return;
-          Navigator.of(context).pop(success);
+          Navigator.of(navigatorContext).pop(success);
         },
         onError: (Object? error) {
           if (!mounted) return;
@@ -177,12 +179,12 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
     );
 
     return PaymentRequest(
-      storeId: PortonePaymentConfig.storeId,
+      storeId: PortoneConfig.storeId,
       paymentId: paymentId,
       orderName: widget.request.itemTitle,
       totalAmount: widget.request.amount,
       currency: PaymentCurrency.KRW,
-      channelKey: PortonePaymentConfig.channelKey,
+      channelKey: PortoneConfig.channelKey,
       payMethod: PaymentPayMethod.card,
       appScheme: widget.request.appScheme,
       customer: customer,

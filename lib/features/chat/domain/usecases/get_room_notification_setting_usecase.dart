@@ -10,6 +10,3 @@ class GetRoomNotificationSettingUseCase {
     return await _repository.getRoomNotificationSetting(roomId);
   }
 }
-
-
-

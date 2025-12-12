@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -64,7 +65,7 @@ class ItemDetailDatasource {
       debugPrint('[ItemDetailDatasource] fetch auction info error: $e');
     }
 
-    final minBidStep = ItemDetailPriceHelper.calculateBidStep(currentPrice);
+    final minBidStep = ItemPriceHelper.calculateBidStep(currentPrice);
 
     DateTime effectiveFinishTime;
     if (finishTime != null) {

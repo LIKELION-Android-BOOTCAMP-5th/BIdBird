@@ -1,3 +1,5 @@
+import 'package:bidbird/core/utils/identity_verification/identity_verification_error_messages.dart';
+import 'package:bidbird/core/utils/identity_verification/identity_verification_texts.dart';
 import 'package:flutter/material.dart';
 
 import '../usecase/check_and_request_identity_verification_usecase.dart';
@@ -35,7 +37,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = '본인인증 중 오류가 발생했습니다.';
+        _error = IdentityVerificationErrorMessages.verificationError;
       });
     } finally {
       if (!mounted) return;
@@ -59,7 +61,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _startFlow,
-                        child: const Text('다시 시도'),
+                        child: const Text(IdentityVerificationErrorMessages.retry),
                       ),
                     ],
                   )

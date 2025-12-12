@@ -10,6 +10,3 @@ class GetRoomInfoUseCase {
     return await _repository.fetchRoomInfo(itemId);
   }
 }
-
-
-

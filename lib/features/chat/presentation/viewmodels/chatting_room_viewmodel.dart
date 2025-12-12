@@ -23,7 +23,7 @@ import 'package:bidbird/features/chat/domain/usecases/send_image_message_usecase
 import 'package:bidbird/features/chat/domain/usecases/send_text_message_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/turn_off_notification_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/turn_on_notification_usecase.dart';
-import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

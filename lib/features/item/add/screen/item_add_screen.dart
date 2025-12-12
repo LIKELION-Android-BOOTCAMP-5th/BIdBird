@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:flutter/material.dart';
@@ -7,10 +8,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodel/item_add_viewmodel.dart';
-import '../widget/item_add_image_section.dart';
-import '../widget/item_add_price_section.dart';
-import '../widget/labeled_dropdown.dart';
-import '../widget/labeled_text_field.dart';
+import 'package:bidbird/core/widgets/item/add/item_add_image_section.dart';
+import 'package:bidbird/core/widgets/item/add/item_add_price_section.dart';
+import 'package:bidbird/core/widgets/item/add/labeled_dropdown.dart';
+import 'package:bidbird/core/widgets/item/add/labeled_text_field.dart';
 
 class ItemAddScreen extends StatelessWidget {
   const ItemAddScreen({super.key});
@@ -171,7 +172,7 @@ class ItemAddScreen extends StatelessWidget {
                     if (value == null) return;
                     viewModel.setSelectedDuration(value);
                   },
-                  decoration: _inputDecoration('4시간'),
+                  decoration: _inputDecoration(ItemAuctionDurationConstants.defaultDurationOption),
                 ),
                 const SizedBox(height: 20),
                 LabeledTextField(

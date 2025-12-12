@@ -9,6 +9,3 @@ class TurnOffNotificationUseCase {
     await _repository.notificationOff(roomId);
   }
 }
-
-
-

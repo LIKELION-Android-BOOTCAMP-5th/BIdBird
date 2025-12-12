@@ -1,5 +1,7 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/utils/item/item_time_utils.dart';
 import 'package:bidbird/features/item/user_history/model/user_history_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -71,8 +73,8 @@ class UserProfileDatasource {
         final String title = item['title']?.toString() ?? '';
         final String? thumbnailUrl = item['thumbnail_image']?.toString();
         final int priceValue = priceByItemId[itemId] ?? 0;
-        final String price = _formatPrice(priceValue);
-        final String date = _formatDate(createdAt);
+        final String price = '${formatPrice(priceValue)}원';
+        final String date = formatDateFromIso(createdAt);
 
         final _StatusInfo status = _mapAuctionTradeStatus(
           auctionCode,
@@ -93,31 +95,7 @@ class UserProfileDatasource {
     }
   }
 
-  String _formatPrice(int price) {
-    final buffer = StringBuffer();
-    final text = price.toString();
-    for (int i = 0; i < text.length; i++) {
-      final reverseIndex = text.length - i;
-      buffer.write(text[i]);
-      if (reverseIndex > 1 && reverseIndex % 3 == 1 && i != text.length - 1) {
-        buffer.write(',');
-      }
-    }
-    return '${buffer.toString()}원';
-  }
 
-  String _formatDate(String? isoString) {
-    if (isoString == null || isoString.isEmpty) return '';
-    try {
-      final dt = DateTime.tryParse(isoString);
-      if (dt == null) return '';
-      final m = dt.month.toString().padLeft(2, '0');
-      final d = dt.day.toString().padLeft(2, '0');
-      return '${dt.year}.$m.$d';
-    } catch (_) {
-      return '';
-    }
-  }
 }
 
 class _StatusInfo {

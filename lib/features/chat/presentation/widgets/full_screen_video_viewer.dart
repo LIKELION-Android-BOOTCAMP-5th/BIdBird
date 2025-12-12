@@ -43,4 +43,3 @@ class FullScreenVideoViewer extends StatelessWidget {
     );
   }
 }
-

@@ -11,11 +11,11 @@ import 'package:bidbird/features/item/current_trade/data/repository/current_trad
 import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
-import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
-import 'package:bidbird/features/item/item_bid_win/screen/item_bid_win_screen.dart';
-import 'package:bidbird/features/item/item_registration_detail/screen/item_registration_detail_screen.dart';
-import 'package:bidbird/features/item/item_registration_list/model/item_registration_entity.dart';
-import 'package:bidbird/features/item/item_registration_list/screen/item_registration_list_screen.dart';
+import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
+import 'package:bidbird/features/item/bid_win/screen/item_bid_win_screen.dart';
+import 'package:bidbird/features/item/registration/detail/screen/item_registration_detail_screen.dart';
+import 'package:bidbird/features/item/registration/list/model/item_registration_entity.dart';
+import 'package:bidbird/features/item/registration/list/screen/item_registration_list_screen.dart';
 import 'package:bidbird/features/item/relist/screen/item_relist_screen.dart';
 import 'package:bidbird/features/item/user_profile/screen/user_profile_screen.dart';
 import 'package:bidbird/features/item/user_profile_history/screen/user_history_screen.dart';
@@ -269,7 +269,6 @@ GoRouter createAppRouter(BuildContext context) {
       GoRoute(
         path: '/payment',
         pageBuilder: (context, state) {
-          final itemId = state.uri.queryParameters['itemId'] ?? '';
           return const NoTransitionPage(child: HomeScreen());
         },
       ),

@@ -1,4 +1,10 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/item/item_time_utils.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
+import 'package:bidbird/core/utils/payment/payment_error_messages.dart';
+import 'package:bidbird/core/utils/payment/payment_texts.dart';
+import 'package:bidbird/core/utils/payment/payment_status_utils.dart';
 import 'package:bidbird/features/payment/payment_history/data/payment_history_repository.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -44,7 +50,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = '결제 내역을 불러오지 못했습니다.';
+        _error = PaymentErrorMessages.loadHistoryFailed;
         _loading = false;
       });
     }
@@ -59,7 +65,9 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
         backgroundColor: BackgroundColor,
         foregroundColor: Colors.black,
         title: Text(
-          widget.itemId != null ? '결제 상세 내역' : '결제 내역',
+          widget.itemId != null 
+              ? PaymentTexts.historyDetailTitle 
+              : PaymentTexts.historyTitle,
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -89,7 +97,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: _loadPayments,
-              child: const Text('다시 시도'),
+              child: const Text(PaymentErrorMessages.retry),
             ),
           ],
         ),
@@ -127,11 +135,10 @@ class _PaymentDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isCompleted = item.isAuctionWin || item.isInstantBuy;
-    final String statusText = item.isAuctionWin
-        ? '경매 낙찰'
-        : item.isInstantBuy
-            ? '즉시 구매'
-            : '결제 완료';
+    final String statusText = getPaymentStatusText(
+      item.statusCode,
+      isCompleted: isCompleted,
+    );
 
     return Column(
       children: [
@@ -158,10 +165,27 @@ class _PaymentDetailBody extends StatelessWidget {
                   ),
                   clipBehavior: Clip.hardEdge,
                   child: item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: item.thumbnailUrl!,
-                          cacheManager: ItemImageCacheManager.instance,
-                          fit: BoxFit.cover,
+                      ? Builder(
+                          builder: (context) {
+                            final String imageUrl = isVideoFile(item.thumbnailUrl!)
+                                ? getVideoThumbnailUrl(item.thumbnailUrl!)
+                                : item.thumbnailUrl!;
+                            
+                            return CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              cacheManager: ItemImageCacheManager.instance,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => Container(
+                                color: ImageBackgroundColor,
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.image,
+                                  size: 48,
+                                  color: iconColor,
+                                ),
+                              ),
+                            );
+                          },
                         )
                       : Container(
                           color: ImageBackgroundColor,
@@ -188,9 +212,7 @@ class _PaymentDetailBody extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isCompleted
-                        ? const Color(0xFFE6F7EC)
-                        : const Color(0xFFFFEBEE),
+                    color: getPaymentStatusBackgroundColor(isCompleted),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -198,16 +220,14 @@ class _PaymentDetailBody extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isCompleted
-                          ? const Color(0xFF27AE60)
-                          : const Color(0xFFFF5252),
+                      color: getPaymentStatusColor(isCompleted),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 // 금액
                 Text(
-                  '${_formatAmount(item.amount)}원',
+                  '${formatPrice(item.amount)}원',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -218,32 +238,32 @@ class _PaymentDetailBody extends StatelessWidget {
                 const SizedBox(height: 16),
                 // 상세 정보 리스트
                 _DetailRow(
-                  label: '거래 방식',
-                  value: item.isInstantBuy ? '즉시 구매' : '경매 낙찰',
+                  label: PaymentTexts.transactionType,
+                  value: getPaymentTransactionTypeText(item.statusCode),
                 ),
                 const SizedBox(height: 8),
                 _DetailRow(
-                  label: '결제 일시',
-                  value: _formatDateTime(item.paidAt),
+                  label: PaymentTexts.paymentDateTime,
+                  value: formatDateTime(item.paidAt),
                 ),
                 const SizedBox(height: 8),
                 if (item.paymentType != null && item.paymentType!.isNotEmpty) ...[
                   _DetailRow(
-                    label: '결제 수단',
+                    label: PaymentTexts.paymentMethod,
                     value: item.paymentType!,
                   ),
                   const SizedBox(height: 8),
                 ],
                 if (item.paymentId != null && item.paymentId!.isNotEmpty) ...[
                   _DetailRow(
-                    label: '거래 번호',
+                    label: PaymentTexts.transactionNumber,
                     value: item.paymentId!,
                   ),
                   const SizedBox(height: 8),
                 ],
                 if (item.txId != null && item.txId!.isNotEmpty)
                   _DetailRow(
-                    label: 'TX ID',
+                    label: PaymentTexts.txId,
                     value: item.txId!,
                   ),
               ],
@@ -273,7 +293,7 @@ class _PaymentDetailBody extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                '확인',
+                PaymentTexts.confirm,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -332,11 +352,10 @@ class _PaymentHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isCompleted = item.isAuctionWin || item.isInstantBuy;
-    final String statusText = item.isAuctionWin
-        ? '경매 낙찰'
-        : item.isInstantBuy
-            ? '즉시 구매'
-            : '결제 완료';
+    final String statusText = getPaymentStatusText(
+      item.statusCode,
+      isCompleted: isCompleted,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -368,7 +387,7 @@ class _PaymentHistoryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _formatDate(item.paidAt),
+                  formatDate(item.paidAt),
                   style: const TextStyle(
                     fontSize: 12,
                     color: iconColor,
@@ -382,7 +401,7 @@ class _PaymentHistoryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${_formatAmount(item.amount)}원',
+                '${formatPrice(item.amount)}원',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -393,9 +412,7 @@ class _PaymentHistoryCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isCompleted
-                      ? const Color(0xFFE6F7EC)
-                      : const Color(0xFFFFEBEE),
+                  color: getPaymentStatusBackgroundColor(isCompleted),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -403,9 +420,7 @@ class _PaymentHistoryCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isCompleted
-                        ? const Color(0xFF27AE60)
-                        : const Color(0xFFFF5252),
+                    color: getPaymentStatusColor(isCompleted),
                   ),
                 ),
               ),
@@ -431,7 +446,7 @@ class _EmptyPaymentHistory extends StatelessWidget {
           ),
           SizedBox(height: 16),
           Text(
-            '결제 내역이 없습니다.',
+            PaymentTexts.emptyHistory,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -439,7 +454,7 @@ class _EmptyPaymentHistory extends StatelessWidget {
           ),
           SizedBox(height: 4),
           Text(
-            '새로운 거래를 시작해보세요.',
+            PaymentTexts.emptyHistorySubtitle,
             style: TextStyle(
               fontSize: 12,
               color: iconColor,
@@ -449,29 +464,4 @@ class _EmptyPaymentHistory extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatDate(DateTime date) {
-  return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
-}
-
-String _formatDateTime(DateTime date) {
-  final String dateStr =
-      '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
-  final String timeStr =
-      '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  return '$dateStr $timeStr';
-}
-
-String _formatAmount(int amount) {
-  final buffer = StringBuffer();
-  final str = amount.toString();
-  for (int i = 0; i < str.length; i++) {
-    final reverseIndex = str.length - i - 1;
-    buffer.write(str[i]);
-    if (reverseIndex % 3 == 0 && i != str.length - 1) {
-      buffer.write(',');
-    }
-  }
-  return buffer.toString();
 }

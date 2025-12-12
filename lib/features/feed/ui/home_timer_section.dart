@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/ui_set/colors_style.dart';
-import '../../item/detail/screen/item_detail_utils.dart'
-    show formatRemainingTime;
+import 'package:bidbird/core/utils/item/item_time_utils.dart' show formatRemainingTime;
 
 class HomeTimerSection extends StatefulWidget {
   const HomeTimerSection({super.key, required this.finishTime});
