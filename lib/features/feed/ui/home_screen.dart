@@ -1,21 +1,23 @@
-import 'package:bidbird/core/utils/extension/money_extension.dart';
+import 'dart:async';
+
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:bidbird/features/identity_verification/widget/identity_verification_helper.dart';
 import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/utils/extension/time_extension.dart';
+import '../../../core/utils/extension/money_extension.dart';
 import '../../../core/utils/ui_set/border_radius_style.dart';
 import '../../../core/utils/ui_set/shadow_style.dart';
 import '../data/repository/home_repository.dart';
+import 'home_timer_section.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -203,22 +205,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                       final myUserId = authVM.user?.id;
 
                                       final bool isWonByMe =
-                                          item.lastBidUserId != null &&
+                                          item.auctions.last_bid_user_id !=
+                                              null &&
                                           myUserId != null &&
-                                          item.lastBidUserId == myUserId &&
-                                          item.auctionStatusCode == 321;
+                                          item.auctions.last_bid_user_id ==
+                                              myUserId &&
+                                          item.auctions.auction_status_code ==
+                                              321;
 
                                       final bool isTradePaid =
-                                          item.tradeStatusCode == 520;
+                                          item.auctions.trade_status_code ==
+                                          520;
 
                                       if (isWonByMe && !isTradePaid) {
                                         final winItem = ItemBidWinEntity(
-                                          itemId: item.id,
+                                          itemId: item.item_id,
                                           title: title,
                                           images: [item.thumbnail_image],
-                                          winPrice: item.current_price,
+                                          winPrice: item.auctions.current_price,
                                           tradeStatusCode:
-                                              item.tradeStatusCode,
+                                              item.auctions.trade_status_code,
                                         );
 
                                         context.push(
@@ -227,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         );
                                       } else {
                                         // item_detail 페이지로 이동
-                                        context.push('/item/${item.id}');
+                                        context.push('/item/${item.item_id}');
                                       }
                                     },
                                     child: Column(
@@ -252,8 +258,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         borderRadius:
                                                             defaultBorder,
                                                         child: CachedNetworkImage(
-                                                          imageUrl:
-                                                              item.thumbnail_image,
+                                                          imageUrl: item
+                                                              .thumbnail_image,
                                                           cacheManager:
                                                               ItemImageCacheManager
                                                                   .instance,
@@ -266,37 +272,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     Positioned(
                                                       top: 8,
                                                       left: 8,
-                                                      child: Container(
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 4,
-                                                        ),
-                                                        decoration: BoxDecoration(
-                                                          color: DateTime.now()
-                                                                  .isAfter(
+                                                      child: HomeTimerSection(
+                                                        finishTime:
                                                             item.finishTime,
-                                                          )
-                                                              ? Colors.black
-                                                              : RedColor,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(4),
-                                                        ),
-                                                        child: Text(
-                                                          DateTime.now()
-                                                                  .isAfter(
-                                                            item.finishTime,
-                                                          )
-                                                              ? '경매 종료'
-                                                              : '${formatRemainingTime(item.finishTime)} 남음',
-                                                          style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                          ),
-                                                        ),
                                                       ),
                                                     ),
 
@@ -336,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                   size: 12,
                                                                 ),
                                                                 Text(
-                                                                  "${item.bidding_count}",
+                                                                  "${item.auctions.bid_count}",
                                                                   style: TextStyle(
                                                                     color: Colors
                                                                         .white,
@@ -379,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                       ),
                                                                 ),
                                                             child: Text(
-                                                              "${item.current_price.toCommaString()}원",
+                                                              "${item.auctions.current_price.toCommaString()}원",
                                                               style: TextStyle(
                                                                 color: Colors
                                                                     .white,
@@ -453,6 +431,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 }, childCount: viewModel.Items.length),
                               ),
                             ),
+
+                          //평상시 화면
                           if (!viewModel.searchButton)
                             SliverPadding(
                               padding: const EdgeInsets.only(
@@ -483,22 +463,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                       final myUserId = authVM.user?.id;
 
                                       final bool isWonByMe =
-                                          item.lastBidUserId != null &&
+                                          item.auctions.last_bid_user_id !=
+                                              null &&
                                           myUserId != null &&
-                                          item.lastBidUserId == myUserId &&
-                                          item.auctionStatusCode == 321;
+                                          item.auctions.last_bid_user_id ==
+                                              myUserId &&
+                                          item.auctions.auction_status_code ==
+                                              321;
 
                                       final bool isTradePaid =
-                                          item.tradeStatusCode == 520;
+                                          item.auctions.trade_status_code ==
+                                          520;
 
                                       if (isWonByMe && !isTradePaid) {
                                         final winItem = ItemBidWinEntity(
-                                          itemId: item.id,
+                                          itemId: item.item_id,
                                           title: title,
                                           images: [item.thumbnail_image],
-                                          winPrice: item.current_price,
+                                          winPrice: item.auctions.current_price,
                                           tradeStatusCode:
-                                              item.tradeStatusCode,
+                                              item.auctions.trade_status_code,
                                         );
 
                                         context.push(
@@ -507,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         );
                                       } else {
                                         // item_detail 페이지로 이동
-                                        context.push('/item/${item.id}');
+                                        context.push('/item/${item.item_id}');
                                       }
                                     },
                                     child: Column(
@@ -532,8 +516,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         borderRadius:
                                                             defaultBorder,
                                                         child: CachedNetworkImage(
-                                                          imageUrl:
-                                                              item.thumbnail_image,
+                                                          imageUrl: item
+                                                              .thumbnail_image,
                                                           cacheManager:
                                                               ItemImageCacheManager
                                                                   .instance,
@@ -549,33 +533,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       child: Container(
                                                         padding:
                                                             const EdgeInsets.symmetric(
-                                                          horizontal: 8,
-                                                          vertical: 4,
-                                                        ),
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
                                                         decoration: BoxDecoration(
-                                                          color: DateTime.now()
+                                                          color:
+                                                              DateTime.now()
                                                                   .isAfter(
-                                                            item.finishTime,
-                                                          )
+                                                                    item.finishTime,
+                                                                  )
                                                               ? Colors.black
                                                               : RedColor,
                                                           borderRadius:
-                                                              BorderRadius
-                                                                  .circular(4),
+                                                              BorderRadius.circular(
+                                                                4,
+                                                              ),
                                                         ),
-                                                        child: Text(
-                                                          DateTime.now()
-                                                                  .isAfter(
-                                                            item.finishTime,
-                                                          )
-                                                              ? '경매 종료'
-                                                              : '${formatRemainingTime(item.finishTime)} 남음',
-                                                          style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                          ),
+                                                        child: HomeTimerSection(
+                                                          finishTime:
+                                                              item.finishTime,
                                                         ),
                                                       ),
                                                     ),
@@ -616,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                   size: 12,
                                                                 ),
                                                                 Text(
-                                                                  "${item.bidding_count}",
+                                                                  "${item.auctions.bid_count}",
                                                                   style: TextStyle(
                                                                     color: Colors
                                                                         .white,
@@ -659,7 +635,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                       ),
                                                                 ),
                                                             child: Text(
-                                                              "${item.current_price.toCommaString()}원",
+                                                              "${item.auctions.current_price.toCommaString()}원",
                                                               style: TextStyle(
                                                                 color: Colors
                                                                     .white,
