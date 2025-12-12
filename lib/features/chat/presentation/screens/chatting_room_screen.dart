@@ -492,71 +492,71 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
-                    color: Colors.transparent,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: chatInputBackground,
-                              borderRadius: defaultBorder,
-                              border: Border.all(
-                                color: chatPlusIconColor,
-                                width: 1,
+                  SafeArea(
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                      color: Colors.transparent,
+                      child: Row(
+                        children: [
+                          // 왼쪽 플러스 버튼
+                          InkWell(
+                            onTap: () {
+                              _showImageSourceSheet(context, viewModel);
+                            },
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                color: myMessageBubbleColor, // 내 버블 색상
+                                shape: BoxShape.circle,
                               ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: shadowLow,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+                              child: const Icon(
+                                Icons.add,
+                                color: Colors.white,
+                                size: 24,
+                              ),
                             ),
+                          ),
+                          const SizedBox(width: 8),
+                          // 가운데 입력 필드
+                          Expanded(
                             child: viewModel.image == null
-                                ? TextField(
-                                    minLines: 1,
-                                    maxLines: 1,
-                                    controller: viewModel.messageController,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: chatTextColor,
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 0,
                                     ),
-                                    textAlignVertical: TextAlignVertical.center,
-                                    decoration: InputDecoration(
-                                      hintText: "메시지를 입력하세요",
-                                      hintStyle: TextStyle(
-                                        color: chatTimeTextColor,
+                                    decoration: BoxDecoration(
+                                      color: myMessageBubbleColor, // 플러스 버튼과 같은 파란색 배경
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    child: TextField(
+                                      minLines: 1,
+                                      maxLines: 5,
+                                      controller: viewModel.messageController,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white, // 흰색 텍스트
                                       ),
-                                      border: InputBorder.none,
-                                      isCollapsed: true,
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 8,
-                                      ),
-                                      suffixIcon: IconButton(
-                                        icon: const Icon(
-                                          Icons.add,
-                                          size: 20,
-                                          color: chatPlusIconColor,
+                                      textAlignVertical: TextAlignVertical.center,
+                                      decoration: InputDecoration(
+                                        hintText: "메시지 입력",
+                                        hintStyle: const TextStyle(
+                                          color: Colors.white, // 흰색 플레이스홀더
+                                          fontSize: 16,
                                         ),
-                                        onPressed: () {
-                                          _showImageSourceSheet(
-                                            context,
-                                            viewModel,
-                                          );
-                                        },
+                                        border: InputBorder.none,
+                                        isCollapsed: true,
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
                                       ),
                                     ),
                                   )
                                 : Stack(
                                     children: [
                                       ClipRRect(
-                                        borderRadius: defaultBorder,
+                                        borderRadius: BorderRadius.circular(22),
                                         child: AspectRatio(
                                           aspectRatio:
                                               viewModel.imageAspectRatio ?? 1,
@@ -594,42 +594,44 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                     ],
                                   ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        InkWell(
-                          onTap: () {
-                            if (!viewModel.isSending) {
-                              viewModel.sendMessage();
-                            }
-                          },
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: const BoxDecoration(
-                              color: brandBlue,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: viewModel.isSending
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                          Colors.white,
+                          const SizedBox(width: 8),
+                          // 오른쪽 전송 버튼
+                          InkWell(
+                            onTap: () {
+                              if (!viewModel.isSending) {
+                                viewModel.sendMessage();
+                              }
+                            },
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                color: myMessageBubbleColor, // 내 버블 색상
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: viewModel.isSending
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                            Colors.white,
+                                          ),
                                         ),
+                                      )
+                                    : const Icon(
+                                        Icons.send,
+                                        color: Colors.white,
+                                        size: 24,
                                       ),
-                                    )
-                                  : const Icon(
-                                      Icons.send,
-                                      color: Colors.white,
-                                    ),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
