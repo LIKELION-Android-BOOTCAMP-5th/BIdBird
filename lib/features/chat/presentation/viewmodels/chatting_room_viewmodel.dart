@@ -23,6 +23,7 @@ import 'package:bidbird/features/chat/domain/usecases/send_image_message_usecase
 import 'package:bidbird/features/chat/domain/usecases/send_text_message_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/turn_off_notification_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/turn_on_notification_usecase.dart';
+import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -569,9 +570,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           return;
         }
         try {
-          final imageUrl = await CloudinaryManager.shared
-              .uploadImageToCloudinary(thisImage);
-          if (imageUrl == null) {
+          final String? mediaUrl;
+          if (isVideoFile(thisImage.path)) {
+            mediaUrl = await CloudinaryManager.shared
+                .uploadVideoToCloudinary(thisImage);
+          } else {
+            mediaUrl = await CloudinaryManager.shared
+                .uploadImageToCloudinary(thisImage);
+          }
+          if (mediaUrl == null) {
             isSending = false;
             notifyListeners();
             return;
@@ -579,11 +586,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           roomId = await _sendFirstMessageUseCase(
             itemId: itemId,
             messageType: type,
-            imageUrl: imageUrl,
+            imageUrl: mediaUrl,
           );
         } catch (e) {
           // ignore: avoid_print
-          print("메세지 전송 실패");
+          print("메세지 전송 실패: $e");
+          isSending = false;
+          notifyListeners();
           return;
         }
         final chattings = await _repository.getMessages(roomId!);
@@ -630,14 +639,20 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           return;
         }
         try {
-          final imageUrl = await CloudinaryManager.shared
-              .uploadImageToCloudinary(thisImage);
-          if (imageUrl == null) {
+          final String? mediaUrl;
+          if (isVideoFile(thisImage.path)) {
+            mediaUrl = await CloudinaryManager.shared
+                .uploadVideoToCloudinary(thisImage);
+          } else {
+            mediaUrl = await CloudinaryManager.shared
+                .uploadImageToCloudinary(thisImage);
+          }
+          if (mediaUrl == null) {
             isSending = false;
             notifyListeners();
             return;
           }
-          await _sendImageMessageUseCase(currentRoomId, imageUrl);
+          await _sendImageMessageUseCase(currentRoomId, mediaUrl);
         } catch (e) {
           // ignore: avoid_print
           print('메세지 전송 실패 : $e');
@@ -990,6 +1005,20 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     final decoded = await decodeImageFromList(await image!.readAsBytes());
     imageAspectRatio = decoded.width / decoded.height;
     type = MessageType.image;
+    notifyListeners();
+  }
+
+  Future<void> pickVideoFromGallery() async {
+    final XFile? video = await _picker.pickVideo(
+      source: ImageSource.gallery,
+    );
+    if (video == null) {
+      return;
+    }
+    // 동영상 파일 저장 (이미지와 동일한 방식으로 처리)
+    image = video;
+    imageAspectRatio = 16 / 9; // 기본 비율 설정
+    type = MessageType.image; // 일단 image로 설정 (나중에 video 타입 추가 가능)
     notifyListeners();
   }
 

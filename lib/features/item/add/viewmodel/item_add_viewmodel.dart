@@ -116,6 +116,22 @@ class ItemAddViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> pickVideoFromGallery() async {
+    final XFile? video = await _picker.pickVideo(
+      source: ImageSource.gallery,
+    );
+    if (video == null) {
+      return;
+    }
+
+    if (selectedImages.length >= 10) {
+      return;
+    }
+
+    selectedImages = <XFile>[...selectedImages, video];
+    notifyListeners();
+  }
+
   void removeImageAt(int index) {
     if (index < 0 || index >= selectedImages.length) return;
     final List<XFile> list = List<XFile>.from(selectedImages);

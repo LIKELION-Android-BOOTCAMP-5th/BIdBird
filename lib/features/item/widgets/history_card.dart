@@ -1,6 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/widgets/trade_status_chip.dart';
+import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -63,10 +64,35 @@ class HistoryCard extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(defaultRadius),
                       child: (thumbnailUrl != null && thumbnailUrl!.isNotEmpty)
-                          ? CachedNetworkImage(
-                              imageUrl: thumbnailUrl!,
-                              cacheManager: ItemImageCacheManager.instance,
-                              fit: BoxFit.cover,
+                          ? Builder(
+                              builder: (context) {
+                                final bool isVideo = isVideoFile(thumbnailUrl!);
+                                final String displayUrl = isVideo
+                                    ? getVideoThumbnailUrl(thumbnailUrl!)
+                                    : thumbnailUrl!;
+                                
+                                return CachedNetworkImage(
+                                  imageUrl: displayUrl,
+                                  cacheManager: ItemImageCacheManager.instance,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    color: BackgroundColor,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    color: BackgroundColor,
+                                    child: const Icon(
+                                      Icons.image,
+                                      size: 32,
+                                      color: iconColor,
+                                    ),
+                                  ),
+                                );
+                              },
                             )
                           : Container(
                               color: BackgroundColor,

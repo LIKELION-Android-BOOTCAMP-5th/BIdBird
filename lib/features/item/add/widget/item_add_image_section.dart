@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/widgets/video_player_widget.dart';
+import 'package:bidbird/features/item/detail/screen/item_detail_utils.dart';
 import 'package:flutter/material.dart';
 
 import '../viewmodel/item_add_viewmodel.dart';
@@ -57,12 +59,37 @@ class ItemAddImagesSection extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: defaultBorder,
-                        child: Image.file(
-                          File(image.path),
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                        ),
+                        child: isVideoFile(image.path)
+                            ? SizedBox(
+                                width: 120,
+                                height: 120,
+                                child: VideoPlayerWidget(
+                                  videoPath: image.path,
+                                  autoPlay: false,
+                                  showControls: true,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Image.file(
+                                File(image.path),
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 120,
+                                    height: 120,
+                                    color: Colors.grey[300],
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.error_outline,
+                                        color: Colors.grey,
+                                        size: 24,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                       ),
                       Positioned(
                         top: 4,
