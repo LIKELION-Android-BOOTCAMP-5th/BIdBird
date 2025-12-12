@@ -6,9 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
-import 'package:bidbird/features/item/identity_verification/data/repository/identity_verification_gateway_impl.dart';
-import 'package:bidbird/features/item/identity_verification/screen/identity_verification_screen.dart';
-import 'package:bidbird/features/item/identity_verification/usecase/check_and_request_identity_verification_usecase.dart';
+import 'package:bidbird/features/identity_verification/widget/identity_verification_helper.dart';
 import 'package:bidbird/features/item/item_bid_win/model/item_bid_win_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -30,46 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _fabMenuOpen = false;
 
   Future<bool> _ensureIdentityVerified(BuildContext context) async {
-    final gateway = IdentityVerificationGatewayImpl();
-    final useCase = CheckAndRequestIdentityVerificationUseCase(gateway);
-
-    // 1) 먼저 서버에서 CI 여부 확인
-    final hasCi = await gateway.hasCi();
-    if (hasCi) {
-      // 이미 CI가 있으면 팝업 없이 바로 통과
-      return true;
-    }
-
-    // 2) CI가 없으면 본인인증 안내 팝업 노출
-    bool proceed = false;
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AskPopup(
-          content: '본인 인증을 해주세요.',
-          yesText: '본인 인증하기',
-          noText: '취소',
-          yesLogic: () async {
-            proceed = true;
-            Navigator.of(dialogContext).pop();
-          },
-        );
-      },
-    );
-
-    if (!proceed) {
-      return false;
-    }
-
-    // 3) 팝업에서 "본인 인증하기"를 누른 경우에만 본인인증 화면으로 이동
-    final result = await Navigator.of(context, rootNavigator: true).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => IdentityVerificationScreen(useCase: useCase),
-      ),
-    );
-
-    return result ?? false;
+    return await ensureIdentityVerified(context);
   }
 
   @override
