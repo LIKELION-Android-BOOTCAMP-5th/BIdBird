@@ -1,7 +1,7 @@
 import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/chat/model/chatting_room_entity.dart';
-import 'package:bidbird/features/chat/model/room_info_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,10 +16,7 @@ class ChatNetworkApiDatasource {
     );
     if (response.data != null) {
       final List data = response.data;
-      print("${data.runtimeType}");
-
       final List<ChattingRoomEntity> results = data.map((json) {
-        print("unread_count : ${json['count'] as int}");
         return ChattingRoomEntity.fromJson(json);
       }).toList();
 
@@ -38,12 +35,9 @@ class ChatNetworkApiDatasource {
         body: {'itemId': itemId},
       );
       final data = response.data;
-      print("$data");
-      print("디버그 포인트");
       final result = RoomInfoEntity.fromJson(data);
       return result;
     } catch (e) {
-      print("방 정보 가져오기 실패 : ${e}");
       return null;
     }
   }
@@ -57,12 +51,9 @@ class ChatNetworkApiDatasource {
         body: {'roomId': roomId},
       );
       final data = response.data;
-      print("$data");
-      print("디버그 포인트");
       final result = RoomInfoEntity.fromJson(data);
       return result;
     } catch (e) {
-      print("방 정보 가져오기 실패 : ${e}");
       return null;
     }
   }
