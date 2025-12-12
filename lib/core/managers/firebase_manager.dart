@@ -536,6 +536,11 @@ class FirebaseManager {
         final String roomId = deepLinkData['room_id']?.toString() ?? '0';
         return '/chat/room?itemId=$itemId&roomId=$roomId';
       case 'NEW_ITEM':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/$itemId';
+      case 'AUCTION_START':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/$itemId';
       case 'NEW_BID':
         // 게시물 ID를 사용하여 해당 게시물 상세 페이지로 이동
         final String postId = deepLinkData['post_id']?.toString() ?? '0';
