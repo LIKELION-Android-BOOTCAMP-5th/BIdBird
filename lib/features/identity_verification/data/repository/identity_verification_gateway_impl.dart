@@ -1,6 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/item/identity_verification/data/repository/identity_verification_gateway.dart';
-import 'package:bidbird/features/item/identity_verification/screen/identity_verification_webview_screen.dart';
+import 'package:bidbird/features/identity_verification/data/repository/identity_verification_gateway.dart';
+import 'package:bidbird/features/identity_verification/screen/identity_verification_webview_screen.dart';
 import 'package:flutter/material.dart';
 
 class IdentityVerificationGatewayImpl implements IdentityVerificationGateway {

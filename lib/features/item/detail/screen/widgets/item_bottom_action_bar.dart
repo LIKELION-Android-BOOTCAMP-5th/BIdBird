@@ -14,7 +14,7 @@ import '../../../bottom_sheet_buy_now_input/screen/bottom_sheet_buy_now_input.da
 import '../../../bottom_sheet_buy_now_input/viewmodel/buy_now_input_viewmodel.dart';
 import '../../../bottom_sheet_price_Input/screen/price_input_screen.dart';
 import '../../../bottom_sheet_price_Input/viewmodel/price_input_viewmodel.dart';
-import '../../../identity_verification/data/repository/identity_verification_gateway_impl.dart';
+import 'package:bidbird/features/identity_verification/widget/identity_verification_helper.dart';
 import '../../../item_bid_win/model/item_bid_win_entity.dart';
 import '../../../item_bid_win/screen/item_bid_win_screen.dart';
 import '../../../../../core/widgets/components/pop_up/ask_popup.dart';
@@ -44,65 +44,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       CheckBidRestrictionUseCase(BidRestrictionGatewayImpl());
 
   Future<bool> _ensureIdentityVerified() async {
-    final gateway = IdentityVerificationGatewayImpl();
-
-    // 1. 먼저 서버에서 CI 존재 여부 확인 (BuildContext 사용 없음)
-    try {
-      final hasCi = await gateway.hasCi();
-      if (hasCi) {
-        // 이미 CI 가 있으면 팝업/본인인증 없이 바로 통과
-        return true;
-      }
-    } catch (e) {
-      // CI 조회 실패 시에는 아래 본인인증 플로우로 유도
-    }
-
-    bool proceed = false;
-
-    // 2. CI 가 없을 때만 AskPopup 으로 본인인증 안내
     if (!mounted) return false;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        return AskPopup(
-          content: '입찰 및 즉시 구매를 위해서는 본인 인증이 필요합니다.\n지금 본인 인증을 진행하시겠습니까?',
-          noText: '취소',
-          yesText: '확인',
-          yesLogic: () async {
-            proceed = true;
-            Navigator.of(dialogContext).pop();
-          },
-        );
-      },
+    return await ensureIdentityVerified(
+      context,
+      message: '입찰 및 즉시 구매를 위해서는 본인 인증이 필요합니다.\n지금 본인 인증을 진행하시겠습니까?',
     );
-
-    if (!proceed) {
-      return false;
-    }
-
-    try {
-      if (!mounted) return false;
-
-      final success = await gateway.requestIdentityVerification(context);
-      if (!mounted) return false;
-      if (!success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('본인 인증 후 이용 가능합니다.'),
-          ),
-        );
-      }
-      return success;
-    } catch (e) {
-      if (!mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('본인 인증 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.\n$e'),
-        ),
-      );
-      return false;
-    }
   }
 
   @override

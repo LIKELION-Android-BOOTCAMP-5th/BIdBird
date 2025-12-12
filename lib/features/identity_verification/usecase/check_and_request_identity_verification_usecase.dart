@@ -1,4 +1,4 @@
-import 'package:bidbird/features/item/identity_verification/data/repository/identity_verification_gateway.dart';
+import 'package:bidbird/features/identity_verification/data/repository/identity_verification_gateway.dart';
 import 'package:flutter/widgets.dart';
 
 class CheckAndRequestIdentityVerificationUseCase {
