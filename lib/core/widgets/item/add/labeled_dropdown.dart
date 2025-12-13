@@ -39,13 +39,23 @@ class LabeledDropdown<T> extends StatelessWidget {
             ),
           ),
         DropdownButtonFormField<T>(
-          initialValue: value,
+          value: value,
           items: items,
           onChanged: onChanged,
           decoration: decoration,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: items.isEmpty 
+                ? const Color(0xFF9CA3AF) 
+                : const Color(0xFF6B7280),
+          ),
           dropdownColor: Colors.white,
-          style: TextStyle(fontSize: itemFontSize, color: Colors.black87),
+          style: TextStyle(
+            fontSize: itemFontSize,
+            color: items.isEmpty 
+                ? const Color(0xFF9CA3AF) 
+                : const Color(0xFF111111),
+          ),
         ),
       ],
     );

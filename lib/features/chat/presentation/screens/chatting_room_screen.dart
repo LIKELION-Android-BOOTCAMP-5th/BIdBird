@@ -11,6 +11,7 @@ import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom
 import 'package:bidbird/core/widgets/video_player_widget.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
+import 'package:bidbird/features/report/ui/report_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -157,7 +158,48 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                     iconColor: textColor,
                     itemBuilder: (context) => [
                       PopupMenuItem(onTap: () {}, child: Text("차단")),
-                      PopupMenuItem(onTap: () {}, child: Text("신고")),
+                      PopupMenuItem(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          if (viewModel.roomInfo != null) {
+                            // 상대방 ID 찾기: itemInfo의 sellerId와 현재 사용자 비교
+                            final currentUserId = SupabaseManager
+                                .shared
+                                .supabase
+                                .auth
+                                .currentUser
+                                ?.id;
+                            String? targetUserId;
+                            
+                            if (currentUserId != null && viewModel.itemInfo != null) {
+                              // 현재 사용자가 판매자가 아니면 판매자를, 판매자면 buyer를 찾아야 함
+                              // 일단 판매자를 상대방으로 가정 (채팅방에서는 보통 상대방이 판매자)
+                              if (viewModel.itemInfo!.sellerId != currentUserId) {
+                                targetUserId = viewModel.itemInfo!.sellerId;
+                              } else {
+                                // 현재 사용자가 판매자인 경우, buyer_id를 찾아야 함
+                                // tradeInfo에서 buyerId를 가져올 수 있음
+                                targetUserId = viewModel.tradeInfo?.buyerId;
+                              }
+                            }
+                            
+                            if (targetUserId != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ReportScreen(
+                                    itemId: viewModel.itemId,
+                                    itemTitle: viewModel.itemInfo?.title,
+                                    targetUserId: targetUserId!,
+                                    targetNickname: viewModel.roomInfo!.opponent.nickName,
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: Text("신고"),
+                      ),
                       PopupMenuItem(
                         onTap: () {
                           if (viewModel.notificationSetting != null) {
