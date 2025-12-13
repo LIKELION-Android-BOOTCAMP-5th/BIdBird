@@ -1,12 +1,13 @@
 import 'dart:async';
 
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:bidbird/core/utils/identity_verification/identity_verification_helper.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
-import 'package:bidbird/core/utils/identity_verification/identity_verification_helper.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,6 @@ import 'package:provider/provider.dart';
 import '../../../core/utils/extension/money_extension.dart';
 import '../../../core/utils/ui_set/border_radius_style.dart';
 import '../../../core/utils/ui_set/shadow_style.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import '../data/repository/home_repository.dart';
 import 'home_timer_section.dart';
 
@@ -256,32 +256,55 @@ class _HomeScreenState extends State<HomeScreen> {
                                                             defaultBorder,
                                                         child: Builder(
                                                           builder: (context) {
-                                                            final bool isVideo = isVideoFile(item.thumbnail_image);
-                                                            final String displayUrl = isVideo
-                                                                ? getVideoThumbnailUrl(item.thumbnail_image)
+                                                            final bool
+                                                            isVideo = isVideoFile(
+                                                              item.thumbnail_image,
+                                                            );
+                                                            final String
+                                                            displayUrl = isVideo
+                                                                ? getVideoThumbnailUrl(
+                                                                    item.thumbnail_image,
+                                                                  )
                                                                 : item.thumbnail_image;
-                                                            
+
                                                             return CachedNetworkImage(
-                                                              imageUrl: displayUrl,
+                                                              imageUrl:
+                                                                  displayUrl,
                                                               cacheManager:
                                                                   ItemImageCacheManager
                                                                       .instance,
                                                               fit: BoxFit.cover,
-                                                              placeholder: (context, url) => Container(
-                                                                color: ImageBackgroundColor,
-                                                                child: const Center(
-                                                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                                                ),
-                                                              ),
-                                                              errorWidget: (context, url, error) => Container(
-                                                                color: ImageBackgroundColor,
-                                                                child: const Center(
-                                                                  child: Icon(
-                                                                    Icons.image_not_supported,
-                                                                    color: iconColor,
+                                                              placeholder:
+                                                                  (
+                                                                    context,
+                                                                    url,
+                                                                  ) => Container(
+                                                                    color:
+                                                                        ImageBackgroundColor,
+                                                                    child: const Center(
+                                                                      child: CircularProgressIndicator(
+                                                                        strokeWidth:
+                                                                            2,
+                                                                      ),
+                                                                    ),
                                                                   ),
-                                                                ),
-                                                              ),
+                                                              errorWidget:
+                                                                  (
+                                                                    context,
+                                                                    url,
+                                                                    error,
+                                                                  ) => Container(
+                                                                    color:
+                                                                        ImageBackgroundColor,
+                                                                    child: const Center(
+                                                                      child: Icon(
+                                                                        Icons
+                                                                            .image_not_supported,
+                                                                        color:
+                                                                            iconColor,
+                                                                      ),
+                                                                    ),
+                                                                  ),
                                                             );
                                                           },
                                                         ),
@@ -537,32 +560,55 @@ class _HomeScreenState extends State<HomeScreen> {
                                                             defaultBorder,
                                                         child: Builder(
                                                           builder: (context) {
-                                                            final bool isVideo = isVideoFile(item.thumbnail_image);
-                                                            final String displayUrl = isVideo
-                                                                ? getVideoThumbnailUrl(item.thumbnail_image)
+                                                            final bool
+                                                            isVideo = isVideoFile(
+                                                              item.thumbnail_image,
+                                                            );
+                                                            final String
+                                                            displayUrl = isVideo
+                                                                ? getVideoThumbnailUrl(
+                                                                    item.thumbnail_image,
+                                                                  )
                                                                 : item.thumbnail_image;
-                                                            
+
                                                             return CachedNetworkImage(
-                                                              imageUrl: displayUrl,
+                                                              imageUrl:
+                                                                  displayUrl,
                                                               cacheManager:
                                                                   ItemImageCacheManager
                                                                       .instance,
                                                               fit: BoxFit.cover,
-                                                              placeholder: (context, url) => Container(
-                                                                color: ImageBackgroundColor,
-                                                                child: const Center(
-                                                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                                                ),
-                                                              ),
-                                                              errorWidget: (context, url, error) => Container(
-                                                                color: ImageBackgroundColor,
-                                                                child: const Center(
-                                                                  child: Icon(
-                                                                    Icons.image_not_supported,
-                                                                    color: iconColor,
+                                                              placeholder:
+                                                                  (
+                                                                    context,
+                                                                    url,
+                                                                  ) => Container(
+                                                                    color:
+                                                                        ImageBackgroundColor,
+                                                                    child: const Center(
+                                                                      child: CircularProgressIndicator(
+                                                                        strokeWidth:
+                                                                            2,
+                                                                      ),
+                                                                    ),
                                                                   ),
-                                                                ),
-                                                              ),
+                                                              errorWidget:
+                                                                  (
+                                                                    context,
+                                                                    url,
+                                                                    error,
+                                                                  ) => Container(
+                                                                    color:
+                                                                        ImageBackgroundColor,
+                                                                    child: const Center(
+                                                                      child: Icon(
+                                                                        Icons
+                                                                            .image_not_supported,
+                                                                        color:
+                                                                            iconColor,
+                                                                      ),
+                                                                    ),
+                                                                  ),
                                                             );
                                                           },
                                                         ),

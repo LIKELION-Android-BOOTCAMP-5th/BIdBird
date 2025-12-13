@@ -18,11 +18,13 @@ class BottomNavBar extends StatelessWidget {
     if (location.startsWith('/mypage')) currentIndex = 3;
 
     return BottomNavigationBar(
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
+      // showSelectedLabels: false,
+      // showUnselectedLabels: false,
       backgroundColor: Colors.white,
       unselectedItemColor: iconColor,
       currentIndex: currentIndex,
+      selectedLabelStyle: const TextStyle(color: Colors.black),
+      selectedItemColor: Colors.black,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
         switch (index) {
@@ -52,7 +54,7 @@ class BottomNavBar extends StatelessWidget {
             width: iconSize.width,
             height: iconSize.height,
           ),
-          label: '',
+          label: '홈',
         ),
         BottomNavigationBarItem(
           icon: Image.asset(
@@ -65,7 +67,7 @@ class BottomNavBar extends StatelessWidget {
             width: iconSize.width,
             height: iconSize.height,
           ),
-          label: '',
+          label: '현재 거래',
         ),
         BottomNavigationBarItem(
           icon: Image.asset(
@@ -78,7 +80,7 @@ class BottomNavBar extends StatelessWidget {
             width: iconSize.width,
             height: iconSize.height,
           ),
-          label: '',
+          label: '채팅',
         ),
         BottomNavigationBarItem(
           icon: Image.asset(
@@ -91,7 +93,7 @@ class BottomNavBar extends StatelessWidget {
             width: iconSize.width,
             height: iconSize.height,
           ),
-          label: '',
+          label: '마이페이지',
         ),
       ],
     );
