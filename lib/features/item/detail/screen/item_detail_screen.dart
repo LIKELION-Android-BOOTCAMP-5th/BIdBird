@@ -70,7 +70,12 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const ReportScreen(),
+                      builder: (_) => ReportScreen(
+                        itemId: item.itemId,
+                        itemTitle: item.itemTitle,
+                        targetUserId: item.sellerId,
+                        targetNickname: vm.sellerProfile?['nick_name'] as String?,
+                      ),
                     ),
                   );
                 },
