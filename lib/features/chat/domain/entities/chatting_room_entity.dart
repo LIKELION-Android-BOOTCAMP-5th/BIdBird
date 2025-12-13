@@ -7,7 +7,7 @@ class ChattingRoomEntity {
   final String lastMessage;
   final String lastMessageSendAt;
   final String itemTitle;
-  final int? count;
+  int? count;
   ChattingRoomEntity({
     required this.id,
     required this.itemId,

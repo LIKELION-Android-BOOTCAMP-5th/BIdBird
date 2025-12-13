@@ -58,51 +58,65 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   bool _isScrollPositionSet = false; // 스크롤 위치가 설정되었는지 여부
   bool _shouldScrollToBottom = false; // 하단으로 스크롤해야 하는지 여부 (false면 상단)
   bool _isScrollPositionReady = false; // 스크롤 위치가 준비되어 화면을 표시해도 되는지 여부
-  
+
   bool get isScrollPositionReady => _isScrollPositionReady;
 
   final ChatRepositoryImpl _repository = ChatRepositoryImpl();
-  
+
   // UseCases - 생성자에서 직접 초기화
-  late final GetMessagesUseCase _getMessagesUseCase = GetMessagesUseCase(_repository);
-  late final GetOlderMessagesUseCase _getOlderMessagesUseCase = GetOlderMessagesUseCase(_repository);
+  late final GetMessagesUseCase _getMessagesUseCase = GetMessagesUseCase(
+    _repository,
+  );
+  late final GetOlderMessagesUseCase _getOlderMessagesUseCase =
+      GetOlderMessagesUseCase(_repository);
   late final GetRoomIdUseCase _getRoomIdUseCase = GetRoomIdUseCase(_repository);
-  late final GetRoomInfoUseCase _getRoomInfoUseCase = GetRoomInfoUseCase(_repository);
-  late final GetRoomInfoWithRoomIdUseCase _getRoomInfoWithRoomIdUseCase = GetRoomInfoWithRoomIdUseCase(_repository);
-  late final GetRoomNotificationSettingUseCase _getRoomNotificationSettingUseCase = GetRoomNotificationSettingUseCase(_repository);
-  late final SendTextMessageUseCase _sendTextMessageUseCase = SendTextMessageUseCase(_repository);
-  late final SendImageMessageUseCase _sendImageMessageUseCase = SendImageMessageUseCase(_repository);
-  late final SendFirstMessageUseCase _sendFirstMessageUseCase = SendFirstMessageUseCase(_repository);
-  late final TurnOnNotificationUseCase _turnOnNotificationUseCase = TurnOnNotificationUseCase(_repository);
-  late final TurnOffNotificationUseCase _turnOffNotificationUseCase = TurnOffNotificationUseCase(_repository);
-  
+  late final GetRoomInfoUseCase _getRoomInfoUseCase = GetRoomInfoUseCase(
+    _repository,
+  );
+  late final GetRoomInfoWithRoomIdUseCase _getRoomInfoWithRoomIdUseCase =
+      GetRoomInfoWithRoomIdUseCase(_repository);
+  late final GetRoomNotificationSettingUseCase
+  _getRoomNotificationSettingUseCase = GetRoomNotificationSettingUseCase(
+    _repository,
+  );
+  late final SendTextMessageUseCase _sendTextMessageUseCase =
+      SendTextMessageUseCase(_repository);
+  late final SendImageMessageUseCase _sendImageMessageUseCase =
+      SendImageMessageUseCase(_repository);
+  late final SendFirstMessageUseCase _sendFirstMessageUseCase =
+      SendFirstMessageUseCase(_repository);
+  late final TurnOnNotificationUseCase _turnOnNotificationUseCase =
+      TurnOnNotificationUseCase(_repository);
+  late final TurnOffNotificationUseCase _turnOffNotificationUseCase =
+      TurnOffNotificationUseCase(_repository);
+
   // 스크롤 위치 설정 및 화면 표시 (pre-render 단계)
   void _setScrollPositionAndShow() {
     if (!isInitialLoad || _isScrollPositionReady) {
       return;
     }
-    
+
     if (!scrollController.hasClients) {
       // ignore: avoid_print
       print('[스크롤 위치 설정] scrollController.hasClients=false, 재시도');
       return;
     }
-    
+
     if (messages.isEmpty) {
       // ignore: avoid_print
       print('[스크롤 위치 설정] messages.isEmpty, 재시도');
       return;
     }
-    
+
     final maxScroll = scrollController.position.maxScrollExtent;
-    
+
     // maxScrollExtent가 0이면 아직 레이아웃이 완료되지 않은 것
     if (maxScroll == 0) {
       // ignore: avoid_print
       print('[스크롤 위치 설정] maxScroll=0, 재시도');
       return;
     }
-    
+
     // 스크롤 위치 계산 및 즉시 적용 (애니메이션 없이)
     if (_shouldScrollToBottom) {
       scrollController.jumpTo(maxScroll);
@@ -113,7 +127,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       // ignore: avoid_print
       print('[Pre-render 위치 설정] 상단으로 설정');
     }
-    
+
     // 스크롤 위치 설정 완료 후 즉시 physics를 ClampingScrollPhysics로 변경하고 화면 표시 허용
     listViewPhysics = const ClampingScrollPhysics();
     _isScrollPositionSet = true;
@@ -122,13 +136,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     notifyListeners();
     // ignore: avoid_print
     print('[Pre-render 위치 설정 완료] 화면 표시 준비 완료: maxScroll=$maxScroll');
-    
+
     // 한 번 더 확인하여 확실하게 위치 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
         final finalMaxScroll = scrollController.position.maxScrollExtent;
         final currentScroll = scrollController.position.pixels;
-        
+
         if (_shouldScrollToBottom && currentScroll < finalMaxScroll - 1) {
           scrollController.jumpTo(finalMaxScroll);
         } else if (!_shouldScrollToBottom && currentScroll > 1) {
@@ -137,18 +151,21 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       }
     });
   }
-  
+
   ChattingRoomViewmodel({required this.itemId, required this.roomId}) {
     // UseCases는 필드 초기화로 자동 초기화됨
-    
+
     // roomInfo와 messages를 모두 로드
     fetchRoomInfo();
     fetchMessage();
-    
+
     // 스크롤 컨트롤러가 처음 연결될 때 즉시 초기 위치 설정
     // 이 리스너는 ListView가 빌드되고 스크롤 컨트롤러가 연결될 때 즉시 실행됨
     scrollController.addListener(() {
-      if (isInitialLoad && !_isScrollPositionSet && scrollController.hasClients && messages.isNotEmpty) {
+      if (isInitialLoad &&
+          !_isScrollPositionSet &&
+          scrollController.hasClients &&
+          messages.isNotEmpty) {
         final maxScroll = scrollController.position.maxScrollExtent;
         if (maxScroll > 0) {
           if (_shouldScrollToBottom) {
@@ -159,13 +176,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
             _isScrollPositionSet = true;
             isInitialLoad = false;
             // 즉시 한 번 더 확인하여 확실하게 하단으로 이동
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
               if (scrollController.hasClients) {
                 final newMaxScroll = scrollController.position.maxScrollExtent;
                 final newCurrentScroll = scrollController.position.pixels;
                 if (newCurrentScroll < newMaxScroll - 1) {
                   // ignore: avoid_print
-                  print('[스크롤 리스너] 하단으로 재이동: newMaxScroll=$newMaxScroll, newCurrentScroll=$newCurrentScroll');
+                  print(
+                    '[스크롤 리스너] 하단으로 재이동: newMaxScroll=$newMaxScroll, newCurrentScroll=$newCurrentScroll',
+                  );
                   scrollController.jumpTo(newMaxScroll);
                 }
               }
@@ -183,11 +202,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
                 final newCurrentScroll = scrollController.position.pixels;
                 if (newCurrentScroll > 1) {
                   // ignore: avoid_print
-                  print('[스크롤 리스너] 상단으로 재이동: newCurrentScroll=$newCurrentScroll');
+                  print(
+                    '[스크롤 리스너] 상단으로 재이동: newCurrentScroll=$newCurrentScroll',
+                  );
                   scrollController.jumpTo(0);
                 }
-            }
-          });
+              }
+            });
           }
         }
       }
@@ -203,7 +224,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           loadMoreMessages();
         }
       });
-      
+
       // 사용자가 수동으로 스크롤하는지 감지
       if (!isInitialLoad) {
         isUserScrolling = true;
@@ -227,30 +248,34 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   Future<void> fetchRoomInfo() async {
     final currentRoomId = roomId;
     RoomInfoEntity? newRoomInfo;
-    if (currentRoomId != null) {
-      newRoomInfo = await _getRoomInfoWithRoomIdUseCase(currentRoomId);
-    } else {
-      newRoomInfo = await _getRoomInfoUseCase(itemId);
+    try {
+      if (currentRoomId != null) {
+        newRoomInfo = await _getRoomInfoWithRoomIdUseCase(currentRoomId);
+      } else {
+        newRoomInfo = await _getRoomInfoUseCase(itemId);
+      }
+    } catch (e) {
+      print("방 정보 가져오기 실패: $e");
     }
-    
+
     final newUnreadCount = newRoomInfo?.unreadCount ?? 0;
-    
+
     // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
     if (messages.isNotEmpty) {
       _markMessagesAsReadUpToLastViewed(newUnreadCount);
     }
-    
+
     // unreadCount 변경 감지: 이전에 읽지 않은 메시지가 있었는데 지금 0이 되면 하단으로 스크롤
     // 단, 사용자가 수동으로 스크롤 중이 아니고, 초기 로드가 아닐 때만
-    if (previousUnreadCount != null && 
-        previousUnreadCount! > 0 && 
+    if (previousUnreadCount != null &&
+        previousUnreadCount! > 0 &&
         newUnreadCount == 0 &&
         !isUserScrolling &&
         !isInitialLoad) {
       // 강제로 하단으로 스크롤
       scrollToBottom(force: true);
     }
-    
+
     previousUnreadCount = newUnreadCount;
     roomInfo = newRoomInfo;
     itemInfo = roomInfo?.item;
@@ -259,7 +284,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     setupRealtimeRoomInfoSubscription();
     notifyListeners();
   }
-  
+
   // 디바운스를 적용한 fetchRoomInfo 호출
   void fetchRoomInfoDebounced() {
     if (_fetchRoomInfoDebounce?.isActive ?? false) {
@@ -269,18 +294,18 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       fetchRoomInfo();
     });
   }
-  
+
   // 하단으로 스크롤하는 메서드
   void scrollToBottom({bool force = false, bool instant = false}) {
     if (!scrollController.hasClients || messages.isEmpty) {
       return;
     }
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
         final maxScroll = scrollController.position.maxScrollExtent;
         final currentScroll = scrollController.position.pixels;
-        
+
         // 이미 하단 근처(50px 이내)에 있고 force가 false면 스크롤하지 않음
         if (!force && (maxScroll - currentScroll) <= 50) {
           return;
@@ -301,26 +326,26 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
   void _markMessagesAsReadUpToLastViewed(int unreadCount) {
     if (messages.isEmpty) return;
-    
+
     final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (userId == null) return;
-    
+
     // unread_count가 0이면 모든 메시지가 읽음 처리됨
     if (unreadCount <= 0) {
       // 모든 메시지가 읽음 처리된 상태
       return;
     }
-    
+
     // unread_count를 기반으로 마지막으로 본 메시지 인덱스 계산
     // unread_count가 N이면, 최신 메시지부터 N개가 읽지 않은 메시지
     // 따라서 messages.length - unreadCount 번째 메시지가 마지막으로 본 메시지
     final lastViewedIndex = messages.length - unreadCount;
-    
+
     if (lastViewedIndex < 0 || lastViewedIndex >= messages.length) {
       // 인덱스가 유효하지 않으면 처리하지 않음
       return;
     }
-    
+
     // 마지막으로 본 메시지의 시간 가져오기
     final lastViewedMessage = messages[lastViewedIndex];
     DateTime? lastViewedTime;
@@ -330,26 +355,29 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       // 날짜 파싱 오류 시 처리하지 않음
       return;
     }
-    
+
     // 마지막으로 본 메시지 시간 이하의 모든 메시지를 읽음 처리
     // (본인이 보낸 메시지는 제외)
     for (int i = 0; i < messages.length; i++) {
       try {
         final messageTime = DateTime.parse(messages[i].createdAt).toLocal();
         // 마지막으로 본 메시지 시간 이하이고, 본인이 보낸 메시지가 아니면 읽음 처리
-        if (!messageTime.isAfter(lastViewedTime) && messages[i].senderId != userId) {
+        if (!messageTime.isAfter(lastViewedTime) &&
+            messages[i].senderId != userId) {
           // 여기서는 메시지 엔티티에 읽음 표시를 할 수 없으므로
           // roomInfo의 lastMessageAt을 업데이트하는 것으로 대체
           // 실제 읽음 처리는 서버에서 처리되므로 여기서는 로그만 남김
           // ignore: avoid_print
-          print('[읽음 처리] 메시지 ${messages[i].id} 읽음 처리 (마지막으로 본 메시지: ${lastViewedMessage.id})');
+          print(
+            '[읽음 처리] 메시지 ${messages[i].id} 읽음 처리 (마지막으로 본 메시지: ${lastViewedMessage.id})',
+          );
         }
       } catch (e) {
         // 날짜 파싱 오류 무시
         continue;
       }
     }
-    
+
     // roomInfo의 lastMessageAt을 마지막으로 본 메시지 시간으로 업데이트
     if (roomInfo != null) {
       // roomInfo는 immutable이므로 직접 업데이트할 수 없음
@@ -363,14 +391,14 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   int findFirstUnreadMessageIndex() {
     final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (userId == null || roomInfo == null || messages.isEmpty) return -1;
-    
+
     // 읽지 않은 메시지가 없으면 -1 반환
     if (roomInfo!.unreadCount <= 0) return -1;
-    
+
     // 마지막 메시지 시간 가져오기
     final lastMessageTime = roomInfo!.lastMessageAt;
     if (lastMessageTime == null) return -1;
-    
+
     // 마지막 메시지 시간 이후의 첫 번째 메시지 찾기
     for (int i = 0; i < messages.length; i++) {
       try {
@@ -383,14 +411,18 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         continue;
       }
     }
-    
+
     return -1; // 읽지 않은 메시지를 찾을 수 없음
   }
-  
+
   // 첫 번째 읽지 않은 메시지로 스크롤
-  void scrollToFirstUnreadMessage(ScrollController scrollController, BuildContext? context, {bool instant = false}) {
+  void scrollToFirstUnreadMessage(
+    ScrollController scrollController,
+    BuildContext? context, {
+    bool instant = false,
+  }) {
     if (hasScrolledToUnread || messages.isEmpty) return;
-    
+
     final index = findFirstUnreadMessageIndex();
     if (index >= 0) {
       // 레이아웃이 완료된 후에 스크롤 수행
@@ -421,21 +453,21 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     try {
       // ignore: avoid_print
       print('fetchMessage 시작: roomId=$roomId, itemId=$itemId');
-      
-    final currentRoomId = roomId;
-    if (currentRoomId != null) {
+
+      final currentRoomId = roomId;
+      if (currentRoomId != null) {
         // ignore: avoid_print
         print('roomId로 메시지 불러오기 시작: $currentRoomId');
         final chattings = await _getMessagesUseCase(currentRoomId);
         // ignore: avoid_print
         print('메시지 불러오기 완료: ${chattings.length}개');
-        
+
         messages.clear(); // 기존 메시지 초기화
-      messages.addAll(chattings);
-      hasMore = chattings.length >= 50;
-      hasScrolledToUnread = false; // 스크롤 플래그 초기화
+        messages.addAll(chattings);
+        hasMore = chattings.length >= 50;
+        hasScrolledToUnread = false; // 스크롤 플래그 초기화
         _isScrollPositionSet = false; // 스크롤 위치 설정 플래그 초기화
-        
+
         // 초기 로드 시 항상 하단으로 위치
         if (isInitialLoad && messages.isNotEmpty) {
           // 읽지 않은 메시지가 있든 없든 항상 하단(최신 메시지)으로
@@ -444,45 +476,45 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         } else {
           _isScrollPositionReady = true; // 초기 로드가 아니면 즉시 화면 표시
         }
-        
+
         // 초기 로드 시 스크롤 위치를 화면 표시 전에 미리 계산 및 설정
-      if (isInitialLoad && messages.isNotEmpty) {
+        if (isInitialLoad && messages.isNotEmpty) {
           // 1. ListView의 physics를 처음에 NeverScrollableScrollPhysics로 설정하여 스크롤 방지
           listViewPhysics = const NeverScrollableScrollPhysics();
           _isScrollPositionReady = false; // 아직 준비되지 않음
           notifyListeners();
-          
+
           // 2. 첫 번째 프레임에서 즉시 스크롤 위치 계산 및 설정 (pre-render 단계)
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             _setScrollPositionAndShow();
           });
-          
+
           // 추가로 여러 프레임에 걸쳐 시도
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!_isScrollPositionReady) {
               _setScrollPositionAndShow();
             }
           });
-          
+
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!_isScrollPositionReady) {
               _setScrollPositionAndShow();
             }
           });
-          
+
           // 약간의 지연 후에도 시도
           Future.delayed(const Duration(milliseconds: 10), () {
             if (!_isScrollPositionReady && isInitialLoad) {
               _setScrollPositionAndShow();
             }
           });
-          
+
           Future.delayed(const Duration(milliseconds: 50), () {
             if (!_isScrollPositionReady && isInitialLoad) {
               _setScrollPositionAndShow();
             }
           });
-          
+
           // 최대 200ms 후에는 강제로 화면 표시 (타임아웃)
           Future.delayed(const Duration(milliseconds: 200), () {
             if (!_isScrollPositionReady && isInitialLoad) {
@@ -493,13 +525,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
               _isScrollPositionReady = true;
               isInitialLoad = false;
               notifyListeners();
-      }
+            }
           });
-    } else {
+        } else {
           _isScrollPositionReady = true;
           notifyListeners();
         }
-        
+
         setupRealtimeSubscription();
         init();
       } else {
@@ -509,7 +541,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         final fetchedRoomId = await _getRoomIdUseCase(itemId);
         // ignore: avoid_print
         print('가져온 roomId: $fetchedRoomId');
-        
+
         if (fetchedRoomId != null) {
           roomId = fetchedRoomId;
           await fetchMessage(); // 재귀 호출로 다시 시도
@@ -572,11 +604,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         try {
           final String? mediaUrl;
           if (isVideoFile(thisImage.path)) {
-            mediaUrl = await CloudinaryManager.shared
-                .uploadVideoToCloudinary(thisImage);
+            mediaUrl = await CloudinaryManager.shared.uploadVideoToCloudinary(
+              thisImage,
+            );
           } else {
-            mediaUrl = await CloudinaryManager.shared
-                .uploadImageToCloudinary(thisImage);
+            mediaUrl = await CloudinaryManager.shared.uploadImageToCloudinary(
+              thisImage,
+            );
           }
           if (mediaUrl == null) {
             isSending = false;
@@ -615,10 +649,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           return;
         }
         try {
-          await _sendTextMessageUseCase(
-            currentRoomId,
-            messageController.text,
-          );
+          await _sendTextMessageUseCase(currentRoomId, messageController.text);
         } catch (e) {
           // ignore: avoid_print
           print('메세지 전송 실패 : $e');
@@ -641,11 +672,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         try {
           final String? mediaUrl;
           if (isVideoFile(thisImage.path)) {
-            mediaUrl = await CloudinaryManager.shared
-                .uploadVideoToCloudinary(thisImage);
+            mediaUrl = await CloudinaryManager.shared.uploadVideoToCloudinary(
+              thisImage,
+            );
           } else {
-            mediaUrl = await CloudinaryManager.shared
-                .uploadImageToCloudinary(thisImage);
+            mediaUrl = await CloudinaryManager.shared.uploadImageToCloudinary(
+              thisImage,
+            );
           }
           if (mediaUrl == null) {
             isSending = false;
@@ -674,15 +707,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   Future<void> init() async {
     final thisRoomId = roomId;
     if (thisRoomId == null) return;
-    
+
     // enterRoom을 호출하여 읽음 처리 초기화
     try {
-    await chattingRoomService.enterRoom(thisRoomId);
+      await chattingRoomService.enterRoom(thisRoomId);
     } catch (e) {
       // ignore: avoid_print
       print("enterRoom 실패: $e");
     }
-    
+
     await getRoomNotificationSetting();
     heartbeatManager.start(thisRoomId);
     isActive = true;
@@ -728,13 +761,10 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> getRoomNotificationSetting() async {
     final thisRoomId = roomId;
     if (thisRoomId == null) return;
-    notificationSetting = await _getRoomNotificationSettingUseCase(
-      thisRoomId,
-    );
+    notificationSetting = await _getRoomNotificationSettingUseCase(thisRoomId);
     notifyListeners();
   }
 
@@ -780,7 +810,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       SupabaseManager.shared.supabase.removeChannel(_roomUsersChannel!);
       _roomUsersChannel = null;
     }
-    
+
     _itemsChannel = SupabaseManager.shared.supabase.channel(
       'items_detail$itemId',
     );
@@ -842,7 +872,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
           callback: (payload) {
             final data = payload.newRecord;
-            
+
             final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
             if (userId == null || data['buyer_id'] != userId) {
               return; // 조건 안 맞으면 무시
@@ -866,7 +896,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           },
         )
         .subscribe();
-    
+
     // chatting_room_users 테이블의 unread_count 변경 감지
     final currentRoomId = roomId;
     final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
@@ -886,18 +916,18 @@ class ChattingRoomViewmodel extends ChangeNotifier {
             ),
             callback: (payload) {
               final data = payload.newRecord;
-              
+
               // 현재 사용자의 unread_count만 확인
               if (data['user_id'] == userId) {
                 final newUnreadCount = data['unread_count'] as int? ?? 0;
-                
+
                 // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
                 _markMessagesAsReadUpToLastViewed(newUnreadCount);
-                
+
                 // 이전에 읽지 않은 메시지가 있었는데 지금 0이 되면 하단으로 스크롤
                 // 단, 사용자가 수동으로 스크롤 중이 아닐 때만
-                if (previousUnreadCount != null && 
-                    previousUnreadCount! > 0 && 
+                if (previousUnreadCount != null &&
+                    previousUnreadCount! > 0 &&
                     newUnreadCount == 0 &&
                     !isUserScrolling) {
                   // 강제로 하단으로 스크롤
@@ -937,7 +967,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
                 ChatMessageEntity.fromJson(newMessage);
             messages.add(newChattingMessage);
             notifyListeners();
-            
+
             // 본인이 보낸 메시지일 때만 하단으로 스크롤
             final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
             if (userId != null && newChattingMessage.senderId == userId) {
@@ -959,7 +989,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         print("disposeViewModel 실패: $e");
       });
     }
-    
+
     _fetchRoomInfoDebounce?.cancel();
     _userScrollingDebounce?.cancel();
     if (_subscribeMessageChannel != null) {
@@ -1009,9 +1039,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
   Future<void> pickVideoFromGallery() async {
-    final XFile? video = await _picker.pickVideo(
-      source: ImageSource.gallery,
-    );
+    final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
     if (video == null) {
       return;
     }
@@ -1043,7 +1071,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     try {
       final oldestMessage = messages.first;
       final beforeCreatedAtIso = oldestMessage.createdAt;
-      
+
       // 현재 스크롤 위치 저장
       double? previousScrollOffset;
       if (scrollController.hasClients) {
@@ -1063,7 +1091,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         if (olderMessages.length < 50) {
           hasMore = false;
         }
-        
+
         // 스크롤 위치 유지 (새로 추가된 메시지 높이만큼 오프셋 조정)
         if (previousScrollOffset != null && scrollController.hasClients) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

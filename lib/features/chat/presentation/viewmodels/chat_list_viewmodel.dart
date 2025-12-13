@@ -39,7 +39,9 @@ class ChatListViewmodel extends ChangeNotifier {
       chattingRoomList = newList;
       notifyListeners();
       // ignore: avoid_print
-      print("reloadList 완료: ${chattingRoomList.length}개 채팅방, unread_count 확인 중...");
+      print(
+        "reloadList 완료: ${chattingRoomList.length}개 채팅방, unread_count 확인 중...",
+      );
       for (var room in chattingRoomList) {
         if (room.count != null && room.count! > 0) {
           // ignore: avoid_print
@@ -59,10 +61,10 @@ class ChatListViewmodel extends ChangeNotifier {
       print("실시간 구독 설정 실패: currentId가 null");
       return;
     }
-    
+
     // ignore: avoid_print
     print("실시간 구독 설정 시작: currentId=$currentId");
-    
+
     _isBuyerChannel = SupabaseManager.shared.supabase.channel(
       'chattingRoomByBuyer',
     );
@@ -104,7 +106,7 @@ class ChatListViewmodel extends ChangeNotifier {
           },
         )
         .subscribe();
-    
+
     // chatting_room_users 테이블의 unread_count 변경 감지
     // 현재 사용자의 unread_count가 변경되면 채팅 리스트 업데이트
     _roomUsersChannel = SupabaseManager.shared.supabase.channel(
@@ -124,58 +126,67 @@ class ChatListViewmodel extends ChangeNotifier {
             // ignore: avoid_print
             print("실시간 업데이트: chatting_room_users 테이블 변경 감지");
             final data = payload.newRecord;
+            final oldData = payload.oldRecord;
             if (data == null) {
               // ignore: avoid_print
               print("실시간 업데이트: newRecord가 null");
               return;
             }
-            
-            // unread_count가 변경되면 해당 채팅방의 정보만 업데이트
-            final roomId = data['room_id'] as String?;
-            final unreadCount = data['unread_count'] as int? ?? 0;
-            final oldUnreadCount = payload.oldRecord?['unread_count'] as int?;
-            
-            // ignore: avoid_print
-            print("실시간 업데이트 트리거: roomId=$roomId, oldCount=$oldUnreadCount, newCount=$unreadCount");
-            
-            if (roomId != null) {
-              // oldRecord가 null이거나 unread_count가 변경되었을 때 업데이트
-              // oldRecord가 null인 경우는 INSERT 이벤트이거나 oldRecord가 전달되지 않은 경우
-              if (oldUnreadCount == null || unreadCount != oldUnreadCount) {
-                // ignore: avoid_print
-                print("unread_count 변경 감지: $oldUnreadCount -> $unreadCount, 리스트 새로고침 시작");
-                
-                // unread_count가 0이 되면 즉시 업데이트 (읽음 처리 완료)
-                if (unreadCount == 0) {
-                  // ignore: avoid_print
-                  print("unread_count가 0이 됨 - 즉시 리스트 새로고침");
-                  // 읽음 처리 완료 시 즉시 업데이트
-                  reloadList();
-                } else {
-                  // unread_count가 증가한 경우 즉시 업데이트
-                  // ignore: avoid_print
-                  print("unread_count 증가: $oldUnreadCount -> $unreadCount - 즉시 리스트 새로고침");
-                  reloadList();
-                }
-              } else {
-                // ignore: avoid_print
-                print("unread_count 변경 없음: $oldUnreadCount == $unreadCount");
-                // oldCount와 newCount가 같아도, unread_count가 0이고 oldRecord가 null이 아닌 경우
-                // 이미 읽음 처리된 상태이므로 리스트를 새로고침하여 UI 업데이트 보장
-                if (unreadCount == 0 && oldUnreadCount != null) {
-                  // ignore: avoid_print
-                  print("unread_count가 이미 0이지만 리스트 새로고침 (UI 업데이트 보장)");
-                  reloadList();
-                }
-              }
-            } else {
-              // ignore: avoid_print
-              print("실시간 업데이트: roomId가 null");
-            }
+
+            if (!checkUpdate(data)) return;
+
+            // // unread_count가 변경되면 해당 채팅방의 정보만 업데이트
+            // final roomId = data['room_id'] as String?;
+            // final unreadCount = data['unread_count'] as int? ?? 0;
+            // final oldUnreadCount = payload.oldRecord?['unread_count'] as int?;
+            //
+            // // ignore: avoid_print
+            // print(
+            //   "실시간 업데이트 트리거: roomId=$roomId, oldCount=$oldUnreadCount, newCount=$unreadCount",
+            // );
+            //
+            // if (roomId != null) {
+            //   // oldRecord가 null이거나 unread_count가 변경되었을 때 업데이트
+            //   // oldRecord가 null인 경우는 INSERT 이벤트이거나 oldRecord가 전달되지 않은 경우
+            //   if (oldUnreadCount == null || unreadCount != oldUnreadCount) {
+            //     // ignore: avoid_print
+            //     print(
+            //       "unread_count 변경 감지: $oldUnreadCount -> $unreadCount, 리스트 새로고침 시작",
+            //     );
+            //
+            //     // unread_count가 0이 되면 즉시 업데이트 (읽음 처리 완료)
+            //     if (unreadCount == 0) {
+            //       // ignore: avoid_print
+            //       print("unread_count가 0이 됨 - 즉시 리스트 새로고침");
+            //       // 읽음 처리 완료 시 즉시 업데이트
+            //       reloadList();
+            //     } else {
+            //       // unread_count가 증가한 경우 즉시 업데이트
+            //       // ignore: avoid_print
+            //       print(
+            //         "unread_count 증가: $oldUnreadCount -> $unreadCount - 즉시 리스트 새로고침",
+            //       );
+            //       reloadList();
+            //     }
+            //   } else {
+            //     // ignore: avoid_print
+            //     print("unread_count 변경 없음: $oldUnreadCount == $unreadCount");
+            //     // oldCount와 newCount가 같아도, unread_count가 0이고 oldRecord가 null이 아닌 경우
+            //     // 이미 읽음 처리된 상태이므로 리스트를 새로고침하여 UI 업데이트 보장
+            //     if (unreadCount == 0 && oldUnreadCount != null) {
+            //       // ignore: avoid_print
+            //       print("unread_count가 이미 0이지만 리스트 새로고침 (UI 업데이트 보장)");
+            //       reloadList();
+            //     }
+            //   }
+            // } else {
+            //   // ignore: avoid_print
+            //   print("실시간 업데이트: roomId가 null");
+            // }
           },
         )
         .subscribe();
-    
+
     // ignore: avoid_print
     print("실시간 구독 설정 완료: chatting_room_users 테이블 감시 시작 (user_id=$currentId)");
   }
@@ -192,6 +203,21 @@ class ChatListViewmodel extends ChangeNotifier {
       SupabaseManager.shared.supabase.removeChannel(_roomUsersChannel!);
     }
     super.dispose();
+  }
+
+  bool checkUpdate(Map<String, dynamic> data) {
+    final index = chattingRoomList.indexWhere(
+      (e) => e.id == data["room_id"] as String,
+    );
+    final room = chattingRoomList[index];
+    // 변동 사항이 있다면 true
+    if (room.count != data['unread_count'] as int?) {
+      print("변경 감지된 Room id : ${room.id}");
+      print("unread_count : ${room.count} => ${data['unread_count']}");
+      room.count = data['unread_count'] as int?;
+      return true;
+    }
+    return false;
   }
 
   // 입력한 글자 수를 받아오는 함수
