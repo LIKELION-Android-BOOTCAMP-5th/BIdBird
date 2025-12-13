@@ -1,5 +1,4 @@
 import 'package:bidbird/core/utils/identity_verification/identity_verification_error_messages.dart';
-import 'package:bidbird/core/utils/identity_verification/identity_verification_texts.dart';
 import 'package:flutter/material.dart';
 
 import '../usecase/check_and_request_identity_verification_usecase.dart';

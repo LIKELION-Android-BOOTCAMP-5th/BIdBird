@@ -1,7 +1,7 @@
 import 'package:image_picker/image_picker.dart';
 
-import 'package:bidbird/features/item/add/data/datasources/image_upload_datasource.dart';
-import 'package:bidbird/features/item/add/model/image_upload_gateway.dart';
+import 'package:bidbird/core/upload/datasources/image_upload_datasource.dart';
+import 'package:bidbird/core/upload/gateways/image_upload_gateway.dart';
 
 class ImageUploadGatewayImpl implements ImageUploadGateway {
   ImageUploadGatewayImpl({ImageUploadDataSource? dataSource})
@@ -14,3 +14,4 @@ class ImageUploadGatewayImpl implements ImageUploadGateway {
     return _dataSource.uploadImages(files);
   }
 }
+

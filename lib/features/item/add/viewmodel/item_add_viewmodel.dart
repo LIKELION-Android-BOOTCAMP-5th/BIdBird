@@ -5,6 +5,7 @@ import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/utils/item/item_registration_validator.dart';
 import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -14,12 +15,14 @@ import 'package:image_picker/image_picker.dart';
 import '../data/repository/item_add_repository.dart';
 import '../data/repository/keyword_repository.dart';
 import '../data/repository/edit_item_repository.dart';
-import '../data/repository/image_upload_repository.dart';
+import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
+import 'package:bidbird/core/upload/repositories/video_upload_repository.dart';
 import '../model/add_item_usecase.dart';
 import '../model/get_edit_item_usecase.dart';
 import '../model/get_keyword_types_usecase.dart';
 import '../model/item_add_entity.dart';
-import '../model/upload_images_usecase.dart';
+import 'package:bidbird/core/upload/usecases/upload_images_usecase.dart';
+import 'package:bidbird/core/upload/usecases/upload_videos_usecase.dart';
 
 class ItemAddViewModel extends ChangeNotifier {
   ItemAddViewModel()
@@ -28,12 +31,15 @@ class ItemAddViewModel extends ChangeNotifier {
           GetKeywordTypesUseCase(KeywordGatewayImpl()),
       _getEditItemUseCase = GetEditItemUseCase(EditItemGatewayImpl()),
       _uploadImagesUseCase =
-          UploadImagesUseCase(ImageUploadGatewayImpl());
+          UploadImagesUseCase(ImageUploadGatewayImpl()),
+      _uploadVideosUseCase =
+          UploadVideosUseCase(VideoUploadGatewayImpl());
 
   final AddItemUseCase _addItemUseCase;
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
   final UploadImagesUseCase _uploadImagesUseCase;
+  final UploadVideosUseCase _uploadVideosUseCase;
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController startPriceController = TextEditingController();
@@ -330,9 +336,52 @@ class ItemAddViewModel extends ChangeNotifier {
       final DateTime auctionStartAt = now;
       final DateTime auctionEndAt = now.add(Duration(hours: auctionHours));
 
-      final List<String> imageUrls = await _uploadImagesUseCase(selectedImages);
+      // 이미지와 동영상을 구분 (인덱스와 함께 저장)
+      final List<({XFile file, int index})> imageFilesWithIndex = [];
+      final List<({XFile file, int index})> videoFilesWithIndex = [];
+      
+      for (int i = 0; i < selectedImages.length; i++) {
+        final file = selectedImages[i];
+        if (isVideoFile(file.path)) {
+          videoFilesWithIndex.add((file: file, index: i));
+        } else {
+          imageFilesWithIndex.add((file: file, index: i));
+        }
+      }
 
-      if (imageUrls.isEmpty) {
+      // 이미지와 동영상을 병렬로 업로드
+      final imageFiles = imageFilesWithIndex.map((e) => e.file).toList();
+      final videoFiles = videoFilesWithIndex.map((e) => e.file).toList();
+      
+      final imageUploadFuture = imageFiles.isNotEmpty
+          ? _uploadImagesUseCase(imageFiles)
+          : Future.value(<String>[]);
+      final videoUploadFuture = videoFiles.isNotEmpty
+          ? _uploadVideosUseCase(videoFiles)
+          : Future.value(<String>[]);
+      
+      // 이미지와 동영상 업로드를 동시에 실행
+      final results = await Future.wait([
+        imageUploadFuture,
+        videoUploadFuture,
+      ]);
+      
+      final List<String> imageUrls = results[0] as List<String>;
+      final List<String> videoUrls = results[1] as List<String>;
+
+      // 이미지와 동영상 URL을 원래 순서대로 합침
+      final List<String> allUrls = List.filled(selectedImages.length, '');
+      for (int i = 0; i < imageFilesWithIndex.length && i < imageUrls.length; i++) {
+        allUrls[imageFilesWithIndex[i].index] = imageUrls[i];
+      }
+      for (int i = 0; i < videoFilesWithIndex.length && i < videoUrls.length; i++) {
+        allUrls[videoFilesWithIndex[i].index] = videoUrls[i];
+      }
+      
+      // 빈 문자열 제거 (업로드 실패한 경우)
+      allUrls.removeWhere((url) => url.isEmpty);
+
+      if (allUrls.isEmpty) {
         if (context.mounted) {
           scaffoldMessenger.showSnackBar(
             const SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
@@ -350,13 +399,13 @@ class ItemAddViewModel extends ChangeNotifier {
         auctionStartAt: auctionStartAt,
         auctionEndAt: auctionEndAt,
         auctionDurationHours: auctionHours,
-        imageUrls: imageUrls,
+        imageUrls: allUrls,
         isAgree: agreed,
       );
 
       await _addItemUseCase(
         entity: data,
-        imageUrls: imageUrls,
+        imageUrls: allUrls,
         primaryImageIndex: primaryImageIndex,
         editingItemId: editingItemId,
       );
