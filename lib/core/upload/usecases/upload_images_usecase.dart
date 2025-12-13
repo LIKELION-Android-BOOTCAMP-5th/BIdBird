@@ -1,6 +1,6 @@
 import 'package:image_picker/image_picker.dart';
 
-import 'image_upload_gateway.dart';
+import 'package:bidbird/core/upload/gateways/image_upload_gateway.dart';
 
 class UploadImagesUseCase {
   UploadImagesUseCase(this._gateway);
@@ -11,3 +11,4 @@ class UploadImagesUseCase {
     return _gateway.uploadImages(files);
   }
 }
+
