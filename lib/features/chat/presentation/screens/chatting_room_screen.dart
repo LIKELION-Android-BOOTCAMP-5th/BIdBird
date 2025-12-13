@@ -1,18 +1,17 @@
 import 'dart:io';
 
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/video_player_widget.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -29,7 +28,6 @@ class ChattingRoomScreen extends StatefulWidget {
 
 class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     with RouteAware, WidgetsBindingObserver {
-
   void _showImageSourceSheet(
     BuildContext context,
     ChattingRoomViewmodel viewModel,
@@ -72,7 +70,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     // 채팅방을 나갈 때 읽음 처리를 위해 disposeViewModel 호출
     if (viewModel.roomId != null && viewModel.isActive) {
       // disposeViewModel에서 leaveRoom을 호출하여 읽음 처리
-      // dispose는 동기 메서드이므로 Future를 기다릴 수 없지만, 
+      // dispose는 동기 메서드이므로 Future를 기다릴 수 없지만,
       // disposeViewModel 내부에서 leaveRoom이 완료될 때까지 기다리도록 처리
       viewModel.disposeViewModel().catchError((e) {
         // ignore: avoid_print
@@ -96,17 +94,20 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     if (viewModel.roomId != null) {
       // dispose에서도 leaveRoom이 호출되지만, 명시적으로 호출하여 읽음 처리 보장
       // leaveRoom이 완료되도록 기다림 (비동기이지만 완료를 보장)
-      viewModel.leaveRoom().then((_) {
-        // leaveRoom 완료 후 약간의 지연을 두고 실시간 업데이트가 반영되도록 함
-        // ignore: avoid_print
-        print("didPop: leaveRoom 완료");
-      }).catchError((e) {
-        // ignore: avoid_print
-        print("didPop: leaveRoom 실패: $e");
-      });
+      viewModel
+          .leaveRoom()
+          .then((_) {
+            // leaveRoom 완료 후 약간의 지연을 두고 실시간 업데이트가 반영되도록 함
+            // ignore: avoid_print
+            print("didPop: leaveRoom 완료");
+          })
+          .catchError((e) {
+            // ignore: avoid_print
+            print("didPop: leaveRoom 실패: $e");
+          });
     }
   }
-  
+
   // 화면이 비활성화될 때 (다른 화면으로 이동)
   @override
   void didPushNext() {
@@ -115,7 +116,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
       viewModel.disposeViewModel();
     }
   }
-  
+
   // 이전 화면에서 돌아왔을 때
   @override
   void didPopNext() {
@@ -140,7 +141,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                 elevation: 0.5,
                 titleSpacing: 0,
                 title: Text(
-                  viewModel.roomInfo?.opponent.nickName ?? "로딩중",
+                  viewModel.roomInfo != null
+                      ? viewModel.roomInfo?.opponent.nickName ?? "사용자"
+                      : "로딩중",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -203,10 +206,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               child: ClipRRect(
                                 borderRadius: defaultBorder,
                                 child: CachedNetworkImage(
-                                  imageUrl:
-                                      viewModel.itemInfo!.thumbnailImage!,
-                                  cacheManager:
-                                      ItemImageCacheManager.instance,
+                                  imageUrl: viewModel.itemInfo!.thumbnailImage!,
+                                  cacheManager: ItemImageCacheManager.instance,
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -256,221 +257,257 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                   Expanded(
                     child: AnimatedOpacity(
                       opacity: viewModel.isScrollPositionReady ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 0), // 즉시 표시 (애니메이션 없음)
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification is ScrollEndNotification) {
-                          // 초기 로드가 아닐 때만 스크롤 처리 (사용자가 수동으로 스크롤한 경우)
-                          // 스크롤이 끝났을 때 roomInfo를 업데이트하여 unreadCount 변경 감지 (디바운스 적용)
-                          viewModel.fetchRoomInfoDebounced();
-                        }
-                        return false;
-                      },
-                      child: ListView.builder(
-                        controller: viewModel.scrollController,
-                        itemCount: viewModel.messages.length,
+                      duration: const Duration(
+                        milliseconds: 0,
+                      ), // 즉시 표시 (애니메이션 없음)
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification is ScrollEndNotification) {
+                            // 초기 로드가 아닐 때만 스크롤 처리 (사용자가 수동으로 스크롤한 경우)
+                            // 스크롤이 끝났을 때 roomInfo를 업데이트하여 unreadCount 변경 감지 (디바운스 적용)
+                            viewModel.fetchRoomInfoDebounced();
+                          }
+                          return false;
+                        },
+                        child: ListView.builder(
+                          controller: viewModel.scrollController,
+                          itemCount: viewModel.messages.length,
                           reverse: false,
                           cacheExtent: 0,
                           padding: const EdgeInsets.only(bottom: 16),
-                          physics: viewModel.listViewPhysics ?? const ClampingScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        final message = viewModel.messages[index];
-                        final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-                        final isCurrentUser = message.senderId == userId;
+                          physics:
+                              viewModel.listViewPhysics ??
+                              const ClampingScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final message = viewModel.messages[index];
+                            final userId = SupabaseManager
+                                .shared
+                                .supabase
+                                .auth
+                                .currentUser
+                                ?.id;
+                            final isCurrentUser = message.senderId == userId;
 
-                        // 같은 사람이 연속해서 보낸 메시지 중 마지막인지 여부 (시간 표시용)
-                        final bool isLastFromSameSender;
-                        if (index == viewModel.messages.length - 1) {
-                          isLastFromSameSender = true;
-                        } else {
-                          final nextMessage = viewModel.messages[index + 1];
-                          isLastFromSameSender =
-                              nextMessage.senderId != message.senderId;
-                        }
-
-                        // 같은 사람이 연속해서 보낸 메시지 중 첫 번째인지 여부 (아바타 표시용)
-                        final bool isFirstFromSameSender;
-                        if (index == 0) {
-                          isFirstFromSameSender = true;
-                        } else {
-                          final prevMessage = viewModel.messages[index - 1];
-                          isFirstFromSameSender =
-                              prevMessage.senderId != message.senderId;
-                        }
-
-                        // 날짜 구분 표시 여부 계산
-                        DateTime? currentDate;
-                        DateTime? previousDate;
-                        try {
-                          currentDate =
-                              DateTime.parse(message.createdAt).toLocal();
-                          if (index > 0) {
-                            previousDate = DateTime.parse(
-                              viewModel.messages[index - 1].createdAt,
-                            ).toLocal();
-                          }
-                        } catch (_) {
-                          currentDate = null;
-                          previousDate = null;
-                        }
-
-                        bool isSameDay(DateTime a, DateTime b) {
-                          return a.year == b.year &&
-                              a.month == b.month &&
-                              a.day == b.day;
-                        }
-
-                        final bool showDateHeader;
-                        if (currentDate == null) {
-                          showDateHeader = false;
-                        } else if (previousDate == null) {
-                          // 첫 번째 메시지는 항상 날짜 표시
-                          showDateHeader = true;
-                        } else {
-                          showDateHeader = !isSameDay(currentDate, previousDate);
-                        }
-
-                        Widget messageWidget;
-
-                        // 메시지 읽음 여부 확인
-                        bool isRead = false;
-                        bool isUnread = false;
-                        
-                        if (isCurrentUser && userId != null) {
-                          // 내가 보낸 메시지: 상대방이 읽었는지 확인
-                          // 가장 최근에 읽은 내 메시지 하나에만 읽음 표시
-                          // 마지막 내 메시지가 아직 읽지 않았다면 안읽음 표시
-                          
-                          // 마지막 내 메시지의 인덱스 찾기
-                          int? lastMyMessageIndex;
-                          for (int i = viewModel.messages.length - 1; i >= 0; i--) {
-                            if (viewModel.messages[i].senderId == userId) {
-                              lastMyMessageIndex = i;
-                              break;
+                            // 같은 사람이 연속해서 보낸 메시지 중 마지막인지 여부 (시간 표시용)
+                            final bool isLastFromSameSender;
+                            if (index == viewModel.messages.length - 1) {
+                              isLastFromSameSender = true;
+                            } else {
+                              final nextMessage = viewModel.messages[index + 1];
+                              isLastFromSameSender =
+                                  nextMessage.senderId != message.senderId;
                             }
-                          }
-                          
-                          // 상대방이 읽은 가장 최근 내 메시지의 인덱스 찾기
-                          // 상대방이 메시지를 보낸 시점 이전의 마지막 내 메시지
-                          int? lastReadMyMessageIndex;
-                          for (int i = viewModel.messages.length - 1; i >= 0; i--) {
-                            // 상대방 메시지를 찾으면, 그 이전의 마지막 내 메시지가 가장 최근에 읽은 메시지
-                            if (viewModel.messages[i].senderId != userId) {
-                              // 상대방 메시지 이전의 내 메시지 찾기
-                              for (int j = i - 1; j >= 0; j--) {
-                                if (viewModel.messages[j].senderId == userId) {
-                                  lastReadMyMessageIndex = j;
+
+                            // 같은 사람이 연속해서 보낸 메시지 중 첫 번째인지 여부 (아바타 표시용)
+                            final bool isFirstFromSameSender;
+                            if (index == 0) {
+                              isFirstFromSameSender = true;
+                            } else {
+                              final prevMessage = viewModel.messages[index - 1];
+                              isFirstFromSameSender =
+                                  prevMessage.senderId != message.senderId;
+                            }
+
+                            // 날짜 구분 표시 여부 계산
+                            DateTime? currentDate;
+                            DateTime? previousDate;
+                            try {
+                              currentDate = DateTime.parse(
+                                message.createdAt,
+                              ).toLocal();
+                              if (index > 0) {
+                                previousDate = DateTime.parse(
+                                  viewModel.messages[index - 1].createdAt,
+                                ).toLocal();
+                              }
+                            } catch (_) {
+                              currentDate = null;
+                              previousDate = null;
+                            }
+
+                            bool isSameDay(DateTime a, DateTime b) {
+                              return a.year == b.year &&
+                                  a.month == b.month &&
+                                  a.day == b.day;
+                            }
+
+                            final bool showDateHeader;
+                            if (currentDate == null) {
+                              showDateHeader = false;
+                            } else if (previousDate == null) {
+                              // 첫 번째 메시지는 항상 날짜 표시
+                              showDateHeader = true;
+                            } else {
+                              showDateHeader = !isSameDay(
+                                currentDate,
+                                previousDate,
+                              );
+                            }
+
+                            Widget messageWidget;
+
+                            // 메시지 읽음 여부 확인
+                            bool isRead = false;
+                            bool isUnread = false;
+
+                            if (isCurrentUser && userId != null) {
+                              // 내가 보낸 메시지: 상대방이 읽었는지 확인
+                              // 가장 최근에 읽은 내 메시지 하나에만 읽음 표시
+                              // 마지막 내 메시지가 아직 읽지 않았다면 안읽음 표시
+
+                              // 마지막 내 메시지의 인덱스 찾기
+                              int? lastMyMessageIndex;
+                              for (
+                                int i = viewModel.messages.length - 1;
+                                i >= 0;
+                                i--
+                              ) {
+                                if (viewModel.messages[i].senderId == userId) {
+                                  lastMyMessageIndex = i;
                                   break;
                                 }
                               }
-                              break;
-                            }
-                          }
-                          
-                          // 현재 메시지가 마지막 내 메시지인지 확인
-                          final isLastMyMessage = lastMyMessageIndex != null && index == lastMyMessageIndex;
-                          
-                          if (isLastMyMessage) {
-                            // 마지막 내 메시지인 경우
-                            if (lastReadMyMessageIndex == null) {
-                              // 상대방이 아직 메시지를 보내지 않았거나, 모든 내 메시지가 읽지 않은 것
-                              isUnread = true;
-                            } else if (lastReadMyMessageIndex < index) {
-                              // 마지막 내 메시지가 읽지 않은 것 (상대방이 읽은 마지막 메시지보다 나중)
-                              isUnread = true;
-                            } else if (index == lastReadMyMessageIndex) {
-                              // 마지막 내 메시지가 가장 최근에 읽은 메시지
-                              isRead = true;
-                            }
-                          } else {
-                            // 마지막 내 메시지가 아닌 경우
-                            if (lastReadMyMessageIndex != null && index == lastReadMyMessageIndex) {
-                              // 가장 최근에 읽은 내 메시지
-                              isRead = true;
-                            }
-                          }
-                        }
-                        // 상대방이 보낸 메시지는 읽음 표시 없음 (isRead는 이미 false)
 
-                        // 같은 사람이 연속 보낸 경우 위 여백을 더 타이트하게
-                        if (isCurrentUser) {
-                          messageWidget = Padding(
-                            padding: EdgeInsets.only(
-                              top: isFirstFromSameSender ? 10 : 4,
-                            ),
-                            child: MessageBubble(
-                              message: message,
-                              isCurrentUser: true,
-                              showTime: isLastFromSameSender,
-                              isRead: isRead,
-                              isUnread: isUnread,
-                            ),
-                          );
-                        } else {
-                          // 상대방 메시지: 왼쪽에 프로필, 오른쪽에 말풍선
-                          const double avatarSize = 36;
-                          final opponent = viewModel.roomInfo?.opponent;
+                              // 상대방이 읽은 가장 최근 내 메시지의 인덱스 찾기
+                              // 상대방이 메시지를 보낸 시점 이전의 마지막 내 메시지
+                              int? lastReadMyMessageIndex;
+                              for (
+                                int i = viewModel.messages.length - 1;
+                                i >= 0;
+                                i--
+                              ) {
+                                // 상대방 메시지를 찾으면, 그 이전의 마지막 내 메시지가 가장 최근에 읽은 메시지
+                                if (viewModel.messages[i].senderId != userId) {
+                                  // 상대방 메시지 이전의 내 메시지 찾기
+                                  for (int j = i - 1; j >= 0; j--) {
+                                    if (viewModel.messages[j].senderId ==
+                                        userId) {
+                                      lastReadMyMessageIndex = j;
+                                      break;
+                                    }
+                                  }
+                                  break;
+                                }
+                              }
 
-                          Widget avatarWidget;
-                          if (isFirstFromSameSender) {
-                            final String? profileImageUrl = opponent?.profileImage;
-                              avatarWidget = CircleAvatar(
-                                radius: avatarSize / 2,
-                              backgroundColor: BorderColor,
-                              backgroundImage: profileImageUrl != null && profileImageUrl.isNotEmpty
-                                  ? NetworkImage(profileImageUrl)
-                                  : null,
-                              child: profileImageUrl != null && profileImageUrl.isNotEmpty
-                                  ? null
-                                  : const Icon(Icons.person, color: BackgroundColor),
-                              );
-                          } else {
-                            avatarWidget = const SizedBox(
-                              width: avatarSize,
-                              height: avatarSize,
-                            );
-                          }
+                              // 현재 메시지가 마지막 내 메시지인지 확인
+                              final isLastMyMessage =
+                                  lastMyMessageIndex != null &&
+                                  index == lastMyMessageIndex;
 
-                          messageWidget = Padding(
-                            padding: EdgeInsets.only(
-                              left: 0,
-                              right: 8,
-                              top: isFirstFromSameSender ? 10 : 4,
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                avatarWidget,
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: MessageBubble(
-                                    message: message,
-                                    isCurrentUser: false,
-                                    showTime: isLastFromSameSender,
-                                    isRead: isRead,
-                                  ),
+                              if (isLastMyMessage) {
+                                // 마지막 내 메시지인 경우
+                                if (lastReadMyMessageIndex == null) {
+                                  // 상대방이 아직 메시지를 보내지 않았거나, 모든 내 메시지가 읽지 않은 것
+                                  isUnread = true;
+                                } else if (lastReadMyMessageIndex < index) {
+                                  // 마지막 내 메시지가 읽지 않은 것 (상대방이 읽은 마지막 메시지보다 나중)
+                                  isUnread = true;
+                                } else if (index == lastReadMyMessageIndex) {
+                                  // 마지막 내 메시지가 가장 최근에 읽은 메시지
+                                  isRead = true;
+                                }
+                              } else {
+                                // 마지막 내 메시지가 아닌 경우
+                                if (lastReadMyMessageIndex != null &&
+                                    index == lastReadMyMessageIndex) {
+                                  // 가장 최근에 읽은 내 메시지
+                                  isRead = true;
+                                }
+                              }
+                            }
+                            // 상대방이 보낸 메시지는 읽음 표시 없음 (isRead는 이미 false)
+
+                            // 같은 사람이 연속 보낸 경우 위 여백을 더 타이트하게
+                            if (isCurrentUser) {
+                              messageWidget = Padding(
+                                padding: EdgeInsets.only(
+                                  top: isFirstFromSameSender ? 10 : 4,
                                 ),
-                              ],
-                            ),
-                          );
-                        }
+                                child: MessageBubble(
+                                  message: message,
+                                  isCurrentUser: true,
+                                  showTime: isLastFromSameSender,
+                                  isRead: isRead,
+                                  isUnread: isUnread,
+                                ),
+                              );
+                            } else {
+                              // 상대방 메시지: 왼쪽에 프로필, 오른쪽에 말풍선
+                              const double avatarSize = 36;
+                              final opponent = viewModel.roomInfo?.opponent;
 
-                        if (showDateHeader && currentDate != null) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                child: _ChatDateSeparator(date: currentDate),
-                              ),
-                              messageWidget,
-                            ],
-                          );
-                        }
+                              Widget avatarWidget;
+                              if (isFirstFromSameSender) {
+                                final String? profileImageUrl =
+                                    opponent?.profileImage;
+                                avatarWidget = CircleAvatar(
+                                  radius: avatarSize / 2,
+                                  backgroundColor: BorderColor,
+                                  backgroundImage:
+                                      profileImageUrl != null &&
+                                          profileImageUrl.isNotEmpty
+                                      ? NetworkImage(profileImageUrl)
+                                      : null,
+                                  child:
+                                      profileImageUrl != null &&
+                                          profileImageUrl.isNotEmpty
+                                      ? null
+                                      : const Icon(
+                                          Icons.person,
+                                          color: BackgroundColor,
+                                        ),
+                                );
+                              } else {
+                                avatarWidget = const SizedBox(
+                                  width: avatarSize,
+                                  height: avatarSize,
+                                );
+                              }
 
-                        return messageWidget;
-                      },
+                              messageWidget = Padding(
+                                padding: EdgeInsets.only(
+                                  left: 0,
+                                  right: 8,
+                                  top: isFirstFromSameSender ? 10 : 4,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    avatarWidget,
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: MessageBubble(
+                                        message: message,
+                                        isCurrentUser: false,
+                                        showTime: isLastFromSameSender,
+                                        isRead: isRead,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            if (showDateHeader && currentDate != null) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8.0,
+                                    ),
+                                    child: _ChatDateSeparator(
+                                      date: currentDate,
+                                    ),
+                                  ),
+                                  messageWidget,
+                                ],
+                              );
+                            }
+
+                            return messageWidget;
+                          },
                         ),
                       ),
                     ),
@@ -510,7 +547,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                       vertical: 0,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: myMessageBubbleColor, // 플러스 버튼과 같은 파란색 배경
+                                      color:
+                                          myMessageBubbleColor, // 플러스 버튼과 같은 파란색 배경
                                       borderRadius: BorderRadius.circular(22),
                                     ),
                                     child: TextField(
@@ -521,7 +559,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                         fontSize: 16,
                                         color: Colors.white, // 흰색 텍스트
                                       ),
-                                      textAlignVertical: TextAlignVertical.center,
+                                      textAlignVertical:
+                                          TextAlignVertical.center,
                                       decoration: InputDecoration(
                                         hintText: "메시지 입력",
                                         hintStyle: const TextStyle(
@@ -530,12 +569,14 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                         ),
                                         border: InputBorder.none,
                                         isCollapsed: true,
-                                        contentPadding: const EdgeInsets.symmetric(
-                                          vertical: 12,
-                                        ),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                            ),
                                       ),
                                       onSubmitted: (value) {
-                                        if (!viewModel.isSending && value.trim().isNotEmpty) {
+                                        if (!viewModel.isSending &&
+                                            value.trim().isNotEmpty) {
                                           // 키보드 닫기
                                           FocusScope.of(context).unfocus();
                                           viewModel.sendMessage();
@@ -550,9 +591,11 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                         child: AspectRatio(
                                           aspectRatio:
                                               viewModel.imageAspectRatio ?? 1,
-                                          child: isVideoFile(viewModel.image!.path)
+                                          child:
+                                              isVideoFile(viewModel.image!.path)
                                               ? VideoPlayerWidget(
-                                                  videoPath: viewModel.image!.path,
+                                                  videoPath:
+                                                      viewModel.image!.path,
                                                   autoPlay: false,
                                                   showControls: true,
                                                   fit: BoxFit.cover,
@@ -562,18 +605,26 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                                   fit: BoxFit.cover,
                                                   width: 150,
                                                   height: 150,
-                                                  errorBuilder: (context, error, stackTrace) {
-                                                    return Container(
-                                                      color: Colors.grey[300],
-                                                      child: const Center(
-                                                        child: Icon(
-                                                          Icons.error_outline,
-                                                          color: Colors.grey,
-                                                          size: 32,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) {
+                                                        return Container(
+                                                          color:
+                                                              Colors.grey[300],
+                                                          child: const Center(
+                                                            child: Icon(
+                                                              Icons
+                                                                  .error_outline,
+                                                              color:
+                                                                  Colors.grey,
+                                                              size: 32,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
                                                 ),
                                         ),
                                       ),
@@ -588,8 +639,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                             width: 28,
                                             height: 28,
                                             decoration: BoxDecoration(
-                                              color: Colors.black
-                                                  .withValues(alpha: 0.5),
+                                              color: Colors.black.withValues(
+                                                alpha: 0.5,
+                                              ),
                                               shape: BoxShape.circle,
                                             ),
                                             child: const Icon(
@@ -629,8 +681,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                           strokeWidth: 2,
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                            Colors.white,
-                                          ),
+                                                Colors.white,
+                                              ),
                                         ),
                                       )
                                     : const Icon(
@@ -686,10 +738,7 @@ class _ChatDateSeparator extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               _formatKoreanDate(date),
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.black, fontSize: 12),
             ),
           ],
         ),
