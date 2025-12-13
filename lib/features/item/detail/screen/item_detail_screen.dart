@@ -65,40 +65,42 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
           appBar: AppBar(
             title: const Text('상세 보기'),
             actions: [
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ReportScreen(
-                        itemId: item.itemId,
-                        itemTitle: item.itemTitle,
-                        targetUserId: item.sellerId,
-                        targetNickname: vm.sellerProfile?['nick_name'] as String?,
+              if (!vm.isMyItem)
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) => ReportScreen(
+                          itemId: item.itemId,
+                          itemTitle: item.itemTitle,
+                          targetUserId: item.sellerId,
+                          targetNickname: vm.sellerProfile?['nick_name'] as String?,
+                        ),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
                       ),
-                    ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  padding: const EdgeInsets.only(right: 12, left: 4),
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: const Icon(
-                  Icons.report_gmailerrorred_outlined,
-                  color: Colors.red,
-                  size: 18,
-                ),
-                label: const Text(
-                  '신고',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    minimumSize: const Size(48, 48),
+                  ),
+                  icon: const Icon(
+                    Icons.warning_outlined,
                     color: Colors.red,
+                    size: 20,
+                  ),
+                  label: const Text(
+                    '신고',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           body: SafeArea(
