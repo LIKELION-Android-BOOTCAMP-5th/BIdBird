@@ -12,7 +12,7 @@ class DoubleBackExitHandler {
       _lastPressedAt = now;
 
       // 웹에서 제외
-      Fluttertoast.cancel();
+      // Fluttertoast.cancel();
       Fluttertoast.showToast(
         webShowClose: true,
         msg: "한 번 더 누르면 앱이 종료됩니다",

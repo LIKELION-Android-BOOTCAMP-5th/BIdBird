@@ -52,6 +52,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 GoRouter createAppRouter(BuildContext context) {
   final AuthViewModel authVM = context.read<AuthViewModel>();
+  final doubleBackHandler = DoubleBackExitHandler();
 
   return GoRouter(
     observers: [
@@ -122,7 +123,6 @@ GoRouter createAppRouter(BuildContext context) {
                 context.go('/home');
                 return false;
               }
-              final doubleBackHandler = DoubleBackExitHandler();
 
               return doubleBackHandler.onWillPop(context);
             },
