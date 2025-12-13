@@ -1,9 +1,10 @@
 import 'dart:async';
 
+import 'package:bidbird/core/utils/item/item_time_utils.dart'
+    show formatRemainingTime;
 import 'package:flutter/material.dart';
 
 import '../../../core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/item/item_time_utils.dart' show formatRemainingTime;
 
 class HomeTimerSection extends StatefulWidget {
   const HomeTimerSection({super.key, required this.finishTime});
@@ -49,7 +50,7 @@ class HomeTimerSectionState extends State<HomeTimerSection> {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        isFinished ? '경매 종료' : '${formatRemainingTime(widget.finishTime)}',
+        isFinished ? '경매 종료' : formatRemainingTime(widget.finishTime),
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,

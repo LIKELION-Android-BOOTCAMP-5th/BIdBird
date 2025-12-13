@@ -1,4 +1,5 @@
 import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
+import 'package:bidbird/core/widgets/item/double_back_exit_handler.dart';
 import 'package:bidbird/core/widgets/splash_screen.dart';
 import 'package:bidbird/features/auth/ui/auth_ui.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
@@ -7,12 +8,12 @@ import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.
 import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item/add/screen/item_add_screen.dart';
 import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
+import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
+import 'package:bidbird/features/item/bid_win/screen/item_bid_win_screen.dart';
 import 'package:bidbird/features/item/current_trade/data/repository/current_trade_repository.dart';
 import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
-import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
-import 'package:bidbird/features/item/bid_win/screen/item_bid_win_screen.dart';
 import 'package:bidbird/features/item/registration/detail/screen/item_registration_detail_screen.dart';
 import 'package:bidbird/features/item/registration/list/model/item_registration_entity.dart';
 import 'package:bidbird/features/item/registration/list/screen/item_registration_list_screen.dart';
@@ -110,9 +111,26 @@ GoRouter createAppRouter(BuildContext context) {
           return const NoTransitionPage(child: LoginScreen());
         },
       ),
+
       ShellRoute(
         builder: (context, state, child) {
-          return Scaffold(body: child, bottomNavigationBar: BottomNavBar());
+          return WillPopScope(
+            onWillPop: () async {
+              final location = state.uri.toString();
+
+              if (location != '/home') {
+                context.go('/home');
+                return false;
+              }
+              final doubleBackHandler = DoubleBackExitHandler();
+
+              return doubleBackHandler.onWillPop(context);
+            },
+            child: Scaffold(
+              body: child,
+              bottomNavigationBar: const BottomNavBar(),
+            ),
+          );
         },
         routes: [
           GoRoute(
