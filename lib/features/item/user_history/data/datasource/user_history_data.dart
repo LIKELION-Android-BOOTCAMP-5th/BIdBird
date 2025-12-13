@@ -1,13 +1,14 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
 import 'package:bidbird/features/item/user_history/model/user_history_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class UserProfileDatasource {
-  UserProfileDatasource({SupabaseClient? supabase})
+class UserHistoryDatasource {
+  UserHistoryDatasource({SupabaseClient? supabase})
     : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   final SupabaseClient _supabase;
@@ -28,8 +29,8 @@ class UserProfileDatasource {
       final Map<String, Map<String, dynamic>> itemsById = {};
       final List<String> itemIds = [];
       for (final row in itemRows) {
-        final id = row['item_id']?.toString();
-        if (id != null) {
+        final id = getNullableStringFromRow(row, 'item_id');
+        if (id != null && id.isNotEmpty) {
           itemsById[id] = row;
           itemIds.add(id);
         }
@@ -48,14 +49,14 @@ class UserProfileDatasource {
             .eq('round', 1);
 
         for (final row in priceRows) {
-          final id = row['item_id']?.toString();
-          if (id != null) {
-            priceByItemId[id] = (row['current_price'] as int?) ?? 0;
-            final auctionCode = row['auction_status_code'] as int?;
+          final id = getNullableStringFromRow(row, 'item_id');
+          if (id != null && id.isNotEmpty) {
+            priceByItemId[id] = getIntFromRow(row, 'current_price');
+            final auctionCode = getNullableIntFromRow(row, 'auction_status_code');
             if (auctionCode != null) {
               auctionCodeByItemId[id] = auctionCode;
             }
-            final tradeCode = row['trade_status_code'] as int?;
+            final tradeCode = getNullableIntFromRow(row, 'trade_status_code');
             if (tradeCode != null) {
               tradeCodeByItemId[id] = tradeCode;
             }
@@ -68,10 +69,10 @@ class UserProfileDatasource {
         final item = itemsById[itemId] ?? <String, dynamic>{};
         final auctionCode = auctionCodeByItemId[itemId];
         final tradeCode = tradeCodeByItemId[itemId];
-        final createdAt = item['created_at']?.toString();
+        final createdAt = getNullableStringFromRow(item, 'created_at');
 
-        final String title = item['title']?.toString() ?? '';
-        final String? thumbnailUrl = item['thumbnail_image']?.toString();
+        final String title = getStringFromRow(item, 'title');
+        final String? thumbnailUrl = getNullableStringFromRow(item, 'thumbnail_image');
         final int priceValue = priceByItemId[itemId] ?? 0;
         final String price = '${formatPrice(priceValue)}원';
         final String date = formatDateFromIso(createdAt);
@@ -90,12 +91,10 @@ class UserProfileDatasource {
           thumbnailUrl: thumbnailUrl,
         );
       }).toList();
-    } catch (_) {
+    } catch (e) {
       return [];
     }
   }
-
-
 }
 
 class _StatusInfo {

@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/features/item/bid/buy_now/model/buy_now_input_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,12 +32,13 @@ class BuyNowInputDatasource {
 
     final data = response;
 
-    if (data is! Map) {
+    if (data is! Map<String, dynamic>) {
       throw Exception(BidErrorMessages.bidProcessingFailed);
     }
 
-    final resultCode = data['result_code'] as String?;
-    final message = data['message'] as String? ?? BidErrorMessages.bidProcessingFailedDefault;
+    final resultCode = getNullableStringFromRow(data, 'result_code');
+    final message = getNullableStringFromRow(data, 'message') ??
+        BidErrorMessages.bidProcessingFailedDefault;
 
     if (resultCode != 'SUCCESS' && resultCode != 'INSTANT_BUY_TRIGGER') {
       throw Exception(message);

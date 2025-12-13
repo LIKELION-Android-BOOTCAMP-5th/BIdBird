@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart' show formatNumber, formatPrice, parseFormattedPrice;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/utils/item/item_registration_validator.dart';
 import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +21,7 @@ import '../model/add_item_usecase.dart';
 import '../model/get_edit_item_usecase.dart';
 import '../model/get_keyword_types_usecase.dart';
 import '../model/item_add_entity.dart';
+import '../model/keyword_type_entity.dart';
 
 class ItemAddViewModel extends ChangeNotifier {
   ItemAddViewModel()
@@ -43,7 +44,7 @@ class ItemAddViewModel extends ChangeNotifier {
 
   final ImagePicker _picker = ImagePicker();
   List<XFile> selectedImages = <XFile>[];
-  final List<Map<String, dynamic>> keywordTypes = <Map<String, dynamic>>[];
+  final List<KeywordTypeEntity> keywordTypes = <KeywordTypeEntity>[];
 
   final List<String> durations = ItemAuctionDurationConstants.durationOptions;
 
@@ -63,6 +64,14 @@ class ItemAddViewModel extends ChangeNotifier {
     descriptionController.dispose();
   }
 
+  @override
+  void dispose() {
+    disposeControllers();
+    _dio?.close();
+    _dio = null;
+    super.dispose();
+  }
+
   Future<void> init() async {
     await fetchKeywordTypes();
   }
@@ -76,10 +85,10 @@ class ItemAddViewModel extends ChangeNotifier {
       final filtered = types.where((e) => e.title != '전체');
       keywordTypes
         ..clear()
-        ..addAll(filtered.map((e) => {'id': e.id, 'title': e.title}));
+        ..addAll(filtered);
 
       // 현재 선택된 카테고리가 필터링된 목록에 없다면 초기화
-      final validIds = keywordTypes.map<int>((e) => e['id'] as int).toSet();
+      final validIds = keywordTypes.map((e) => e.id).toSet();
       if (selectedKeywordTypeId != null &&
           !validIds.contains(selectedKeywordTypeId)) {
         selectedKeywordTypeId = null;
@@ -99,8 +108,8 @@ class ItemAddViewModel extends ChangeNotifier {
     }
 
     final List<XFile> all = <XFile>[...selectedImages, ...images];
-    if (all.length > 10) {
-      selectedImages = all.take(10).toList();
+    if (all.length > ItemImageLimits.maxImageCount) {
+      selectedImages = all.take(ItemImageLimits.maxImageCount).toList();
     } else {
       selectedImages = all;
     }
@@ -114,7 +123,7 @@ class ItemAddViewModel extends ChangeNotifier {
     );
     if (image == null) return;
 
-    if (selectedImages.length >= 10) {
+    if (selectedImages.length >= ItemImageLimits.maxImageCount) {
       return;
     }
 
@@ -130,7 +139,7 @@ class ItemAddViewModel extends ChangeNotifier {
       return;
     }
 
-    if (selectedImages.length >= 10) {
+    if (selectedImages.length >= ItemImageLimits.maxImageCount) {
       return;
     }
 
@@ -196,48 +205,72 @@ class ItemAddViewModel extends ChangeNotifier {
 
       notifyListeners();
 
-      await loadExistingImages(editItem.imageUrls);
-    } catch (_) {
+      try {
+        await loadExistingImages(editItem.imageUrls);
+      } catch (e) {
+        // 이미지 로드 실패 시에도 수정은 계속 진행 가능
+        // 에러는 로그에만 남기고 사용자에게는 알리지 않음
+      }
+    } catch (e) {
       // 실패해도 새로 작성할 수 있도록 조용히 무시
     }
   }
 
+  Dio? _dio;
+
   /// 수정 모드에서 기존 이미지를 불러와 selectedImages에 채웁니다.
   Future<void> loadExistingImages(List<String> imageUrls) async {
+    if (imageUrls.isEmpty) return;
+
+    _dio ??= Dio();
+    final dio = _dio!;
+    final List<XFile> files = <XFile>[];
+
     try {
-      final dio = Dio();
-      final List<XFile> files = <XFile>[];
+      // 병렬로 이미지 다운로드
+      final results = await Future.wait(
+        imageUrls.map((url) async {
+          try {
+            final response = await dio.get<List<int>>(
+              url,
+              options: Options(responseType: ResponseType.bytes),
+            );
 
-      for (final String url in imageUrls) {
-        try {
-          final response = await dio.get<List<int>>(
-            url,
-            options: Options(responseType: ResponseType.bytes),
-          );
+            final String fileName =
+                '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch}.jpg';
+            final String tempPath = '${Directory.systemTemp.path}/$fileName';
+            final file = File(tempPath);
+            await file.writeAsBytes(response.data ?? <int>[]);
 
-          final String fileName =
-              '${DateTime.now().millisecondsSinceEpoch}_${files.length}.jpg';
-          final String tempPath = '${Directory.systemTemp.path}/$fileName';
-          final file = File(tempPath);
-          await file.writeAsBytes(response.data ?? <int>[]);
+            return XFile(file.path);
+          } catch (e) {
+            return null;
+          }
+        }),
+        eagerError: false,
+      );
 
-          files.add(XFile(file.path));
-        } catch (_) {}
-      }
+      files.addAll(results.whereType<XFile>());
 
       if (files.isNotEmpty) {
         selectedImages = files;
         notifyListeners();
+      } else {
+        // 모든 이미지 다운로드 실패 시 에러
+        throw Exception('이미지를 불러올 수 없습니다.');
       }
-    } catch (_) {}
+    } catch (e) {
+      // 전체 실패 시에만 에러 처리
+      if (files.isEmpty) {
+        rethrow;
+      }
+    }
   }
 
   String? validate() {
-    final int? startPrice = int.tryParse(
-      startPriceController.text.replaceAll(',', ''),
-    );
+    final int startPrice = parseFormattedPrice(startPriceController.text);
     final int? instantPrice = useInstantPrice
-        ? int.tryParse(instantPriceController.text.replaceAll(',', ''))
+        ? parseFormattedPrice(instantPriceController.text)
         : null;
 
     return ItemRegistrationValidator.validateForUI(
@@ -269,7 +302,6 @@ class ItemAddViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> submit(BuildContext context) async {
     final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
@@ -284,11 +316,9 @@ class ItemAddViewModel extends ChangeNotifier {
 
     final String title = titleController.text.trim();
     final String description = descriptionController.text.trim();
-    final int startPrice = int.parse(
-      startPriceController.text.replaceAll(',', ''),
-    );
+    final int startPrice = parseFormattedPrice(startPriceController.text);
     final int instantPrice = useInstantPrice
-        ? int.parse(instantPriceController.text.replaceAll(',', ''))
+        ? parseFormattedPrice(instantPriceController.text)
         : 0;
 
     isSubmitting = true;
@@ -299,19 +329,22 @@ class ItemAddViewModel extends ChangeNotifier {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) {
-        return const Center(
+      builder: (dialogContext) {
+        final spacing = dialogContext.inputPadding;
+        final fontSize = dialogContext.fontSizeMedium;
+
+        return Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(blueColor),
               ),
-              SizedBox(height: 12),
+              SizedBox(height: spacing),
               Text(
                 '로딩중',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: fontSize,
                   color: textColor,
                   decoration: TextDecoration.none,
                   decorationColor: Colors.transparent,
@@ -355,37 +388,11 @@ class ItemAddViewModel extends ChangeNotifier {
         isAgree: agreed,
       );
 
-      // 유찰 재등록인지 확인: editingItemId가 있고 auction_status_code가 323이면 새로 등록
-      String? finalEditingItemId = editingItemId;
-      final currentEditingItemId = editingItemId;
-      if (currentEditingItemId != null) {
-        try {
-          final supabase = SupabaseManager.shared.supabase;
-          final auctionRow = await supabase
-              .from('auctions')
-              .select('auction_status_code')
-              .eq('item_id', currentEditingItemId)
-              .eq('round', 1)
-              .maybeSingle();
-
-          if (auctionRow != null) {
-            final auctionStatusCode = auctionRow['auction_status_code'] as int? ?? 0;
-            // 유찰(323) 상태이면 새로 등록하도록 editingItemId를 null로 설정
-            if (auctionStatusCode == 323) {
-              finalEditingItemId = null;
-            }
-          }
-        } catch (e) {
-          // 오류 발생 시 기존 동작 유지 (수정 모드로 진행)
-          debugPrint('[ItemAddViewModel] Failed to check auction status: $e');
-        }
-      }
-
       await _addItemUseCase(
         entity: data,
         imageUrls: imageUrls,
         primaryImageIndex: primaryImageIndex,
-        editingItemId: finalEditingItemId,
+        editingItemId: editingItemId,
       );
 
       if (loadingDialogOpen && navigator.canPop()) {
@@ -397,8 +404,11 @@ class ItemAddViewModel extends ChangeNotifier {
       await showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => WillPopScope(
-          onWillPop: () async => false,
+        builder: (_) => PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            // Pop is prevented by canPop: false
+          },
           child: AskPopup(
             content: '매물 등록 확인 화면으로 이동하여\n최종 등록을 진행해 주세요.',
             yesText: '이동하기',

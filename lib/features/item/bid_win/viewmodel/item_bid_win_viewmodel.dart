@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../data/repository/item_bid_win_repository.dart';
 import '../model/item_bid_win_entity.dart';
@@ -31,7 +31,6 @@ class ItemBidWinViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: 결제 API 연동 및 상태 업데이트
       await Future<void>.delayed(const Duration(milliseconds: 300));
     } catch (e) {
       _error = e.toString();

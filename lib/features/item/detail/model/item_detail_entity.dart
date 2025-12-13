@@ -1,3 +1,5 @@
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
+
 class ItemDetail {
   ItemDetail({
     required this.itemId,
@@ -52,7 +54,8 @@ class SellerRatingSummary {
 
     double totalRating = 0;
     for (final trade in completedTrades) {
-      final rating = (trade['rating'] as num?)?.toDouble() ?? 0.0;
+      if (trade is! Map<String, dynamic>) continue;
+      final rating = getDoubleFromRow(trade, 'rating');
       totalRating += rating;
     }
 

@@ -34,6 +34,15 @@ String formatNumber(String value) {
   return buffer.toString();
 }
 
+/// 포맷된 가격 문자열에서 쉼표를 제거하고 int로 파싱
+/// 예: "10,000" -> 10000, "1,234,567" -> 1234567
+/// [formattedPrice] 쉼표가 포함된 가격 문자열
+/// Returns: 파싱된 int 값
+int parseFormattedPrice(String formattedPrice) {
+  final digits = formattedPrice.replaceAll(',', '');
+  return int.tryParse(digits) ?? 0;
+}
+
 /// 아이템 가격 관련 헬퍼 클래스
 class ItemPriceHelper {
   /// 현재 가격에 따른 입찰 단위를 계산

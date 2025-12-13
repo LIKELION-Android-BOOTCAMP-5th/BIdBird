@@ -1,7 +1,7 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
-import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ItemDetailDatasource {
@@ -19,15 +19,15 @@ class ItemDetailDatasource {
 
     if (result.isEmpty) return null;
 
-    final Map<String, dynamic> row = result.first as Map<String, dynamic>;
+    final firstResult = result.first;
+    if (firstResult is! Map<String, dynamic>) return null;
+    final row = firstResult;
 
-    // 종료 시간은 auctions 테이블의 auction_end_at 기준으로 계산
     DateTime? finishTime;
 
-    final String sellerId = row['seller_id']?.toString() ?? '';
+    final String sellerId = getStringFromRow(row, 'seller_id');
     String sellerTitle = await _fetchSellerName(sellerId, row);
 
-    // 판매자 별점/리뷰 수 계산 (bid_status 기반)
     SellerRatingSummary? ratingSummary;
     if (sellerId.isNotEmpty) {
       ratingSummary = await _fetchSellerRating(sellerId);
@@ -51,18 +51,18 @@ class ItemDetailDatasource {
           .maybeSingle();
 
       if (auctionRow is Map<String, dynamic>) {
-        currentPrice = (auctionRow['current_price'] as int?) ?? 0;
-        biddingCount = (auctionRow['bid_count'] as int?) ?? 0;
-        statusCode = (auctionRow['auction_status_code'] as int?) ?? 0;
-        tradeStatusCode = auctionRow['trade_status_code'] as int?;
+        currentPrice = getIntFromRow(auctionRow, 'current_price');
+        biddingCount = getIntFromRow(auctionRow, 'bid_count');
+        statusCode = getIntFromRow(auctionRow, 'auction_status_code');
+        tradeStatusCode = getNullableIntFromRow(auctionRow, 'trade_status_code');
 
-        final endRaw = auctionRow['auction_end_at']?.toString();
+        final endRaw = getNullableStringFromRow(auctionRow, 'auction_end_at');
         if (endRaw != null && endRaw.isNotEmpty) {
           finishTime = DateTime.tryParse(endRaw);
         }
       }
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] fetch auction info error: $e');
+      // auction info 조회 실패 시 조용히 처리
     }
 
     final minBidStep = ItemPriceHelper.calculateBidStep(currentPrice);
@@ -71,30 +71,30 @@ class ItemDetailDatasource {
     if (finishTime != null) {
       effectiveFinishTime = finishTime;
     } else {
-      final createdAtRaw = row['created_at']?.toString();
+      final createdAtRaw = getNullableStringFromRow(row, 'created_at');
       final createdAt = createdAtRaw != null
           ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
           : DateTime.now();
-      final durationHours = (row['auction_duration_hours'] as int?) ?? 24;
+      final durationHours = getIntFromRow(row, 'auction_duration_hours', 24);
       effectiveFinishTime = createdAt.add(Duration(hours: durationHours));
     }
 
     return ItemDetail(
-      itemId: row['item_id']?.toString() ?? itemId,
+      itemId: getStringFromRow(row, 'item_id', itemId),
       sellerId: sellerId,
-      itemTitle: row['title']?.toString() ?? '',
+      itemTitle: getStringFromRow(row, 'title'),
       itemImages: images,
       finishTime: effectiveFinishTime,
       sellerTitle: sellerTitle,
-      buyNowPrice: (row['buy_now_price'] as int?) ?? 0,
+      buyNowPrice: getIntFromRow(row, 'buy_now_price'),
       biddingCount: biddingCount,
-      itemContent: row['description']?.toString() ?? '',
+      itemContent: getStringFromRow(row, 'description'),
       currentPrice: currentPrice,
       bidPrice: minBidStep,
       sellerRating: ratingSummary?.rating ??
-          (row['seller_rating'] as num?)?.toDouble() ?? 0.0,
+          getDoubleFromRow(row, 'seller_rating'),
       sellerReviewCount: ratingSummary?.reviewCount ??
-          (row['seller_review_count'] as int?) ?? 0,
+          getIntFromRow(row, 'seller_review_count'),
       statusCode: statusCode,
       tradeStatusCode: tradeStatusCode,
     );
@@ -104,7 +104,7 @@ class ItemDetailDatasource {
     String sellerId,
     Map<String, dynamic> row,
   ) async {
-    String sellerTitle = row['seller_name']?.toString() ?? '';
+    String sellerTitle = getStringFromRow(row, 'seller_name');
 
     if (sellerTitle.isEmpty && sellerId.isNotEmpty) {
       try {
@@ -115,13 +115,13 @@ class ItemDetailDatasource {
             .maybeSingle();
 
         if (userRow is Map<String, dynamic>) {
-          final rawNick = userRow['nick_name']?.toString() ?? '';
+          final rawNick = getStringFromRow(userRow, 'nick_name');
           sellerTitle = rawNick.isNotEmpty
               ? rawNick
-              : (userRow['name']?.toString() ?? '');
+              : getStringFromRow(userRow, 'name');
         }
       } catch (e) {
-        debugPrint('[ItemDetailDatasource] fetch seller name error: $e');
+        // seller name 조회 실패 시 조용히 처리
       }
     }
 
@@ -139,13 +139,13 @@ class ItemDetailDatasource {
           .order('sort_order', ascending: true);
 
       for (final Map<String, dynamic> imgRow in imageRows) {
-        final imageUrl = imgRow['image_url']?.toString();
+        final imageUrl = getNullableStringFromRow(imgRow, 'image_url');
         if (imageUrl != null && imageUrl.isNotEmpty) {
           images.add(imageUrl);
         }
       }
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] fetch images error: $e');
+      // images 조회 실패 시 조용히 처리
     }
 
     return images;
@@ -165,14 +165,15 @@ class ItemDetailDatasource {
 
       return rows.isNotEmpty;
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] check favorite error: $e');
       return false;
     }
   }
 
   Future<void> toggleFavorite(String itemId, bool currentState) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      throw Exception('로그인이 필요합니다.');
+    }
 
     if (currentState) {
       await _supabase
@@ -202,10 +203,9 @@ class ItemDetailDatasource {
 
       if (row is! Map<String, dynamic>) return false;
 
-      final String? lastBidUserId = row['last_bid_user_id']?.toString();
+      final String? lastBidUserId = getNullableStringFromRow(row, 'last_bid_user_id');
       return lastBidUserId != null && lastBidUserId == user.id;
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] checkIsTopBidder error: $e');
       return false;
     }
   }
@@ -214,6 +214,7 @@ class ItemDetailDatasource {
     if (sellerId.isEmpty) return null;
 
     try {
+      // 민감 정보(email) 제외
       final userRow = await _supabase
           .from('users')
           .select('''
@@ -221,7 +222,6 @@ class ItemDetailDatasource {
             name,
             nick_name,
             profile_image,
-            email,
             created_at
           ''')
           .eq('id', sellerId)
@@ -239,7 +239,6 @@ class ItemDetailDatasource {
       }
       return null;
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] fetch seller profile error: $e');
       return null;
     }
   }
@@ -255,7 +254,6 @@ class ItemDetailDatasource {
 
       return SellerRatingSummary.fromCompletedTrades(reviews);
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] fetch seller rating error: $e');
       return SellerRatingSummary(rating: 0.0, reviewCount: 0);
     }
   }
@@ -274,7 +272,7 @@ class ItemDetailDatasource {
         return [];
       }
 
-      final String? auctionId = auctionRow['auction_id']?.toString();
+      final String? auctionId = getNullableStringFromRow(auctionRow, 'auction_id');
       if (auctionId == null || auctionId.isEmpty) {
         return [];
       }
@@ -291,21 +289,16 @@ class ItemDetailDatasource {
       final List<Map<String, dynamic>> bidHistory = [];
 
       for (final row in rows) {
-        final Map<String, dynamic> logRow = row as Map<String, dynamic>;
+        if (row is! Map<String, dynamic>) continue;
+        final logRow = row;
 
-        final dynamic rawPrice = logRow['bid_price'];
-        final int price;
-        if (rawPrice is num) {
-          price = rawPrice.toInt();
-        } else {
-          price = int.tryParse(rawPrice?.toString() ?? '') ?? 0;
-        }
+        final int price = getIntFromRow(logRow, 'bid_price');
 
         bidHistory.add({
           'price': price,
           'user_name': '알 수 없음',
           'user_id': '',
-          'created_at': logRow['created_at']?.toString() ?? '',
+          'created_at': getStringFromRow(logRow, 'created_at'),
           'profile_image_url': null,
           'auction_log_code': logRow['auction_log_code'],
         });
@@ -313,8 +306,19 @@ class ItemDetailDatasource {
 
       return bidHistory;
     } catch (e) {
-      debugPrint('[ItemDetailDatasource] fetchBidHistory error: $e');
       return [];
+    }
+  }
+
+  Future<bool> checkIsMyItem(String itemId, String sellerId) async {
+    try {
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
+        return false;
+      }
+      return currentUser.id == sellerId;
+    } catch (e) {
+      return false;
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
@@ -30,6 +31,18 @@ class ItemBidResultBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive values
+    final iconSize = context.widthRatio(0.18, min: 56.0, max: 88.0); // 특수 케이스: 큰 아이콘
+    final titleFontSize = context.fontSizeXLarge;
+    final subtitleFontSize = context.fontSizeSmall;
+    final itemTitleFontSize = context.buttonFontSize;
+    final priceLabelFontSize = context.fontSizeSmall;
+    final priceFontSize = context.fontSizeLarge;
+    final horizontalPadding = context.screenPadding;
+    final verticalPadding = context.spacingMedium;
+    final spacing = context.spacingMedium;
+    final smallSpacing = context.spacingSmall;
+    
     return Column(
       children: [
         Align(
@@ -39,31 +52,33 @@ class ItemBidResultBody extends StatelessWidget {
             onPressed: onClose,
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: smallSpacing),
         Icon(
           icon,
-          size: 72,
+          size: iconSize,
           color: iconColor,
         ),
-        SizedBox(height: 24),
+        SizedBox(height: spacing),
         Text(
           title,
           style: TextStyle(
-            fontSize: 22,
+            fontSize: titleFontSize,
             fontWeight: FontWeight.w800,
           ),
+          textAlign: TextAlign.center,
         ),
-        SizedBox(height: 8),
+        SizedBox(height: smallSpacing),
         Text(
           subtitle,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: subtitleFontSize,
             color: iconColor,
           ),
+          textAlign: TextAlign.center,
         ),
-        SizedBox(height: 24),
+        SizedBox(height: spacing),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -100,7 +115,10 @@ class ItemBidResultBody extends StatelessWidget {
                                   child: Center(
                                     child: Text(
                                       '이미지 없음',
-                                      style: TextStyle(color: iconColor),
+                                      style: TextStyle(
+                                        color: iconColor,
+                                        fontSize: subtitleFontSize,
+                                      ),
                                     ),
                                   ),
                                 );
@@ -134,7 +152,10 @@ class ItemBidResultBody extends StatelessWidget {
                                               child: Center(
                                                 child: Text(
                                                   '이미지 없음',
-                                                  style: TextStyle(color: iconColor),
+                                                  style: TextStyle(
+                                                    color: iconColor,
+                                                    fontSize: subtitleFontSize,
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -145,7 +166,10 @@ class ItemBidResultBody extends StatelessWidget {
                                           child: Center(
                                             child: Text(
                                               '이미지 없음',
-                                              style: TextStyle(color: iconColor),
+                                              style: TextStyle(
+                                                color: iconColor,
+                                                fontSize: subtitleFontSize,
+                                              ),
                                             ),
                                           ),
                                         );
@@ -156,7 +180,10 @@ class ItemBidResultBody extends StatelessWidget {
                                       child: Center(
                                         child: Text(
                                           '이미지 없음',
-                                          style: TextStyle(color: iconColor),
+                                          style: TextStyle(
+                                            color: iconColor,
+                                            fontSize: subtitleFontSize,
+                                          ),
                                         ),
                                       ),
                                     );
@@ -165,13 +192,21 @@ class ItemBidResultBody extends StatelessWidget {
                         : Center(
                             child: Text(
                               '상품 이미지',
-                              style: TextStyle(color: iconColor),
+                              style: TextStyle(
+                                color: iconColor,
+                                fontSize: subtitleFontSize,
+                              ),
                             ),
                           ),
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    context.heightRatio(0.017, min: 12.0, max: 18.0), // 특수 케이스: 내부 패딩
+                    horizontalPadding,
+                    horizontalPadding,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -180,23 +215,23 @@ class ItemBidResultBody extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: itemTitleFontSize,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      SizedBox(height: 6),
+                      SizedBox(height: smallSpacing * 0.6),
                       Text(
                         '낙찰가',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: priceLabelFontSize,
                           color: iconColor,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      SizedBox(height: smallSpacing * 0.2),
                       Text(
                         '${formatPrice(item.winPrice)}원',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: priceFontSize,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -209,7 +244,12 @@ class ItemBidResultBody extends StatelessWidget {
         ),
         Spacer(),
         Padding(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            0,
+            horizontalPadding,
+            verticalPadding,
+          ),
           child: Column(
             children: actions,
           ),

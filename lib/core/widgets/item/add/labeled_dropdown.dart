@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:flutter/material.dart';
 
 class LabeledDropdown<T> extends StatelessWidget {
@@ -19,16 +20,19 @@ class LabeledDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelFontSize = context.fontSizeMedium;
+    final itemFontSize = context.fontSizeSmall;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: EdgeInsets.only(bottom: context.labelBottomPadding),
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: labelFontSize,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
@@ -41,7 +45,7 @@ class LabeledDropdown<T> extends StatelessWidget {
           decoration: decoration,
           icon: const Icon(Icons.keyboard_arrow_down_rounded),
           dropdownColor: Colors.white,
-          style: const TextStyle(fontSize: 13, color: Colors.black87),
+          style: TextStyle(fontSize: itemFontSize, color: Colors.black87),
         ),
       ],
     );

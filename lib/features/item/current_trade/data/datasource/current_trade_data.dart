@@ -1,7 +1,7 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
 import 'package:bidbird/features/item/current_trade/model/current_trade_entity.dart';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CurrentTradeDatasource {
@@ -29,7 +29,7 @@ class CurrentTradeDatasource {
       // 필요한 item_id만 모아서 items_detail에서 제목/썸네일 조회
       final Set<String> itemIds = {};
       for (final row in auctionRows) {
-        final itemId = row['item_id']?.toString();
+        final itemId = getNullableStringFromRow(row, 'item_id');
         if (itemId != null && itemId.isNotEmpty) {
           itemIds.add(itemId);
         }
@@ -43,7 +43,7 @@ class CurrentTradeDatasource {
             .inFilter('item_id', itemIds.toList());
 
         for (final row in itemRows) {
-          final id = row['item_id']?.toString();
+          final id = getNullableStringFromRow(row, 'item_id');
           if (id != null && id.isNotEmpty) {
             itemsById[id] = row;
           }
@@ -51,7 +51,7 @@ class CurrentTradeDatasource {
       }
 
       // auctions의 경매/거래 상태 코드 기준으로 상태 문자열 생성
-      String _buildStatus({required int auctionCode, required int tradeCode}) {
+      String buildStatus({required int auctionCode, required int tradeCode}) {
         if (tradeCode == 550) {
           return '거래 완료';
         } else if (tradeCode == 520) {
@@ -81,20 +81,20 @@ class CurrentTradeDatasource {
       final List<BidHistoryItem> results = [];
 
       for (final row in auctionRows) {
-        final itemId = row['item_id']?.toString() ?? '';
+        final itemId = getStringFromRow(row, 'item_id');
         if (itemId.isEmpty) continue;
 
         final item = itemsById[itemId] ?? <String, dynamic>{};
-        final auctionCode = row['auction_status_code'] as int? ?? 0;
-        final tradeCode = row['trade_status_code'] as int? ?? 0;
+        final auctionCode = getIntFromRow(row, 'auction_status_code');
+        final tradeCode = getIntFromRow(row, 'trade_status_code');
 
         results.add(
           BidHistoryItem(
             itemId: itemId,
-            title: item['title']?.toString() ?? '',
-            price: row['current_price'] as int? ?? 0,
-            thumbnailUrl: item['thumbnail_image']?.toString(),
-            status: _buildStatus(
+            title: getStringFromRow(item, 'title'),
+            price: getIntFromRow(row, 'current_price'),
+            thumbnailUrl: getNullableStringFromRow(item, 'thumbnail_image'),
+            status: buildStatus(
               auctionCode: auctionCode,
               tradeCode: tradeCode,
             ),
@@ -105,9 +105,6 @@ class CurrentTradeDatasource {
       // DB 쿼리에서 이미 created_at 내림차순 정렬, 그대로 사용
       return results;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error fetching bid history: $e');
-      }
       rethrow;
     }
   }
@@ -129,8 +126,8 @@ class CurrentTradeDatasource {
       final Map<String, Map<String, dynamic>> itemsById = {};
       final List<String> itemIds = [];
       for (final row in itemRows) {
-        final id = row['item_id']?.toString();
-        if (id != null) {
+        final id = getNullableStringFromRow(row, 'item_id');
+        if (id != null && id.isNotEmpty) {
           itemsById[id] = row;
           itemIds.add(id);
         }
@@ -147,14 +144,14 @@ class CurrentTradeDatasource {
             .eq('round', 1);
 
         for (final row in priceRows) {
-          final id = row['item_id']?.toString();
-          if (id != null) {
-            priceByItemId[id] = (row['current_price'] as int?) ?? 0;
-            final auctionCode = row['auction_status_code'] as int?;
+          final id = getNullableStringFromRow(row, 'item_id');
+          if (id != null && id.isNotEmpty) {
+            priceByItemId[id] = getIntFromRow(row, 'current_price');
+            final auctionCode = getNullableIntFromRow(row, 'auction_status_code');
             if (auctionCode != null) {
               auctionCodeByItemId[id] = auctionCode;
             }
-            final tradeCode = row['trade_status_code'] as int?;
+            final tradeCode = getNullableIntFromRow(row, 'trade_status_code');
             if (tradeCode != null) {
               tradeCodeByItemId[id] = tradeCode;
             }
@@ -166,7 +163,7 @@ class CurrentTradeDatasource {
         final item = itemsById[itemId] ?? <String, dynamic>{};
         final auctionCode = auctionCodeByItemId[itemId] ?? 0;
         final tradeCode = tradeCodeByItemId[itemId] ?? 0;
-        final createdAt = item['created_at']?.toString() ?? '';
+        final createdAt = getStringFromRow(item, 'created_at');
 
         // 입찰 내역과 동일한 규칙으로 상태 문자열 생성
         String status;
@@ -203,17 +200,14 @@ class CurrentTradeDatasource {
 
         return SaleHistoryItem(
           itemId: itemId,
-          title: item['title']?.toString() ?? '',
+          title: getStringFromRow(item, 'title'),
           price: priceByItemId[itemId] ?? 0,
-          thumbnailUrl: item['thumbnail_image']?.toString(),
+          thumbnailUrl: getNullableStringFromRow(item, 'thumbnail_image'),
           status: status,
           date: formatDateTimeFromIso(createdAt),
         );
       }).toList();
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error fetching sale history: $e');
-      }
       rethrow;
     }
   }

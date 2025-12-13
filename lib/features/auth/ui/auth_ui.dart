@@ -1,6 +1,6 @@
 import 'dart:io';
-
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -11,25 +11,33 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive values
+    final horizontalPadding = context.hPadding;
+    final logoHeight = context.heightRatio(0.3, min: 200.0, max: 300.0); // 특수 케이스: 로고 높이
+    final buttonHeight = context.buttonHeight;
+    final buttonFontSize = context.buttonFontSize;
+    final spacing = context.spacingSmall;
+    final logoSpacing = context.spacingSmall * 0.5;
+    
     return WillPopScope(
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Image.asset(
                     'assets/logos/bidbird_image_text_logo.png',
-                    height: 260,
+                    height: logoHeight,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: logoSpacing),
                   SizedBox(
-                    height: 56,
+                    height: buttonHeight,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xffF2F2F2),
@@ -61,22 +69,22 @@ class LoginScreen extends StatelessWidget {
                             Text(
                               'Sign in with Google',
                               style: TextStyle(
-                                fontSize: 24,
+                                fontSize: buttonFontSize,
                                 color: Color(0xff1F1F1F),
                                 fontFamily: 'GoogleFont',
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            SizedBox(width: context.widthRatio(0.025, min: 8.0, max: 14.0)), // 특수 케이스: 버튼 내부 간격
                           ],
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  SizedBox(height: spacing),
 
                   SizedBox(
-                    height: 56,
+                    height: buttonHeight,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
@@ -98,18 +106,18 @@ class LoginScreen extends StatelessWidget {
                             Text(
                               'Sign in with Apple',
                               style: TextStyle(
-                                fontSize: 24,
+                                fontSize: buttonFontSize,
                                 color: Colors.white,
                                 fontFamily: 'GoogleFont',
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            SizedBox(width: context.inputPadding),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: spacing * 1.5),
                 ],
               ),
             ),

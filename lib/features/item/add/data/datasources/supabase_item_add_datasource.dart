@@ -1,10 +1,11 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/utils/item/item_registration_validator.dart';
+import 'package:bidbird/core/utils/item/item_security_utils.dart';
 import 'package:bidbird/features/item/add/model/item_add_entity.dart';
 import 'package:bidbird/features/item/registration/list/model/item_registration_entity.dart';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseItemAddDatasource {
@@ -19,10 +20,7 @@ class SupabaseItemAddDatasource {
     required int primaryImageIndex,
     String? editingItemId,
   }) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) {
-      throw Exception(ItemRegistrationErrorMessages.loginRequired);
-    }
+    final userId = ItemSecurityUtils.requireAuth(_supabase);
 
     // 공통 검증 로직 사용
     ItemRegistrationValidator.validateForServer(
@@ -35,26 +33,85 @@ class SupabaseItemAddDatasource {
       auctionDurationHours: entity.auctionDurationHours,
     );
 
-    late final String itemId;
+    late String itemId;
 
     if (editingItemId != null) {
       itemId = editingItemId;
 
-      await _supabase.from('items_detail').update(<String, dynamic>{
-        'title': entity.title,
-        'description': entity.description,
-        'start_price': entity.startPrice,
-        'buy_now_price': entity.instantPrice > 0 ? entity.instantPrice : null,
-        'keyword_type': entity.keywordTypeId,
-        'auction_duration_hours': entity.auctionDurationHours,
-      }).eq('item_id', itemId);
+      await ItemSecurityUtils.verifyItemOwnership(_supabase, itemId, userId);
 
-      await _supabase.from('item_images').delete().eq('item_id', itemId);
+      try {
+        final auctionRow = await _supabase
+            .from('auctions')
+            .select('auction_status_code')
+            .eq('item_id', itemId)
+            .eq('round', 1)
+            .maybeSingle();
+
+        if (auctionRow != null && auctionRow is Map<String, dynamic>) {
+          final auctionStatusCode = getIntFromRow(auctionRow, 'auction_status_code');
+          if (auctionStatusCode == 323) {
+            itemId = (await _supabase.rpc(
+              'register_item',
+              params: <String, dynamic>{
+                'p_seller_id': userId,
+                'p_title': entity.title,
+                'p_description': entity.description,
+                'p_start_price': entity.startPrice,
+                'p_buy_now_price':
+                    entity.instantPrice > 0 ? entity.instantPrice : null,
+                'p_keyword_type': entity.keywordTypeId,
+                'p_duration_minutes': entity.auctionDurationHours * 60,
+              },
+            )).toString();
+
+            await _supabase.from('items_detail').update(<String, dynamic>{
+              'auction_duration_hours': entity.auctionDurationHours,
+            }).eq('item_id', itemId);
+          } else {
+            // 수정 모드로 진행
+            await _supabase.from('items_detail').update(<String, dynamic>{
+              'title': entity.title,
+              'description': entity.description,
+              'start_price': entity.startPrice,
+              'buy_now_price': entity.instantPrice > 0 ? entity.instantPrice : null,
+              'keyword_type': entity.keywordTypeId,
+              'auction_duration_hours': entity.auctionDurationHours,
+            }).eq('item_id', itemId);
+
+            await _supabase.from('item_images').delete().eq('item_id', itemId);
+          }
+        } else {
+          // auction 정보가 없으면 수정 모드로 진행
+          await _supabase.from('items_detail').update(<String, dynamic>{
+            'title': entity.title,
+            'description': entity.description,
+            'start_price': entity.startPrice,
+            'buy_now_price': entity.instantPrice > 0 ? entity.instantPrice : null,
+            'keyword_type': entity.keywordTypeId,
+            'auction_duration_hours': entity.auctionDurationHours,
+          }).eq('item_id', itemId);
+
+          await _supabase.from('item_images').delete().eq('item_id', itemId);
+        }
+      } catch (e) {
+        // 오류 발생 시 기존 동작 유지 (수정 모드로 진행)
+        await _supabase.from('items_detail').update(<String, dynamic>{
+          'title': entity.title,
+          'description': entity.description,
+          'start_price': entity.startPrice,
+          'buy_now_price': entity.instantPrice > 0 ? entity.instantPrice : null,
+          'keyword_type': entity.keywordTypeId,
+          'auction_duration_hours': entity.auctionDurationHours,
+        }).eq('item_id', itemId);
+
+        await _supabase.from('item_images').delete().eq('item_id', itemId);
+      }
     } else {
       final dynamic result = await _supabase.rpc(
         'register_item',
         params: <String, dynamic>{
-          'p_seller_id': user.id,
+          'p_seller_id': userId,
           'p_title': entity.title,
           'p_description': entity.description,
           'p_start_price': entity.startPrice,
@@ -98,7 +155,7 @@ class SupabaseItemAddDatasource {
         },
       );
     } catch (e) {
-      debugPrint('create-thumbnail error: $e');
+      // create-thumbnail 실패 시 조용히 처리
     }
 
     int thumbnailIndex = 0;

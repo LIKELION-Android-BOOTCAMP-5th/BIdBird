@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -17,13 +18,13 @@ class UserProfileDatasource {
           .select('id, nick_name, profile_image')
           .eq('id', userId)
           .maybeSingle();
-    } catch (_) {
+    } catch (e) {
       userRow = null;
     }
 
     String nickname;
     if (userRow != null) {
-      final nickNameRaw = userRow['nick_name']?.toString();
+      final nickNameRaw = getNullableStringFromRow(userRow, 'nick_name');
       nickname = (nickNameRaw != null && nickNameRaw.isNotEmpty)
           ? nickNameRaw
           : '알 수 없음';
@@ -32,7 +33,7 @@ class UserProfileDatasource {
     }
 
     final avatarUrl = userRow != null
-        ? (userRow['profile_image']?.toString() ?? '')
+        ? getStringFromRow(userRow, 'profile_image')
         : '';
 
     // 2) user_review 테이블에서 받은 리뷰들의 평점/개수 및 목록 집계
@@ -49,10 +50,11 @@ class UserProfileDatasource {
 
       final ratings = <double>[];
       for (final row in reviews) {
-        final fromUserId = row['from_user_id']?.toString() ?? '';
-        final ratingValue = (row['rating'] as num?)?.toDouble();
-        final comment = row['comment']?.toString() ?? '';
-        final createdAtRaw = row['created_at']?.toString();
+        if (row is! Map<String, dynamic>) continue;
+        final fromUserId = getStringFromRow(row, 'from_user_id');
+        final ratingValue = getNullableDoubleFromRow(row, 'rating');
+        final comment = getStringFromRow(row, 'comment');
+        final createdAtRaw = getNullableStringFromRow(row, 'created_at');
 
         if (ratingValue != null) {
           ratings.add(ratingValue);
@@ -95,8 +97,9 @@ class UserProfileDatasource {
 
         final nickMap = <String, String>{};
         for (final row in userRows) {
-          final id = row['id']?.toString();
-          final nick = row['nick_name']?.toString();
+          if (row is! Map<String, dynamic>) continue;
+          final id = getNullableStringFromRow(row, 'id');
+          final nick = getNullableStringFromRow(row, 'nick_name');
           if (id != null && nick != null && nick.isNotEmpty) {
             nickMap[id] = nick;
           }
@@ -114,7 +117,7 @@ class UserProfileDatasource {
             )
             .toList();
       }
-    } catch (_) {
+    } catch (e) {
       rating = 0;
       reviewCount = 0;
       reviewsList = [];

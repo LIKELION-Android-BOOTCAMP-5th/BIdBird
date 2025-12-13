@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/video_player_widget.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:flutter/material.dart';
@@ -20,8 +21,18 @@ class ItemAddImagesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive values
+    final containerHeight = context.heightRatio(0.2, min: 140.0, max: 200.0); // 특수 케이스: 이미지 컨테이너 높이
+    final imageSize = context.imageSize;
+    final buttonSize = context.iconSizeMedium;
+    final iconSize = context.iconSizeSmall;
+    final padding = context.inputPadding;
+    final spacing = context.spacingSmall;
+    final fontSize = context.widthRatio(0.03, min: 10.0, max: 14.0); // 특수 케이스: 이미지 카운트 폰트
+    final labelFontSize = context.widthRatio(0.028, min: 9.0, max: 13.0); // 특수 케이스: 대표 이미지 라벨
+    
     return Container(
-      height: 160,
+      height: containerHeight,
       width: double.infinity,
       decoration: BoxDecoration(
         color: BackgroundColor,
@@ -35,11 +46,15 @@ class ItemAddImagesSection extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.file_upload_outlined, color: iconColor, size: 32),
-                  const SizedBox(height: 8),
-                  const Text(
+                  Icon(
+                    Icons.file_upload_outlined,
+                    color: iconColor,
+                    size: iconSize * 1.3,
+                  ),
+                  SizedBox(height: spacing),
+                  Text(
                     '이미지를 업로드하세요',
-                    style: TextStyle(fontSize: 13, color: iconColor),
+                    style: TextStyle(fontSize: fontSize, color: iconColor),
                   ),
                 ],
               ),
@@ -47,7 +62,10 @@ class ItemAddImagesSection extends StatelessWidget {
           else
             ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: padding,
+                vertical: padding,
+              ),
               itemBuilder: (context, index) {
                 final image = viewModel.selectedImages[index];
                 final bool isPrimary = index == viewModel.primaryImageIndex;
@@ -61,8 +79,8 @@ class ItemAddImagesSection extends StatelessWidget {
                         borderRadius: defaultBorder,
                         child: isVideoFile(image.path)
                             ? SizedBox(
-                                width: 120,
-                                height: 120,
+                                width: imageSize,
+                                height: imageSize,
                                 child: VideoPlayerWidget(
                                   videoPath: image.path,
                                   autoPlay: false,
@@ -72,19 +90,19 @@ class ItemAddImagesSection extends StatelessWidget {
                               )
                             : Image.file(
                                 File(image.path),
-                                width: 120,
-                                height: 120,
+                                width: imageSize,
+                                height: imageSize,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
-                                    width: 120,
-                                    height: 120,
+                                    width: imageSize,
+                                    height: imageSize,
                                     color: Colors.grey[300],
-                                    child: const Center(
+                                    child: Center(
                                       child: Icon(
                                         Icons.error_outline,
                                         color: Colors.grey,
-                                        size: 24,
+                                        size: iconSize,
                                       ),
                                     ),
                                   );
@@ -92,23 +110,23 @@ class ItemAddImagesSection extends StatelessWidget {
                               ),
                       ),
                       Positioned(
-                        top: 4,
-                        right: 4,
+                        top: spacing * 0.5,
+                        right: spacing * 0.5,
                         child: GestureDetector(
                           onTap: () {
                             viewModel.removeImageAt(index);
                           },
                           child: Container(
-                            width: 20,
-                            height: 20,
+                            width: buttonSize * 0.625,
+                            height: buttonSize * 0.625,
                             decoration: BoxDecoration(
                               color: Colors.black54,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(buttonSize * 0.3125),
                             ),
                             alignment: Alignment.center,
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              size: 14,
+                              size: iconSize * 0.7,
                               color: Colors.white,
                             ),
                           ),
@@ -118,19 +136,19 @@ class ItemAddImagesSection extends StatelessWidget {
                         Positioned.fill(
                           child: Center(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: padding * 0.67,
+                                vertical: spacing * 0.5,
                               ),
                               decoration: BoxDecoration(
                                 color: blueColor,
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
+                              child: Text(
                                 '대표 이미지',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 11,
+                                  fontSize: labelFontSize,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -141,31 +159,35 @@ class ItemAddImagesSection extends StatelessWidget {
                   ),
                 );
               },
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, __) => SizedBox(width: spacing),
               itemCount: viewModel.selectedImages.length,
             ),
           Positioned(
-            right: 8,
-            bottom: 8,
+            right: padding * 0.67,
+            bottom: padding * 0.67,
             child: GestureDetector(
               onTap: onTapAdd,
               child: Container(
-                width: 32,
-                height: 32,
+                width: buttonSize,
+                height: buttonSize,
                 decoration: BoxDecoration(
                   color: blueColor,
                   borderRadius: BorderRadius.circular(defaultRadius),
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
+                child: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                  size: iconSize,
+                ),
               ),
             ),
           ),
           Positioned(
-            left: 8,
-            bottom: 8,
+            left: padding * 0.67,
+            bottom: padding * 0.67,
             child: Container(
-              width: 32,
-              height: 32,
+              width: buttonSize,
+              height: buttonSize,
               decoration: BoxDecoration(
                 color: blueColor,
                 borderRadius: BorderRadius.circular(defaultRadius),
@@ -175,7 +197,10 @@ class ItemAddImagesSection extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   '${viewModel.selectedImages.length}/10',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: fontSize,
+                  ),
                 ),
               ),
             ),
