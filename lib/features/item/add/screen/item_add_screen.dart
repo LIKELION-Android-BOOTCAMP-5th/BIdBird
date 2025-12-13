@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
@@ -16,11 +17,41 @@ import 'package:bidbird/core/widgets/item/add/labeled_text_field.dart';
 class ItemAddScreen extends StatelessWidget {
   const ItemAddScreen({super.key});
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String hint, BuildContext? context) {
+    if (context == null) {
+      return InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: iconColor, fontSize: 13),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(defaultRadius),
+          borderSide: const BorderSide(color: BackgroundColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(defaultRadius),
+          borderSide: const BorderSide(color: BackgroundColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(defaultRadius),
+          borderSide: const BorderSide(color: blueColor, width: 1.5),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      );
+    }
+
+    final hintFontSize = context.fontSizeSmall;
+    final horizontalPadding = context.inputPadding;
+    final verticalPadding = context.inputPadding;
+    final borderWidth = context.borderWidth;
+
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: iconColor, fontSize: 13),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      hintStyle: TextStyle(color: iconColor, fontSize: hintFontSize),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(defaultRadius),
         borderSide: const BorderSide(color: BackgroundColor),
@@ -31,7 +62,7 @@ class ItemAddScreen extends StatelessWidget {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: const BorderSide(color: blueColor, width: 1.5),
+        borderSide: BorderSide(color: blueColor, width: borderWidth),
       ),
       filled: true,
       fillColor: Colors.white,
@@ -57,6 +88,13 @@ class ItemAddScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ItemAddViewModel viewModel = context.watch<ItemAddViewModel>();
 
+    // Responsive values
+    final horizontalPadding = context.hPadding;
+    final verticalPadding = context.vPadding;
+    final spacing = context.spacingMedium;
+    final labelFontSize = context.fontSizeMedium;
+    final bottomPadding = context.bottomPadding;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -68,16 +106,19 @@ class ItemAddScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('매물 등록'), centerTitle: true),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8.0),
+                Padding(
+                  padding: EdgeInsets.only(bottom: context.labelBottomPadding),
                   child: Text(
                     '상품 이미지',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: labelFontSize,
                       fontWeight: FontWeight.w600,
                       color: textColor,
                     ),
@@ -87,21 +128,22 @@ class ItemAddScreen extends StatelessWidget {
                   viewModel: viewModel,
                   onTapAdd: () => _showImageSourceSheet(context, viewModel),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: spacing),
                 LabeledTextField(
                   label: '제목',
                   controller: viewModel.titleController,
                   decoration: _inputDecoration(
                     '상품 제목을 입력하세요',
+                    context,
                   ).copyWith(fillColor: Colors.white),
                 ),
-                const SizedBox(height: 20),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8.0),
+                SizedBox(height: spacing),
+                Padding(
+                  padding: EdgeInsets.only(bottom: context.labelBottomPadding),
                   child: Text(
                     '카테고리',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: labelFontSize,
                       fontWeight: FontWeight.w600,
                       color: textColor,
                     ),
@@ -109,17 +151,19 @@ class ItemAddScreen extends StatelessWidget {
                 ),
                 viewModel.isLoadingKeywords
                     ? Container(
-                        height: 48,
+                        height: context.heightRatio(0.06, min: 44.0, max: 56.0), // 특수 케이스: 로딩 컨테이너 높이
                         alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: context.inputPadding,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(defaultRadius),
                           border: Border.all(color: BackgroundColor),
                         ),
-                        child: const SizedBox(
-                          height: 20,
-                          width: 20,
+                        child: SizedBox(
+                          height: context.iconSizeSmall,
+                          width: context.iconSizeSmall,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
@@ -129,11 +173,11 @@ class ItemAddScreen extends StatelessWidget {
                         items: viewModel.keywordTypes
                             .map(
                               (e) => DropdownMenuItem<int>(
-                                value: e['id'] as int,
+                                value: e.id,
                                 child: Text(
-                                  e['title']?.toString() ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 13,
+                                  e.title,
+                                  style: TextStyle(
+                                    fontSize: context.fontSizeSmall,
                                     color: Colors.black87,
                                   ),
                                 ),
@@ -143,14 +187,14 @@ class ItemAddScreen extends StatelessWidget {
                         onChanged: (value) {
                           viewModel.setSelectedKeywordTypeId(value);
                         },
-                        decoration: _inputDecoration('카테고리 선택'),
+                        decoration: _inputDecoration('카테고리 선택', context),
                       ),
-                const SizedBox(height: 20),
+                SizedBox(height: spacing),
                 ItemAddPriceSection(
                   viewModel: viewModel,
-                  inputDecoration: _inputDecoration,
+                  inputDecoration: (hint) => _inputDecoration(hint, context),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: spacing),
                 LabeledDropdown<String>(
                   label: '경매 기간(시간)',
                   value: viewModel.selectedDuration,
@@ -160,8 +204,8 @@ class ItemAddScreen extends StatelessWidget {
                           value: e,
                           child: Text(
                             e,
-                            style: const TextStyle(
-                              fontSize: 13,
+                            style: TextStyle(
+                              fontSize: context.fontSizeSmall,
                               color: textColor,
                             ),
                           ),
@@ -172,26 +216,31 @@ class ItemAddScreen extends StatelessWidget {
                     if (value == null) return;
                     viewModel.setSelectedDuration(value);
                   },
-                  decoration: _inputDecoration(ItemAuctionDurationConstants.defaultDurationOption),
+                  decoration: _inputDecoration(ItemAuctionDurationConstants.defaultDurationOption, context),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: spacing),
                 LabeledTextField(
                   label: '상품 설명',
                   controller: viewModel.descriptionController,
                   maxLines: 5,
-                  decoration: _inputDecoration('상품에 대한 상세한 설명을 입력하세요'),
+                  decoration: _inputDecoration('상품에 대한 상세한 설명을 입력하세요', context),
                 ),
-                const SizedBox(height: 80),
+                SizedBox(height: bottomPadding),
               ],
             ),
           ),
         ),
         bottomNavigationBar: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              0,
+              horizontalPadding,
+              context.labelBottomPadding,
+            ),
             child: SizedBox(
               width: double.infinity,
-              height: 52,
+              height: context.buttonHeight,
               child: ElevatedButton(
                 onPressed: viewModel.isSubmitting
                     ? null
@@ -215,10 +264,10 @@ class ItemAddScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(defaultRadius),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   '저장하기',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: context.buttonFontSize,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),

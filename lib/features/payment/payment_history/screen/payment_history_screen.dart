@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
@@ -58,6 +59,8 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final titleFontSize = context.fontSizeLarge;
+    
     return Scaffold(
       backgroundColor: BackgroundColor,
       appBar: AppBar(
@@ -68,8 +71,8 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           widget.itemId != null 
               ? PaymentTexts.historyDetailTitle 
               : PaymentTexts.historyTitle,
-          style: const TextStyle(
-            fontSize: 18,
+          style: TextStyle(
+            fontSize: titleFontSize,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -86,20 +89,30 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     }
 
     if (_error != null) {
+      final fontSize = context.fontSizeMedium;
+      final buttonFontSize = context.fontSizeMedium;
+      
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _error!,
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: _loadPayments,
-              child: const Text(PaymentErrorMessages.retry),
-            ),
-          ],
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: context.hPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _error!,
+                style: TextStyle(fontSize: fontSize),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: context.spacingSmall),
+              TextButton(
+                onPressed: _loadPayments,
+                child: Text(
+                  PaymentErrorMessages.retry,
+                  style: TextStyle(fontSize: buttonFontSize),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -115,13 +128,22 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     }
 
     // itemId 없으면: 전체 결제 내역 리스트
+    final horizontalPadding = context.screenPadding;
+    final verticalPadding = context.vPadding;
+    final separatorHeight = context.spacingSmall;
+    
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        verticalPadding,
+        horizontalPadding,
+        verticalPadding * 1.5,
+      ),
       itemBuilder: (BuildContext context, int index) {
         final PaymentHistoryItem item = _payments[index];
         return _PaymentHistoryCard(item: item);
       },
-      separatorBuilder: (BuildContext context, int index) => const SizedBox(height: 8),
+      separatorBuilder: (BuildContext context, int index) => SizedBox(height: separatorHeight),
       itemCount: _payments.length,
     );
   }
@@ -139,19 +161,35 @@ class _PaymentDetailBody extends StatelessWidget {
       item.statusCode,
       isCompleted: isCompleted,
     );
+    
+    // Responsive values
+    final horizontalPadding = context.screenPadding;
+    final verticalPadding = context.spacingMedium;
+    final imageSize = context.widthRatio(0.4, min: 120.0, max: 200.0); // 특수 케이스: 결제 상세 이미지 크기
+    final titleFontSize = context.fontSizeLarge;
+    final amountFontSize = context.fontSizeXLarge;
+    final badgeFontSize = context.widthRatio(0.03, min: 10.0, max: 14.0); // 특수 케이스: 상태 배지 폰트
+    final spacing = context.spacingMedium;
+    final buttonHeight = context.buttonHeight;
+    final buttonFontSize = context.buttonFontSize;
 
     return Column(
       children: [
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              verticalPadding,
+              horizontalPadding,
+              verticalPadding,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // 이미지
                 Container(
-                  width: 160,
-                  height: 160,
+                  width: imageSize,
+                  height: imageSize,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -178,9 +216,9 @@ class _PaymentDetailBody extends StatelessWidget {
                               errorWidget: (context, url, error) => Container(
                                 color: ImageBackgroundColor,
                                 alignment: Alignment.center,
-                                child: const Icon(
+                                child: Icon(
                                   Icons.image,
-                                  size: 48,
+                                  size: context.iconSizeMedium,
                                   color: iconColor,
                                 ),
                               ),
@@ -190,27 +228,30 @@ class _PaymentDetailBody extends StatelessWidget {
                       : Container(
                           color: ImageBackgroundColor,
                           alignment: Alignment.center,
-                          child: const Icon(
+                          child: Icon(
                             Icons.image,
-                            size: 48,
+                            size: context.iconSizeMedium,
                             color: iconColor,
                           ),
                         ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: spacing),
                 // 제목
                 Text(
                   item.title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: TextStyle(
+                    fontSize: titleFontSize,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: spacing * 0.5),
                 // 상태 배지
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.inputPadding,
+                    vertical: context.spacingSmall * 0.5,
+                  ),
                   decoration: BoxDecoration(
                     color: getPaymentStatusBackgroundColor(isCompleted),
                     borderRadius: BorderRadius.circular(999),
@@ -218,48 +259,48 @@ class _PaymentDetailBody extends StatelessWidget {
                   child: Text(
                     statusText,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: badgeFontSize,
                       fontWeight: FontWeight.w600,
                       color: getPaymentStatusColor(isCompleted),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: spacing * 0.67),
                 // 금액
                 Text(
                   '${formatPrice(item.amount)}원',
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: TextStyle(
+                    fontSize: amountFontSize,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: spacing),
                 const Divider(height: 1),
-                const SizedBox(height: 16),
+                SizedBox(height: spacing * 0.67),
                 // 상세 정보 리스트
                 _DetailRow(
                   label: PaymentTexts.transactionType,
                   value: getPaymentTransactionTypeText(item.statusCode),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: context.labelBottomPadding),
                 _DetailRow(
                   label: PaymentTexts.paymentDateTime,
                   value: formatDateTime(item.paidAt),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: context.labelBottomPadding),
                 if (item.paymentType != null && item.paymentType!.isNotEmpty) ...[
                   _DetailRow(
                     label: PaymentTexts.paymentMethod,
                     value: item.paymentType!,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: context.labelBottomPadding),
                 ],
                 if (item.paymentId != null && item.paymentId!.isNotEmpty) ...[
                   _DetailRow(
                     label: PaymentTexts.transactionNumber,
                     value: item.paymentId!,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: context.labelBottomPadding),
                 ],
                 if (item.txId != null && item.txId!.isNotEmpty)
                   _DetailRow(
@@ -271,10 +312,15 @@ class _PaymentDetailBody extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            0,
+            horizontalPadding,
+            context.spacingMedium,
+          ),
           child: SizedBox(
             width: double.infinity,
-            height: 48,
+            height: buttonHeight,
             child: ElevatedButton(
               onPressed: () {
                 // 1순위: 스택에 이전 화면이 있으면 단순히 뒤로가기
@@ -292,10 +338,10 @@ class _PaymentDetailBody extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8.7),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 PaymentTexts.confirm,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: buttonFontSize,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
@@ -316,25 +362,30 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelWidth = context.widthRatio(0.2, min: 70.0, max: 100.0); // 특수 케이스: 상세 정보 라벨 너비
+    final labelFontSize = context.fontSizeSmall;
+    final valueFontSize = context.fontSizeMedium;
+    final spacing = context.inputPadding;
+    
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 80,
+          width: labelWidth,
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: labelFontSize,
               color: iconColor,
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: spacing),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: valueFontSize,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -356,11 +407,25 @@ class _PaymentHistoryCard extends StatelessWidget {
       item.statusCode,
       isCompleted: isCompleted,
     );
+    
+    // Responsive values
+    final horizontalPadding = context.screenPadding;
+    final verticalPadding = context.inputPadding;
+    final borderRadius = context.inputPadding;
+    final titleFontSize = context.fontSizeMedium;
+    final dateFontSize = context.fontSizeSmall;
+    final amountFontSize = context.fontSizeMedium;
+    final badgeFontSize = context.widthRatio(0.028, min: 9.0, max: 13.0); // 특수 케이스: 카드 배지 폰트
+    final spacing = context.inputPadding;
+    final badgePadding = EdgeInsets.symmetric(
+      horizontal: context.widthRatio(0.025, min: 8.0, max: 14.0), // 특수 케이스: 배지 패딩
+      vertical: context.spacingSmall * 0.5,
+    );
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: const [
           BoxShadow(
             color: shadowLow,
@@ -369,7 +434,10 @@ class _PaymentHistoryCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -380,37 +448,36 @@ class _PaymentHistoryCard extends StatelessWidget {
                   item.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: titleFontSize,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: spacing * 0.33),
                 Text(
                   formatDate(item.paidAt),
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: dateFontSize,
                     color: iconColor,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: spacing),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 '${formatPrice(item.amount)}원',
-                style: const TextStyle(
-                  fontSize: 15,
+                style: TextStyle(
+                  fontSize: amountFontSize,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: spacing * 0.33),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: badgePadding,
                 decoration: BoxDecoration(
                   color: getPaymentStatusBackgroundColor(isCompleted),
                   borderRadius: BorderRadius.circular(999),
@@ -418,7 +485,7 @@ class _PaymentHistoryCard extends StatelessWidget {
                 child: Text(
                   statusText,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: badgeFontSize,
                     fontWeight: FontWeight.w600,
                     color: getPaymentStatusColor(isCompleted),
                   ),
@@ -435,32 +502,43 @@ class _PaymentHistoryCard extends StatelessWidget {
 class _EmptyPaymentHistory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final iconSize = context.iconSizeMedium;
+    final titleFontSize = context.fontSizeMedium;
+    final subtitleFontSize = context.fontSizeSmall;
+    final spacing = context.screenPadding;
+    final smallSpacing = context.spacingSmall * 0.5;
+    
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(
-            Icons.receipt_long,
-            size: 48,
-            color: iconColor,
-          ),
-          SizedBox(height: 16),
-          Text(
-            PaymentTexts.emptyHistory,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            PaymentTexts.emptyHistorySubtitle,
-            style: TextStyle(
-              fontSize: 12,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: context.hPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.receipt_long,
+              size: iconSize,
               color: iconColor,
             ),
-          ),
-        ],
+            SizedBox(height: spacing),
+            Text(
+              PaymentTexts.emptyHistory,
+              style: TextStyle(
+                fontSize: titleFontSize,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: smallSpacing),
+            Text(
+              PaymentTexts.emptyHistorySubtitle,
+              style: TextStyle(
+                fontSize: subtitleFontSize,
+                color: iconColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

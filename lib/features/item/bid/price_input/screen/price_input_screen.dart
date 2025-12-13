@@ -37,51 +37,23 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   }
 
   void _increaseBid() {
-    debugPrint(
-      '[BidBottomSheet] _increaseBid called, bidUnit: ${widget.bidUnit}',
-    );
-    debugPrint('[BidBottomSheet] _increaseBid: before _bidAmount: $_bidAmount');
-
     setState(() {
       final next = _bidAmount + widget.bidUnit;
-      debugPrint(
-        '[BidBottomSheet] _increaseBid: _bidAmount: $_bidAmount, next: $next, buyNowPrice: ${widget.buyNowPrice}',
-      );
 
       if (widget.buyNowPrice > 0 && next > widget.buyNowPrice) {
-        debugPrint(
-          '[BidBottomSheet] _increaseBid: next > buyNowPrice, not updating',
-        );
+        // 즉시 구매가보다 높으면 업데이트하지 않음
       } else {
         _bidAmount = next;
-        debugPrint(
-          '[BidBottomSheet] _increaseBid: updated _bidAmount to $_bidAmount',
-        );
       }
     });
-
-    debugPrint('[BidBottomSheet] _increaseBid: after _bidAmount: $_bidAmount');
   }
 
   void _decreaseBid() {
-    debugPrint(
-      '[BidBottomSheet] _decreaseBid called, bidUnit: ${widget.bidUnit}',
-    );
     setState(() {
       final minBid = widget.currentPrice + widget.bidUnit;
       final next = _bidAmount - widget.bidUnit;
-      debugPrint(
-        '[BidBottomSheet] _decreaseBid: _bidAmount: $_bidAmount, next: $next, minBid: $minBid',
-      );
       if (next >= minBid) {
         _bidAmount = next;
-        debugPrint(
-          '[BidBottomSheet] _decreaseBid: updated _bidAmount to $_bidAmount',
-        );
-      } else {
-        debugPrint(
-          '[BidBottomSheet] _decreaseBid: next < minBid, not updating',
-        );
       }
     });
   }

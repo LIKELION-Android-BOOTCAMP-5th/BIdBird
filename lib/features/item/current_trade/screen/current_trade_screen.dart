@@ -155,11 +155,8 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             date: item.date,
             onTap: () {
               final itemId = item.itemId;
-              debugPrint('[CurrentTradeScreen] 카드 탭: item_id=$itemId');
               if (itemId.isNotEmpty) {
                 context.push('/item/$itemId');
-              } else {
-                debugPrint('[CurrentTradeScreen] item_id가 비어 있어서 이동하지 않습니다.');
               }
             },
           );

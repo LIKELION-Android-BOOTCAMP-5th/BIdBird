@@ -86,8 +86,8 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
   Widget _buildImageSection(BuildContext context) {
     final thumbnailUrl = item.thumbnailUrl;
     final bool isVideo = thumbnailUrl != null && isVideoFile(thumbnailUrl);
-    final displayUrl = isVideo && thumbnailUrl != null 
-        ? getVideoThumbnailUrl(thumbnailUrl) 
+    final displayUrl = isVideo 
+        ? getVideoThumbnailUrl(thumbnailUrl!) 
         : thumbnailUrl;
 
     return Container(
@@ -103,10 +103,10 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
             Positioned.fill(
               child: displayUrl != null && displayUrl.isNotEmpty
                   ? GestureDetector(
-                      onTap: isVideo && thumbnailUrl != null
+                      onTap: isVideo
                           ? () {
                               // 전체 화면 비디오 플레이어로 재생
-                              FullScreenVideoViewer.show(context, thumbnailUrl);
+                              FullScreenVideoViewer.show(context, thumbnailUrl!);
                             }
                           : null,
                       child: Stack(

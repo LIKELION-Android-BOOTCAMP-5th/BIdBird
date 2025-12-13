@@ -1,4 +1,3 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -61,12 +60,6 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
 
         final ItemDetail item = vm.itemDetail!;
 
-        // 현재 로그인 유저와 판매자 비교해서 내 매물 여부 판단
-        final supabase = SupabaseManager.shared.supabase;
-        final currentUser = supabase.auth.currentUser;
-        final bool isMyItem =
-            currentUser != null && currentUser.id == item.sellerId;
-
         return Scaffold(
           backgroundColor: Colors.white,
           appBar: AppBar(
@@ -113,14 +106,14 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
                       children: [
                         ItemImageSection(item: item),
                         const SizedBox(height: 8),
-                        ItemMainInfoSection(item: item, isMyItem: isMyItem),
+                        ItemMainInfoSection(item: item, isMyItem: vm.isMyItem),
                         const SizedBox(height: 0),
                         ItemDescriptionSection(item: item),
                       ],
                     ),
                   ),
                 ),
-                ItemBottomActionBar(item: item, isMyItem: isMyItem),
+                ItemBottomActionBar(item: item, isMyItem: vm.isMyItem),
               ],
             ),
           ),

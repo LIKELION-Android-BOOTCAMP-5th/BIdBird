@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../data/repository/user_history_repository.dart';
 import '../model/user_history_entity.dart';
 
-class UserProfileViewModel extends ChangeNotifier {
-  UserProfileViewModel({UserProfileRepository? repository})
-      : _repository = repository ?? UserProfileRepository();
+class UserHistoryViewModel extends ChangeNotifier {
+  UserHistoryViewModel({UserHistoryRepository? repository})
+      : _repository = repository ?? UserHistoryRepository();
 
-  final UserProfileRepository _repository;
+  final UserHistoryRepository _repository;
 
   List<UserTradeSummary> _trades = [];
 

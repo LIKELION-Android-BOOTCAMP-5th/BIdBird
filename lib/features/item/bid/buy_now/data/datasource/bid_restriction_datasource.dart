@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -25,7 +26,7 @@ class BidRestrictionDatasource {
       return false;
     }
 
-    final int failCount = (row['fail_count'] as num?)?.toInt() ?? 0;
+    final int failCount = getIntFromRow(row, 'fail_count');
     return failCount >= 3;
   }
 }

@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:flutter/material.dart';
 
 class LabeledTextField extends StatelessWidget {
@@ -17,15 +18,17 @@ class LabeledTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelFontSize = context.fontSizeMedium;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
+          padding: EdgeInsets.only(bottom: context.labelBottomPadding),
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: labelFontSize,
               fontWeight: FontWeight.w600,
               color: textColor,
             ),

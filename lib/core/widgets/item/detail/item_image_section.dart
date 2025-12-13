@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:bidbird/core/widgets/video_player_widget.dart';
+import 'package:bidbird/core/widgets/item/detail/full_screen_image_gallery_viewer.dart';
 import 'package:bidbird/features/chat/presentation/widgets/full_screen_video_viewer.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -62,12 +62,27 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                     final thumbnailUrl = isVideo ? getVideoThumbnailUrl(imageUrl) : imageUrl;
 
                     return GestureDetector(
-                      onTap: isVideo
-                          ? () {
-                              // 전체 화면 비디오 플레이어로 재생
-                              FullScreenVideoViewer.show(context, imageUrl);
-                            }
-                          : null,
+                      onTap: () {
+                        if (isVideo) {
+                          // 전체 화면 비디오 플레이어로 재생
+                          FullScreenVideoViewer.show(context, imageUrl);
+                        } else {
+                          // 이미지 갤러리 뷰어로 확대
+                          // 이미지만 필터링 (비디오 제외)
+                          final imageOnlyUrls = images
+                              .where((url) => !isVideoFile(url))
+                              .toList();
+                          final imageIndex = imageOnlyUrls.indexOf(imageUrl);
+                          
+                          if (imageIndex >= 0) {
+                            FullScreenImageGalleryViewer.show(
+                              context,
+                              imageOnlyUrls,
+                              initialIndex: imageIndex,
+                            );
+                          }
+                        }
+                      },
                       child: Container(
                         width: double.infinity,
                         height: double.infinity,

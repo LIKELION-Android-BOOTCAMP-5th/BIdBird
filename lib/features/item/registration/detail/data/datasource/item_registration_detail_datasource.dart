@@ -1,6 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
-import 'package:flutter/foundation.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
+import 'package:bidbird/core/utils/item/item_security_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ItemRegistrationDetailDatasource {
@@ -17,55 +17,66 @@ class ItemRegistrationDetailDatasource {
           .eq('id', 1)
           .single();
 
-      return (row['terms'] ?? '').toString();
-    } on PostgrestException catch (e) {
-      debugPrint('[ItemRegistrationDetailDatasource] fetchTermsText PostgrestException: ${e.message}');
-      rethrow;
+      return getStringFromRow(row, 'terms');
     } catch (e) {
-      debugPrint('[ItemRegistrationDetailDatasource] fetchTermsText error: $e');
+      if (e.toString().contains('PGRST116') || e.toString().contains('No rows')) {
+        throw Exception('약관 정보를 불러올 수 없습니다.');
+      }
       rethrow;
     }
   }
 
   Future<DateTime> confirmRegistration(String itemId) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
-        throw Exception(ItemRegistrationErrorMessages.loginRequired);
-      }
+      final userId = ItemSecurityUtils.requireAuth(_supabase);
 
       final response = await _supabase.functions.invoke(
         'schedule-item-registration',
         body: <String, dynamic>{
           'itemId': itemId,
-          'userId': user.id,
+          'userId': userId,
         },
       );
 
       final dynamic data = response.data;
-      if (data is Map<String, dynamic> && data['scheduled_at'] != null) {
-        return DateTime.parse(data['scheduled_at'].toString()).toLocal();
+      if (data is Map<String, dynamic>) {
+        final scheduledAt = getNullableStringFromRow(data, 'scheduled_at');
+        if (scheduledAt != null) {
+          return DateTime.parse(scheduledAt).toLocal();
+        }
       }
 
       throw Exception('잘못된 Edge Function 응답입니다: ${response.data}');
-    } on PostgrestException catch (e) {
-      debugPrint('[ItemRegistrationDetailDatasource] PostgrestException: ${e.message}');
-      rethrow;
     } catch (e) {
-      debugPrint('[ItemRegistrationDetailDatasource] confirmRegistration error: $e');
       rethrow;
     }
   }
 
   Future<void> deleteItem(String itemId) async {
     try {
-      await _supabase.from('item_images').delete().eq('item_id', itemId);
-      await _supabase.from('items_detail').delete().eq('item_id', itemId);
-    } on PostgrestException catch (e) {
-      debugPrint('[ItemRegistrationDetailDatasource] deleteItem PostgrestException: ${e.message}');
-      rethrow;
+      await ItemSecurityUtils.requireAuthAndVerifyOwnership(
+        _supabase,
+        itemId,
+      );
+
+      // 트랜잭션 처리: 두 작업이 모두 성공해야 함
+      // Supabase는 RPC를 통해 트랜잭션을 처리하거나,
+      // 순차 실행 후 실패 시 롤백 로직을 구현할 수 있습니다.
+      // 여기서는 순차 실행 후 실패 시 예외를 던져 롤백을 유도합니다.
+
+      // 1. item_images 삭제
+      await _supabase
+          .from('item_images')
+          .delete()
+          .eq('item_id', itemId);
+
+      // 2. items_detail 삭제
+      await _supabase
+          .from('items_detail')
+          .delete()
+          .eq('item_id', itemId);
     } catch (e) {
-      debugPrint('[ItemRegistrationDetailDatasource] deleteItem error: $e');
+      // 에러 발생 시 상위로 전파하여 롤백 유도
       rethrow;
     }
   }

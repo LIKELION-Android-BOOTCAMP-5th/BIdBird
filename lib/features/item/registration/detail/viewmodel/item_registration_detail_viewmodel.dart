@@ -26,7 +26,8 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
   Future<void> loadTerms() async {
     try {
       _termsText = await _repository.fetchTermsText();
-    } catch (_) {
+    } catch (e) {
+      // 약관 로드 실패 시에도 계속 진행 가능하도록 조용히 처리
     } finally {
       notifyListeners();
     }

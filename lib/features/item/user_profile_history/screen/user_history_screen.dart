@@ -19,7 +19,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
       backgroundColor: BackgroundColor,
       body: SafeArea(
         child: FutureBuilder<List<UserTradeSummary>>(
-          future: UserProfileRepository().fetchUserTrades(userId),
+          future: UserHistoryRepository().fetchUserTrades(userId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());

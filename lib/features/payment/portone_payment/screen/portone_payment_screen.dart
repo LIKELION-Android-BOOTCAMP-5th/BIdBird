@@ -1,5 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/payment/payment_error_messages.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/config/portone_config.dart';
 import 'package:bidbird/features/payment/portone_payment/data/repository/item_payment_gateway.dart';
 import 'package:bidbird/features/payment/portone_payment/data/repository/item_payment_gateway_impl.dart';
@@ -114,21 +115,32 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
 
     // 사용자 정보 로딩 실패 또는 부족한 경우 에러 UI 노출
     if (_buyerName == null || _buyerPhone == null) {
+      final fontSize = context.buttonFontSize;
+      final buttonFontSize = context.fontSizeMedium;
+      final spacing = context.screenPadding;
+      
       return Scaffold(
         body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                PaymentErrorMessages.loadUserInfoFailed,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadDecryptedUser,
-                child: const Text(PaymentErrorMessages.retry),
-              ),
-            ],
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.hPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  PaymentErrorMessages.loadUserInfoFailed,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: fontSize),
+                ),
+                SizedBox(height: spacing),
+                ElevatedButton(
+                  onPressed: _loadDecryptedUser,
+                  child: Text(
+                    PaymentErrorMessages.retry,
+                    style: TextStyle(fontSize: buttonFontSize),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -149,14 +161,13 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
           child: CircularProgressIndicator(),
         ),
         callback: (PaymentResponse result) async {
-          final navigatorContext = context;
           final success = await widget.gateway.handlePaymentResult(
             result: result.toJson(),
             request: widget.request,
           );
 
           if (!mounted) return;
-          Navigator.of(navigatorContext).pop(success);
+          Navigator.of(context).pop(success);
         },
         onError: (Object? error) {
           if (!mounted) return;

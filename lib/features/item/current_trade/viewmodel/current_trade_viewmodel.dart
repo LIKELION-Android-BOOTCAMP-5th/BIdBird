@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
 import '../data/repository/current_trade_repository.dart';
@@ -27,13 +26,8 @@ class CurrentTradeViewModel extends ChangeNotifier {
       _setLoading(true);
       _error = null;
 
-      final results = await Future.wait([
-        _repository.fetchMyBidHistory(),
-        _repository.fetchMySaleHistory(),
-      ]);
-
-      _bidHistory = results[0] as List<BidHistoryItem>;
-      _saleHistory = results[1] as List<SaleHistoryItem>;
+      _bidHistory = await _repository.fetchMyBidHistory();
+      _saleHistory = await _repository.fetchMySaleHistory();
 
       notifyListeners();
     } catch (e) {
