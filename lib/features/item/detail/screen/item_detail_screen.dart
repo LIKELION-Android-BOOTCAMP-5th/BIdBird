@@ -3,7 +3,7 @@ import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dar
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../report/ui/report_screen.dart';
+import 'package:bidbird/features/report/screen/report_screen.dart';
 import 'package:bidbird/core/widgets/item/detail/item_image_section.dart';
 import 'package:bidbird/core/widgets/item/detail/item_main_info_section.dart';
 import 'package:bidbird/core/widgets/item/detail/item_description_section.dart';

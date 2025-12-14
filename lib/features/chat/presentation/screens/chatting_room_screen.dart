@@ -11,7 +11,7 @@ import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom
 import 'package:bidbird/core/widgets/video_player_widget.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
-import 'package:bidbird/features/report/ui/report_screen.dart';
+import 'package:bidbird/features/report/screen/report_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
