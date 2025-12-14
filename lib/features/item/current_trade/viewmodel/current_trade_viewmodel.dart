@@ -21,6 +21,76 @@ class CurrentTradeViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  /// 상태별 그룹핑된 아이템 (구매 내역)
+  List<BidHistoryItem> get todoBidItems {
+    return _bidHistory.where((item) => item.itemStatus == TradeItemStatus.todo).toList();
+  }
+
+  List<BidHistoryItem> get inProgressBidItems {
+    return _bidHistory.where((item) => item.itemStatus == TradeItemStatus.inProgress).toList();
+  }
+
+  List<BidHistoryItem> get completedBidItems {
+    return _bidHistory.where((item) => item.itemStatus == TradeItemStatus.completed).toList();
+  }
+
+  /// 상태별 그룹핑된 아이템 (판매 내역)
+  List<SaleHistoryItem> get todoSaleItems {
+    return _saleHistory.where((item) => item.itemStatus == TradeItemStatus.todo).toList();
+  }
+
+  List<SaleHistoryItem> get inProgressSaleItems {
+    return _saleHistory.where((item) => item.itemStatus == TradeItemStatus.inProgress).toList();
+  }
+
+  List<SaleHistoryItem> get completedSaleItems {
+    return _saleHistory.where((item) => item.itemStatus == TradeItemStatus.completed).toList();
+  }
+
+  /// 액션 허브 아이템 (구매 내역, 최대 2개)
+  List<ActionHubItem> get bidActionHubItems {
+    final Map<TradeActionType, int> actionCounts = {
+      TradeActionType.paymentRequired: 0,
+      TradeActionType.purchaseConfirmRequired: 0,
+    };
+    
+    for (final item in _bidHistory) {
+      final actionType = item.actionType;
+      if (actionType != TradeActionType.none) {
+        actionCounts[actionType] = (actionCounts[actionType] ?? 0) + 1;
+      }
+    }
+
+    final hubItems = actionCounts.entries
+        .map((e) => ActionHubItem(actionType: e.key, count: e.value))
+        .toList();
+    
+    hubItems.sort((a, b) => b.count.compareTo(a.count));
+    return hubItems.take(2).toList();
+  }
+
+  /// 액션 허브 아이템 (판매 내역, 최대 2개)
+  List<ActionHubItem> get saleActionHubItems {
+    final Map<TradeActionType, int> actionCounts = {
+      TradeActionType.paymentRequired: 0,
+      TradeActionType.shippingInfoRequired: 0,
+    };
+    
+    for (final item in _saleHistory) {
+      final actionType = item.actionType;
+      if (actionType != TradeActionType.none) {
+        actionCounts[actionType] = (actionCounts[actionType] ?? 0) + 1;
+      }
+    }
+
+    final hubItems = actionCounts.entries
+        .map((e) => ActionHubItem(actionType: e.key, count: e.value))
+        .toList();
+    
+    hubItems.sort((a, b) => b.count.compareTo(a.count));
+    return hubItems.take(2).toList();
+  }
+
   Future<void> loadData() async {
     try {
       _setLoading(true);
