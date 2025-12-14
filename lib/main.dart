@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bidbird/core/config/portone_config.dart';
 import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/router/app_router.dart';
@@ -35,6 +36,21 @@ void main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+
+  // Portone 설정 초기화 (Supabase 환경 변수에서 로드)
+  try {
+    await PortoneConfig.initialize().timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        debugPrint('[PortoneConfig] Initialization timeout');
+        throw TimeoutException('PortoneConfig initialization timeout');
+      },
+    );
+  } catch (e) {
+    debugPrint('[PortoneConfig] Initialization failed: $e');
+    debugPrint('[PortoneConfig] App will continue but payment features may not work');
+    // 앱은 계속 실행되지만 결제 기능은 사용할 수 없음
+  }
 
   // Cloudinary 초기화
   CloudinaryContext.cloudinary = Cloudinary.fromCloudName(
