@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodel/item_add_viewmodel.dart';
+import 'package:bidbird/core/widgets/item/bottom_submit_button.dart';
 import 'package:bidbird/core/widgets/item/content_input_section.dart';
 import 'package:bidbird/core/widgets/item/image_upload_section.dart';
 import 'package:bidbird/core/widgets/item/add/item_add_price_section.dart';
@@ -246,41 +247,22 @@ class ItemAddScreen extends StatelessWidget {
               horizontalPadding,
               context.labelBottomPadding,
             ),
-            child: SizedBox(
-              width: double.infinity,
-              height: context.buttonHeight,
-              child: ElevatedButton(
-                onPressed: viewModel.isSubmitting
-                    ? null
-                    : () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AskPopup(
-                            content: '저장하시겠습니까?',
-                            noText: '취소',
-                            yesLogic: () async {
-                              Navigator.of(context).pop();
-                              await viewModel.submit(context);
-                            },
-                          ),
-                        );
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: blueColor,
-                  disabledBackgroundColor: BorderColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(defaultRadius),
+            child: BottomSubmitButton(
+              text: '저장하기',
+              isEnabled: viewModel.validate() == null && !viewModel.isSubmitting,
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AskPopup(
+                    content: '저장하시겠습니까?',
+                    noText: '취소',
+                    yesLogic: () async {
+                      Navigator.of(context).pop();
+                      await viewModel.submit(context);
+                    },
                   ),
-                ),
-                child: Text(
-                  '저장하기',
-                  style: TextStyle(
-                    fontSize: context.buttonFontSize,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ),

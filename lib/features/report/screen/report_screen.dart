@@ -1,9 +1,10 @@
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/widgets/item/bottom_submit_button.dart';
 import 'package:bidbird/core/widgets/item/content_input_section.dart';
 import 'package:bidbird/core/widgets/item/image_upload_section.dart';
 import 'package:bidbird/core/widgets/report/report_reason_section.dart';
-import 'package:bidbird/core/widgets/report/report_submit_button.dart';
 import 'package:bidbird/core/widgets/report/report_target_section.dart';
 import 'package:bidbird/features/report/viewmodel/report_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -272,9 +273,18 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
 
                   // 하단 고정 버튼
-                  ReportSubmitButton(
-                    viewModel: vm,
-                    onSubmit: () => _showSubmitConfirmDialog(vm),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      context.hPadding,
+                      0,
+                      context.hPadding,
+                      context.labelBottomPadding,
+                    ),
+                    child: BottomSubmitButton(
+                      text: '신고 제출',
+                      isEnabled: vm.canSubmit,
+                      onPressed: () => _showSubmitConfirmDialog(vm),
+                    ),
                   ),
                 ],
               ),
