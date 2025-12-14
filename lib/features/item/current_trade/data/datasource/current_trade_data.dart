@@ -120,6 +120,9 @@ class CurrentTradeDatasource {
               tradeCode: tradeCode,
               itemId: itemId,
             ),
+            tradeStatusCode: tradeCode,
+            auctionStatusCode: auctionCode,
+            hasShippingInfo: itemIdsWithShipping.contains(itemId),
           ),
         );
       }
@@ -244,6 +247,9 @@ class CurrentTradeDatasource {
           thumbnailUrl: getNullableStringFromRow(item, 'thumbnail_image'),
           status: status,
           date: formatDateTimeFromIso(createdAt),
+          tradeStatusCode: tradeCode,
+          auctionStatusCode: auctionCode,
+          hasShippingInfo: itemIdsWithShipping.contains(itemId),
         );
       }).toList();
     } catch (e) {

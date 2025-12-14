@@ -11,7 +11,9 @@ import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
 import 'package:bidbird/features/item/bid_win/screen/item_bid_win_screen.dart';
 import 'package:bidbird/features/item/current_trade/data/repository/current_trade_repository.dart';
+import 'package:bidbird/features/item/current_trade/model/current_trade_entity.dart';
 import 'package:bidbird/features/item/current_trade/screen/current_trade_screen.dart';
+import 'package:bidbird/features/item/current_trade/screen/filtered_trade_list_screen.dart';
 import 'package:bidbird/features/item/current_trade/viewmodel/current_trade_viewmodel.dart';
 import 'package:bidbird/features/item/detail/screen/item_detail_screen.dart';
 import 'package:bidbird/features/item/registration/detail/screen/item_registration_detail_screen.dart';
@@ -159,6 +161,30 @@ GoRouter createAppRouter(BuildContext context) {
                 ),
               );
             },
+            routes: [
+              GoRoute(
+                path: 'filtered',
+                pageBuilder: (context, state) {
+                  final extra = state.extra;
+                  if (extra is Map<String, dynamic>) {
+                    final actionType = extra['actionType'] as TradeActionType;
+                    final isSeller = extra['isSeller'] as bool;
+                    return NoTransitionPage(
+                      child: ChangeNotifierProvider<CurrentTradeViewModel>(
+                        create: (_) => CurrentTradeViewModel(
+                          repository: CurrentTradeRepositoryImpl(),
+                        )..loadData(),
+                        child: FilteredTradeListScreen(
+                          actionType: actionType,
+                          isSeller: isSeller,
+                        ),
+                      ),
+                    );
+                  }
+                  return const NoTransitionPage(child: CurrentTradeScreen());
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: '/chat',

@@ -128,7 +128,7 @@ class _ShippingInfoInputPopupState extends State<ShippingInfoInputPopup> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: _trackingNumberController,
-                  enabled: _isEditing,
+                  enabled: _isEditing && !_hasExistingData, // 기존 송장 번호가 있으면 수정 불가
                   decoration: InputDecoration(
                     hintText: '송장번호를 입력하세요',
                     hintStyle: TextStyle(
@@ -159,7 +159,7 @@ class _ShippingInfoInputPopupState extends State<ShippingInfoInputPopup> {
 
                 // 버튼 영역
                 if (_hasExistingData && !_isEditing)
-                  // 기존 정보가 있고 편집 모드가 아닐 때: 수정 버튼만
+                  // 기존 정보가 있고 편집 모드가 아닐 때: 닫기 버튼만 (송장 정보는 수정 불가)
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
@@ -167,11 +167,9 @@ class _ShippingInfoInputPopupState extends State<ShippingInfoInputPopup> {
                         backgroundColor: WidgetStateProperty.all(blueColor),
                       ),
                       onPressed: () {
-                        setState(() {
-                          _isEditing = true;
-                        });
+                        Navigator.pop(context);
                       },
-                      child: const Text('수정'),
+                      child: const Text('닫기'),
                     ),
                   )
                 else
@@ -211,18 +209,32 @@ class _ShippingInfoInputPopupState extends State<ShippingInfoInputPopup> {
                             backgroundColor: WidgetStateProperty.all(blueColor),
                           ),
                           onPressed: () async {
-                            if (_carrierController.text.trim().isEmpty ||
-                                _trackingNumberController.text.trim().isEmpty) {
+                            if (_carrierController.text.trim().isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('택배사와 송장번호를 모두 입력해주세요'),
+                                  content: Text('택배사를 입력해주세요'),
                                 ),
                               );
                               return;
                             }
+                            
+                            // 송장 번호가 이미 있으면 기존 값 유지, 없으면 입력값 사용
+                            final trackingNumber = _hasExistingData 
+                                ? (widget.initialTrackingNumber ?? _trackingNumberController.text.trim())
+                                : _trackingNumberController.text.trim();
+                            
+                            if (trackingNumber.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('송장번호를 입력해주세요'),
+                                ),
+                              );
+                              return;
+                            }
+                            
                             await widget.onConfirm(
                               _carrierController.text.trim(),
-                              _trackingNumberController.text.trim(),
+                              trackingNumber,
                             );
                             if (context.mounted) {
                               Navigator.pop(context);
