@@ -22,17 +22,16 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
       final supabase = SupabaseManager.shared.supabase;
 
       final response = await supabase.functions.invoke(
-        'payment-complete',
+        'payment',
         body: <String, dynamic>{
           'payment_type': 'auction',
           'item_id': request.itemId,
-          'amount': request.amount,
           'txId': result['txId'] ?? result['transactionId'],
           'paymentId': result['paymentId'],
         },
       );
 
-      debugPrint('[PortonePayment] payment-complete response: ${response.data}');
+      debugPrint('[PortonePayment] payment response: ${response.data}');
 
       final data = response.data;
       if (data is Map && data['success'] == true) {
@@ -41,7 +40,7 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
         return false;
       }
     } catch (e, st) {
-      debugPrint('[PortonePayment] payment-complete error: $e\n$st');
+      debugPrint('[PortonePayment] payment error: $e\n$st');
       return false;
     }
   }

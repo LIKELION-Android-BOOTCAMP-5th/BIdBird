@@ -199,6 +199,9 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
       payMethod: PaymentPayMethod.card,
       appScheme: widget.request.appScheme,
       customer: customer,
+      customData: {
+        'escrow': 'true',
+      },
     );
   }
 }
