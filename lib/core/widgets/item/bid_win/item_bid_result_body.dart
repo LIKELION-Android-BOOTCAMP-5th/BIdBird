@@ -19,6 +19,7 @@ class ItemBidResultBody extends StatelessWidget {
     required this.iconColor,
     required this.actions,
     this.onClose,
+    this.priceLabel,
   });
 
   final ItemBidWinEntity item;
@@ -28,6 +29,7 @@ class ItemBidResultBody extends StatelessWidget {
   final Color iconColor;
   final List<Widget> actions;
   final VoidCallback? onClose;
+  final String? priceLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +223,7 @@ class ItemBidResultBody extends StatelessWidget {
                       ),
                       SizedBox(height: smallSpacing * 0.6),
                       Text(
-                        '낙찰가',
+                        priceLabel ?? '낙찰가',
                         style: TextStyle(
                           fontSize: priceLabelFontSize,
                           color: iconColor,
@@ -242,7 +244,7 @@ class ItemBidResultBody extends StatelessWidget {
             ),
           ),
         ),
-        Spacer(),
+        const SizedBox(height: 24),
         Padding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,

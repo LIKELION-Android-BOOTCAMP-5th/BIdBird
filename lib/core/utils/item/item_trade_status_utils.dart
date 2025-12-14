@@ -10,6 +10,11 @@ Color getTradeStatusColor(String status) {
     return blueColor;
   }
 
+  // 배송 중: 파란색
+  if (status == '배송 중') {
+    return blueColor;
+  }
+
   // 경매/입찰 진행 중 또는 성공 계열: 초록색
   if (status.contains('경매 진행 중') ||
       status.contains('입찰 중') ||

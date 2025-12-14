@@ -50,12 +50,33 @@ class CurrentTradeDatasource {
         }
       }
 
+      // 배송 정보 조회 (결제 완료 상태인 경우 배송 중 여부 확인용)
+      Set<String> itemIdsWithShipping = {};
+      if (itemIds.isNotEmpty) {
+        final shippingRows = await _supabase
+            .from('shipping_info')
+            .select('item_id')
+            .inFilter('item_id', itemIds.toList());
+
+        for (final row in shippingRows) {
+          final id = getNullableStringFromRow(row, 'item_id');
+          if (id != null && id.isNotEmpty) {
+            itemIdsWithShipping.add(id);
+          }
+        }
+      }
+
       // auctions의 경매/거래 상태 코드 기준으로 상태 문자열 생성
-      String buildStatus({required int auctionCode, required int tradeCode}) {
+      String buildStatus({
+        required int auctionCode,
+        required int tradeCode,
+        required String itemId,
+      }) {
         if (tradeCode == 550) {
           return '거래 완료';
         } else if (tradeCode == 520) {
-          return '결제 완료';
+          // 배송 정보가 있으면 "배송 중", 없으면 "결제 완료"
+          return itemIdsWithShipping.contains(itemId) ? '배송 중' : '결제 완료';
         } else if (tradeCode == 510) {
           return '결제 대기';
         }
@@ -97,6 +118,7 @@ class CurrentTradeDatasource {
             status: buildStatus(
               auctionCode: auctionCode,
               tradeCode: tradeCode,
+              itemId: itemId,
             ),
           ),
         );
@@ -159,6 +181,22 @@ class CurrentTradeDatasource {
         }
       }
 
+      // 배송 정보 조회 (결제 완료 상태인 경우 배송 중 여부 확인용)
+      Set<String> itemIdsWithShipping = {};
+      if (itemIds.isNotEmpty) {
+        final shippingRows = await _supabase
+            .from('shipping_info')
+            .select('item_id')
+            .inFilter('item_id', itemIds);
+
+        for (final row in shippingRows) {
+          final id = getNullableStringFromRow(row, 'item_id');
+          if (id != null && id.isNotEmpty) {
+            itemIdsWithShipping.add(id);
+          }
+        }
+      }
+
       return itemIds.map((itemId) {
         final item = itemsById[itemId] ?? <String, dynamic>{};
         final auctionCode = auctionCodeByItemId[itemId] ?? 0;
@@ -170,7 +208,8 @@ class CurrentTradeDatasource {
         if (tradeCode == 550) {
           status = '거래 완료';
         } else if (tradeCode == 520) {
-          status = '결제 완료';
+          // 배송 정보가 있으면 "배송 중", 없으면 "결제 완료"
+          status = itemIdsWithShipping.contains(itemId) ? '배송 중' : '결제 완료';
         } else if (tradeCode == 510) {
           status = '결제 대기';
         } else {
