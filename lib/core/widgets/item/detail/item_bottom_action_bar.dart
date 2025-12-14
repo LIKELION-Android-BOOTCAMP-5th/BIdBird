@@ -17,6 +17,7 @@ import 'package:bidbird/features/item/bid/price_input/screen/price_input_screen.
 import 'package:bidbird/features/item/bid/price_input/viewmodel/price_input_viewmodel.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
 import 'package:bidbird/features/item/bid_win/screen/item_bid_win_screen.dart';
+import 'package:bidbird/features/item/seller_payment_complete/screen/seller_payment_complete_screen.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
@@ -39,6 +40,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   int? _statusCode;
   bool _isBidRestricted = false;
   bool _hasShownRelistPopup = false;
+  bool _hasShownPaymentCompleteScreen = false;
 
   final CheckBidRestrictionUseCase _checkBidRestrictionUseCase =
       CheckBidRestrictionUseCase(BidRestrictionGatewayImpl());
@@ -57,6 +59,16 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     _statusCode = widget.item.statusCode;
     _checkBidRestriction();
   }
+
+  @override
+  void didUpdateWidget(ItemBottomActionBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // trade_status_code가 변경되면 플래그 리셋
+    if (oldWidget.item.tradeStatusCode != widget.item.tradeStatusCode) {
+      _hasShownPaymentCompleteScreen = false;
+    }
+  }
+
 
   Future<void> _checkBidRestriction() async {
     try {
@@ -108,6 +120,22 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               },
             );
           },
+        );
+      });
+    }
+
+    // 판매자 입장: trade_status_code가 520이면 자동으로 결제 완료 화면 표시
+    if (isMyItem && isTradePaid && !_hasShownPaymentCompleteScreen) {
+      _hasShownPaymentCompleteScreen = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SellerPaymentCompleteScreen(item: bidWinEntity),
+          ),
         );
       });
     }
@@ -177,27 +205,80 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               Expanded(child: _buildBuyNowButton()),
             ],
           ] else ...[
-            Expanded(
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: BackgroundColor,
-                  borderRadius: BorderRadius.circular(8.7),
-                  border: Border.all(color: BorderColor),
-                ),
-                child: const Center(
-                  child: Text(
-                    '내 매물은 입찰이 불가능합니다',
+            // 판매자 입장: trade_status_code가 520이면 구매자 연락하기, 배송 정보 입력하기 버튼 표시
+            if (isTradePaid) ...[
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChattingRoomScreen(
+                          itemId: widget.item.itemId,
+                        ),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: blueColor),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.7),
+                    ),
+                  ),
+                  child: const Text(
+                    '구매자 연락하기',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: TopBidderTextColor,
+                      color: blueColor,
                     ),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    // TODO: 배송 정보 입력 화면으로 이동
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: blueColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.7),
+                    ),
+                  ),
+                  child: const Text(
+                    '배송 정보 입력하기',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ] else
+              Expanded(
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: BackgroundColor,
+                    borderRadius: BorderRadius.circular(8.7),
+                    border: Border.all(color: BorderColor),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '내 매물은 입찰이 불가능합니다',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: TopBidderTextColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ],
       ),

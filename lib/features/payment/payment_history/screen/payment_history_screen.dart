@@ -213,6 +213,13 @@ class _PaymentDetailBody extends StatelessWidget {
                               imageUrl: imageUrl,
                               cacheManager: ItemImageCacheManager.instance,
                               fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: ImageBackgroundColor,
+                                alignment: Alignment.center,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
                               errorWidget: (context, url, error) => Container(
                                 color: ImageBackgroundColor,
                                 alignment: Alignment.center,
