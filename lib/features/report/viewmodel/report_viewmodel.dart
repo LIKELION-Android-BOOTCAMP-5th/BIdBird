@@ -1,15 +1,15 @@
 import 'package:bidbird/core/managers/cloudinary_manager.dart';
-import 'package:bidbird/features/report/data/datasource/report_datasource.dart';
+import 'package:bidbird/features/report/data/repository/report_repository.dart';
 import 'package:bidbird/features/report/model/report_type_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ReportViewModel extends ChangeNotifier {
-  final ReportDatasource _datasource;
+  final ReportRepository _repository;
   final ImagePicker _picker = ImagePicker();
 
-  ReportViewModel({ReportDatasource? datasource})
-      : _datasource = datasource ?? ReportDatasource() {
+  ReportViewModel({ReportRepository? repository})
+      : _repository = repository ?? ReportRepository() {
     // 생성 시 즉시 로드 시작
     loadReportTypes();
   }
@@ -97,7 +97,7 @@ class ReportViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _allReportTypes = await _datasource.fetchReportTypes();
+      _allReportTypes = await _repository.fetchReportTypes();
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -222,7 +222,7 @@ class ReportViewModel extends ChangeNotifier {
         return false;
       }
 
-      await _datasource.submitReport(
+      await _repository.submitReport(
         itemId: itemId,
         targetUserId: targetUserId,
         reportCode: _selectedReportCode!,
