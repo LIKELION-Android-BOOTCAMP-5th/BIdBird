@@ -2,6 +2,8 @@ import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
+import 'package:bidbird/core/widgets/components/bottom_sheet/auction_duration_bottom_sheet.dart';
+import 'package:bidbird/core/widgets/components/bottom_sheet/category_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +15,6 @@ import 'package:bidbird/core/widgets/item/bottom_submit_button.dart';
 import 'package:bidbird/core/widgets/item/content_input_section.dart';
 import 'package:bidbird/core/widgets/item/image_upload_section.dart';
 import 'package:bidbird/core/widgets/item/add/item_add_price_section.dart';
-import 'package:bidbird/core/widgets/item/add/labeled_dropdown.dart';
 import 'package:bidbird/core/widgets/item/add/labeled_text_field.dart';
 
 class ItemAddScreen extends StatelessWidget {
@@ -174,27 +175,63 @@ class ItemAddScreen extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       )
-                    : LabeledDropdown<int>(
-                        label: '',
-                        value: viewModel.selectedKeywordTypeId,
-                        items: viewModel.keywordTypes
-                            .map(
-                              (e) => DropdownMenuItem<int>(
-                                value: e.id,
-                                child: Text(
-                                  e.title,
-                                  style: TextStyle(
-                                    fontSize: context.fontSizeSmall,
-                                    color: Colors.black87,
+                    : GestureDetector(
+                        onTap: () {
+                          CategoryBottomSheet.show(
+                            context,
+                            categories: viewModel.keywordTypes,
+                            selectedCategoryId: viewModel.selectedKeywordTypeId,
+                            onCategorySelected: (id) {
+                              viewModel.setSelectedKeywordTypeId(id);
+                            },
+                          );
+                        },
+                        child: Container(
+                          height: 48,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.inputPadding,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(defaultRadius),
+                            border: Border.all(
+                              color: viewModel.selectedKeywordTypeId != null
+                                  ? blueColor
+                                  : BackgroundColor,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    viewModel.selectedKeywordTypeId != null
+                                        ? viewModel.keywordTypes
+                                            .firstWhere(
+                                              (e) => e.id == viewModel.selectedKeywordTypeId,
+                                              orElse: () => viewModel.keywordTypes.first,
+                                            )
+                                            .title
+                                        : '카테고리 선택',
+                                    style: TextStyle(
+                                      fontSize: context.fontSizeSmall,
+                                      color: viewModel.selectedKeywordTypeId != null
+                                          ? textColor
+                                          : iconColor,
+                                    ),
                                   ),
                                 ),
                               ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          viewModel.setSelectedKeywordTypeId(value);
-                        },
-                        decoration: _inputDecoration('카테고리 선택', context),
+                              Icon(
+                                Icons.keyboard_arrow_down,
+                                color: viewModel.selectedKeywordTypeId != null
+                                    ? blueColor
+                                    : iconColor,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                 SizedBox(height: spacing),
                 ItemAddPriceSection(
@@ -202,28 +239,67 @@ class ItemAddScreen extends StatelessWidget {
                   inputDecoration: (hint) => _inputDecoration(hint, context),
                 ),
                 SizedBox(height: spacing),
-                LabeledDropdown<String>(
-                  label: '경매 기간(시간)',
-                  value: viewModel.selectedDuration,
-                  items: viewModel.durations
-                      .map(
-                        (e) => DropdownMenuItem<String>(
-                          value: e,
-                          child: Text(
-                            e,
-                            style: TextStyle(
-                              fontSize: context.fontSizeSmall,
-                              color: textColor,
+                Padding(
+                  padding: EdgeInsets.only(bottom: context.labelBottomPadding),
+                  child: Text(
+                    '경매 기간(시간)',
+                    style: TextStyle(
+                      fontSize: labelFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    AuctionDurationBottomSheet.show(
+                      context,
+                      durations: viewModel.durations,
+                      selectedDuration: viewModel.selectedDuration,
+                      onDurationSelected: (duration) {
+                        viewModel.setSelectedDuration(duration);
+                      },
+                    );
+                  },
+                  child: Container(
+                    height: 48,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.inputPadding,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(defaultRadius),
+                      border: Border.all(
+                        color: viewModel.selectedDuration != null
+                            ? blueColor
+                            : BackgroundColor,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              viewModel.selectedDuration ?? '경매 기간 선택',
+                              style: TextStyle(
+                                fontSize: context.fontSizeSmall,
+                                color: viewModel.selectedDuration != null
+                                    ? textColor
+                                    : iconColor,
+                              ),
                             ),
                           ),
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    viewModel.setSelectedDuration(value);
-                  },
-                  decoration: _inputDecoration(ItemAuctionDurationConstants.defaultDurationOption, context),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          color: viewModel.selectedDuration != null
+                              ? blueColor
+                              : iconColor,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 SizedBox(height: spacing),
                 ContentInputSection(

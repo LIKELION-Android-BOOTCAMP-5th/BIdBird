@@ -50,7 +50,7 @@ class ItemAddViewModel extends ChangeNotifier {
 
   String? editingItemId;
   int? selectedKeywordTypeId;
-  String selectedDuration = ItemAuctionDurationConstants.defaultDurationOption;
+  String? selectedDuration;
   bool agreed = false;
   bool isLoadingKeywords = false;
   bool isSubmitting = false;
@@ -358,8 +358,17 @@ class ItemAddViewModel extends ChangeNotifier {
     );
 
     try {
+      if (selectedDuration == null) {
+        if (context.mounted) {
+          scaffoldMessenger.showSnackBar(
+            const SnackBar(content: Text('경매 기간을 선택해주세요.')),
+          );
+        }
+        return;
+      }
+      
       final DateTime now = DateTime.now();
-      final int auctionHours = parseAuctionDuration(selectedDuration);
+      final int auctionHours = parseAuctionDuration(selectedDuration!);
 
       final DateTime auctionStartAt = now;
       final DateTime auctionEndAt = now.add(Duration(hours: auctionHours));

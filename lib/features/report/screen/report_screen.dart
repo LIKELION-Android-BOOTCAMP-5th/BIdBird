@@ -247,7 +247,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             controller: vm.contentController,
                             hintText: '발생한 상황을 간단히 설명해주세요',
                             maxLength: 500,
-                            minLength: 10,
+                            minLength: 1,
                             minLines: 6,
                             maxLines: 8,
                             successMessage: '구체적으로 작성할수록 처리 속도가 빨라집니다',
