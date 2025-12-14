@@ -9,7 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodel/item_add_viewmodel.dart';
-import 'package:bidbird/core/widgets/item/add/item_add_image_section.dart';
+import 'package:bidbird/core/widgets/item/image_upload_section.dart';
 import 'package:bidbird/core/widgets/item/add/item_add_price_section.dart';
 import 'package:bidbird/core/widgets/item/add/labeled_dropdown.dart';
 import 'package:bidbird/core/widgets/item/add/labeled_text_field.dart';
@@ -124,9 +124,14 @@ class ItemAddScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                ItemAddImagesSection(
-                  viewModel: viewModel,
-                  onTapAdd: () => _showImageSourceSheet(context, viewModel),
+                ImageUploadSection(
+                  images: viewModel.selectedImages,
+                  maxImageCount: 10,
+                  primaryImageIndex: viewModel.primaryImageIndex,
+                  onPrimaryImageTap: (index) => viewModel.setPrimaryImage(index),
+                  supportVideo: true,
+                  onAddImage: () => _showImageSourceSheet(context, viewModel),
+                  onRemoveImage: (index) => viewModel.removeImageAt(index),
                 ),
                 SizedBox(height: spacing),
                 LabeledTextField(

@@ -1,7 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/widgets/item/image_upload_section.dart';
 import 'package:bidbird/core/widgets/report/report_content_section.dart';
-import 'package:bidbird/core/widgets/report/report_image_section.dart';
 import 'package:bidbird/core/widgets/report/report_reason_section.dart';
 import 'package:bidbird/core/widgets/report/report_submit_button.dart';
 import 'package:bidbird/core/widgets/report/report_target_section.dart';
@@ -245,7 +246,18 @@ class _ReportScreenState extends State<ReportScreen> {
                           const SizedBox(height: 16),
 
                           // 사진 첨부 카드
-                          ReportImageSection(viewModel: vm),
+                          ImageUploadSection(
+                            images: vm.selectedImages,
+                            maxImageCount: 5,
+                            onAddImage: () {
+                              ImageSourceBottomSheet.show(
+                                context,
+                                onGalleryTap: () => vm.pickImagesFromGallery(),
+                                onCameraTap: () => vm.pickImageFromCamera(),
+                              );
+                            },
+                            onRemoveImage: (index) => vm.removeImageAt(index),
+                          ),
                         ],
                       ),
                     ),
