@@ -1,8 +1,7 @@
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/widgets/item/content_input_section.dart';
 import 'package:bidbird/core/widgets/item/image_upload_section.dart';
-import 'package:bidbird/core/widgets/report/report_content_section.dart';
 import 'package:bidbird/core/widgets/report/report_reason_section.dart';
 import 'package:bidbird/core/widgets/report/report_submit_button.dart';
 import 'package:bidbird/core/widgets/report/report_target_section.dart';
@@ -242,7 +241,16 @@ class _ReportScreenState extends State<ReportScreen> {
                           const SizedBox(height: 24),
 
                           // 상세 내용 카드
-                          ReportContentSection(viewModel: vm),
+                          ContentInputSection(
+                            label: '상세 내용',
+                            controller: vm.contentController,
+                            hintText: '발생한 상황을 간단히 설명해주세요',
+                            maxLength: 500,
+                            minLength: 10,
+                            minLines: 6,
+                            maxLines: 8,
+                            successMessage: '구체적으로 작성할수록 처리 속도가 빨라집니다',
+                          ),
                           const SizedBox(height: 16),
 
                           // 사진 첨부 카드
