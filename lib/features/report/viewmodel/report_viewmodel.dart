@@ -12,6 +12,11 @@ class ReportViewModel extends ChangeNotifier {
       : _repository = repository ?? ReportRepository() {
     // 생성 시 즉시 로드 시작
     loadReportTypes();
+    
+    // 상세 내용 텍스트 변경 시 버튼 상태 업데이트
+    contentController.addListener(() {
+      notifyListeners();
+    });
   }
 
   List<ReportTypeEntity> _allReportTypes = [];
@@ -81,7 +86,7 @@ class ReportViewModel extends ChangeNotifier {
   bool get canSubmit {
     return _selectedCategory != null &&
         _selectedReportCode != null &&
-        contentController.text.trim().length >= 10;
+        contentController.text.trim().length >= 1;
   }
 
   @override
