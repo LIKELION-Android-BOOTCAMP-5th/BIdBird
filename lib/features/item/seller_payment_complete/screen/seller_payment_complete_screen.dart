@@ -1,6 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/pop_up/shipping_info_input_popup.dart';
+import 'package:bidbird/core/widgets/components/pop_up/shipping_info_view_popup.dart';
 import 'package:bidbird/core/widgets/item/bid_win/item_bid_result_body.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
@@ -74,7 +76,7 @@ class _SellerPaymentCompleteScreenState extends State<SellerPaymentCompleteScree
                     actions: [
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: ResponsiveConstants.buttonHeight(context),
               child: OutlinedButton(
                 onPressed: () {
                   Navigator.push(
@@ -91,21 +93,40 @@ class _SellerPaymentCompleteScreenState extends State<SellerPaymentCompleteScree
                     borderRadius: defaultBorder,
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   '구매자 연락하기',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: ResponsiveConstants.buttonFontSize(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ResponsiveConstants.spacingSmall(context)),
             SizedBox(
               width: double.infinity,
-              height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
+              height: ResponsiveConstants.buttonHeight(context),
+              child: ElevatedButton(
+                onPressed: () {
+                  final hasShippingInfo = _shippingInfo != null && 
+                      _shippingInfo?['tracking_number'] != null &&
+                      (_shippingInfo?['tracking_number'] as String?)?.isNotEmpty == true;
+                  
+                  if (hasShippingInfo) {
+                    // 송장 정보가 있으면 확인 팝업 표시
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (dialogContext) {
+                        return ShippingInfoViewPopup(
+                          createdAt: _shippingInfo?['created_at'] as String?,
+                          carrier: _shippingInfo?['carrier'] as String?,
+                          trackingNumber: _shippingInfo?['tracking_number'] as String?,
+                        );
+                      },
+                    );
+                  } else {
+                    // 송장 정보가 없으면 입력 팝업 표시
                     showDialog(
                       context: context,
                       barrierDismissible: true,
@@ -116,16 +137,17 @@ class _SellerPaymentCompleteScreenState extends State<SellerPaymentCompleteScree
                           onConfirm: (carrier, trackingNumber) async {
                             try {
                               if (_shippingInfo != null) {
-                                // 기존 정보가 있으면 수정
+                                // 기존 정보가 있으면 택배사만 수정 (송장 번호는 수정 불가)
+                                final existingTrackingNumber = _shippingInfo?['tracking_number'] as String?;
                                 await _shippingInfoRepository.updateShippingInfo(
                                   itemId: widget.item.itemId,
                                   carrier: carrier,
-                                  trackingNumber: trackingNumber,
+                                  trackingNumber: existingTrackingNumber ?? trackingNumber, // 기존 송장 번호 유지
                                 );
                                 if (dialogContext.mounted) {
                                   ScaffoldMessenger.of(dialogContext).showSnackBar(
                                     const SnackBar(
-                                      content: Text('송장 정보가 수정되었습니다'),
+                                      content: Text('택배사 정보가 수정되었습니다'),
                                     ),
                                   );
                                 }
@@ -159,7 +181,8 @@ class _SellerPaymentCompleteScreenState extends State<SellerPaymentCompleteScree
                         );
                       },
                     );
-                  },
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: blueColor,
                   shape: RoundedRectangleBorder(
@@ -167,15 +190,20 @@ class _SellerPaymentCompleteScreenState extends State<SellerPaymentCompleteScree
                   ),
                 ),
                 child: Text(
-                  _shippingInfo != null ? '배송 정보 수정하기' : '배송 정보 입력하기',
-                  style: const TextStyle(
-                    fontSize: 16,
+                  (_shippingInfo != null && 
+                   _shippingInfo?['tracking_number'] != null &&
+                   (_shippingInfo?['tracking_number'] as String?)?.isNotEmpty == true)
+                      ? '배송 정보 확인하기'
+                      : '배송 정보 입력하기',
+                  style: TextStyle(
+                    fontSize: ResponsiveConstants.buttonFontSize(context),
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
               ),
             ),
+            SizedBox(height: ResponsiveConstants.spacingMedium(context)),
                     ],
                   ),
                 ),
