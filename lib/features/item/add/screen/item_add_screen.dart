@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodel/item_add_viewmodel.dart';
+import 'package:bidbird/core/widgets/item/content_input_section.dart';
 import 'package:bidbird/core/widgets/item/image_upload_section.dart';
 import 'package:bidbird/core/widgets/item/add/item_add_price_section.dart';
 import 'package:bidbird/core/widgets/item/add/labeled_dropdown.dart';
@@ -224,11 +225,13 @@ class ItemAddScreen extends StatelessWidget {
                   decoration: _inputDecoration(ItemAuctionDurationConstants.defaultDurationOption, context),
                 ),
                 SizedBox(height: spacing),
-                LabeledTextField(
+                ContentInputSection(
                   label: '상품 설명',
                   controller: viewModel.descriptionController,
-                  maxLines: 5,
-                  decoration: _inputDecoration('상품에 대한 상세한 설명을 입력하세요', context),
+                  hintText: '상품에 대한 상세한 설명을 입력하세요',
+                  maxLength: 1000,
+                  minLines: 5,
+                  maxLines: 8,
                 ),
                 SizedBox(height: bottomPadding),
               ],
