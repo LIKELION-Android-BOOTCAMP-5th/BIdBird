@@ -244,7 +244,7 @@ class ItemBidResultBody extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: spacing),
         Padding(
           padding: EdgeInsets.fromLTRB(
             horizontalPadding,

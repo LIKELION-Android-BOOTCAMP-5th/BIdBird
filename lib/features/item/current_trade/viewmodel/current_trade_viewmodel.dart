@@ -92,6 +92,10 @@ class CurrentTradeViewModel extends ChangeNotifier {
   }
 
   Future<void> loadData() async {
+    if (_isLoading) {
+      return;
+    }
+    
     try {
       _setLoading(true);
       _error = null;

@@ -1,3 +1,4 @@
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/payment/payment_texts.dart';
@@ -51,7 +52,7 @@ class PaymentCompleteScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: blueColor,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.7),
+                            borderRadius: defaultBorder,
                           ),
                         ),
                         child: Text(
