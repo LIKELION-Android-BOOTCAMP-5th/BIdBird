@@ -1,9 +1,11 @@
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/utils/item/item_trade_status_utils.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
+import 'package:bidbird/features/item/registration/list/model/item_registration_entity.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -392,8 +394,13 @@ class _HistoryCard extends StatelessWidget {
     final roleLabel = isSeller ? '판매' : '구매';
 
     return GestureDetector(
-      onTap: () {
-        if (itemId.isNotEmpty) {
+      onTap: () async {
+        if (itemId.isEmpty) return;
+        
+        // 경매 대기 상태이고 판매자인 경우 매물 등록 최종 화면으로 이동
+        if (isSeller && status == '경매 대기') {
+          await _navigateToRegistrationDetail(context);
+        } else {
           context.push('/item/$itemId');
         }
       },
@@ -560,6 +567,54 @@ class _HistoryCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _navigateToRegistrationDetail(BuildContext context) async {
+    try {
+      final supabase = SupabaseManager.shared.supabase;
+      // items_detail에서 필요한 정보 가져오기
+      final result = await supabase
+          .from('items_detail')
+          .select('start_price, auction_duration_hours, thumbnail_image, buy_now_price, description')
+          .eq('item_id', itemId)
+          .maybeSingle();
+
+      if (result == null) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('매물 정보를 불러올 수 없습니다.')),
+        );
+        return;
+      }
+
+      final startPrice = getIntFromRow(result, 'start_price');
+      final auctionDurationHours = getIntFromRow(result, 'auction_duration_hours', 24);
+      final thumbnailUrl = getNullableStringFromRow(result, 'thumbnail_image');
+      final buyNowPrice = getIntFromRow(result, 'buy_now_price');
+      final description = getStringFromRow(result, 'description');
+
+      // ItemRegistrationData 생성
+      final registrationData = ItemRegistrationData(
+        id: itemId,
+        title: title,
+        description: description,
+        startPrice: startPrice,
+        instantPrice: buyNowPrice,
+        auctionDurationHours: auctionDurationHours,
+        thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      );
+
+      if (!context.mounted) return;
+      await context.push(
+        '/add_item/item_registration_detail',
+        extra: registrationData,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('오류가 발생했습니다: ${e.toString()}')),
+      );
+    }
   }
 
   String _formatMoney(int value) {
