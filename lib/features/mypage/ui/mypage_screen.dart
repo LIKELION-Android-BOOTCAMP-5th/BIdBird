@@ -1,9 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+
 import 'package:bidbird/core/widgets/notification_button.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +32,7 @@ class MypageScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _MypageProfile(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
               Expanded(child: _MypageItemList()),
             ],
           ),
@@ -61,38 +60,54 @@ class _MypageProfile extends StatelessWidget {
 
     final profile = vm.profile;
     final nickName = profile?.nickName ?? '닉네임을 등록하세요';
-    // final phoneNumber = profile?.phoneNumber ?? '전화번호를 등록하세요';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(color: blueColor, borderRadius: defaultBorder),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 32,
-
-            backgroundImage:
-                (profile?.profileImageUrl != null &&
-                    profile!.profileImageUrl!.isNotEmpty)
-                ? NetworkImage(profile.profileImageUrl!)
-                : null,
-            child:
-                (profile?.profileImageUrl == null ||
-                    profile!.profileImageUrl!.isEmpty)
-                ? const Icon(Icons.person, color: iconColor, size: 32)
-                : null,
-          ),
-          const SizedBox(width: 24),
-          Expanded(
-            child: Text(
-              nickName,
-              style: contentFontStyle.copyWith(color: BackgroundColor),
+    return GestureDetector(
+      onTap: () {
+        context.go('/mypage/update_info');
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: blueColor,
+          borderRadius: defaultBorder,
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 64,
+              height: 64,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: ImageBackgroundColor,
+                    foregroundImage:
+                        (profile?.profileImageUrl != null &&
+                            profile!.profileImageUrl!.isNotEmpty)
+                        ? NetworkImage(profile.profileImageUrl!)
+                        : null,
+                    child: const Icon(Icons.person, color: iconColor, size: 32),
+                  ),
+                  if (vm.isLoading)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
             ),
-
-            // const SizedBox(height: 4),
-            // Text(phoneNumber),
-          ),
-        ],
+            const SizedBox(width: 24),
+            Expanded(
+              child: Text(
+                nickName,
+                style: contentFontStyle.copyWith(color: BackgroundColor),
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: BackgroundColor),
+          ],
+        ),
       ),
     );
   }
@@ -104,22 +119,15 @@ class _MypageItemList extends StatelessWidget {
     return Column(
       children: [
         _Item(
-          icon: Icons.edit,
-          title: '정보 수정',
-          onTap: () {
-            context.go('/mypage/update_info');
-          },
-        ),
-        _Item(
           icon: Icons.favorite_border,
-          title: '관심 목록',
+          title: '관심목록',
           onTap: () {
             context.go('/mypage/favorite');
           },
         ),
         _Item(
           icon: Icons.receipt_long,
-          title: '거래 내역',
+          title: '거래내역',
           onTap: () {
             context.go('/mypage/trade');
           },
@@ -133,52 +141,12 @@ class _MypageItemList extends StatelessWidget {
         ),
         _Item(
           icon: Icons.block,
-          title: '블랙리스트',
+          title: '차단목록',
           onTap: () {
             context.go('/mypage/black_list');
           },
         ),
-        const Spacer(),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: RedColor,
-              side: const BorderSide(color: RedColor),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: defaultBorder),
-            ),
-            onPressed: () async {
-              showDialog(
-                context: context,
-                builder: (BuildContext dialogContext) {
-                  return AskPopup(
-                    content: '로그아웃 하시겠습니까?',
-                    yesText: '확인',
-                    noText: '취소',
-                    yesLogic: () async {
-                      Navigator.pop(dialogContext);
-                      await context.read<AuthViewModel>().logout(
-                        onLoggedOut: () {
-                          context.go('/login');
-                        },
-                      );
-                    },
-                  );
-                },
-              );
-            },
-            child: Text(
-              '로그아웃',
-              style: TextStyle(
-                fontSize: buttonFontStyle.fontSize,
-                fontWeight: buttonFontStyle.fontWeight,
-                color: RedColor,
-              ),
-            ),
-          ),
-        ),
-        const Spacer(),
+        const SizedBox(height: 24),
       ],
     );
   }

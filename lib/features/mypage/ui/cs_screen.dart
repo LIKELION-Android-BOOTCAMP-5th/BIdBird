@@ -43,19 +43,19 @@ class CsItemList extends StatelessWidget {
     return Column(
       children: [
         _Item(
-          icon: Icons.description_outlined,
-          color: blueColor,
-          title: '약관 확인',
+          icon: Icons.chat_bubble_outline,
+          color: yellowColor,
+          title: '신고내역',
           onTap: () {
-            context.go('/mypage/service_center/terms');
+            context.go('/mypage/service_center/report_feedback');
           },
         ),
         _Item(
-          icon: Icons.chat_bubble_outline,
-          color: yellowColor,
-          title: '신고 내역',
+          icon: Icons.description_outlined,
+          color: blueColor,
+          title: '약관확인',
           onTap: () {
-            context.go('/mypage/service_center/report_feedback');
+            context.go('/mypage/service_center/terms');
           },
         ),
       ],

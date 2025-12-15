@@ -54,7 +54,7 @@ class FavoritesScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('관심 목록'),
+        title: const Text('관심목록'),
         centerTitle: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
