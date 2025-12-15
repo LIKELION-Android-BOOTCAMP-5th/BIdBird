@@ -4,7 +4,6 @@ import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/widgets/video_player_widget.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 /// 이미지 첨부 바 위젯
 /// 여러 이미지를 가로 스크롤로 표시하고 각각 삭제 가능

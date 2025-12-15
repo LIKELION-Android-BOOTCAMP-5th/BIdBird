@@ -1,4 +1,4 @@
-import '../datasource/user_history_data.dart';
+import '../datasource/user_history_datasource.dart';
 import '../../model/user_history_entity.dart';
 
 class UserHistoryRepository {

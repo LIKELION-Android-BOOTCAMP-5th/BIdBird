@@ -11,6 +11,41 @@ class ItemDetailDatasource {
   final SupabaseClient _supabase;
 
   Future<ItemDetail?> fetchItemDetail(String itemId) async {
+    final row = await _fetchItemRow(itemId);
+    if (row == null) return null;
+
+    final String sellerId = getStringFromRow(row, 'seller_id');
+    final sellerTitle = await _fetchSellerName(sellerId, row);
+    final ratingSummary = sellerId.isNotEmpty 
+        ? await _fetchSellerRating(sellerId) 
+        : null;
+    final images = await _fetchImages(itemId);
+    final auctionData = await _fetchAuctionData(itemId);
+    final effectiveFinishTime = _calculateFinishTime(
+      auctionData.finishTime,
+      row,
+    );
+
+    return ItemDetail(
+      itemId: getStringFromRow(row, 'item_id', itemId),
+      sellerId: sellerId,
+      itemTitle: getStringFromRow(row, 'title'),
+      itemImages: images,
+      finishTime: effectiveFinishTime,
+      sellerTitle: sellerTitle,
+      buyNowPrice: getIntFromRow(row, 'buy_now_price'),
+      biddingCount: auctionData.biddingCount,
+      itemContent: getStringFromRow(row, 'description'),
+      currentPrice: auctionData.currentPrice,
+      bidPrice: ItemPriceHelper.calculateBidStep(auctionData.currentPrice),
+      sellerRating: ratingSummary?.rating ?? getDoubleFromRow(row, 'seller_rating'),
+      sellerReviewCount: ratingSummary?.reviewCount ?? getIntFromRow(row, 'seller_review_count'),
+      statusCode: auctionData.statusCode,
+      tradeStatusCode: auctionData.tradeStatusCode,
+    );
+  }
+
+  Future<Map<String, dynamic>?> _fetchItemRow(String itemId) async {
     final List<dynamic> result = await _supabase
         .from('items_detail')
         .select()
@@ -21,24 +56,15 @@ class ItemDetailDatasource {
 
     final firstResult = result.first;
     if (firstResult is! Map<String, dynamic>) return null;
-    final row = firstResult;
+    return firstResult;
+  }
 
-    DateTime? finishTime;
-
-    final String sellerId = getStringFromRow(row, 'seller_id');
-    String sellerTitle = await _fetchSellerName(sellerId, row);
-
-    SellerRatingSummary? ratingSummary;
-    if (sellerId.isNotEmpty) {
-      ratingSummary = await _fetchSellerRating(sellerId);
-    }
-
-    final List<String> images = await _fetchImages(itemId);
-
+  Future<_AuctionData> _fetchAuctionData(String itemId) async {
     int biddingCount = 0;
     int currentPrice = 0;
     int statusCode = 0;
     int? tradeStatusCode;
+    DateTime? finishTime;
 
     try {
       final auctionRow = await _supabase
@@ -65,39 +91,29 @@ class ItemDetailDatasource {
       // auction info 조회 실패 시 조용히 처리
     }
 
-    final minBidStep = ItemPriceHelper.calculateBidStep(currentPrice);
-
-    DateTime effectiveFinishTime;
-    if (finishTime != null) {
-      effectiveFinishTime = finishTime;
-    } else {
-      final createdAtRaw = getNullableStringFromRow(row, 'created_at');
-      final createdAt = createdAtRaw != null
-          ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
-          : DateTime.now();
-      final durationHours = getIntFromRow(row, 'auction_duration_hours', 24);
-      effectiveFinishTime = createdAt.add(Duration(hours: durationHours));
-    }
-
-    return ItemDetail(
-      itemId: getStringFromRow(row, 'item_id', itemId),
-      sellerId: sellerId,
-      itemTitle: getStringFromRow(row, 'title'),
-      itemImages: images,
-      finishTime: effectiveFinishTime,
-      sellerTitle: sellerTitle,
-      buyNowPrice: getIntFromRow(row, 'buy_now_price'),
-      biddingCount: biddingCount,
-      itemContent: getStringFromRow(row, 'description'),
+    return _AuctionData(
       currentPrice: currentPrice,
-      bidPrice: minBidStep,
-      sellerRating: ratingSummary?.rating ??
-          getDoubleFromRow(row, 'seller_rating'),
-      sellerReviewCount: ratingSummary?.reviewCount ??
-          getIntFromRow(row, 'seller_review_count'),
+      biddingCount: biddingCount,
       statusCode: statusCode,
       tradeStatusCode: tradeStatusCode,
+      finishTime: finishTime,
     );
+  }
+
+  DateTime _calculateFinishTime(
+    DateTime? auctionFinishTime,
+    Map<String, dynamic> row,
+  ) {
+    if (auctionFinishTime != null) {
+      return auctionFinishTime;
+    }
+
+    final createdAtRaw = getNullableStringFromRow(row, 'created_at');
+    final createdAt = createdAtRaw != null
+        ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
+        : DateTime.now();
+    final durationHours = getIntFromRow(row, 'auction_duration_hours', 24);
+    return createdAt.add(Duration(hours: durationHours));
   }
 
   Future<String> _fetchSellerName(
@@ -321,4 +337,21 @@ class ItemDetailDatasource {
       return false;
     }
   }
+}
+
+/// 경매 데이터를 담는 내부 클래스
+class _AuctionData {
+  _AuctionData({
+    required this.currentPrice,
+    required this.biddingCount,
+    required this.statusCode,
+    this.tradeStatusCode,
+    this.finishTime,
+  });
+
+  final int currentPrice;
+  final int biddingCount;
+  final int statusCode;
+  final int? tradeStatusCode;
+  final DateTime? finishTime;
 }

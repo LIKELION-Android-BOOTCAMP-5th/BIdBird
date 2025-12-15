@@ -1,4 +1,3 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

@@ -1,9 +1,9 @@
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/core/widgets/item/bottom_submit_button.dart';
-import 'package:bidbird/core/widgets/item/content_input_section.dart';
-import 'package:bidbird/core/widgets/item/image_upload_section.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/bottom_submit_button.dart';
+import 'package:bidbird/core/widgets/item/components/sections/content_input_section.dart';
+import 'package:bidbird/core/widgets/item/components/sections/image_upload_section.dart';
 import 'package:bidbird/core/widgets/report/report_reason_section.dart';
 import 'package:bidbird/core/widgets/report/report_target_section.dart';
 import 'package:bidbird/features/report/viewmodel/report_viewmodel.dart';

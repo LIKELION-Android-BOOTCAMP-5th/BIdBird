@@ -1,4 +1,3 @@
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
 /// 거래 취소 사유 선택 바텀시트

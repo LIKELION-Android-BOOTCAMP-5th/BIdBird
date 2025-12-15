@@ -1,5 +1,5 @@
 import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
-import 'package:bidbird/core/widgets/item/double_back_exit_handler.dart';
+import 'package:bidbird/core/widgets/item/components/others/double_back_exit_handler.dart';
 import 'package:bidbird/core/widgets/splash_screen.dart';
 import 'package:bidbird/features/auth/ui/auth_ui.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';

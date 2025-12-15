@@ -1,3 +1,5 @@
+import 'package:bidbird/features/item/model/trade_status_codes.dart';
+
 enum TradeItemStatus {
   todo, // 지금 필요한 처리
   inProgress, // 배송 중 / 처리 중
@@ -11,7 +13,13 @@ enum TradeActionType {
   none, // 액션 없음
 }
 
-class BidHistoryItem {
+/// 거래 아이템의 공통 인터페이스
+abstract class TradeHistoryItem {
+  TradeItemStatus get itemStatus;
+  TradeActionType get actionType;
+}
+
+class BidHistoryItem implements TradeHistoryItem {
   final String itemId;
   final String title;
   final int price;
@@ -35,11 +43,11 @@ class BidHistoryItem {
   /// 상태 분류 (지금 필요한 처리 / 배송 중 / 처리 중 / 완료)
   TradeItemStatus get itemStatus {
     // 구매자: 결제 대기 (510), 구매 확정 (520이고 배송 완료)
-    if (tradeStatusCode == 510) {
+    if (tradeStatusCode == TradeStatusCode.paymentRequired) {
       return TradeItemStatus.todo;
     }
     // 완료: 550
-    if (tradeStatusCode == 550) {
+    if (tradeStatusCode == TradeStatusCode.completed) {
       return TradeItemStatus.completed;
     }
     // 배송 중 / 처리 중: 나머지
@@ -49,18 +57,18 @@ class BidHistoryItem {
   /// 필요한 액션 타입
   TradeActionType get actionType {
     // 구매자: 결제 대기
-    if (tradeStatusCode == 510) {
+    if (tradeStatusCode == TradeStatusCode.paymentRequired) {
       return TradeActionType.paymentRequired;
     }
     // 구매 확정 (520이고 배송 정보 있음)
-    if (tradeStatusCode == 520 && hasShippingInfo) {
+    if (tradeStatusCode == TradeStatusCode.shippingInfoRequired && hasShippingInfo) {
       return TradeActionType.purchaseConfirmRequired;
     }
     return TradeActionType.none;
   }
 }
 
-class SaleHistoryItem {
+class SaleHistoryItem implements TradeHistoryItem {
   final String itemId;
   final String title;
   final int price;
@@ -86,11 +94,11 @@ class SaleHistoryItem {
   /// 상태 분류 (지금 필요한 처리 / 배송 중 / 처리 중 / 완료)
   TradeItemStatus get itemStatus {
     // 판매자: 배송지 입력 필요 (520이고 배송 정보 없음)
-    if (tradeStatusCode == 520 && !hasShippingInfo) {
+    if (tradeStatusCode == TradeStatusCode.shippingInfoRequired && !hasShippingInfo) {
       return TradeItemStatus.todo;
     }
     // 완료: 550
-    if (tradeStatusCode == 550) {
+    if (tradeStatusCode == TradeStatusCode.completed) {
       return TradeItemStatus.completed;
     }
     // 배송 중 / 처리 중: 나머지
@@ -100,11 +108,11 @@ class SaleHistoryItem {
   /// 필요한 액션 타입
   TradeActionType get actionType {
     // 판매자: 결제 대기 (510)
-    if (tradeStatusCode == 510) {
+    if (tradeStatusCode == TradeStatusCode.paymentRequired) {
       return TradeActionType.paymentRequired;
     }
     // 판매자: 배송지 입력 필요 (520이고 배송 정보 없음)
-    if (tradeStatusCode == 520 && !hasShippingInfo) {
+    if (tradeStatusCode == TradeStatusCode.shippingInfoRequired && !hasShippingInfo) {
       return TradeActionType.shippingInfoRequired;
     }
     return TradeActionType.none;

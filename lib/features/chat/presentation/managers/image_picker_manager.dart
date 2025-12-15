@@ -1,5 +1,4 @@
 import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
-import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// 이미지 선택 결과
@@ -71,6 +70,7 @@ class ImagePickerManager {
     );
   }
 }
+
 
 
 

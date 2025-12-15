@@ -1,5 +1,5 @@
-import 'package:bidbird/features/item/add/data/datasources/keyword_remote_datasource.dart';
-import 'package:bidbird/features/item/add/model/keyword_gateway.dart';
+import 'package:bidbird/features/item/add/data/datasource/keyword_remote_datasource.dart';
+import 'package:bidbird/features/item/add/gateway/keyword_gateway.dart';
 import 'package:bidbird/features/item/add/model/keyword_type_entity.dart';
 
 class KeywordGatewayImpl implements KeywordGateway {

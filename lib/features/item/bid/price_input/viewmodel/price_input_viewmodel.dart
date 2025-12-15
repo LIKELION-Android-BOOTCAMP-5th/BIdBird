@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../model/bottom_sheet_price_input_entity.dart';
-import '../model/place_bid_usecase.dart';
-import '../data/repository/bottom_sheet_price_input_repository.dart';
+import 'package:bidbird/features/item/bid/price_input/model/bottom_sheet_price_input_entity.dart';
+import 'package:bidbird/features/item/bid/price_input/usecase/place_bid_usecase.dart';
+import 'package:bidbird/features/item/bid/price_input/data/repository/bid_input_gateway_impl.dart';
 
 class PriceInputViewModel extends ChangeNotifier {
   PriceInputViewModel({PlaceBidUseCase? placeBidUseCase})

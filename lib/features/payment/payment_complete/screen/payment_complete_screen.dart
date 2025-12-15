@@ -3,7 +3,7 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/payment/payment_texts.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
-import 'package:bidbird/core/widgets/item/bid_win/item_bid_result_body.dart';
+import 'package:bidbird/core/widgets/item/components/others/item_bid_result_body.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
