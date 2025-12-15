@@ -37,10 +37,30 @@ class ItemDetailViewModel extends ChangeNotifier {
 
   RealtimeChannel? _bidStatusChannel;
   bool _isLoadingDetail = false;
+  
+  // 캐싱 관련
+  DateTime? _lastFetchTime;
+  static const Duration _cacheValidDuration = Duration(minutes: 3);
 
-  Future<void> loadItemDetail() async {
+  Future<void> loadItemDetail({bool forceRefresh = false}) async {
     // 중복 로딩 방지
     if (_isLoadingDetail) return;
+    
+    // 캐시가 유효하고 강제 새로고침이 아니면 캐시 사용
+    if (!forceRefresh && 
+        _lastFetchTime != null && 
+        DateTime.now().difference(_lastFetchTime!) < _cacheValidDuration &&
+        _itemDetail != null) {
+      // 캐시된 데이터가 있지만, 추가 데이터는 항상 최신 상태로 업데이트
+      await Future.wait([
+        _checkIsMyItem(),
+        _loadFavoriteState(),
+        _checkTopBidder(),
+        _loadSellerProfile(),
+        _loadBidHistory(),
+      ], eagerError: false);
+      return; // 캐시된 메인 데이터 사용, 추가 데이터만 업데이트
+    }
     
     _isLoadingDetail = true;
     _isLoading = true;
@@ -68,13 +88,21 @@ class ItemDetailViewModel extends ChangeNotifier {
         _loadSellerProfile(),
         _loadBidHistory(),
       ], eagerError: false);
+      
+      _lastFetchTime = DateTime.now();
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
+      // 에러 발생 시에도 캐시된 데이터는 유지
     } finally {
       _isLoadingDetail = false;
     }
+  }
+  
+  /// 캐시 무효화
+  void invalidateCache() {
+    _lastFetchTime = null;
   }
 
   Future<void> _loadFavoriteState() async {
@@ -152,7 +180,9 @@ class ItemDetailViewModel extends ChangeNotifier {
             value: itemId,
           ),
           callback: (payload) {
-            loadItemDetail();
+            // 실시간 업데이트 시 캐시 무효화하고 새로고침
+            invalidateCache();
+            loadItemDetail(forceRefresh: true);
           },
         )
         .subscribe();
