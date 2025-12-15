@@ -1,51 +1,20 @@
-import 'dart:convert';
-
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/features/chat/data/managers/chat_message_cache_manager.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// 채팅 데이터 소스
 class ChatSupabaseDatasource {
   static const String _chatRoomsTable = 'chatting_room';
   static const String _messagesTable = 'chatting_message';
   static const String _roomUserTable = 'chatting_room_users';
-  static const String _cachePrefix = 'chat_messages_cache_';
 
   final _supabase = SupabaseManager.shared.supabase;
-
-  // 캐시에서 메시지 불러오기
-  Future<List<ChatMessageEntity>> _getCachedMessages(String chattingRoomId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cacheKey = '$_cachePrefix$chattingRoomId';
-      final cachedData = prefs.getString(cacheKey);
-      
-      if (cachedData != null) {
-        final List<dynamic> jsonList = jsonDecode(cachedData);
-        return jsonList.map((json) => ChatMessageEntity.fromJson(json)).toList();
-      }
-    } catch (e) {
-      // 캐시 불러오기 실패 시 빈 리스트 반환
-    }
-    return [];
-  }
-
-  // 메시지를 캐시에 저장
-  Future<void> _saveMessagesToCache(String chattingRoomId, List<ChatMessageEntity> messages) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cacheKey = '$_cachePrefix$chattingRoomId';
-      final jsonList = messages.map((msg) => msg.toJson()).toList();
-      await prefs.setString(cacheKey, jsonEncode(jsonList));
-    } catch (e) {
-      // 캐시 저장 실패 시 무시
-    }
-  }
+  final _cacheManager = ChatMessageCacheManager();
 
   Future<List<ChatMessageEntity>> getMessages(String chattingRoomId) async {
     // 먼저 캐시에서 불러오기
-    final cachedMessages = await _getCachedMessages(chattingRoomId);
+    final cachedMessages = await _cacheManager.getCachedMessages(chattingRoomId);
     
     try {
       final response = await SupabaseManager.shared.supabase
@@ -66,7 +35,7 @@ class ChatSupabaseDatasource {
         final networkMessages = results.reversed.toList();
         
         // 네트워크에서 가져온 메시지를 캐시에 저장
-        await _saveMessagesToCache(chattingRoomId, networkMessages);
+        await _cacheManager.saveMessagesToCache(chattingRoomId, networkMessages);
         
         return networkMessages;
       } else {
