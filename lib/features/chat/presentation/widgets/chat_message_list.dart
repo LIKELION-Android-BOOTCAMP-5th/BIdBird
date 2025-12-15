@@ -2,6 +2,7 @@ import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
+import 'package:bidbird/features/chat/presentation/widgets/message_read_status_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -71,7 +72,12 @@ class ChatMessageList extends StatelessWidget {
     final showDateHeader = _shouldShowDateHeader(index);
 
     // 메시지 읽음 여부 확인
-    final (isRead, isUnread) = _getReadStatus(index, userId, isCurrentUser);
+    final (isRead, isUnread) = MessageReadStatusHelper.getReadStatus(
+      viewModel.messages,
+      index,
+      userId,
+      isCurrentUser,
+    );
 
     Widget messageWidget = _buildMessageBubble(
       context,
@@ -134,72 +140,6 @@ class ChatMessageList extends StatelessWidget {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  (bool isRead, bool isUnread) _getReadStatus(
-    int index,
-    String? userId,
-    bool isCurrentUser,
-  ) {
-    bool isRead = false;
-    bool isUnread = false;
-
-    if (isCurrentUser && userId != null) {
-      // 내가 보낸 메시지: 상대방이 읽었는지 확인
-      // 가장 최근에 읽은 내 메시지 하나에만 읽음 표시
-      // 마지막 내 메시지가 아직 읽지 않았다면 안읽음 표시
-
-      // 마지막 내 메시지의 인덱스 찾기
-      int? lastMyMessageIndex;
-      for (int i = viewModel.messages.length - 1; i >= 0; i--) {
-        if (viewModel.messages[i].senderId == userId) {
-          lastMyMessageIndex = i;
-          break;
-        }
-      }
-
-      // 상대방이 읽은 가장 최근 내 메시지의 인덱스 찾기
-      // 상대방이 메시지를 보낸 시점 이전의 마지막 내 메시지
-      int? lastReadMyMessageIndex;
-      for (int i = viewModel.messages.length - 1; i >= 0; i--) {
-        // 상대방 메시지를 찾으면, 그 이전의 마지막 내 메시지가 가장 최근에 읽은 메시지
-        if (viewModel.messages[i].senderId != userId) {
-          // 상대방 메시지 이전의 내 메시지 찾기
-          for (int j = i - 1; j >= 0; j--) {
-            if (viewModel.messages[j].senderId == userId) {
-              lastReadMyMessageIndex = j;
-              break;
-            }
-          }
-          break;
-        }
-      }
-
-      // 현재 메시지가 마지막 내 메시지인지 확인
-      final isLastMyMessage = lastMyMessageIndex != null && index == lastMyMessageIndex;
-
-      if (isLastMyMessage) {
-        // 마지막 내 메시지인 경우
-        if (lastReadMyMessageIndex == null) {
-          // 상대방이 아직 메시지를 보내지 않았거나, 모든 내 메시지가 읽지 않은 것
-          isUnread = true;
-        } else if (lastReadMyMessageIndex < index) {
-          // 마지막 내 메시지가 읽지 않은 것 (상대방이 읽은 마지막 메시지보다 나중)
-          isUnread = true;
-        } else if (index == lastReadMyMessageIndex) {
-          // 마지막 내 메시지가 가장 최근에 읽은 메시지
-          isRead = true;
-        }
-      } else {
-        // 마지막 내 메시지가 아닌 경우
-        if (lastReadMyMessageIndex != null && index == lastReadMyMessageIndex) {
-          // 가장 최근에 읽은 내 메시지
-          isRead = true;
-        }
-      }
-    }
-    // 상대방이 보낸 메시지는 읽음 표시 없음 (isRead는 이미 false)
-
-    return (isRead, isUnread);
-  }
 
   Widget _buildMessageBubble(
     BuildContext context,

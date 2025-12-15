@@ -24,9 +24,12 @@ import 'package:bidbird/features/chat/domain/usecases/send_text_message_usecase.
 import 'package:bidbird/features/chat/domain/usecases/turn_off_notification_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/turn_on_notification_usecase.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
+import 'package:bidbird/features/chat/presentation/managers/image_picker_manager.dart';
+import 'package:bidbird/features/chat/presentation/managers/message_send_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/message_sender.dart';
 import 'package:bidbird/features/chat/presentation/managers/read_status_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/realtime_subscription_manager.dart';
+import 'package:bidbird/features/chat/presentation/managers/room_info_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/scroll_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -42,7 +45,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   TradeInfoEntity? tradeInfo;
   bool _hasShippingInfo = false;
   bool get hasShippingInfo => _hasShippingInfo;
-  final ImagePicker _picker = ImagePicker();
   final TextEditingController messageController = TextEditingController();
   List<ChatMessageEntity> messages = [];
   MessageType type = MessageType.text;
@@ -52,12 +54,14 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   bool hasMore = false;
 
   int? previousUnreadCount; // 이전 unreadCount 값을 저장
-  Timer? _fetchRoomInfoDebounce; // fetchRoomInfo 디바운스용 타이머
 
   // Manager 클래스들
   late final ScrollManager _scrollManager;
   late final RealtimeSubscriptionManager _subscriptionManager;
   late final ReadStatusManager _readStatusManager;
+  late final MessageSendManager _messageSendManager;
+  late final RoomInfoManager _roomInfoManager;
+  late final ImagePickerManager _imagePickerManager;
 
   // ScrollManager의 getter들
   ScrollController get scrollController => _scrollManager.scrollController;
@@ -116,11 +120,26 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     ScrollManager? scrollManager,
     RealtimeSubscriptionManager? subscriptionManager,
     ReadStatusManager? readStatusManager,
+    MessageSendManager? messageSendManager,
+    RoomInfoManager? roomInfoManager,
+    ImagePickerManager? imagePickerManager,
   }) {
     // Manager 클래스 초기화
     _scrollManager = scrollManager ?? ScrollManager(ScrollController());
     _subscriptionManager = subscriptionManager ?? RealtimeSubscriptionManager();
     _readStatusManager = readStatusManager ?? ReadStatusManager();
+    _messageSendManager = messageSendManager ??
+        MessageSendManager(
+          sendFirstMessageUseCase: _sendFirstMessageUseCase,
+          sendTextMessageUseCase: _sendTextMessageUseCase,
+          sendImageMessageUseCase: _sendImageMessageUseCase,
+        );
+    _roomInfoManager = roomInfoManager ??
+        RoomInfoManager(
+          getRoomInfoUseCase: _getRoomInfoUseCase,
+          getRoomInfoWithRoomIdUseCase: _getRoomInfoWithRoomIdUseCase,
+        );
+    _imagePickerManager = imagePickerManager ?? ImagePickerManager();
 
     // 더 많은 메시지 로드 리스너 설정
     _scrollManager.setupLoadMoreListener(() {
@@ -134,18 +153,12 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
 
   Future<void> fetchRoomInfo() async {
-    final currentRoomId = roomId;
-    RoomInfoEntity? newRoomInfo;
-    try {
-      if (currentRoomId != null) {
-        newRoomInfo = await _getRoomInfoWithRoomIdUseCase(currentRoomId);
-      } else {
-        newRoomInfo = await _getRoomInfoUseCase(itemId);
-      }
-    } catch (e) {
-    }
+    final result = await _roomInfoManager.fetchRoomInfo(
+      roomId: roomId,
+      itemId: itemId,
+    );
 
-    final newUnreadCount = newRoomInfo?.unreadCount ?? 0;
+    final newUnreadCount = result.unreadCount;
 
     // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
     if (messages.isNotEmpty) {
@@ -164,40 +177,49 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     }
 
     previousUnreadCount = newUnreadCount;
-    roomInfo = newRoomInfo;
-    itemInfo = roomInfo?.item;
-    auctionInfo = roomInfo?.auction;
-    tradeInfo = roomInfo?.trade;
-    
-    // 배송 정보 확인
-    await _checkShippingInfo();
+    roomInfo = result.roomInfo;
+    itemInfo = result.itemInfo;
+    auctionInfo = result.auctionInfo;
+    tradeInfo = result.tradeInfo;
+    _hasShippingInfo = result.hasShippingInfo;
     
     setupRealtimeRoomInfoSubscription();
     notifyListeners();
   }
 
-  /// 배송 정보 입력 여부 확인
-  Future<void> _checkShippingInfo() async {
-    try {
-      final shippingInfoRepository = ShippingInfoRepository();
-      final shippingInfo = await shippingInfoRepository.getShippingInfo(itemId);
-      
-      _hasShippingInfo = shippingInfo != null &&
-          shippingInfo['tracking_number'] != null &&
-          (shippingInfo['tracking_number'] as String?)?.isNotEmpty == true;
-    } catch (e) {
-      _hasShippingInfo = false;
-    }
-  }
-
   // 디바운스를 적용한 fetchRoomInfo 호출
   void fetchRoomInfoDebounced() {
-    if (_fetchRoomInfoDebounce?.isActive ?? false) {
-      _fetchRoomInfoDebounce!.cancel();
-    }
-    _fetchRoomInfoDebounce = Timer(const Duration(milliseconds: 500), () {
-      fetchRoomInfo();
-    });
+    _roomInfoManager.fetchRoomInfoDebounced(
+      roomId: roomId,
+      itemId: itemId,
+      callback: (result) async {
+        final newUnreadCount = result.unreadCount;
+
+        // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
+        if (messages.isNotEmpty) {
+          _markMessagesAsReadUpToLastViewed(newUnreadCount);
+        }
+
+        // unreadCount 변경 감지
+        if (previousUnreadCount != null &&
+            previousUnreadCount! > 0 &&
+            newUnreadCount == 0 &&
+            !isUserScrolling &&
+            !isInitialLoad) {
+          scrollToBottom(force: true);
+        }
+
+        previousUnreadCount = newUnreadCount;
+        roomInfo = result.roomInfo;
+        itemInfo = result.itemInfo;
+        auctionInfo = result.auctionInfo;
+        tradeInfo = result.tradeInfo;
+        _hasShippingInfo = result.hasShippingInfo;
+        
+        setupRealtimeRoomInfoSubscription();
+        notifyListeners();
+      },
+    );
   }
 
   // 하단으로 스크롤하는 메서드
@@ -327,120 +349,21 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   Future<void> sendMessage() async {
     if (isSending == true) return;
     isSending = true;
+    notifyListeners();
+
     final currentRoomId = roomId;
+    final messageText = messageController.text;
+    final imagesToSend = List<XFile>.from(images);
 
-    // 이미지가 있는 경우 (여러 개 또는 단일)
-    if (images.isNotEmpty) {
-      if (currentRoomId == null) {
-        // 첫 메시지 전송 - 첫 번째 이미지만 사용
-        final imagesToSend = List<XFile>.from(images);
-        final hasText = messageController.text.trim().isNotEmpty;
-        
-        MessageSender? sender = _createMessageSender(currentRoomId);
-        if (sender == null) {
-          _handleSendError("메시지 전송 실패: 전송 전략을 생성할 수 없습니다");
-          isSending = false;
-          notifyListeners();
-          return;
-        }
-
-        final result = await sender.send();
-        if (!result.success) {
-          _handleSendError(result.errorMessage ?? "메시지 전송 실패");
-          isSending = false;
-          notifyListeners();
-          return;
-        }
-
-        if (result.roomId != null) {
-          roomId = result.roomId;
-          messageController.text = "";
-          images.clear();
-          type = MessageType.text;
-          notifyListeners();
-          await _handleFirstMessageSent();
-          
-          // 나머지 이미지들을 순차적으로 전송
-          if (imagesToSend.length > 1) {
-            for (int i = 1; i < imagesToSend.length; i++) {
-              final sender = ImageMessageSender(
-                sendImageMessageUseCase: _sendImageMessageUseCase,
-                roomId: result.roomId!,
-                image: imagesToSend[i],
-              );
-              final imageResult = await sender.send();
-              if (!imageResult.success) {
-                _handleSendError(imageResult.errorMessage ?? "이미지 전송 실패");
-                break;
-              }
-            }
-            await _refreshLatestMessage(result.roomId!);
-            scrollToBottom(force: true);
-          }
-        }
-        return;
-      } else {
-        // 기존 채팅방에서 여러 이미지 전송
-        final imagesToSend = List<XFile>.from(images);
-        final hasText = messageController.text.trim().isNotEmpty;
-        
-        // 텍스트가 있으면 먼저 텍스트 메시지 전송
-        if (hasText) {
-          final textSender = TextMessageSender(
-            sendTextMessageUseCase: _sendTextMessageUseCase,
-            roomId: currentRoomId,
-            message: messageController.text,
-          );
-          final textResult = await textSender.send();
-          if (!textResult.success) {
-            _handleSendError(textResult.errorMessage ?? "메시지 전송 실패");
-            isSending = false;
-            notifyListeners();
-            return;
-          }
-          messageController.text = "";
-        }
-        
-        // 모든 이미지들을 순차적으로 전송
-        int successCount = 0;
-        for (int i = 0; i < imagesToSend.length; i++) {
-          final imageToSend = imagesToSend[i];
-          final sender = ImageMessageSender(
-            sendImageMessageUseCase: _sendImageMessageUseCase,
-            roomId: currentRoomId,
-            image: imageToSend,
-          );
-          final result = await sender.send();
-          if (result.success) {
-            successCount++;
-          } else {
-            _handleSendError("이미지 ${i + 1}/${imagesToSend.length} 전송 실패: ${result.errorMessage ?? "알 수 없는 오류"}");
-            // 에러가 나도 나머지 이미지는 계속 전송 시도
-          }
-        }
-        
-        images.clear();
-        type = MessageType.text;
-        setupRealtimeSubscription();
-        await _refreshLatestMessage(currentRoomId);
-        isSending = false;
-        notifyListeners();
-        scrollToBottom(force: true);
-        return;
-      }
-    }
-
-    // 텍스트만 전송하는 경우
-    MessageSender? sender = _createMessageSender(currentRoomId);
-    if (sender == null) {
-      _handleSendError("메시지 전송 실패: 전송 전략을 생성할 수 없습니다");
-      isSending = false;
-      notifyListeners();
-      return;
-    }
-
-    // 메시지 전송 실행
-    final result = await sender.send();
+    // MessageSendManager를 통해 메시지 전송
+    final result = await _messageSendManager.sendMessage(
+      roomId: currentRoomId,
+      itemId: itemId,
+      messageText: messageText,
+      images: imagesToSend,
+      messageType: type,
+      onError: _handleSendError,
+    );
 
     if (!result.success) {
       _handleSendError(result.errorMessage ?? "메시지 전송 실패");
@@ -449,66 +372,35 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       return;
     }
 
-    // 첫 메시지 전송인 경우
-    if (currentRoomId == null && result.roomId != null) {
+    // 전송 성공 후 상태 업데이트
+    if (result.isFirstMessage && result.roomId != null) {
+      // 첫 메시지 전송 성공
       roomId = result.roomId;
       messageController.text = "";
+      images.clear();
+      type = MessageType.text;
       notifyListeners();
       await _handleFirstMessageSent();
+      
+      // 여러 이미지 전송 후 최신 메시지 새로고침
+      if (imagesToSend.length > 1) {
+        await _refreshLatestMessage(result.roomId!);
+        scrollToBottom(force: true);
+      }
     } else if (currentRoomId != null) {
-      // 기존 채팅방에서 메시지 전송
-      setupRealtimeSubscription();
+      // 기존 채팅방에서 메시지 전송 성공
       messageController.text = "";
+      images.clear();
+      type = MessageType.text;
+      setupRealtimeSubscription();
       await _refreshLatestMessage(currentRoomId);
       isSending = false;
       notifyListeners();
       scrollToBottom(force: true);
-    }
-  }
-
-  /// 메시지 전송 전략 생성
-  MessageSender? _createMessageSender(String? currentRoomId) {
-    if (currentRoomId == null) {
-      // 첫 메시지 전송
-      if (type == MessageType.text) {
-        return FirstTextMessageSender(
-          sendFirstMessageUseCase: _sendFirstMessageUseCase,
-          itemId: itemId,
-          message: messageController.text,
-        );
-      } else {
-        // 이미지/비디오 메시지 - 첫 번째 이미지만 사용 (첫 메시지는 하나만)
-        if (images.isEmpty) {
-          _handleSendError("이미지가 없습니다");
-          return null;
-        }
-        return FirstImageMessageSender(
-          sendFirstMessageUseCase: _sendFirstMessageUseCase,
-          itemId: itemId,
-          image: images.first,
-        );
-      }
     } else {
-      // 기존 채팅방에서 메시지 전송
-      if (type == MessageType.text) {
-        return TextMessageSender(
-          sendTextMessageUseCase: _sendTextMessageUseCase,
-          roomId: currentRoomId,
-          message: messageController.text,
-        );
-      } else {
-        // 이미지/비디오 메시지 - 여러 이미지 순차 전송
-        if (images.isEmpty) {
-          _handleSendError("이미지가 없습니다");
-          return null;
-        }
-        // 여러 이미지 전송을 위한 전략 생성 (첫 번째 이미지만, 나머지는 별도 처리)
-        return ImageMessageSender(
-          sendImageMessageUseCase: _sendImageMessageUseCase,
-          roomId: currentRoomId,
-          image: images.first,
-        );
-      }
+      // 예상치 못한 경우
+      isSending = false;
+      notifyListeners();
     }
   }
 
@@ -671,47 +563,36 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       });
     }
 
-    _fetchRoomInfoDebounce?.cancel();
+    _roomInfoManager.dispose();
     _subscriptionManager.dispose();
     _scrollManager.dispose();
     super.dispose();
   }
 
   Future<void> pickImagesFromGallery() async {
-    final List<XFile>? pickedImages = await _picker.pickMultiImage(
-      imageQuality: 70,
-      maxWidth: 1200,
-      maxHeight: 1200,
-    );
-    if (pickedImages == null || pickedImages.isEmpty) {
-      return;
-    }
-    images.addAll(pickedImages);
-    type = MessageType.image;
+    final result = await _imagePickerManager.pickImagesFromGallery();
+    if (result == null) return;
+    
+    images.addAll(result.images);
+    type = result.messageType;
     notifyListeners();
   }
 
   Future<void> pickImageFromCamera() async {
-    final XFile? pickedImage = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 70,
-      maxWidth: 1200,
-      maxHeight: 1200,
-    );
-    if (pickedImage == null) return;
-    images.add(pickedImage);
-    type = MessageType.image;
+    final result = await _imagePickerManager.pickImageFromCamera();
+    if (result == null) return;
+    
+    images.addAll(result.images);
+    type = result.messageType;
     notifyListeners();
   }
 
   Future<void> pickVideoFromGallery() async {
-    final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
-    if (video == null) {
-      return;
-    }
-    // 동영상 파일 저장 (이미지와 동일한 방식으로 처리)
-    images.add(video);
-    type = MessageType.image; // 일단 image로 설정 (나중에 video 타입 추가 가능)
+    final result = await _imagePickerManager.pickVideoFromGallery();
+    if (result == null) return;
+    
+    images.addAll(result.images);
+    type = result.messageType;
     notifyListeners();
   }
 
