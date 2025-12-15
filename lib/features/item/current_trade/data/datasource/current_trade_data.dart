@@ -36,11 +36,23 @@ class CurrentTradeDatasource {
       }
 
       final Map<String, Map<String, dynamic>> itemsById = {};
+      Set<String> itemIdsWithShipping = {};
+      
       if (itemIds.isNotEmpty) {
-        final itemRows = await _supabase
-            .from('items_detail')
-            .select('item_id, title, thumbnail_image')
-            .inFilter('item_id', itemIds.toList());
+        // items_detail과 shipping_info를 병렬로 조회
+        final results = await Future.wait([
+          _supabase
+              .from('items_detail')
+              .select('item_id, title, thumbnail_image')
+              .inFilter('item_id', itemIds.toList()),
+          _supabase
+              .from('shipping_info')
+              .select('item_id')
+              .inFilter('item_id', itemIds.toList()),
+        ]);
+
+        final itemRows = results[0] as List<dynamic>;
+        final shippingRows = results[1] as List<dynamic>;
 
         for (final row in itemRows) {
           final id = getNullableStringFromRow(row, 'item_id');
@@ -48,15 +60,6 @@ class CurrentTradeDatasource {
             itemsById[id] = row;
           }
         }
-      }
-
-      // 배송 정보 조회 (결제 완료 상태인 경우 배송 중 여부 확인용)
-      Set<String> itemIdsWithShipping = {};
-      if (itemIds.isNotEmpty) {
-        final shippingRows = await _supabase
-            .from('shipping_info')
-            .select('item_id')
-            .inFilter('item_id', itemIds.toList());
 
         for (final row in shippingRows) {
           final id = getNullableStringFromRow(row, 'item_id');
@@ -161,37 +164,60 @@ class CurrentTradeDatasource {
       Map<String, int> priceByItemId = {};
       Map<String, int> auctionCodeByItemId = {};
       Map<String, int> tradeCodeByItemId = {};
+      Set<String> itemIdsWithShipping = {};
+      
       if (itemIds.isNotEmpty) {
-        final priceRows = await _supabase
-            .from('auctions')
-            .select('item_id, current_price, auction_status_code, trade_status_code')
-            .inFilter('item_id', itemIds)
-            .eq('round', 1);
+        // auctions와 shipping_info를 병렬로 조회
+        final results = await Future.wait([
+          _supabase
+              .from('auctions')
+              .select('item_id, current_price, auction_status_code, trade_status_code, round, created_at')
+              .inFilter('item_id', itemIds)
+              .order('round', ascending: false)
+              .order('created_at', ascending: false),
+          _supabase
+              .from('shipping_info')
+              .select('item_id')
+              .inFilter('item_id', itemIds),
+        ]);
 
+        final priceRows = results[0] as List<dynamic>;
+        final shippingRows = results[1] as List<dynamic>;
+        
+        // 같은 item_id에 여러 round가 있으면 trade_status_code가 null이 아닌 것을 우선 사용
+        final Map<String, Map<String, dynamic>> bestAuctionsByItemId = {};
         for (final row in priceRows) {
           final id = getNullableStringFromRow(row, 'item_id');
-          if (id != null && id.isNotEmpty) {
-            priceByItemId[id] = getIntFromRow(row, 'current_price');
-            final auctionCode = getNullableIntFromRow(row, 'auction_status_code');
-            if (auctionCode != null) {
-              auctionCodeByItemId[id] = auctionCode;
-            }
-            final tradeCode = getNullableIntFromRow(row, 'trade_status_code');
-            if (tradeCode != null) {
-              tradeCodeByItemId[id] = tradeCode;
-            }
+          if (id == null || id.isEmpty) continue;
+          
+          final existing = bestAuctionsByItemId[id];
+          final tradeCode = getNullableIntFromRow(row, 'trade_status_code');
+          final existingTradeCode = existing != null ? getNullableIntFromRow(existing, 'trade_status_code') : null;
+          
+          // trade_status_code가 null이 아닌 것을 우선, 없으면 가장 최근 것
+          if (existing == null || 
+              (tradeCode != null && existingTradeCode == null) ||
+              (tradeCode != null && existingTradeCode != null && 
+               getIntFromRow(row, 'round') > getIntFromRow(existing, 'round'))) {
+            bestAuctionsByItemId[id] = row;
           }
         }
-      }
 
-      // 배송 정보 조회 (결제 완료 상태인 경우 배송 중 여부 확인용)
-      Set<String> itemIdsWithShipping = {};
-      if (itemIds.isNotEmpty) {
-        final shippingRows = await _supabase
-            .from('shipping_info')
-            .select('item_id')
-            .inFilter('item_id', itemIds);
+        for (final entry in bestAuctionsByItemId.entries) {
+          final id = entry.key;
+          final row = entry.value;
+          priceByItemId[id] = getIntFromRow(row, 'current_price');
+          final auctionCode = getNullableIntFromRow(row, 'auction_status_code');
+          if (auctionCode != null) {
+            auctionCodeByItemId[id] = auctionCode;
+          }
+          final tradeCode = getNullableIntFromRow(row, 'trade_status_code');
+          if (tradeCode != null) {
+            tradeCodeByItemId[id] = tradeCode;
+          }
+        }
 
+        // 배송 정보 처리
         for (final row in shippingRows) {
           final id = getNullableStringFromRow(row, 'item_id');
           if (id != null && id.isNotEmpty) {
@@ -247,7 +273,7 @@ class CurrentTradeDatasource {
           thumbnailUrl: getNullableStringFromRow(item, 'thumbnail_image'),
           status: status,
           date: formatDateTimeFromIso(createdAt),
-          tradeStatusCode: tradeCode,
+          tradeStatusCode: tradeCode == 0 ? null : tradeCode,
           auctionStatusCode: auctionCode,
           hasShippingInfo: itemIdsWithShipping.contains(itemId),
         );

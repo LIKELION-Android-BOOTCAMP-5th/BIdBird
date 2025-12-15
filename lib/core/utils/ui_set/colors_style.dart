@@ -32,4 +32,15 @@ const Color chatPlusIconColor = Color(0xff5A86F2); // 플러스 버튼 아이콘
 const Color chatBackgroundColor = Color(0xffF7F8FA); // 채팅 화면 전체 배경
 const Color chatTimeTextColor = Color(0xff9CA3AF); // 시간 텍스트 색상
 const Color chatItemSectionBackground = Color(0xffF2F3F5); // 매물 정보 섹션 배경
-const Color chatItemCardBackground = Color(0xffFFFFFF); // 매물 정보 카드 배경/Users/kimjaehyun/Desktop/BidBird/lib/features/chat/presentation
+const Color chatItemCardBackground = Color(0xffFFFFFF); // 매물 정보 카드 배경
+
+// 역할 구분 색상 (구매/판매)
+// 구매 (Buyer)
+const Color rolePurchasePrimary = Color(0xFF3B6EF6); // Primary: #3B6EF6
+const Color rolePurchaseSub = Color(0xFFE8EEFF); // Sub(연한 톤): #E8EEFF
+const Color rolePurchaseText = Color(0xFF1F3FB8); // 텍스트/아이콘 대비용: #1F3FB8
+
+// 판매 (Seller)
+const Color roleSalePrimary = Color(0xFF2FAE8E); // Primary: #2FAE8E
+const Color roleSaleSub = Color(0xFFE6F6F1); // Sub(연한 톤): #E6F6F1
+const Color roleSaleText = Color(0xFF1E7F68); // 텍스트/아이콘 대비용: #1E7F68
