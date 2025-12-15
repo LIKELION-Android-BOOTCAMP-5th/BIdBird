@@ -96,8 +96,14 @@ class CurrentTradeViewModel extends ChangeNotifier {
       _setLoading(true);
       _error = null;
 
-      _bidHistory = await _repository.fetchMyBidHistory();
-      _saleHistory = await _repository.fetchMySaleHistory();
+      // 병렬로 입찰/판매 내역 조회
+      final results = await Future.wait([
+        _repository.fetchMyBidHistory(),
+        _repository.fetchMySaleHistory(),
+      ]);
+
+      _bidHistory = results[0] as List<BidHistoryItem>;
+      _saleHistory = results[1] as List<SaleHistoryItem>;
 
       notifyListeners();
     } catch (e) {
