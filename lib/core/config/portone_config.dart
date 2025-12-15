@@ -1,5 +1,4 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PortoneConfig {
@@ -72,17 +71,12 @@ class PortoneConfig {
         _redirectUrl = configData['redirectUrl'] as String?;
 
         if (_storeId == null || _channelKey == null || _userCode == null || _pg == null || _redirectUrl == null) {
-          debugPrint('[PortoneConfig] Missing required config values in response');
           throw StateError('Failed to load Portone config: missing values');
         }
-
-        debugPrint('[PortoneConfig] Initialized successfully');
       } else {
-        debugPrint('[PortoneConfig] Invalid response format: $data');
         throw StateError('Failed to load Portone config: invalid response');
       }
     } catch (e, st) {
-      debugPrint('[PortoneConfig] Initialization error: $e\n$st');
       rethrow;
     }
   }

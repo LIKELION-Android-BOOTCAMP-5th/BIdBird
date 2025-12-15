@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/payment/payment_error_messages.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
@@ -42,8 +44,6 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
       final supabase = SupabaseManager.shared.supabase;
       final user = supabase.auth.currentUser;
 
-      debugPrint('[PortonePayment] current user: \\${user?.id}');
-
       // 로그인 유저가 없으면 결제 진행 불가로 처리
       if (user == null) {
         setState(() {
@@ -61,8 +61,6 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
         },
       );
       final data = response.data;
-
-      debugPrint('[PortonePayment] decrypt_user response: \\${response.data}');
 
       String? name;
       String? phone;
@@ -94,7 +92,6 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
         _loadingUser = false;
       });
     } catch (e, st) {
-      debugPrint('decrypt_user error: $e\n$st');
       setState(() {
         _buyerName = null;
         _buyerPhone = null;
@@ -182,7 +179,7 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
     required String buyerPhone,
   }) {
     final String paymentId =
-        'pay_${DateTime.now().millisecondsSinceEpoch}_${widget.request.itemId}';
+        'pay_${DateTime.now().millisecondsSinceEpoch}_${widget.request.itemId}_${Random().nextInt(999999)}';
 
     final customer = Customer(
       fullName: buyerName,

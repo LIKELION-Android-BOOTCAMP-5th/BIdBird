@@ -1,7 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/payment/portone_payment/data/repository/item_payment_gateway.dart';
 import 'package:bidbird/features/payment/portone_payment/model/item_payment_request.dart';
-import 'package:flutter/foundation.dart';
 
 class ItemPaymentGatewayImpl implements ItemPaymentGateway {
   @override
@@ -9,12 +8,22 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
     required Map<String, dynamic> result,
     required ItemPaymentRequest request,
   }) async {
-    debugPrint('[PortonePayment] raw result: $result');
-
     final String? errorCode = result['code'] as String?;
     final bool portoneSuccess = errorCode == null || errorCode.isEmpty;
 
     if (!portoneSuccess) {
+      return false;
+    }
+
+    final txId = result['txId'] ?? result['transactionId'];
+    final paymentId = result['paymentId'];
+    
+    if (txId == null || paymentId == null) {
+      return false;
+    }
+
+    final resultAmount = result['amount'] as int?;
+    if (resultAmount != null && resultAmount != request.amount) {
       return false;
     }
 
@@ -26,12 +35,11 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
         body: <String, dynamic>{
           'payment_type': 'auction',
           'item_id': request.itemId,
-          'txId': result['txId'] ?? result['transactionId'],
-          'paymentId': result['paymentId'],
+          'txId': txId,
+          'paymentId': paymentId,
+          'amount': request.amount,
         },
       );
-
-      debugPrint('[PortonePayment] payment response: ${response.data}');
 
       final data = response.data;
       if (data is Map && data['success'] == true) {
@@ -40,7 +48,6 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
         return false;
       }
     } catch (e, st) {
-      debugPrint('[PortonePayment] payment error: $e\n$st');
       return false;
     }
   }

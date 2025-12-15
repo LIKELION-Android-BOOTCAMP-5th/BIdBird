@@ -42,13 +42,10 @@ void main() async {
     await PortoneConfig.initialize().timeout(
       const Duration(seconds: 10),
       onTimeout: () {
-        debugPrint('[PortoneConfig] Initialization timeout');
         throw TimeoutException('PortoneConfig initialization timeout');
       },
     );
   } catch (e) {
-    debugPrint('[PortoneConfig] Initialization failed: $e');
-    debugPrint('[PortoneConfig] App will continue but payment features may not work');
     // 앱은 계속 실행되지만 결제 기능은 사용할 수 없음
   }
 
