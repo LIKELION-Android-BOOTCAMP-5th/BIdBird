@@ -1,8 +1,7 @@
 import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/models/items_entity.dart';
+import 'package:bidbird/core/models/keywordType_entity.dart';
 import 'package:dio/dio.dart';
-
-import '../../model/home_data.dart';
 
 class HomeNetworkApiManager {
   static final HomeNetworkApiManager _shared = HomeNetworkApiManager();
@@ -12,7 +11,7 @@ class HomeNetworkApiManager {
 
   HomeNetworkApiManager() {}
 
-  Future<List<HomeCodeKeywordType>> getKeywordType() async {
+  Future<List<KeywordType>> getKeywordType() async {
     final response = await dio.get(
       //키워드 최신순으로 정렬
       '${NetworkApiManager.supabaseUrl}/code_keyword_type?select=*&order=id.asc',
@@ -20,8 +19,8 @@ class HomeNetworkApiManager {
     );
     final List<dynamic> data = response.data;
     print("data 데이터 타입: ${data.runtimeType}");
-    final List<HomeCodeKeywordType> results = data.map((json) {
-      return HomeCodeKeywordType.fromJson(json);
+    final List<KeywordType> results = data.map((json) {
+      return KeywordType.fromJson(json);
     }).toList();
 
     return results;

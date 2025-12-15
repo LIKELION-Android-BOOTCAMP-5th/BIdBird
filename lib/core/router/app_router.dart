@@ -1,8 +1,12 @@
 import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/item/double_back_exit_handler.dart';
 import 'package:bidbird/core/widgets/splash_screen.dart';
-import 'package:bidbird/features/auth/ui/auth_ui.dart';
+import 'package:bidbird/features/auth/data/repository/tos_repository.dart';
+import 'package:bidbird/features/auth/ui/auth_set_profile_screen.dart';
+import 'package:bidbird/features/auth/ui/login_screen.dart';
+import 'package:bidbird/features/auth/ui/tos_screen.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/auth/viewmodel/tos_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/screens/chat_screen.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
@@ -46,14 +50,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../models/user_entity.dart';
-
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 GoRouter createAppRouter(BuildContext context) {
   final AuthViewModel authVM = context.read<AuthViewModel>();
+
   final doubleBackHandler = DoubleBackExitHandler();
 
   return GoRouter(
@@ -63,42 +66,43 @@ GoRouter createAppRouter(BuildContext context) {
     navigatorKey: rootNavigatorKey,
     initialLocation: '/login',
     refreshListenable: authVM,
-    redirect: (BuildContext context, GoRouterState state) {
-      final bool isLoggedIn = authVM.isLoggedIn;
-      debugPrint("[리디렉트] isLoggedIn: ${isLoggedIn}");
+    redirect: (context, state) {
+      final isLoggedIn = authVM.isLoggedIn;
+      final user = authVM.user;
+      final currentRoute = state.uri.toString();
 
-      final String currentRoute = state.uri.toString();
-      debugPrint("[리디렉트] currentRoute: ${currentRoute}");
-
-      final UserEntity? user = authVM.user;
-
-      //로그인 되면 홈화면으로 이동
-      if (isLoggedIn && currentRoute == '/login') {
-        return '/home';
-        // 밴 유저는 밴유저 페이지로
-      } else if (isLoggedIn && user?.is_banned == true) {
-        return '/blocked';
-        // 삭제한 유저는 삭제유저 페이지로
-      } else if (isLoggedIn && user?.unregister_at != null) {
-        return '/deleted_user';
-      }
-
-      //접근 가능한 화면
-      final List<String> publicRoutes = [
+      // 1. 비로그인 접근 제어
+      final publicRoutes = [
         '/login',
         '/splash',
         '/home',
-        '/blocked',
-        '/deleted_user',
-        '/set_profile',
+        '/login/ToS',
+        '/login/ToS/auth_set_profile',
       ];
-      // 비로그인인데 publicRoutes 중 어떤 것도 아닌 경우 로그인 페이지로(지선생)
-      final bool isPublic = publicRoutes.any(
+
+      final isPublic = publicRoutes.any(
         (path) => currentRoute.startsWith(path),
       );
-      if (!isLoggedIn && !isPublic) {
-        return '/login';
+
+      //로그인 안했을 시 로그인 화면으로
+      if (!isLoggedIn) {
+        if (!isPublic) return '/login';
+        return null;
       }
+
+      // 2. 로그인 했지만 닉네임 없음 → 프로필 설정 강제
+      if (user?.nick_name == null) {
+        if (!currentRoute.startsWith('/login/ToS')) {
+          return '/login/ToS';
+        }
+        return null;
+      }
+
+      // 3. 로그인 완료 상태
+      if (isLoggedIn && currentRoute == '/login') {
+        return '/home';
+      }
+
       return null;
     },
     routes: [
@@ -113,6 +117,27 @@ GoRouter createAppRouter(BuildContext context) {
         pageBuilder: (context, state) {
           return const NoTransitionPage(child: LoginScreen());
         },
+        routes: [
+          GoRoute(
+            path: 'ToS',
+            pageBuilder: (context, state) {
+              return NoTransitionPage(
+                child: ChangeNotifierProvider(
+                  create: (_) => ToSViewmodel(ToSRepository()),
+                  child: const ToSScreen(),
+                ),
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'auth_set_profile',
+                pageBuilder: (context, state) {
+                  return const NoTransitionPage(child: AuthSetProfileScreen());
+                },
+              ),
+            ],
+          ),
+        ],
       ),
 
       ShellRoute(

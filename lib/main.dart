@@ -46,6 +46,10 @@ void main() async {
       },
     );
   } catch (e) {
+    debugPrint('[PortoneConfig] Initialization failed: $e');
+    debugPrint(
+      '[PortoneConfig] App will continue but payment features may not work',
+    );
     // 앱은 계속 실행되지만 결제 기능은 사용할 수 없음
   }
 
@@ -86,10 +90,9 @@ void main() async {
             return AuthViewModel();
           },
         ),
+        // 확정된 프로필 데이터
         ChangeNotifierProvider(
-          create: (context) {
-            return ProfileViewModel(ProfileRepository());
-          },
+          create: (_) => ProfileViewModel(ProfileRepository()),
         ),
         // 프로필정보가 필요한 곳에서 다음과 같이 사용하세요
         // final profileVm = context.watch<ProfileViewModel>();
