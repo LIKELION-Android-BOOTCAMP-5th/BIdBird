@@ -6,11 +6,13 @@ class ImageSourceBottomSheet extends StatelessWidget {
     required this.onGalleryTap,
     required this.onCameraTap,
     this.onVideoTap,
+    this.onDeleteTap,
   });
 
   final VoidCallback onGalleryTap;
   final VoidCallback onCameraTap;
   final VoidCallback? onVideoTap;
+  final VoidCallback? onDeleteTap;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +55,15 @@ class ImageSourceBottomSheet extends StatelessWidget {
                 onVideoTap!();
               },
             ),
+          if (onDeleteTap != null)
+            _ImageSourceActionItem(
+              icon: Icons.delete_outline,
+              label: '사진 삭제',
+              onTap: () {
+                Navigator.of(context).pop();
+                onDeleteTap!();
+              },
+            ),
           const SizedBox(height: 8),
         ],
       ),
@@ -65,19 +76,19 @@ class ImageSourceBottomSheet extends StatelessWidget {
     required VoidCallback onGalleryTap,
     required VoidCallback onCameraTap,
     VoidCallback? onVideoTap,
+    VoidCallback? onDeleteTap,
   }) {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFFFAFAFB),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => ImageSourceBottomSheet(
         onGalleryTap: onGalleryTap,
         onCameraTap: onCameraTap,
         onVideoTap: onVideoTap,
+        onDeleteTap: onDeleteTap,
       ),
     );
   }
@@ -144,11 +155,7 @@ class _ImageSourceActionItemState extends State<_ImageSourceActionItem>
             color: _colorAnimation.value,
             child: Row(
               children: [
-                Icon(
-                  widget.icon,
-                  size: 24,
-                  color: const Color(0xFF9CA3AF),
-                ),
+                Icon(widget.icon, size: 24, color: const Color(0xFF9CA3AF)),
                 const SizedBox(width: 14),
                 Text(
                   widget.label,
