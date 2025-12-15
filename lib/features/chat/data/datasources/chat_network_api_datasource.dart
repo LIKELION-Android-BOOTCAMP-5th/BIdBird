@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatNetworkApiDatasource {
   final dio = Dio();
-  ChatNetworkApiDatasource() {}
+  ChatNetworkApiDatasource();
   Future<List<ChattingRoomEntity>> fetchChattingRoomList() async {
     final response = await SupabaseManager.shared.supabase.functions.invoke(
       'chatting/roomList',
@@ -61,23 +61,22 @@ class ChatNetworkApiDatasource {
   Future<String?> firstMessage({
     required String itemId,
     String? message,
-    required String message_type,
+    required String messageType,
     String? imageUrl,
   }) async {
-    if (message_type != "text" && message_type != "image") {
-      print("메세지 타입이 잘못되었습니다.");
+    if (messageType != "text" && messageType != "image") {
       return null;
     }
 
     try {
       final body = <String, dynamic>{
         'itemId': itemId,
-        'message_type': message_type,
+        'message_type': messageType,
       };
       
-      if (message_type == "text" && message != null) {
+      if (messageType == "text" && message != null) {
         body['message'] = message;
-      } else if (message_type == "image" && imageUrl != null) {
+      } else if (messageType == "image" && imageUrl != null) {
         body['imageUrl'] = imageUrl;
       }
 
@@ -92,7 +91,6 @@ class ChatNetworkApiDatasource {
       final data = response.data['room_id'] as String;
       return data;
     } catch (e) {
-      print('메세지 전송 실패 : ${e}');
       return null;
     }
   }

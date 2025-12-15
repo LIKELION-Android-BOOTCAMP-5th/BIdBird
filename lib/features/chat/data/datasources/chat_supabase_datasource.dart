@@ -26,7 +26,7 @@ class ChatSupabaseDatasource {
         return jsonList.map((json) => ChatMessageEntity.fromJson(json)).toList();
       }
     } catch (e) {
-      print("캐시 불러오기 실패 : $e");
+      // 캐시 불러오기 실패 시 빈 리스트 반환
     }
     return [];
   }
@@ -39,7 +39,7 @@ class ChatSupabaseDatasource {
       final jsonList = messages.map((msg) => msg.toJson()).toList();
       await prefs.setString(cacheKey, jsonEncode(jsonList));
     } catch (e) {
-      print("캐시 저장 실패 : $e");
+      // 캐시 저장 실패 시 무시
     }
   }
 
@@ -76,7 +76,6 @@ class ChatSupabaseDatasource {
         }
       }
     } catch (e) {
-      print("불러오기 실패 : $e");
       // 네트워크 오류 시 캐시 반환
       if (cachedMessages.isNotEmpty) {
         return cachedMessages;
@@ -113,7 +112,6 @@ class ChatSupabaseDatasource {
       // 함수에서 created_at desc 로 내려주므로, UI에서는 asc 로 보이게 뒤집기
       return results.reversed.toList();
     } catch (e) {
-      print('이전 메세지 불러오기 실패 : $e');
       return List.empty();
     }
   }
@@ -134,7 +132,6 @@ class ChatSupabaseDatasource {
         return data;
       }
     } catch (e) {
-      print("불러오기 실패 : $e");
       return null;
     }
     return null;
@@ -152,7 +149,7 @@ class ChatSupabaseDatasource {
         'text': message,
       });
     } catch (e) {
-      print('메시지 전송에 실패했습니다 : $e');
+      // 메시지 전송 실패 시 무시
     }
   }
 
@@ -168,7 +165,7 @@ class ChatSupabaseDatasource {
         'image_url': imageUrl,
       });
     } catch (e) {
-      print('메시지 전송에 실패했습니다 : $e');
+      // 메시지 전송 실패 시 무시
     }
   }
 
@@ -190,7 +187,6 @@ class ChatSupabaseDatasource {
         return data;
       }
     } catch (e) {
-      print("알림 셋팅 불러오기 실패 : $e");
       return null;
     }
     return null;
@@ -208,7 +204,6 @@ class ChatSupabaseDatasource {
           .eq('room_id', roomId)
           .eq('user_id', currentUserId);
     } catch (e) {
-      print('푸시알림 키는데 실패했습니다 : $e');
       return;
     }
     return;
@@ -226,7 +221,6 @@ class ChatSupabaseDatasource {
           .eq('room_id', roomId)
           .eq('user_id', currentUserId);
     } catch (e) {
-      print('푸시알림 키는데 실패했습니다 : $e');
       return;
     }
     return;
