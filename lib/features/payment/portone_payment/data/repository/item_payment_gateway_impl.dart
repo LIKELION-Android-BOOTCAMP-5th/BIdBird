@@ -22,6 +22,14 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
       return false;
     }
 
+    if (txId is! String || paymentId is! String) {
+      return false;
+    }
+
+    if (txId.isEmpty || paymentId.isEmpty) {
+      return false;
+    }
+
     final resultAmount = result['amount'] as int?;
     if (resultAmount != null && resultAmount != request.amount) {
       return false;
@@ -31,7 +39,7 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
       final supabase = SupabaseManager.shared.supabase;
 
       final response = await supabase.functions.invoke(
-        'payment',
+        'payment_v2',
         body: <String, dynamic>{
           'payment_type': 'auction',
           'item_id': request.itemId,
