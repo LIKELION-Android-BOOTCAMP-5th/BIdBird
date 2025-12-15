@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:bidbird/features/report/screen/report_screen.dart';
-import 'package:bidbird/core/widgets/item/detail/item_image_section.dart';
-import 'package:bidbird/core/widgets/item/detail/item_main_info_section.dart';
-import 'package:bidbird/core/widgets/item/detail/item_description_section.dart';
-import 'package:bidbird/core/widgets/item/detail/item_bottom_action_bar.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_image_section.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_main_info_section.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_description_section.dart';
+import 'package:bidbird/core/widgets/item/components/others/item_bottom_action_bar.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key, required this.itemId});

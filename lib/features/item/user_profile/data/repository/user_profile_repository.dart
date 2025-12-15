@@ -1,6 +1,6 @@
 import 'package:bidbird/features/item/user_profile/model/user_profile_entity.dart';
 
-import '../datasource/user_profile_data.dart';
+import '../datasource/user_profile_datasource.dart';
 
 class UserProfileRepository {
   UserProfileRepository({UserProfileDatasource? datasource})

@@ -1,10 +1,7 @@
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
-import 'package:bidbird/core/utils/item/item_trade_status_utils.dart';
-import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/chat/trade_action_bottom_sheet.dart';
-import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
