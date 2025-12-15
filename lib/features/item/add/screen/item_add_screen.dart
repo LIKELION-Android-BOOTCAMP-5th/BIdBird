@@ -11,42 +11,20 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodel/item_add_viewmodel.dart';
-import 'package:bidbird/core/widgets/item/bottom_submit_button.dart';
-import 'package:bidbird/core/widgets/item/content_input_section.dart';
-import 'package:bidbird/core/widgets/item/image_upload_section.dart';
-import 'package:bidbird/core/widgets/item/add/item_add_price_section.dart';
-import 'package:bidbird/core/widgets/item/add/labeled_text_field.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/bottom_submit_button.dart';
+import 'package:bidbird/core/widgets/item/components/sections/content_input_section.dart';
+import 'package:bidbird/core/widgets/item/components/sections/image_upload_section.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_add_price_section.dart';
+import 'package:bidbird/core/widgets/item/components/fields/labeled_text_field.dart';
 
 class ItemAddScreen extends StatelessWidget {
   const ItemAddScreen({super.key});
 
   InputDecoration _inputDecoration(String hint, BuildContext? context) {
-    if (context == null) {
-      return InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: iconColor, fontSize: 13),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(defaultRadius),
-          borderSide: const BorderSide(color: BackgroundColor),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(defaultRadius),
-          borderSide: const BorderSide(color: BackgroundColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(defaultRadius),
-          borderSide: const BorderSide(color: blueColor, width: 1.5),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-      );
-    }
-
-    final hintFontSize = context.fontSizeSmall;
-    final horizontalPadding = context.inputPadding;
-    final verticalPadding = context.inputPadding;
-    final borderWidth = context.borderWidth;
+    final hintFontSize = context?.fontSizeSmall ?? 13;
+    final horizontalPadding = context?.inputPadding ?? 12;
+    final verticalPadding = context?.inputPadding ?? 12;
+    final borderWidth = context?.borderWidth ?? 1.5;
 
     return InputDecoration(
       hintText: hint,

@@ -1,17 +1,19 @@
 
+import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/payment/payment_helper.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/shipping_info_input_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/shipping_info_view_popup.dart';
-import 'package:bidbird/core/widgets/item/trade_history_card.dart';
+import 'package:bidbird/core/widgets/item/components/cards/trade_history_card.dart';
 import 'package:bidbird/features/item/shipping/data/repository/shipping_info_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/repository/current_trade_repository.dart';
 import '../model/current_trade_entity.dart';
+import '../utils/trade_item_filter.dart';
 import '../viewmodel/current_trade_viewmodel.dart';
 
 class FilteredTradeListScreen extends StatelessWidget {
@@ -74,108 +76,26 @@ class FilteredTradeListScreen extends StatelessWidget {
     // 여러 액션 타입이 제공되면 그것을 사용, 아니면 단일 actionType 사용
     final targetActionTypes = actionTypes ?? [actionType];
     
-    // 액션 타입에 맞는 항목 필터링
-    final List<dynamic> filteredItems;
-    
-    // 필터링 헬퍼 함수
-    bool shouldIncludeSaleItem(SaleHistoryItem item) {
-      // actionType이 none이 아니고 targetActionTypes에 포함되면 포함
-      if (item.actionType != TradeActionType.none && 
-          targetActionTypes.contains(item.actionType)) {
-        return true;
-      }
-      // actionType이 none이면 tradeStatusCode로 직접 판단
-      if (item.actionType == TradeActionType.none) {
-        if (item.tradeStatusCode == 510 && 
-            targetActionTypes.contains(TradeActionType.paymentRequired)) {
-          return true;
-        }
-        if (item.tradeStatusCode == 520 && !item.hasShippingInfo &&
-            targetActionTypes.contains(TradeActionType.shippingInfoRequired)) {
-          return true;
-        }
-      }
-      return false;
-    }
-    
-    bool shouldIncludeBidItem(BidHistoryItem item) {
-      // actionType이 none이 아니고 targetActionTypes에 포함되면 포함
-      if (item.actionType != TradeActionType.none && 
-          targetActionTypes.contains(item.actionType)) {
-        return true;
-      }
-      // actionType이 none이면 tradeStatusCode로 직접 판단
-      if (item.actionType == TradeActionType.none) {
-        if (item.tradeStatusCode == 510 && 
-            targetActionTypes.contains(TradeActionType.paymentRequired)) {
-          return true;
-        }
-        if (item.tradeStatusCode == 520 && item.hasShippingInfo &&
-            targetActionTypes.contains(TradeActionType.purchaseConfirmRequired)) {
-          return true;
-        }
-      }
-      // auction_status_code=321이고 tradeStatusCode가 없으면 결제 대기
-      if ((item.tradeStatusCode == null || item.tradeStatusCode == 0) &&
-          item.auctionStatusCode == 321 &&
-          targetActionTypes.contains(TradeActionType.paymentRequired)) {
-        return true;
-      }
-      return false;
-    }
-    
-    // 액션 타입별로 아이템 그룹화
-    final Map<TradeActionType, List<dynamic>> itemsByActionType = {};
-    
-    // 각 액션 타입별로 아이템 수집
-    for (final actionType in targetActionTypes) {
-      itemsByActionType[actionType] = [];
-    }
-    
-    // 판매 아이템 분류
+    // 판매 아이템 필터링
     final saleItems = isSeller == null || isSeller == true
-        ? viewModel.saleHistory.where(shouldIncludeSaleItem).toList()
+        ? viewModel.saleHistory
+            .where((item) => TradeItemFilter.shouldIncludeSaleItem(item, targetActionTypes))
+            .toList()
         : <SaleHistoryItem>[];
     
-    for (final item in saleItems) {
-      TradeActionType? itemActionType;
-      if (item.actionType != TradeActionType.none) {
-        itemActionType = item.actionType;
-      } else {
-        if (item.tradeStatusCode == 510) {
-          itemActionType = TradeActionType.paymentRequired;
-        } else if (item.tradeStatusCode == 520 && !item.hasShippingInfo) {
-          itemActionType = TradeActionType.shippingInfoRequired;
-        }
-      }
-      if (itemActionType != null && itemsByActionType.containsKey(itemActionType)) {
-        itemsByActionType[itemActionType]!.add(item);
-      }
-    }
-    
-    // 입찰 아이템 분류
+    // 입찰 아이템 필터링
     final bidItems = isSeller == null || isSeller == false
-        ? viewModel.bidHistory.where(shouldIncludeBidItem).toList()
+        ? viewModel.bidHistory
+            .where((item) => TradeItemFilter.shouldIncludeBidItem(item, targetActionTypes))
+            .toList()
         : <BidHistoryItem>[];
     
-    for (final item in bidItems) {
-      TradeActionType? itemActionType;
-      if (item.actionType != TradeActionType.none) {
-        itemActionType = item.actionType;
-      } else {
-        if (item.tradeStatusCode == 510) {
-          itemActionType = TradeActionType.paymentRequired;
-        } else if (item.tradeStatusCode == 520 && item.hasShippingInfo) {
-          itemActionType = TradeActionType.purchaseConfirmRequired;
-        } else if ((item.tradeStatusCode == null || item.tradeStatusCode == 0) &&
-                   item.auctionStatusCode == 321) {
-          itemActionType = TradeActionType.paymentRequired;
-        }
-      }
-      if (itemActionType != null && itemsByActionType.containsKey(itemActionType)) {
-        itemsByActionType[itemActionType]!.add(item);
-      }
-    }
+    // 액션 타입별로 아이템 그룹화
+    final itemsByActionType = TradeItemFilter.groupItemsByActionType(
+      saleItems: saleItems,
+      bidItems: bidItems,
+      targetActionTypes: targetActionTypes,
+    );
 
     final title = '처리 목록';
 
@@ -227,8 +147,8 @@ class FilteredTradeListScreen extends StatelessWidget {
                               final sectionLabel = _getSectionLabel(actionType);
                               
                               // 섹션 내 아이템들의 역할 확인 (판매/구매)
-                              final saleCount = items.where((item) => item is SaleHistoryItem).length;
-                              final bidCount = items.where((item) => item is BidHistoryItem).length;
+                              final saleCount = items.whereType<SaleHistoryItem>().length;
+                              final bidCount = items.whereType<BidHistoryItem>().length;
                               
                               // 섹션 색상 결정: 모두 판매면 초록색, 모두 구매면 파란색, 혼합이면 기본 파란색
                               final Color sectionColor;
@@ -277,30 +197,20 @@ class FilteredTradeListScreen extends StatelessWidget {
                                 // 섹션 아이템들
                                 ...items.map((item) {
                                   final itemIsSeller = item is SaleHistoryItem;
-                                  final itemActionType = itemIsSeller
-                                      ? (item as SaleHistoryItem).actionType
-                                      : (item as BidHistoryItem).actionType;
+                                  final saleItem = itemIsSeller ? item : null;
+                                  final bidItem = itemIsSeller ? null : item as BidHistoryItem;
+                                  final itemActionType = saleItem?.actionType ?? bidItem?.actionType ?? TradeActionType.none;
                                   return Builder(
                                     builder: (context) {
                                       final spacing = ResponsiveConstants.spacingSmall(context);
                                       return Padding(
                                         padding: EdgeInsets.only(bottom: spacing * 1.5),
                                         child: TradeHistoryCard(
-                                          title: itemIsSeller
-                                              ? (item as SaleHistoryItem).title
-                                              : (item as BidHistoryItem).title,
-                                          thumbnailUrl: itemIsSeller
-                                              ? (item as SaleHistoryItem).thumbnailUrl
-                                              : (item as BidHistoryItem).thumbnailUrl,
-                                          status: itemIsSeller
-                                              ? (item as SaleHistoryItem).status
-                                              : (item as BidHistoryItem).status,
-                                          price: itemIsSeller
-                                              ? (item as SaleHistoryItem).price
-                                              : (item as BidHistoryItem).price,
-                                          itemId: itemIsSeller
-                                              ? (item as SaleHistoryItem).itemId
-                                              : (item as BidHistoryItem).itemId,
+                                          title: saleItem?.title ?? bidItem?.title ?? '',
+                                          thumbnailUrl: saleItem?.thumbnailUrl ?? bidItem?.thumbnailUrl,
+                                          status: saleItem?.status ?? bidItem?.status ?? '',
+                                          price: saleItem?.price ?? bidItem?.price ?? 0,
+                                          itemId: saleItem?.itemId ?? bidItem?.itemId ?? '',
                                           isSeller: itemIsSeller,
                                           actionType: itemActionType,
                                           useResponsive: true,
@@ -325,147 +235,51 @@ class FilteredTradeListScreen extends StatelessWidget {
     );
   }
 
-  String _getTitle(TradeActionType actionType) {
-    switch (actionType) {
-      case TradeActionType.paymentRequired:
-        return '결제 대기';
-      case TradeActionType.shippingInfoRequired:
-        return '배송지 입력';
-      case TradeActionType.purchaseConfirmRequired:
-        return '구매 확정';
-      case TradeActionType.none:
-        return '현재 거래 내역';
-    }
-  }
-
   String _getSectionLabel(TradeActionType actionType) {
-    switch (actionType) {
-      case TradeActionType.paymentRequired:
-        return '결제 대기';
-      case TradeActionType.shippingInfoRequired:
-        return '배송지 입력';
-      case TradeActionType.purchaseConfirmRequired:
-        return '구매 확정';
-      case TradeActionType.none:
-        return '';
+    if (actionType == TradeActionType.none) {
+      return '';
     }
+    return ActionHubItem(actionType: actionType, count: 0).label;
   }
 
 
   Widget _buildActionButton(BuildContext context, dynamic item, TradeActionType actionType) {
     final isSeller = item is SaleHistoryItem;
-    final itemId = isSeller ? (item as SaleHistoryItem).itemId : (item as BidHistoryItem).itemId;
-    final title = isSeller ? (item as SaleHistoryItem).title : (item as BidHistoryItem).title;
-    final price = isSeller ? (item as SaleHistoryItem).price : (item as BidHistoryItem).price;
+    final saleItem = isSeller ? item : null;
+    final bidItem = isSeller ? null : item as BidHistoryItem;
+    final itemId = saleItem?.itemId ?? bidItem?.itemId ?? '';
+    final title = saleItem?.title ?? bidItem?.title ?? '';
+    final price = saleItem?.price ?? bidItem?.price ?? 0;
 
     switch (actionType) {
       case TradeActionType.paymentRequired:
-        return Builder(
-          builder: (context) {
-            final buttonPadding = ResponsiveConstants.screenPadding(context);
-            final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
-            final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
-            return Padding(
-              padding: EdgeInsets.fromLTRB(buttonPadding, 0, buttonPadding, buttonPadding),
-              child: SizedBox(
-                width: double.infinity,
-                height: buttonHeight,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await handlePayment(
-                      context: context,
-                      itemId: itemId,
-                      itemTitle: title,
-                      amount: price,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: blueColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.7),
-                    ),
-                  ),
-                  child: Text(
-                    '결제하러 가기',
-                    style: TextStyle(
-                      fontSize: buttonFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+        return _buildActionButtonWidget(
+          context: context,
+          text: '결제하러 가기',
+          onPressed: () async {
+            await handlePayment(
+              context: context,
+              itemId: itemId,
+              itemTitle: title,
+              amount: price,
             );
           },
         );
 
       case TradeActionType.shippingInfoRequired:
-        return Builder(
-          builder: (context) {
-            final buttonPadding = ResponsiveConstants.screenPadding(context);
-            final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
-            final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
-            return Padding(
-              padding: EdgeInsets.fromLTRB(buttonPadding, 0, buttonPadding, buttonPadding),
-              child: SizedBox(
-                width: double.infinity,
-                height: buttonHeight,
-                child: ElevatedButton(
-                  onPressed: () => _handleShippingInfo(context, itemId),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: blueColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.7),
-                    ),
-                  ),
-                  child: Text(
-                    '배송 정보 입력하기',
-                    style: TextStyle(
-                      fontSize: buttonFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
+        return _buildActionButtonWidget(
+          context: context,
+          text: '배송 정보 입력하기',
+          onPressed: () => _handleShippingInfo(context, itemId),
         );
 
       case TradeActionType.purchaseConfirmRequired:
-        return Builder(
-          builder: (context) {
-            final buttonPadding = ResponsiveConstants.screenPadding(context);
-            final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
-            final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
-            return Padding(
-              padding: EdgeInsets.fromLTRB(buttonPadding, 0, buttonPadding, buttonPadding),
-              child: SizedBox(
-                width: double.infinity,
-                height: buttonHeight,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // 구매 확정 기능 구현 필요
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('구매 확정 기능은 준비 중입니다.')),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: blueColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.7),
-                    ),
-                  ),
-                  child: Text(
-                    '구매 확정하기',
-                    style: TextStyle(
-                      fontSize: buttonFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+        return _buildActionButtonWidget(
+          context: context,
+          text: '구매 확정하기',
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('구매 확정 기능은 준비 중입니다.')),
             );
           },
         );
@@ -475,23 +289,62 @@ class FilteredTradeListScreen extends StatelessWidget {
     }
   }
 
+  Widget _buildActionButtonWidget({
+    required BuildContext context,
+    required String text,
+    required VoidCallback onPressed,
+  }) {
+    return Builder(
+      builder: (context) {
+        final buttonPadding = ResponsiveConstants.screenPadding(context);
+        final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
+        final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(buttonPadding, 0, buttonPadding, buttonPadding),
+          child: SizedBox(
+            width: double.infinity,
+            height: buttonHeight,
+            child: ElevatedButton(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: blueColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.7),
+                ),
+              ),
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: buttonFontSize,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _handleShippingInfo(BuildContext context, String itemId) async {
     final shippingInfoRepository = ShippingInfoRepository();
     try {
       final shippingInfo = await shippingInfoRepository.getShippingInfo(itemId);
       if (!context.mounted) return;
       
+      final trackingNumber = shippingInfo?['tracking_number'];
       final hasShippingInfo = shippingInfo != null && 
-          shippingInfo['tracking_number'] != null &&
-          (shippingInfo['tracking_number'] as String?)?.isNotEmpty == true;
+          trackingNumber != null &&
+          (trackingNumber is String && trackingNumber.isNotEmpty);
       
       if (hasShippingInfo) {
         showDialog(
           context: context,
           builder: (dialogContext) => ShippingInfoViewPopup(
-            createdAt: shippingInfo?['created_at'] as String?,
-            carrier: shippingInfo?['carrier'] as String?,
-            trackingNumber: shippingInfo?['tracking_number'] as String?,
+            createdAt: shippingInfo['created_at'] is String ? shippingInfo['created_at'] as String : null,
+            carrier: shippingInfo['carrier'] is String ? shippingInfo['carrier'] as String : null,
+            trackingNumber: trackingNumber is String ? trackingNumber : null,
           ),
         );
       } else {
@@ -500,12 +353,12 @@ class FilteredTradeListScreen extends StatelessWidget {
           barrierDismissible: true,
           builder: (dialogContext) {
             return ShippingInfoInputPopup(
-              initialCarrier: shippingInfo?['carrier'] as String?,
-              initialTrackingNumber: shippingInfo?['tracking_number'] as String?,
+              initialCarrier: shippingInfo != null && shippingInfo['carrier'] is String ? shippingInfo['carrier'] as String : null,
+              initialTrackingNumber: trackingNumber is String ? trackingNumber : null,
               onConfirm: (carrier, trackingNumber) async {
                 try {
                   if (shippingInfo != null) {
-                    final existingTrackingNumber = shippingInfo?['tracking_number'] as String?;
+                    final existingTrackingNumber = shippingInfo['tracking_number'] as String?;
                     await shippingInfoRepository.updateShippingInfo(
                       itemId: itemId,
                       carrier: carrier,
@@ -566,14 +419,5 @@ class FilteredTradeListScreen extends StatelessWidget {
         ),
       );
     }
-  }
-
-  String _formatMoney(int value) {
-    final s = value.toString();
-    final formatted = s.replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (m) => ',',
-    );
-    return '$formatted원';
   }
 }

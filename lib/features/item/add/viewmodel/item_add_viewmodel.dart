@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart' show formatNumber, formatPrice, parseFormattedPrice;
+import 'package:bidbird/core/utils/item/item_price_utils.dart' show formatNumber, parseFormattedPrice;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/utils/item/item_registration_validator.dart';
@@ -17,9 +17,9 @@ import '../data/repository/keyword_repository.dart';
 import '../data/repository/edit_item_repository.dart';
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 import 'package:bidbird/core/upload/usecases/upload_images_usecase.dart';
-import '../model/add_item_usecase.dart';
-import '../model/get_edit_item_usecase.dart';
-import '../model/get_keyword_types_usecase.dart';
+import '../usecase/add_item_usecase.dart';
+import '../usecase/get_edit_item_usecase.dart';
+import '../usecase/get_keyword_types_usecase.dart';
 import '../model/item_add_entity.dart';
 import '../model/keyword_type_entity.dart';
 
@@ -224,47 +224,58 @@ class ItemAddViewModel extends ChangeNotifier {
 
     _dio ??= Dio();
     final dio = _dio!;
-    final List<XFile> files = <XFile>[];
 
     try {
-      // 병렬로 이미지 다운로드
-      final results = await Future.wait(
-        imageUrls.map((url) async {
-          try {
-            final response = await dio.get<List<int>>(
-              url,
-              options: Options(responseType: ResponseType.bytes),
-            );
+      final files = await _downloadImagesInParallel(dio, imageUrls);
 
-            final String fileName =
-                '${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch}.jpg';
-            final String tempPath = '${Directory.systemTemp.path}/$fileName';
-            final file = File(tempPath);
-            await file.writeAsBytes(response.data ?? <int>[]);
-
-            return XFile(file.path);
-          } catch (e) {
-            return null;
-          }
-        }),
-        eagerError: false,
-      );
-
-      files.addAll(results.whereType<XFile>());
-
-      if (files.isNotEmpty) {
-        selectedImages = files;
-        notifyListeners();
-      } else {
-        // 모든 이미지 다운로드 실패 시 에러
+      if (files.isEmpty) {
         throw Exception('이미지를 불러올 수 없습니다.');
       }
+
+      selectedImages = files;
+      notifyListeners();
     } catch (e) {
-      // 전체 실패 시에만 에러 처리
-      if (files.isEmpty) {
-        rethrow;
-      }
+      // 이미지 로드 실패 시 에러 재발생
+      rethrow;
     }
+  }
+
+  /// 병렬로 이미지를 다운로드합니다.
+  Future<List<XFile>> _downloadImagesInParallel(
+    Dio dio,
+    List<String> imageUrls,
+  ) async {
+    final results = await Future.wait(
+      imageUrls.map((url) => _downloadSingleImage(dio, url)),
+      eagerError: false,
+    );
+
+    return results.whereType<XFile>().toList();
+  }
+
+  /// 단일 이미지를 다운로드합니다.
+  Future<XFile?> _downloadSingleImage(Dio dio, String url) async {
+    try {
+      final response = await dio.get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final fileName = _generateTempFileName();
+      final tempPath = '${Directory.systemTemp.path}/$fileName';
+      final file = File(tempPath);
+      await file.writeAsBytes(response.data ?? <int>[]);
+
+      return XFile(file.path);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 임시 파일명을 생성합니다.
+  String _generateTempFileName() {
+    final timestamp = DateTime.now();
+    return '${timestamp.millisecondsSinceEpoch}_${timestamp.microsecondsSinceEpoch}.jpg';
   }
 
   String? validate() {
@@ -306,26 +317,58 @@ class ItemAddViewModel extends ChangeNotifier {
     final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    final String? error = validate();
-    if (error != null) {
-      if (context.mounted) {
-        scaffoldMessenger.showSnackBar(SnackBar(content: Text(error)));
-      }
+    if (!_validateSubmission(context, scaffoldMessenger)) {
       return;
     }
-
-    final String title = titleController.text.trim();
-    final String description = descriptionController.text.trim();
-    final int startPrice = parseFormattedPrice(startPriceController.text);
-    final int instantPrice = useInstantPrice
-        ? parseFormattedPrice(instantPriceController.text)
-        : 0;
 
     isSubmitting = true;
     notifyListeners();
 
     bool loadingDialogOpen = true;
+    _showLoadingDialog(context);
 
+    try {
+      final itemData = _prepareItemData();
+      if (itemData == null) {
+        _showError(context, scaffoldMessenger, '경매 기간을 선택해주세요.');
+        return;
+      }
+
+      final imageUrls = await _uploadItemImages(context, scaffoldMessenger);
+      if (imageUrls == null) {
+        return;
+      }
+
+      await _saveItem(itemData, imageUrls);
+
+      _closeLoadingDialog(navigator, loadingDialogOpen);
+      loadingDialogOpen = false;
+
+      if (!context.mounted) return;
+      await _showSuccessDialog(context, navigator);
+    } catch (e) {
+      if (context.mounted) {
+        _showError(context, scaffoldMessenger, ItemRegistrationErrorMessages.registrationError(e));
+      }
+    } finally {
+      isSubmitting = false;
+      notifyListeners();
+      _closeLoadingDialog(navigator, loadingDialogOpen);
+    }
+  }
+
+  bool _validateSubmission(BuildContext context, ScaffoldMessengerState scaffoldMessenger) {
+    final String? error = validate();
+    if (error != null) {
+      if (context.mounted) {
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text(error)));
+      }
+      return false;
+    }
+    return true;
+  }
+
+  void _showLoadingDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -356,95 +399,115 @@ class ItemAddViewModel extends ChangeNotifier {
         );
       },
     );
+  }
 
-    try {
-      if (selectedDuration == null) {
-        if (context.mounted) {
-          scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text('경매 기간을 선택해주세요.')),
-          );
-        }
-        return;
-      }
-      
-      final DateTime now = DateTime.now();
-      final int auctionHours = parseAuctionDuration(selectedDuration!);
+  ItemAddEntity? _prepareItemData() {
+    if (selectedDuration == null) {
+      return null;
+    }
 
-      final DateTime auctionStartAt = now;
-      final DateTime auctionEndAt = now.add(Duration(hours: auctionHours));
+    final String title = titleController.text.trim();
+    final String description = descriptionController.text.trim();
+    final int startPrice = parseFormattedPrice(startPriceController.text);
+    final int instantPrice = useInstantPrice
+        ? parseFormattedPrice(instantPriceController.text)
+        : 0;
 
-      final List<String> imageUrls = await _uploadImagesUseCase(selectedImages);
+    final DateTime now = DateTime.now();
+    final int auctionHours = parseAuctionDuration(selectedDuration!);
 
-      if (imageUrls.isEmpty) {
-        if (context.mounted) {
-          scaffoldMessenger.showSnackBar(
-            const SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
-          );
-        }
-        return;
-      }
+    return ItemAddEntity(
+      title: title,
+      description: description,
+      startPrice: startPrice,
+      instantPrice: instantPrice,
+      keywordTypeId: selectedKeywordTypeId!,
+      auctionStartAt: now,
+      auctionEndAt: now.add(Duration(hours: auctionHours)),
+      auctionDurationHours: auctionHours,
+      imageUrls: [], // 이미지 URL은 업로드 후 설정
+      isAgree: agreed,
+    );
+  }
 
-      final ItemAddEntity data = ItemAddEntity(
-        title: title,
-        description: description,
-        startPrice: startPrice,
-        instantPrice: instantPrice,
-        keywordTypeId: selectedKeywordTypeId!,
-        auctionStartAt: auctionStartAt,
-        auctionEndAt: auctionEndAt,
-        auctionDurationHours: auctionHours,
-        imageUrls: imageUrls,
-        isAgree: agreed,
-      );
+  Future<List<String>?> _uploadItemImages(
+    BuildContext context,
+    ScaffoldMessengerState scaffoldMessenger,
+  ) async {
+    final List<String> imageUrls = await _uploadImagesUseCase(selectedImages);
 
-      await _addItemUseCase(
-        entity: data,
-        imageUrls: imageUrls,
-        primaryImageIndex: primaryImageIndex,
-        editingItemId: editingItemId,
-      );
-
-      if (loadingDialogOpen && navigator.canPop()) {
-        navigator.pop();
-        loadingDialogOpen = false;
-      }
-
-      if (!context.mounted) return;
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, result) {
-            // Pop is prevented by canPop: false
-          },
-          child: AskPopup(
-            content: '매물 등록 확인 화면으로 이동하여\n최종 등록을 진행해 주세요.',
-            yesText: '이동하기',
-            yesLogic: () async {
-              navigator.pop();
-              if (!context.mounted) return;
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!context.mounted) return;
-                context.go('/add_item/item_registration_list');
-              });
-            },
-          ),
-        ),
-      );
-    } catch (e) {
+    if (imageUrls.isEmpty) {
       if (context.mounted) {
         scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(ItemRegistrationErrorMessages.registrationError(e))),
+          const SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
         );
       }
-    } finally {
-      isSubmitting = false;
-      notifyListeners();
+      return null;
+    }
 
-      if (loadingDialogOpen && navigator.canPop()) {
-        navigator.pop();
-      }
+    return imageUrls;
+  }
+
+  Future<void> _saveItem(ItemAddEntity itemData, List<String> imageUrls) async {
+    final updatedData = ItemAddEntity(
+      title: itemData.title,
+      description: itemData.description,
+      startPrice: itemData.startPrice,
+      instantPrice: itemData.instantPrice,
+      keywordTypeId: itemData.keywordTypeId,
+      auctionStartAt: itemData.auctionStartAt,
+      auctionEndAt: itemData.auctionEndAt,
+      auctionDurationHours: itemData.auctionDurationHours,
+      imageUrls: imageUrls,
+      isAgree: itemData.isAgree,
+    );
+
+    await _addItemUseCase(
+      entity: updatedData,
+      imageUrls: imageUrls,
+      primaryImageIndex: primaryImageIndex,
+      editingItemId: editingItemId,
+    );
+  }
+
+  Future<void> _showSuccessDialog(BuildContext context, NavigatorState navigator) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          // Pop is prevented by canPop: false
+        },
+        child: AskPopup(
+          content: '매물 등록 확인 화면으로 이동하여\n최종 등록을 진행해 주세요.',
+          yesText: '이동하기',
+          yesLogic: () async {
+            navigator.pop();
+            if (!context.mounted) return;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted) return;
+              context.go('/add_item/item_registration_list');
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showError(
+    BuildContext context,
+    ScaffoldMessengerState scaffoldMessenger,
+    String message,
+  ) {
+    if (context.mounted) {
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  void _closeLoadingDialog(NavigatorState navigator, bool isOpen) {
+    if (isOpen && navigator.canPop()) {
+      navigator.pop();
     }
   }
 }

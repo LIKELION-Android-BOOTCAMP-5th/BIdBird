@@ -1,6 +1,6 @@
 import 'package:bidbird/features/item/current_trade/model/current_trade_entity.dart';
 
-import '../datasource/current_trade_data.dart';
+import '../datasource/current_trade_datasource.dart';
 
 abstract class CurrentTradeRepository {
   Future<List<BidHistoryItem>> fetchMyBidHistory();

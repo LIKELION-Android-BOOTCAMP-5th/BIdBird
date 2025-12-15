@@ -22,63 +22,58 @@ class CurrentTradeViewModel extends ChangeNotifier {
   String? get error => _error;
 
   /// 상태별 그룹핑된 아이템 (구매 내역)
-  List<BidHistoryItem> get todoBidItems {
-    return _bidHistory.where((item) => item.itemStatus == TradeItemStatus.todo).toList();
-  }
+  List<BidHistoryItem> get todoBidItems => 
+      _filterByStatus(_bidHistory, TradeItemStatus.todo);
 
-  List<BidHistoryItem> get inProgressBidItems {
-    return _bidHistory.where((item) => item.itemStatus == TradeItemStatus.inProgress).toList();
-  }
+  List<BidHistoryItem> get inProgressBidItems => 
+      _filterByStatus(_bidHistory, TradeItemStatus.inProgress);
 
-  List<BidHistoryItem> get completedBidItems {
-    return _bidHistory.where((item) => item.itemStatus == TradeItemStatus.completed).toList();
-  }
+  List<BidHistoryItem> get completedBidItems => 
+      _filterByStatus(_bidHistory, TradeItemStatus.completed);
 
   /// 상태별 그룹핑된 아이템 (판매 내역)
-  List<SaleHistoryItem> get todoSaleItems {
-    return _saleHistory.where((item) => item.itemStatus == TradeItemStatus.todo).toList();
-  }
+  List<SaleHistoryItem> get todoSaleItems => 
+      _filterByStatus(_saleHistory, TradeItemStatus.todo);
 
-  List<SaleHistoryItem> get inProgressSaleItems {
-    return _saleHistory.where((item) => item.itemStatus == TradeItemStatus.inProgress).toList();
-  }
+  List<SaleHistoryItem> get inProgressSaleItems => 
+      _filterByStatus(_saleHistory, TradeItemStatus.inProgress);
 
-  List<SaleHistoryItem> get completedSaleItems {
-    return _saleHistory.where((item) => item.itemStatus == TradeItemStatus.completed).toList();
+  List<SaleHistoryItem> get completedSaleItems => 
+      _filterByStatus(_saleHistory, TradeItemStatus.completed);
+
+  /// 상태별로 아이템 필터링하는 제네릭 헬퍼 메서드
+  List<T> _filterByStatus<T extends TradeHistoryItem>(List<T> items, TradeItemStatus status) {
+    return items.where((item) => item.itemStatus == status).toList();
   }
 
   /// 액션 허브 아이템 (구매 내역, 최대 2개)
   List<ActionHubItem> get bidActionHubItems {
-    final Map<TradeActionType, int> actionCounts = {
-      TradeActionType.paymentRequired: 0,
-      TradeActionType.purchaseConfirmRequired: 0,
-    };
-    
-    for (final item in _bidHistory) {
-      final actionType = item.actionType;
-      if (actionType != TradeActionType.none) {
-        actionCounts[actionType] = (actionCounts[actionType] ?? 0) + 1;
-      }
-    }
-
-    final hubItems = actionCounts.entries
-        .map((e) => ActionHubItem(actionType: e.key, count: e.value))
-        .toList();
-    
-    hubItems.sort((a, b) => b.count.compareTo(a.count));
-    return hubItems.take(2).toList();
+    return _buildActionHubItems(
+      _bidHistory,
+      [TradeActionType.paymentRequired, TradeActionType.purchaseConfirmRequired],
+    );
   }
 
   /// 액션 허브 아이템 (판매 내역, 최대 2개)
   List<ActionHubItem> get saleActionHubItems {
+    return _buildActionHubItems(
+      _saleHistory,
+      [TradeActionType.paymentRequired, TradeActionType.shippingInfoRequired],
+    );
+  }
+
+  /// 액션 허브 아이템 생성 헬퍼 메서드
+  List<ActionHubItem> _buildActionHubItems(
+    List<TradeHistoryItem> items,
+    List<TradeActionType> targetActionTypes,
+  ) {
     final Map<TradeActionType, int> actionCounts = {
-      TradeActionType.paymentRequired: 0,
-      TradeActionType.shippingInfoRequired: 0,
+      for (final type in targetActionTypes) type: 0,
     };
     
-    for (final item in _saleHistory) {
+    for (final item in items) {
       final actionType = item.actionType;
-      if (actionType != TradeActionType.none) {
+      if (actionType != TradeActionType.none && actionCounts.containsKey(actionType)) {
         actionCounts[actionType] = (actionCounts[actionType] ?? 0) + 1;
       }
     }

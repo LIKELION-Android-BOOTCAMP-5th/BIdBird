@@ -1,4 +1,4 @@
-import 'package:bidbird/features/item/bid/buy_now/model/bid_restriction_gateway.dart';
+import 'package:bidbird/features/item/bid/buy_now/gateway/bid_restriction_gateway.dart';
 
 import '../datasource/bid_restriction_datasource.dart';
 

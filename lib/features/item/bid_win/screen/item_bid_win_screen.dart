@@ -12,7 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../model/item_bid_win_entity.dart';
-import 'package:bidbird/core/widgets/item/bid_win/item_bid_result_body.dart';
+import 'package:bidbird/core/widgets/item/components/others/item_bid_result_body.dart';
 
 class ItemBidSuccessScreen extends StatelessWidget {
   const ItemBidSuccessScreen({super.key, required this.item});
