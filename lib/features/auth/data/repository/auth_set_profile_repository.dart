@@ -1,13 +1,14 @@
+import 'package:bidbird/features/auth/data/data_sources/auth_set_profile_network_api_datasource.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/managers/supabase_manager.dart';
-import '../../../core/models/keywordType_entity.dart';
-import '../model/profile_model.dart';
+import '../../../../core/managers/supabase_manager.dart';
+import '../../../../core/models/keywordType_entity.dart';
+import '../../model/auth_set_profile_model.dart';
 
-class ProfileRepository {
+class AuthSetProfileRepository {
   final _client = SupabaseManager.shared.supabase;
 
-  Future<Profile?> fetchProfile() async {
+  Future<AuthSetProfileModel?> fetchProfile() async {
     final user = _client.auth.currentUser;
 
     if (user == null) {
@@ -27,7 +28,7 @@ class ProfileRepository {
         //return null; //프로필없을때발생
       }
 
-      return Profile.fromMap(response);
+      return AuthSetProfileModel.fromMap(response);
     } catch (e) {
       throw Exception('Failed fetchProfile: $e'); //나중에팝업으로쓸것
     }
@@ -50,9 +51,9 @@ class ProfileRepository {
       updateData['profile_image'] = profileImageUrl;
     }
 
-    if (keywordIds != null) {
-      updateData['keyword_code'] = keywordIds; // users 테이블에 컬럼 존재 시
-    }
+    // if (keywordIds != null) {
+    //   updateData['keyword_code'] = keywordIds; // users 테이블에 컬럼 존재 시
+    // }
 
     if (updateData.isEmpty) return;
 
@@ -143,11 +144,27 @@ class ProfileRepository {
         .select('keyword_code')
         .eq('user_id', user.id);
 
-    return response.map<int>((e) => e['keyword_id'] as int).toList();
+    return response.map<int>((e) => e['keyword_code'] as int).toList();
   }
 
   Future<List<KeywordType>> getKeywordType() async {
-    final response = await _client.from('user_keyword').select();
-    return response.map<KeywordType>(KeywordType.fromJson).toList();
+    return await AuthSetProfileNetworkApiDatasource.shared.getKeywordType();
+  }
+
+  Future<void> updateUserKeywords(List<int> keywordIds) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception('Not logged in');
+
+    // 1. 기존 키워드 삭제
+    await _client.from('user_keyword').delete().eq('user_id', user.id);
+
+    // 2. 새 키워드 삽입
+    if (keywordIds.isNotEmpty) {
+      final rows = keywordIds
+          .map((keyword) => {'user_id': user.id, 'keyword_code': keyword})
+          .toList();
+
+      await _client.from('user_keyword').insert(rows);
+    }
   }
 }

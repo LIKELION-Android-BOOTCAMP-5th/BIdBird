@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/models/items_entity.dart';
+import 'package:bidbird/core/models/keywordType_entity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/repository/home_repository.dart';
-import '../model/home_data.dart';
 
 //최신순, 오래된순, 좋아요순 처리할 때 쓸 것
 enum OrderByType { newFirst, oldFirst, likesFirst }
@@ -14,8 +14,8 @@ enum OrderByType { newFirst, oldFirst, likesFirst }
 class HomeViewmodel extends ChangeNotifier {
   final HomeRepository _homeRepository;
   //키워드 그릇 생성
-  List<HomeCodeKeywordType> _keywords = [];
-  List<HomeCodeKeywordType> get keywords => _keywords;
+  List<KeywordType> _keywords = [];
+  List<KeywordType> get keywords => _keywords;
   //Items 그릇 생성
   List<ItemsEntity> _Items = [];
   List<ItemsEntity> get Items => _Items;

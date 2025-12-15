@@ -1,12 +1,12 @@
 import 'package:bidbird/core/models/items_entity.dart';
+import 'package:bidbird/core/models/keywordType_entity.dart';
 
-import '../../model/home_data.dart';
 import '../data_sources/home_network_api_datasource.dart';
 
 class HomeRepository {
   // 반환 형태가 무엇이 되어야 할까요?
   // List<Task>
-  Future<List<HomeCodeKeywordType>> getKeywordType() async {
+  Future<List<KeywordType>> getKeywordType() async {
     return await HomeNetworkApiManager.shared.getKeywordType();
   }
 

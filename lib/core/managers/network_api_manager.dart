@@ -20,7 +20,7 @@ class NetworkApiManager {
     'Content-Type': 'application/json',
   };
 
-  //이것만 사용하세요!!!!!!!!!!!!!!!!!!!!!!!11
+  //이것만 사용하세요!!!!!!!!!!!!!!!!!!!!!!!11 range 설정 안하는거면 그냥 안쓰면 됩니다
   static Map<String, String> useThisHeaders({String? range}) {
     final newHeaders = Map<String, String>.from(headers);
 
