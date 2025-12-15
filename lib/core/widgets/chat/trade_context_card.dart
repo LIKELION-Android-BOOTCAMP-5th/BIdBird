@@ -33,60 +33,6 @@ class TradeContextCard extends StatelessWidget {
   final VoidCallback? onTradeComplete;
   final VoidCallback? onTradeCancel;
 
-  /// 거래 상태에 따른 배경색 반환
-  Color _getTradeStatusBackgroundColor() {
-    if (tradeStatusCode == null) {
-      return const Color(0xFFE9ECEF); // 기본 중립색
-    }
-
-    switch (tradeStatusCode) {
-      case 510: // 결제 대기
-        return const Color(0xFFE9ECEF); // 중립색
-      case 520: // 거래 중
-        return const Color(0xFFE9ECEF); // 중립색
-      case 550: // 거래 완료
-        return const Color(0xFFE6F4EA); // 성공색 배경
-      default:
-        return const Color(0xFFE9ECEF); // 기본 중립색
-    }
-  }
-
-  /// 거래 상태에 따른 텍스트 색상 반환
-  Color _getTradeStatusTextColor() {
-    if (tradeStatusCode == null) {
-      return const Color(0xFF5F6368); // 기본 중립 텍스트
-    }
-
-    switch (tradeStatusCode) {
-      case 510: // 결제 대기
-        return const Color(0xFF5F6368); // 중립 텍스트
-      case 520: // 거래 중
-        return const Color(0xFF5F6368); // 중립 텍스트
-      case 550: // 거래 완료
-        return const Color(0xFF1E8E3E); // 성공 텍스트
-      default:
-        return const Color(0xFF5F6368); // 기본 중립 텍스트
-    }
-  }
-
-  /// 거래 상태 텍스트 반환
-  String _getTradeStatusText() {
-    if (tradeStatusCode == null) {
-      return tradeStatus;
-    }
-
-    switch (tradeStatusCode) {
-      case 510:
-        return '결제 대기';
-      case 520:
-        return '거래 중';
-      case 550:
-        return '거래 완료';
-      default:
-        return tradeStatus;
-    }
-  }
-
   /// 거래 액션 표시 여부 (오버플로 메뉴)
   /// 배송 정보가 입력되었을 때만 표시
   bool _shouldShowOverflowMenu() {
@@ -103,9 +49,6 @@ class TradeContextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusBackgroundColor = _getTradeStatusBackgroundColor();
-    final statusTextColor = _getTradeStatusTextColor();
-    final statusText = _getTradeStatusText();
     final showOverflowMenu = _shouldShowOverflowMenu();
 
     return Container(

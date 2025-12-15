@@ -119,7 +119,7 @@ class FirstImageMessageSender implements MessageSender {
       } else {
         return await CloudinaryManager.shared.uploadImageToCloudinary(file);
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       return null;
     }
   }
@@ -194,7 +194,7 @@ class ImageMessageSender implements MessageSender {
       } else {
         return await CloudinaryManager.shared.uploadImageToCloudinary(file);
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       return null;
     }
   }

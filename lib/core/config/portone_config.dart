@@ -76,7 +76,7 @@ class PortoneConfig {
       } else {
         throw StateError('Failed to load Portone config: invalid response');
       }
-    } catch (e, st) {
+    } catch (e) {
       rethrow;
     }
   }

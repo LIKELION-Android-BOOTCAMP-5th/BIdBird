@@ -35,7 +35,7 @@ class ReportDatasource {
       }
 
       return result;
-    } catch (e, stackTrace) {
+    } catch (e) {
       rethrow;
     }
   }

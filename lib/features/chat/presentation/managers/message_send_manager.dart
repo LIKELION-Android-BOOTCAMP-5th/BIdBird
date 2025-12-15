@@ -224,7 +224,7 @@ class MessageSendManager {
     required String messageText,
     required void Function(String) onError,
   }) async {
-    MessageSender? sender;
+    final MessageSender sender;
 
     if (roomId == null) {
       // 첫 메시지 전송
@@ -239,12 +239,6 @@ class MessageSendManager {
         sendTextMessageUseCase: _sendTextMessageUseCase,
         roomId: roomId,
         message: messageText,
-      );
-    }
-
-    if (sender == null) {
-      return MessageSendResult.failure(
-        "메시지 전송 실패: 전송 전략을 생성할 수 없습니다",
       );
     }
 

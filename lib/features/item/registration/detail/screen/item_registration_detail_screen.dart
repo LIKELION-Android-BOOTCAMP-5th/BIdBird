@@ -87,7 +87,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     final thumbnailUrl = item.thumbnailUrl;
     final bool isVideo = thumbnailUrl != null && isVideoFile(thumbnailUrl);
     final displayUrl = isVideo 
-        ? getVideoThumbnailUrl(thumbnailUrl!) 
+        ? getVideoThumbnailUrl(thumbnailUrl) 
         : thumbnailUrl;
 
     return Container(
@@ -106,7 +106,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                       onTap: isVideo
                           ? () {
                               // 전체 화면 비디오 플레이어로 재생
-                              FullScreenVideoViewer.show(context, thumbnailUrl!);
+                              FullScreenVideoViewer.show(context, thumbnailUrl);
                             }
                           : null,
                       child: Stack(

@@ -4,8 +4,6 @@ import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
-import '../../../../core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/widgets/item/components/others/action_hub.dart';
 import '../model/current_trade_entity.dart';
 import '../viewmodel/current_trade_viewmodel.dart';

@@ -329,9 +329,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                         showDialog(
                           context: context,
                           builder: (dialogContext) => ShippingInfoViewPopup(
-                            createdAt: shippingInfo?['created_at'] as String?,
-                            carrier: shippingInfo?['carrier'] as String?,
-                            trackingNumber: shippingInfo?['tracking_number'] as String?,
+                            createdAt: shippingInfo['created_at'] as String?,
+                            carrier: shippingInfo['carrier'] as String?,
+                            trackingNumber: shippingInfo['tracking_number'] as String?,
                           ),
                         );
                       } else {
@@ -347,7 +347,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                                 try {
                                   if (shippingInfo != null) {
                                     // 기존 정보가 있으면 택배사만 수정 (송장 번호는 수정 불가)
-                                    final existingTrackingNumber = shippingInfo?['tracking_number'] as String?;
+                                    final existingTrackingNumber = shippingInfo['tracking_number'] as String?;
                                     await shippingInfoRepository.updateShippingInfo(
                                       itemId: widget.item.itemId,
                                       carrier: carrier,
@@ -554,10 +554,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                 try {
                   final shippingInfo = await shippingInfoRepository.getShippingInfo(widget.item.itemId);
                   
-                  if (!context.mounted) return;
+                  if (!mounted) return;
                   
+                  final navigatorContext = context;
                   showDialog(
-                    context: context,
+                    context: navigatorContext,
                     builder: (dialogContext) => ShippingInfoViewPopup(
                       createdAt: shippingInfo?['created_at'] as String?,
                       carrier: shippingInfo?['carrier'] as String?,
@@ -566,10 +567,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                     ),
                   );
                 } catch (e) {
-                  if (!context.mounted) return;
+                  if (!mounted) return;
                   
+                  final navigatorContext = context;
                   showDialog(
-                    context: context,
+                    context: navigatorContext,
                     builder: (dialogContext) => AskPopup(
                       content: '배송 정보를 불러올 수 없습니다.',
                       yesText: '확인',
