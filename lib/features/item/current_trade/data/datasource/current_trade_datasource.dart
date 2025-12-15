@@ -28,13 +28,11 @@ class CurrentTradeDatasource {
       if (auctionRows.isEmpty) return [];
 
       // 필요한 item_id만 모아서 items_detail에서 제목/썸네일 조회
-      final Set<String> itemIds = {};
-      for (final row in auctionRows) {
-        final itemId = getNullableStringFromRow(row, 'item_id');
-        if (itemId != null && itemId.isNotEmpty) {
-          itemIds.add(itemId);
-        }
-      }
+      final Set<String> itemIds = auctionRows
+          .map((row) => getNullableStringFromRow(row, 'item_id'))
+          .where((id) => id != null && id.isNotEmpty)
+          .cast<String>()
+          .toSet();
 
       final Map<String, Map<String, dynamic>> itemsById = {};
       Set<String> itemIdsWithShipping = {};
@@ -50,7 +48,7 @@ class CurrentTradeDatasource {
               .from('shipping_info')
               .select('item_id')
               .inFilter('item_id', itemIds.toList()),
-        ]);
+        ], eagerError: false);
 
         final itemRows = results[0] as List<dynamic>;
         final shippingRows = results[1] as List<dynamic>;
@@ -180,7 +178,7 @@ class CurrentTradeDatasource {
               .from('shipping_info')
               .select('item_id')
               .inFilter('item_id', itemIds),
-        ]);
+        ], eagerError: false);
 
         final priceRows = results[0] as List<dynamic>;
         final shippingRows = results[1] as List<dynamic>;

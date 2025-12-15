@@ -12,6 +12,10 @@ class CurrentTradeViewModel extends ChangeNotifier {
   List<SaleHistoryItem> _saleHistory = [];
   bool _isLoading = false;
   String? _error;
+  
+  // 캐싱 관련
+  DateTime? _lastFetchTime;
+  static const Duration _cacheValidDuration = Duration(minutes: 2);
 
   CurrentTradeViewModel({required CurrentTradeRepository repository})
     : _repository = repository;
@@ -86,35 +90,51 @@ class CurrentTradeViewModel extends ChangeNotifier {
     return hubItems.take(2).toList();
   }
 
-  Future<void> loadData() async {
+  Future<void> loadData({bool forceRefresh = false}) async {
     if (_isLoading) {
       return;
+    }
+    
+    // 캐시가 유효하고 강제 새로고침이 아니면 캐시 사용
+    if (!forceRefresh && 
+        _lastFetchTime != null && 
+        DateTime.now().difference(_lastFetchTime!) < _cacheValidDuration &&
+        _bidHistory.isNotEmpty && 
+        _saleHistory.isNotEmpty) {
+      return; // 캐시된 데이터 사용
     }
     
     try {
       _setLoading(true);
       _error = null;
 
-      // 병렬로 입찰/판매 내역 조회
+      // 병렬로 입찰/판매 내역 조회 - 일부 실패해도 다른 요청은 계속 진행
       final results = await Future.wait([
         _repository.fetchMyBidHistory(),
         _repository.fetchMySaleHistory(),
-      ]);
+      ], eagerError: false);
 
       _bidHistory = results[0] as List<BidHistoryItem>;
       _saleHistory = results[1] as List<SaleHistoryItem>;
+      
+      _lastFetchTime = DateTime.now();
 
       notifyListeners();
     } catch (e) {
       _error = e.toString();
-      rethrow;
+      // 에러 발생 시에도 캐시된 데이터는 유지
     } finally {
       _setLoading(false);
     }
   }
 
   Future<void> refresh() async {
-    await loadData();
+    await loadData(forceRefresh: true);
+  }
+  
+  /// 캐시 무효화
+  void invalidateCache() {
+    _lastFetchTime = null;
   }
 
   void _setLoading(bool value) {

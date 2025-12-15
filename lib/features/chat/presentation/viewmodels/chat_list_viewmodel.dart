@@ -15,6 +15,10 @@ class ChatListViewmodel extends ChangeNotifier {
   
   List<ChattingRoomEntity> chattingRoomList = [];
   bool isLoading = false;
+  
+  // 캐싱 관련
+  DateTime? _lastFetchTime;
+  static const Duration _cacheValidDuration = Duration(minutes: 2);
 
   // 뷰모델 생성자, context를 통해 리포지토리를 받아올 수 있음.
   ChatListViewmodel(BuildContext context) {
@@ -26,24 +30,57 @@ class ChatListViewmodel extends ChangeNotifier {
     _setupRealtimeSubscription();
   }
 
-  Future<void> fetchChattingRoomList() async {
+  Future<void> fetchChattingRoomList({bool forceRefresh = false}) async {
+    // 캐시가 유효하고 강제 새로고침이 아니면 캐시 사용
+    if (!forceRefresh && 
+        _lastFetchTime != null && 
+        DateTime.now().difference(_lastFetchTime!) < _cacheValidDuration &&
+        chattingRoomList.isNotEmpty) {
+      return; // 캐시된 데이터 사용
+    }
+    
     isLoading = true;
     notifyListeners();
-    chattingRoomList = await _getChattingRoomListUseCase();
-    await _cacheManager.loadSellerIds(chattingRoomList);
-    await _cacheManager.loadTopBidders(chattingRoomList);
-    isLoading = false;
-    notifyListeners();
+    
+    try {
+      chattingRoomList = await _getChattingRoomListUseCase();
+      
+      // loadSellerIds와 loadTopBidders를 병렬로 처리
+      await Future.wait([
+        _cacheManager.loadSellerIds(chattingRoomList),
+        _cacheManager.loadTopBidders(chattingRoomList),
+      ], eagerError: false);
+      
+      _lastFetchTime = DateTime.now();
+    } catch (e) {
+      // 에러 발생 시에도 캐시된 데이터는 유지
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> reloadList() async {
     try {
       final newList = await _getChattingRoomListUseCase();
       chattingRoomList = newList;
-      await _cacheManager.loadSellerIds(chattingRoomList);
-      await _cacheManager.loadTopBidders(chattingRoomList);
+      
+      // loadSellerIds와 loadTopBidders를 병렬로 처리
+      await Future.wait([
+        _cacheManager.loadSellerIds(chattingRoomList),
+        _cacheManager.loadTopBidders(chattingRoomList),
+      ], eagerError: false);
+      
+      _lastFetchTime = DateTime.now();
       notifyListeners();
-    } catch (e) {}
+    } catch (e) {
+      // 에러 발생 시에도 기존 데이터 유지
+    }
+  }
+  
+  /// 캐시 무효화
+  void invalidateCache() {
+    _lastFetchTime = null;
   }
 
   /// 특정 itemId에 대해 현재 사용자가 판매자인지 확인

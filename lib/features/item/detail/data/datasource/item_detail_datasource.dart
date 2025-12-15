@@ -15,12 +15,22 @@ class ItemDetailDatasource {
     if (row == null) return null;
 
     final String sellerId = getStringFromRow(row, 'seller_id');
-    final sellerTitle = await _fetchSellerName(sellerId, row);
-    final ratingSummary = sellerId.isNotEmpty 
-        ? await _fetchSellerRating(sellerId) 
-        : null;
-    final images = await _fetchImages(itemId);
-    final auctionData = await _fetchAuctionData(itemId);
+    
+    // 병렬로 데이터 가져오기 - 독립적인 API 호출들을 동시에 실행
+    final results = await Future.wait([
+      _fetchSellerName(sellerId, row),
+      sellerId.isNotEmpty 
+          ? _fetchSellerRating(sellerId) 
+          : Future.value(null),
+      _fetchImages(itemId),
+      _fetchAuctionData(itemId),
+    ], eagerError: false);
+
+    final sellerTitle = results[0] as String;
+    final ratingSummary = results[1] as SellerRatingSummary?;
+    final images = results[2] as List<String>;
+    final auctionData = results[3] as _AuctionData;
+    
     final effectiveFinishTime = _calculateFinishTime(
       auctionData.finishTime,
       row,
