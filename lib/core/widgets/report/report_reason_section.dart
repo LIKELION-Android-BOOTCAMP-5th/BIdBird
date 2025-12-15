@@ -1,9 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/report_category_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/report_reason_bottom_sheet.dart';
-import 'package:bidbird/features/report/model/report_type_entity.dart';
 import 'package:bidbird/features/report/viewmodel/report_viewmodel.dart';
 import 'package:flutter/material.dart';
 

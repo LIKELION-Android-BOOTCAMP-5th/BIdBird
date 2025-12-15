@@ -52,8 +52,8 @@ class CurrentTradeDatasource {
               .inFilter('item_id', itemIds.toList()),
         ]);
 
-        final itemRows = results[0] is List<dynamic> ? results[0] as List<dynamic> : <dynamic>[];
-        final shippingRows = results[1] is List<dynamic> ? results[1] as List<dynamic> : <dynamic>[];
+        final itemRows = results[0] as List<dynamic>;
+        final shippingRows = results[1] as List<dynamic>;
 
         for (final row in itemRows) {
           final id = getNullableStringFromRow(row, 'item_id');
@@ -182,8 +182,8 @@ class CurrentTradeDatasource {
               .inFilter('item_id', itemIds),
         ]);
 
-        final priceRows = results[0] is List<dynamic> ? results[0] as List<dynamic> : <dynamic>[];
-        final shippingRows = results[1] is List<dynamic> ? results[1] as List<dynamic> : <dynamic>[];
+        final priceRows = results[0] as List<dynamic>;
+        final shippingRows = results[1] as List<dynamic>;
         
         // 같은 item_id에 여러 round가 있으면 trade_status_code가 null이 아닌 것을 우선 사용
         final Map<String, Map<String, dynamic>> bestAuctionsByItemId = {};

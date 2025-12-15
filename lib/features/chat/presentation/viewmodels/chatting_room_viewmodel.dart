@@ -4,7 +4,6 @@ import 'package:bidbird/core/managers/chatting_room_service.dart';
 import 'package:bidbird/core/managers/heartbeat_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
-import 'package:bidbird/features/item/shipping/data/repository/shipping_info_repository.dart';
 import 'package:bidbird/features/chat/domain/entities/auction_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
@@ -23,10 +22,8 @@ import 'package:bidbird/features/chat/domain/usecases/send_image_message_usecase
 import 'package:bidbird/features/chat/domain/usecases/send_text_message_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/turn_off_notification_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/turn_on_notification_usecase.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/features/chat/presentation/managers/image_picker_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/message_send_manager.dart';
-import 'package:bidbird/features/chat/presentation/managers/message_sender.dart';
 import 'package:bidbird/features/chat/presentation/managers/read_status_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/room_info_manager.dart';
@@ -295,7 +292,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           notifyListeners();
         }
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       notifyListeners();
     }
   }
@@ -343,6 +340,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         }
       }
     } catch (e) {
+      // 에러 발생 시 무시 (이미 로딩 상태는 false로 설정됨)
     }
   }
 
@@ -413,6 +411,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     try {
       await chattingRoomService.enterRoom(thisRoomId);
     } catch (e) {
+      // 에러 발생 시 무시 (읽음 처리 실패해도 계속 진행)
     }
 
     await getRoomNotificationSetting();
@@ -430,6 +429,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       try {
         await chattingRoomService.leaveRoom(thisRoomId);
       } catch (e) {
+        // 에러 발생 시 무시 (읽음 처리 실패해도 계속 진행)
       }
       heartbeatManager.stop();
       isActive = false;
@@ -650,12 +650,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         // 스크롤 위치 유지 (새로 추가된 메시지 높이만큼 오프셋 조정)
         if (previousScrollOffset != null) {
           _scrollManager.maintainScrollPosition(
-            previousScrollOffset!,
+            previousScrollOffset,
             olderMessages.length,
           );
         }
       }
     } catch (e) {
+      // 에러 발생 시 무시 (이미 로딩 상태는 false로 설정됨)
     }
 
     isLoadingMore = false;

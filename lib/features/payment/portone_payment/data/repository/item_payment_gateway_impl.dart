@@ -55,7 +55,7 @@ class ItemPaymentGatewayImpl implements ItemPaymentGateway {
       } else {
         return false;
       }
-    } catch (e, st) {
+    } catch (e) {
       return false;
     }
   }

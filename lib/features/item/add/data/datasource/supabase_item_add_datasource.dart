@@ -1,7 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
-import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/utils/item/item_registration_validator.dart';
 import 'package:bidbird/core/utils/item/item_security_utils.dart';
 import 'package:bidbird/features/item/model/trade_status_codes.dart';
@@ -49,7 +48,7 @@ class SupabaseItemAddDatasource {
             .eq('round', 1)
             .maybeSingle();
 
-        if (auctionRow != null && auctionRow is Map<String, dynamic>) {
+        if (auctionRow != null) {
           final auctionStatusCode = getIntFromRow(auctionRow, 'auction_status_code');
           if (auctionStatusCode == AuctionStatusCode.failed) {
             itemId = (await _supabase.rpc(

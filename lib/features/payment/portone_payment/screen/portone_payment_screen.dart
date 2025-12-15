@@ -91,7 +91,7 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
         _buyerPhone = phone;
         _loadingUser = false;
       });
-    } catch (e, st) {
+    } catch (e) {
       setState(() {
         _buyerName = null;
         _buyerPhone = null;
@@ -164,7 +164,8 @@ class _PortonePaymentScreenState extends State<PortonePaymentScreen> {
           );
 
           if (!mounted) return;
-          Navigator.of(context).pop(success);
+          final navigatorContext = context;
+          Navigator.of(navigatorContext).pop(success);
         },
         onError: (Object? error) {
           if (!mounted) return;

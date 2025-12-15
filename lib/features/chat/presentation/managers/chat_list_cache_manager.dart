@@ -36,16 +36,16 @@ class ChatListCacheManager {
           .select('item_id, seller_id')
           .inFilter('item_id', uncachedItemIds);
 
-      if (response is List) {
-        for (final row in response) {
-          final itemId = row['item_id'] as String?;
-          final sellerId = row['seller_id'] as String?;
-          if (itemId != null && sellerId != null) {
-            _sellerIdCache[itemId] = sellerId;
-          }
+      for (final row in response) {
+        final itemId = row['item_id'] as String?;
+        final sellerId = row['seller_id'] as String?;
+        if (itemId != null && sellerId != null) {
+          _sellerIdCache[itemId] = sellerId;
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      // 캐시 로딩 실패 시 무시 (기존 캐시 사용)
+    }
   }
 
   /// 모든 채팅방의 itemId에 대한 낙찰자 여부를 한 번에 가져와서 캐시에 저장
@@ -70,20 +70,20 @@ class ChatListCacheManager {
           .inFilter('item_id', uncachedItemIds)
           .eq('round', 1);
 
-      if (response is List) {
-        for (final row in response) {
-          final itemId = row['item_id'] as String?;
-          final lastBidUserId = row['last_bid_user_id'] as String?;
-          if (itemId != null) {
-            // last_bid_user_id 저장
-            _lastBidUserIdCache[itemId] = lastBidUserId;
-            // 내가 낙찰자인지 확인
-            _topBidderCache[itemId] =
-                lastBidUserId != null && lastBidUserId == currentUserId;
-          }
+      for (final row in response) {
+        final itemId = row['item_id'] as String?;
+        final lastBidUserId = row['last_bid_user_id'] as String?;
+        if (itemId != null) {
+          // last_bid_user_id 저장
+          _lastBidUserIdCache[itemId] = lastBidUserId;
+          // 내가 낙찰자인지 확인
+          _topBidderCache[itemId] =
+              lastBidUserId != null && lastBidUserId == currentUserId;
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      // 캐시 로딩 실패 시 무시 (기존 캐시 사용)
+    }
   }
 
   /// 특정 itemId에 대해 현재 사용자가 판매자인지 확인

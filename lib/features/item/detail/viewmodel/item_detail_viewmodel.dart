@@ -68,7 +68,7 @@ class ItemDetailViewModel extends ChangeNotifier {
         _loadSellerProfile(),
         _loadBidHistory(),
       ], eagerError: false);
-    } catch (e, stackTrace) {
+    } catch (e) {
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
@@ -81,7 +81,7 @@ class ItemDetailViewModel extends ChangeNotifier {
     try {
       _isFavorite = await _repository.checkIsFavorite(itemId);
       notifyListeners();
-    } catch (e, stackTrace) {
+    } catch (e) {
       // 즐겨찾기 상태 로드 실패 시 기본값 유지
     }
   }
@@ -90,7 +90,7 @@ class ItemDetailViewModel extends ChangeNotifier {
     try {
       _isTopBidder = await _repository.checkIsTopBidder(itemId);
       notifyListeners();
-    } catch (e, stackTrace) {
+    } catch (e) {
       // 최고 입찰자 확인 실패 시 기본값 유지
     }
   }
@@ -100,7 +100,7 @@ class ItemDetailViewModel extends ChangeNotifier {
       try {
         _isMyItem = await _repository.checkIsMyItem(itemId, _itemDetail!.sellerId);
         notifyListeners();
-      } catch (e, stackTrace) {
+      } catch (e) {
         // 내 아이템 확인 실패 시 기본값 유지
       }
     }
@@ -113,7 +113,7 @@ class ItemDetailViewModel extends ChangeNotifier {
           _itemDetail!.sellerId,
         );
         notifyListeners();
-      } catch (e, stackTrace) {
+      } catch (e) {
         // 판매자 프로필 로드 실패 시 null 유지
       }
     }
@@ -123,7 +123,7 @@ class ItemDetailViewModel extends ChangeNotifier {
     try {
       _bidHistory = await _repository.fetchBidHistory(itemId);
       notifyListeners();
-    } catch (e, stackTrace) {
+    } catch (e) {
       // 입찰 내역 로드 실패 시 빈 리스트 유지
     }
   }
@@ -133,7 +133,7 @@ class ItemDetailViewModel extends ChangeNotifier {
       await _repository.toggleFavorite(itemId, _isFavorite);
       _isFavorite = !_isFavorite;
       notifyListeners();
-    } catch (e, stackTrace) {
+    } catch (e) {
       // toggle favorite 실패 시 조용히 처리
     }
   }

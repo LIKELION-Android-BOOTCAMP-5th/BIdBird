@@ -1,5 +1,4 @@
 
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/payment/payment_helper.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
@@ -344,7 +343,7 @@ class FilteredTradeListScreen extends StatelessWidget {
           builder: (dialogContext) => ShippingInfoViewPopup(
             createdAt: shippingInfo['created_at'] is String ? shippingInfo['created_at'] as String : null,
             carrier: shippingInfo['carrier'] is String ? shippingInfo['carrier'] as String : null,
-            trackingNumber: trackingNumber is String ? trackingNumber : null,
+            trackingNumber: trackingNumber,
           ),
         );
       } else {
