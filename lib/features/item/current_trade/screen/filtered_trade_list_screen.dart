@@ -1,17 +1,13 @@
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
-import 'package:bidbird/core/utils/item/item_trade_status_utils.dart';
+
 import 'package:bidbird/core/utils/payment/payment_helper.dart';
-import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/shipping_info_input_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/shipping_info_view_popup.dart';
+import 'package:bidbird/core/widgets/item/trade_history_card.dart';
 import 'package:bidbird/features/item/shipping/data/repository/shipping_info_repository.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../data/repository/current_trade_repository.dart';
@@ -289,7 +285,31 @@ class FilteredTradeListScreen extends StatelessWidget {
                                       final spacing = ResponsiveConstants.spacingSmall(context);
                                       return Padding(
                                         padding: EdgeInsets.only(bottom: spacing * 1.5),
-                                        child: _buildHistoryCard(context, item, itemIsSeller, itemActionType),
+                                        child: TradeHistoryCard(
+                                          title: itemIsSeller
+                                              ? (item as SaleHistoryItem).title
+                                              : (item as BidHistoryItem).title,
+                                          thumbnailUrl: itemIsSeller
+                                              ? (item as SaleHistoryItem).thumbnailUrl
+                                              : (item as BidHistoryItem).thumbnailUrl,
+                                          status: itemIsSeller
+                                              ? (item as SaleHistoryItem).status
+                                              : (item as BidHistoryItem).status,
+                                          price: itemIsSeller
+                                              ? (item as SaleHistoryItem).price
+                                              : (item as BidHistoryItem).price,
+                                          itemId: itemIsSeller
+                                              ? (item as SaleHistoryItem).itemId
+                                              : (item as BidHistoryItem).itemId,
+                                          isSeller: itemIsSeller,
+                                          actionType: itemActionType,
+                                          useResponsive: true,
+                                          onActionButtonPressed: () => _buildActionButton(
+                                            context,
+                                            item,
+                                            itemActionType,
+                                          ),
+                                        ),
                                       );
                                     },
                                   );
@@ -331,469 +351,6 @@ class FilteredTradeListScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildHistoryCard(BuildContext context, dynamic item, bool isSeller, TradeActionType actionType) {
-    // 역할 색상 결정
-    final roleColor = isSeller ? roleSalePrimary : rolePurchasePrimary;
-    final roleSubColor = isSeller ? roleSaleSub : rolePurchaseSub;
-    final roleTextColor = isSeller ? roleSaleText : rolePurchaseText;
-    final roleLabel = isSeller ? '판매' : '구매';
-
-    if (isSeller) {
-      final saleItem = item as SaleHistoryItem;
-      return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: defaultBorder,
-            border: Border.all(
-              color: BorderColor.withValues(alpha: 0.25),
-              width: 1,
-            ),
-          ),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                // 좌측 역할 인디케이터 스트립
-                Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    color: roleColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(defaultRadius),
-                      bottomLeft: Radius.circular(defaultRadius),
-                    ),
-                  ),
-                ),
-                // 메인 컨텐츠
-                Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (saleItem.itemId.isNotEmpty) {
-                        context.push('/item/${saleItem.itemId}');
-                      }
-                    },
-                    child: Builder(
-                      builder: (context) {
-                        final cardPadding = ResponsiveConstants.screenPadding(context);
-                        return Padding(
-                          padding: EdgeInsets.all(cardPadding),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // 썸네일
-                                  Builder(
-                                    builder: (context) {
-                                      final thumbnailSize = context.widthRatio(0.16, min: 64.0, max: 80.0);
-                                      return ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Container(
-                                          width: thumbnailSize,
-                                          height: thumbnailSize,
-                                          color: BackgroundColor,
-                                          child: saleItem.thumbnailUrl != null &&
-                                                  saleItem.thumbnailUrl!.isNotEmpty
-                                            ? Builder(
-                                                builder: (context) {
-                                                  final bool isVideo = isVideoFile(saleItem.thumbnailUrl!);
-                                                  final String displayUrl = isVideo
-                                                      ? getVideoThumbnailUrl(saleItem.thumbnailUrl!)
-                                                      : saleItem.thumbnailUrl!;
-                                                  
-                                                  return CachedNetworkImage(
-                                                    imageUrl: displayUrl,
-                                                    cacheManager: ItemImageCacheManager.instance,
-                                                    fit: BoxFit.cover,
-                                                    placeholder: (context, url) => Container(
-                                                      color: BackgroundColor,
-                                                      child: const Center(
-                                                        child: CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    errorWidget: (context, url, error) => Container(
-                                                      color: BackgroundColor,
-                                                      child: const Icon(
-                                                        Icons.image_outlined,
-                                                        color: BorderColor,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              )
-                                            : const Icon(Icons.image_outlined, color: BorderColor),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  Builder(
-                                    builder: (context) {
-                                      final spacing = ResponsiveConstants.spacingSmall(context);
-                                      return SizedBox(width: spacing);
-                                    },
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // 역할 태그와 제목
-                                        Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            // 역할 태그
-                                            Builder(
-                                              builder: (context) {
-                                                final tagPadding = ResponsiveConstants.spacingSmall(context) * 0.5;
-                                                final tagFontSize = ResponsiveConstants.fontSizeSmall(context);
-                                                final spacing = ResponsiveConstants.spacingSmall(context);
-                                                return Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: tagPadding,
-                                                    vertical: tagPadding * 0.4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: roleSubColor,
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Text(
-                                                    roleLabel,
-                                                    style: TextStyle(
-                                                      color: roleTextColor,
-                                                      fontSize: tagFontSize,
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                            Builder(
-                                              builder: (context) {
-                                                final spacing = ResponsiveConstants.spacingSmall(context) * 0.5;
-                                                return SizedBox(width: spacing);
-                                              },
-                                            ),
-                                            Expanded(
-                                              child: Builder(
-                                                builder: (context) {
-                                                  final titleFontSize = ResponsiveConstants.fontSizeMedium(context);
-                                                  return Text(
-                                                    saleItem.title,
-                                                    style: TextStyle(fontSize: titleFontSize),
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Builder(
-                                          builder: (context) {
-                                            final spacing = ResponsiveConstants.spacingSmall(context);
-                                            return SizedBox(height: spacing);
-                                          },
-                                        ),
-                                        // 상태 배지와 가격
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Builder(
-                                              builder: (context) {
-                                                final badgePadding = ResponsiveConstants.spacingSmall(context) * 0.8;
-                                                final badgeFontSize = ResponsiveConstants.fontSizeSmall(context);
-                                                return Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: badgePadding,
-                                                    vertical: badgePadding * 0.4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: getTradeStatusColor(saleItem.status)
-                                                        .withValues(alpha: 0.1),
-                                                    borderRadius: defaultBorder,
-                                                  ),
-                                                  child: Text(
-                                                    saleItem.status,
-                                                    style: TextStyle(
-                                                      color: getTradeStatusColor(saleItem.status),
-                                                      fontSize: badgeFontSize,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                            Builder(
-                                              builder: (context) {
-                                                final priceFontSize = ResponsiveConstants.fontSizeMedium(context);
-                                                return Text(
-                                                  _formatMoney(saleItem.price),
-                                                  style: TextStyle(
-                                                    fontSize: priceFontSize,
-                                                    color: textColor,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                    },
-                  ),
-                  ),
-                  // 하단 액션 버튼
-                  _buildActionButton(context, saleItem, actionType),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      );
-    } else {
-      final bidItem = item as BidHistoryItem;
-      return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: defaultBorder,
-            border: Border.all(
-              color: BorderColor.withValues(alpha: 0.25),
-              width: 1,
-            ),
-          ),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                // 좌측 역할 인디케이터 스트립
-                Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    color: roleColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(defaultRadius),
-                      bottomLeft: Radius.circular(defaultRadius),
-                    ),
-                  ),
-                ),
-                // 메인 컨텐츠
-                Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      if (bidItem.itemId.isNotEmpty) {
-                        context.push('/item/${bidItem.itemId}');
-                      }
-                    },
-                    child: Builder(
-                      builder: (context) {
-                        final cardPadding = ResponsiveConstants.screenPadding(context);
-                        return Padding(
-                          padding: EdgeInsets.all(cardPadding),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // 썸네일
-                                  Builder(
-                                    builder: (context) {
-                                      final thumbnailSize = context.widthRatio(0.16, min: 64.0, max: 80.0);
-                                      return ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Container(
-                                          width: thumbnailSize,
-                                          height: thumbnailSize,
-                                          color: BackgroundColor,
-                                          child: bidItem.thumbnailUrl != null &&
-                                                  bidItem.thumbnailUrl!.isNotEmpty
-                                            ? Builder(
-                                                builder: (context) {
-                                                  final bool isVideo = isVideoFile(bidItem.thumbnailUrl!);
-                                                  final String displayUrl = isVideo
-                                                      ? getVideoThumbnailUrl(bidItem.thumbnailUrl!)
-                                                      : bidItem.thumbnailUrl!;
-                                                  
-                                                  return CachedNetworkImage(
-                                                    imageUrl: displayUrl,
-                                                    cacheManager: ItemImageCacheManager.instance,
-                                                    fit: BoxFit.cover,
-                                                    placeholder: (context, url) => Container(
-                                                      color: BackgroundColor,
-                                                      child: const Center(
-                                                        child: CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    errorWidget: (context, url, error) => Container(
-                                                      color: BackgroundColor,
-                                                      child: const Icon(
-                                                        Icons.image_outlined,
-                                                        color: BorderColor,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              )
-                                            : const Icon(Icons.image_outlined, color: BorderColor),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  Builder(
-                                    builder: (context) {
-                                      final spacing = ResponsiveConstants.spacingSmall(context);
-                                      return SizedBox(width: spacing);
-                                    },
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // 역할 태그와 제목
-                                        Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            // 역할 태그
-                                            Builder(
-                                              builder: (context) {
-                                                final tagPadding = ResponsiveConstants.spacingSmall(context) * 0.5;
-                                                final tagFontSize = ResponsiveConstants.fontSizeSmall(context);
-                                                final spacing = ResponsiveConstants.spacingSmall(context);
-                                                return Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: tagPadding,
-                                                    vertical: tagPadding * 0.4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: roleSubColor,
-                                                    borderRadius: BorderRadius.circular(4),
-                                                  ),
-                                                  child: Text(
-                                                    roleLabel,
-                                                    style: TextStyle(
-                                                      color: roleTextColor,
-                                                      fontSize: tagFontSize,
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                            Builder(
-                                              builder: (context) {
-                                                final spacing = ResponsiveConstants.spacingSmall(context) * 0.5;
-                                                return SizedBox(width: spacing);
-                                              },
-                                            ),
-                                            Expanded(
-                                              child: Builder(
-                                                builder: (context) {
-                                                  final titleFontSize = ResponsiveConstants.fontSizeMedium(context);
-                                                  return Text(
-                                                    bidItem.title,
-                                                    style: TextStyle(fontSize: titleFontSize),
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Builder(
-                                          builder: (context) {
-                                            final spacing = ResponsiveConstants.spacingSmall(context);
-                                            return SizedBox(height: spacing);
-                                          },
-                                        ),
-                                        // 상태 배지와 가격
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Builder(
-                                              builder: (context) {
-                                                final badgePadding = ResponsiveConstants.spacingSmall(context) * 0.8;
-                                                final badgeFontSize = ResponsiveConstants.fontSizeSmall(context);
-                                                return Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: badgePadding,
-                                                    vertical: badgePadding * 0.4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: getTradeStatusColor(bidItem.status)
-                                                        .withValues(alpha: 0.1),
-                                                    borderRadius: defaultBorder,
-                                                  ),
-                                                  child: Text(
-                                                    bidItem.status,
-                                                    style: TextStyle(
-                                                      color: getTradeStatusColor(bidItem.status),
-                                                      fontSize: badgeFontSize,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                            Builder(
-                                              builder: (context) {
-                                                final priceFontSize = ResponsiveConstants.fontSizeMedium(context);
-                                                return Text(
-                                                  _formatMoney(bidItem.price),
-                                                  style: TextStyle(
-                                                    fontSize: priceFontSize,
-                                                    color: textColor,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                    },
-                  ),
-                  ),
-                  // 하단 액션 버튼
-                  _buildActionButton(context, bidItem, actionType),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      );
-    }
-  }
 
   Widget _buildActionButton(BuildContext context, dynamic item, TradeActionType actionType) {
     final isSeller = item is SaleHistoryItem;
@@ -971,9 +528,18 @@ class FilteredTradeListScreen extends StatelessWidget {
                       );
                     }
                   }
-                  if (dialogContext.mounted) {
-                    Navigator.of(dialogContext).pop();
-                    context.read<CurrentTradeViewModel>().refresh();
+                  // 팝업은 ShippingInfoInputPopup 내부에서 닫음
+                  // 여기서는 refresh만 수행 (다음 프레임에서 실행하여 dispose 문제 방지)
+                  if (context.mounted) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (context.mounted) {
+                        try {
+                          context.read<CurrentTradeViewModel>().refresh();
+                        } catch (e) {
+                          // ViewModel이 dispose된 경우 무시
+                        }
+                      }
+                    });
                   }
                 } catch (e) {
                   if (dialogContext.mounted) {

@@ -4,6 +4,7 @@ import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -63,7 +64,6 @@ class _ChatScreenState extends State<ChatScreen>
   // 이전 화면에서 돌아왔을 때 (채팅방에서 돌아올 때)
   @override
   void didPopNext() {
-    // ignore: avoid_print
     print("didPopNext: 채팅방에서 나옴 - 즉시 리스트 새로고침");
     _refreshListOnce();
   }
@@ -74,7 +74,6 @@ class _ChatScreenState extends State<ChatScreen>
     final now = DateTime.now();
     if (_lastRefreshTime != null &&
         now.difference(_lastRefreshTime!).inMilliseconds < 500) {
-      // ignore: avoid_print
       print("새로고침 스킵: 너무 최근에 새로고침됨");
       return;
     }
@@ -86,7 +85,6 @@ class _ChatScreenState extends State<ChatScreen>
   void _refreshListOnce() {
     if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
 
-    // ignore: avoid_print
     print("채팅 리스트 새로고침 시작");
     _viewModel!.reloadList();
   }
@@ -100,7 +98,6 @@ class _ChatScreenState extends State<ChatScreen>
     if (currentRoute == '/chat') {
       final previousRoute = _previousRoute;
       if (previousRoute != null && previousRoute.startsWith('/chat/room')) {
-        // ignore: avoid_print
         print(
           "경로 변경 감지 (build): 채팅방($previousRoute)에서 채팅 리스트($currentRoute)로 복귀 - 즉시 리스트 새로고침",
         );
@@ -181,102 +178,166 @@ class _ChatScreenState extends State<ChatScreen>
                 ),
               ],
             ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              spacing: 8,
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: BorderColor,
-                  backgroundImage:
-                      chattingRoom.profileImage != null &&
-                          chattingRoom.profileImage!.isNotEmpty
-                      ? NetworkImage(chattingRoom.profileImage!)
-                      : null,
-                  child:
-                      chattingRoom.profileImage != null &&
-                          chattingRoom.profileImage!.isNotEmpty
-                      ? null
-                      : const Icon(Icons.person, color: BackgroundColor),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 매물 제목과 시간을 같은 줄에 수평 정렬
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 좌측 역할 인디케이터 스트립
+                  Builder(
+                    builder: (context) {
+                      final itemId = chattingRoom.itemId;
+                      final isSeller = viewModel.isSeller(itemId);
+                      final isTopBidder = viewModel.isTopBidder(itemId);
+                      final isOpponentTopBidder = viewModel.isOpponentTopBidder(itemId);
+                      
+                      // 낙찰자/낙찰인 경우 노란색
+                      final Color roleColor;
+                      if ((!isSeller && isTopBidder) || (isSeller && isOpponentTopBidder)) {
+                        roleColor = yellowColor;
+                      } else {
+                        roleColor = isSeller ? roleSalePrimary : rolePurchasePrimary;
+                      }
+                      
+                      return Container(
+                        width: 4,
+                        decoration: BoxDecoration(
+                          color: roleColor,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(defaultRadius),
+                            bottomLeft: Radius.circular(defaultRadius),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  // 메인 컨텐츠
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        spacing: 8,
                         children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: BorderColor,
+                            backgroundImage:
+                                chattingRoom.profileImage != null &&
+                                    chattingRoom.profileImage!.isNotEmpty
+                                ? NetworkImage(chattingRoom.profileImage!)
+                                : null,
+                            child:
+                                chattingRoom.profileImage != null &&
+                                    chattingRoom.profileImage!.isNotEmpty
+                                ? null
+                                : const Icon(Icons.person, color: BackgroundColor),
+                          ),
                           Expanded(
-                            child: Text(
-                              chattingRoom.itemTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            chattingRoom.lastMessageSendAt.toTimesAgo(),
-                            style: TextStyle(
-                              color: iconColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      // 메시지 내용과 안 읽은 메시지 수를 같은 줄에 수평 정렬
-                      if (chattingRoom.lastMessage.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  chattingRoom.lastMessage,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 13,
-                                  ),
-                                  textAlign: TextAlign.left,
-                                ),
-                              ),
-                              if (chattingRoom.count! > 0)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 6),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // 매물 제목과 시간을 같은 줄에 수평 정렬
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.only(right: 6),
+                                            child: Builder(
+                                              builder: (context) {
+                                                final itemId = chattingRoom.itemId;
+                                                final isSeller = viewModel.isSeller(itemId);
+                                                final isTopBidder = viewModel.isTopBidder(itemId);
+                                                final isOpponentTopBidder = viewModel.isOpponentTopBidder(itemId);
+                                                
+                                                return RoleBadge(
+                                                  isSeller: isSeller,
+                                                  isTopBidder: isTopBidder,
+                                                  isOpponentTopBidder: isOpponentTopBidder,
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Text(
+                                              chattingRoom.itemTitle,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: blueColor,
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    child: Text(
-                                      "${chattingRoom.count ?? 0}",
+                                    Text(
+                                      chattingRoom.lastMessageSendAt.toTimesAgo(),
                                       style: TextStyle(
-                                        color: Colors.white,
+                                        color: iconColor,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                            ],
+                                // 메시지 내용과 안 읽은 메시지 수를 같은 줄에 수평 정렬
+                                if (chattingRoom.lastMessage.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            chattingRoom.lastMessage,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 13,
+                                            ),
+                                            textAlign: TextAlign.left,
+                                          ),
+                                        ),
+                                        if (chattingRoom.count! > 0)
+                                          Padding(
+                                            padding: const EdgeInsets.only(left: 6),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: blueColor,
+                                                borderRadius: BorderRadius.circular(15),
+                                              ),
+                                              child: Text(
+                                                "${chattingRoom.count ?? 0}",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
-                        ),
-                    ],
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

@@ -64,44 +64,35 @@ class ChatNetworkApiDatasource {
     required String message_type,
     String? imageUrl,
   }) async {
-    if (message_type == "text") {
-      try {
-        final response = await SupabaseManager.shared.supabase.functions.invoke(
-          'chatting/creatChattingRoom',
-          method: HttpMethod.post,
-          headers: NetworkApiManager.useThisHeaders(),
-          body: {
-            'itemId': itemId,
-            'message': message,
-            'message_type': message_type,
-          },
-        );
-        if (response.data == null) return null;
-        final data = response.data['room_id'] as String;
-        return data;
-      } catch (e) {
-        print('메세지 전송 실패 : ${e}');
-      }
-    } else if (message_type == "image") {
-      try {
-        final response = await SupabaseManager.shared.supabase.functions.invoke(
-          'chatting/creatChattingRoom',
-          method: HttpMethod.post,
-          headers: NetworkApiManager.useThisHeaders(),
-          body: {
-            'itemId': itemId,
-            'message_type': message_type,
-            'imageUrl': imageUrl,
-          },
-        );
-        if (response.data == null) return null;
-        final data = response.data['room_id'] as String;
-        return data;
-      } catch (e) {
-        print('메세지 전송 실패 : ${e}');
-      }
-    } else {
+    if (message_type != "text" && message_type != "image") {
       print("메세지 타입이 잘못되었습니다.");
+      return null;
+    }
+
+    try {
+      final body = <String, dynamic>{
+        'itemId': itemId,
+        'message_type': message_type,
+      };
+      
+      if (message_type == "text" && message != null) {
+        body['message'] = message;
+      } else if (message_type == "image" && imageUrl != null) {
+        body['imageUrl'] = imageUrl;
+      }
+
+      final response = await SupabaseManager.shared.supabase.functions.invoke(
+        'chatting/creatChattingRoom',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: body,
+      );
+      
+      if (response.data == null) return null;
+      final data = response.data['room_id'] as String;
+      return data;
+    } catch (e) {
+      print('메세지 전송 실패 : ${e}');
       return null;
     }
   }

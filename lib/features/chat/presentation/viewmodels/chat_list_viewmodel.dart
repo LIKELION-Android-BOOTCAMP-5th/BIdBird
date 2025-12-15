@@ -13,6 +13,12 @@ class ChatListViewmodel extends ChangeNotifier {
   RealtimeChannel? _isBuyerChannel;
   RealtimeChannel? _isSellerChannel;
   RealtimeChannel? _roomUsersChannel;
+  // itemId -> sellerId 매핑 캐시
+  Map<String, String> _sellerIdCache = {};
+  // itemId -> isTopBidder 매핑 캐시 (내가 낙찰자인지 여부)
+  Map<String, bool> _topBidderCache = {};
+  // itemId -> lastBidUserId 매핑 캐시 (낙찰자 ID 저장)
+  Map<String, String?> _lastBidUserIdCache = {};
 
   // int inputCount = 0;
 
@@ -29,6 +35,8 @@ class ChatListViewmodel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     chattingRoomList = await _getChattingRoomListUseCase();
+    await _loadSellerIds();
+    await _loadTopBidders();
     isLoading = false;
     notifyListeners();
   }
@@ -37,32 +45,136 @@ class ChatListViewmodel extends ChangeNotifier {
     try {
       final newList = await _getChattingRoomListUseCase();
       chattingRoomList = newList;
+      await _loadSellerIds();
+      await _loadTopBidders();
       notifyListeners();
-      // ignore: avoid_print
       print(
         "reloadList 완료: ${chattingRoomList.length}개 채팅방, unread_count 확인 중...",
       );
       for (var room in chattingRoomList) {
         if (room.count != null && room.count! > 0) {
-          // ignore: avoid_print
           print("  - ${room.itemTitle}: unread_count=${room.count}");
         }
       }
     } catch (e) {
-      // ignore: avoid_print
       print("reloadList 실패: $e");
+    }
+  }
+
+  /// 모든 채팅방의 itemId에 대한 seller_id를 한 번에 가져와서 캐시에 저장
+  Future<void> _loadSellerIds() async {
+    try {
+      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      if (currentUserId == null) return;
+
+      // 중복 제거된 itemId 목록
+      final itemIds = chattingRoomList.map((room) => room.itemId).toSet().toList();
+      if (itemIds.isEmpty) return;
+
+      // 캐시에 없는 itemId만 조회
+      final uncachedItemIds = itemIds.where((itemId) => !_sellerIdCache.containsKey(itemId)).toList();
+      if (uncachedItemIds.isEmpty) return;
+
+      final response = await SupabaseManager.shared.supabase
+          .from('items_detail')
+          .select('item_id, seller_id')
+          .inFilter('item_id', uncachedItemIds);
+
+      if (response != null && response is List) {
+        for (final row in response) {
+          final itemId = row['item_id'] as String?;
+          final sellerId = row['seller_id'] as String?;
+          if (itemId != null && sellerId != null) {
+            _sellerIdCache[itemId] = sellerId;
+          }
+        }
+      }
+    } catch (e) {
+      print("seller_id 로드 실패: $e");
+    }
+  }
+
+  /// 특정 itemId에 대해 현재 사용자가 판매자인지 확인
+  bool isSeller(String itemId) {
+    final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return false;
+    
+    final sellerId = _sellerIdCache[itemId];
+    return sellerId == currentUserId;
+  }
+
+  /// 특정 itemId에 대해 현재 사용자가 낙찰자인지 확인
+  bool isTopBidder(String itemId) {
+    return _topBidderCache[itemId] ?? false;
+  }
+
+  /// 특정 itemId에 대해 상대방(구매자)이 낙찰자인지 확인
+  /// 내가 판매자인 경우에만 사용
+  bool isOpponentTopBidder(String itemId) {
+    // 내가 판매자가 아니면 false
+    if (!isSeller(itemId)) {
+      return false;
+    }
+    
+    // 내가 판매자인 경우, 상대방(구매자)이 낙찰자인지 확인
+    // last_bid_user_id가 존재하고, 내가 아니면 상대방이 낙찰자
+    final lastBidUserId = _lastBidUserIdCache[itemId];
+    if (lastBidUserId == null) return false; // 낙찰자가 없으면 false
+    
+    final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return false;
+    
+    // 낙찰자가 존재하고 내가 낙찰자가 아니면 상대방이 낙찰자
+    return lastBidUserId != currentUserId;
+  }
+
+  /// 모든 채팅방의 itemId에 대한 낙찰자 여부를 한 번에 가져와서 캐시에 저장
+  Future<void> _loadTopBidders() async {
+    try {
+      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      if (currentUserId == null) return;
+
+      // 중복 제거된 itemId 목록
+      final itemIds = chattingRoomList.map((room) => room.itemId).toSet().toList();
+      if (itemIds.isEmpty) return;
+
+      // 캐시에 없는 itemId만 조회
+      final uncachedItemIds = itemIds.where((itemId) => !_topBidderCache.containsKey(itemId)).toList();
+      if (uncachedItemIds.isEmpty) return;
+
+      final response = await SupabaseManager.shared.supabase
+          .from('auctions')
+          .select('item_id, last_bid_user_id')
+          .inFilter('item_id', uncachedItemIds)
+          .eq('round', 1);
+
+      if (response != null && response is List) {
+        for (final row in response) {
+          final itemId = row['item_id'] as String?;
+          final lastBidUserId = row['last_bid_user_id'] as String?;
+          if (itemId != null) {
+            // last_bid_user_id 저장
+            _lastBidUserIdCache[itemId] = lastBidUserId;
+            // 내가 낙찰자인지 확인
+            _topBidderCache[itemId] = lastBidUserId != null && lastBidUserId == currentUserId;
+          } else {
+            _lastBidUserIdCache[itemId ?? ''] = null;
+            _topBidderCache[itemId ?? ''] = false;
+          }
+        }
+      }
+    } catch (e) {
+      print("top_bidder 로드 실패: $e");
     }
   }
 
   void setupRealtimeSubscription() {
     final currentId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentId == null) {
-      // ignore: avoid_print
       print("실시간 구독 설정 실패: currentId가 null");
       return;
     }
 
-    // ignore: avoid_print
     print("실시간 구독 설정 시작: currentId=$currentId");
 
     _isBuyerChannel = SupabaseManager.shared.supabase.channel(
@@ -79,7 +191,6 @@ class ChatListViewmodel extends ChangeNotifier {
             value: currentId,
           ),
           callback: (payload) {
-            // ignore: avoid_print
             print("실시간 업데이트: chatting_room (buyer) 변경 감지");
             reloadList();
           },
@@ -100,7 +211,6 @@ class ChatListViewmodel extends ChangeNotifier {
             value: currentId,
           ),
           callback: (payload) {
-            // ignore: avoid_print
             print("실시간 업데이트: chatting_room (seller) 변경 감지");
             reloadList();
           },
@@ -123,12 +233,10 @@ class ChatListViewmodel extends ChangeNotifier {
             value: currentId,
           ),
           callback: (payload) {
-            // ignore: avoid_print
             print("실시간 업데이트: chatting_room_users 테이블 변경 감지");
             final data = payload.newRecord;
             final oldData = payload.oldRecord;
             if (data == null) {
-              // ignore: avoid_print
               print("실시간 업데이트: newRecord가 null");
               return;
             }
@@ -140,7 +248,7 @@ class ChatListViewmodel extends ChangeNotifier {
             // final unreadCount = data['unread_count'] as int? ?? 0;
             // final oldUnreadCount = payload.oldRecord?['unread_count'] as int?;
             //
-            // // ignore: avoid_print
+            // //
             // print(
             //   "실시간 업데이트 트리거: roomId=$roomId, oldCount=$oldUnreadCount, newCount=$unreadCount",
             // );
@@ -149,45 +257,44 @@ class ChatListViewmodel extends ChangeNotifier {
             //   // oldRecord가 null이거나 unread_count가 변경되었을 때 업데이트
             //   // oldRecord가 null인 경우는 INSERT 이벤트이거나 oldRecord가 전달되지 않은 경우
             //   if (oldUnreadCount == null || unreadCount != oldUnreadCount) {
-            //     // ignore: avoid_print
+            //     //
             //     print(
             //       "unread_count 변경 감지: $oldUnreadCount -> $unreadCount, 리스트 새로고침 시작",
             //     );
             //
             //     // unread_count가 0이 되면 즉시 업데이트 (읽음 처리 완료)
             //     if (unreadCount == 0) {
-            //       // ignore: avoid_print
+            //       //
             //       print("unread_count가 0이 됨 - 즉시 리스트 새로고침");
             //       // 읽음 처리 완료 시 즉시 업데이트
             //       reloadList();
             //     } else {
             //       // unread_count가 증가한 경우 즉시 업데이트
-            //       // ignore: avoid_print
+            //       //
             //       print(
             //         "unread_count 증가: $oldUnreadCount -> $unreadCount - 즉시 리스트 새로고침",
             //       );
             //       reloadList();
             //     }
             //   } else {
-            //     // ignore: avoid_print
+            //     //
             //     print("unread_count 변경 없음: $oldUnreadCount == $unreadCount");
             //     // oldCount와 newCount가 같아도, unread_count가 0이고 oldRecord가 null이 아닌 경우
             //     // 이미 읽음 처리된 상태이므로 리스트를 새로고침하여 UI 업데이트 보장
             //     if (unreadCount == 0 && oldUnreadCount != null) {
-            //       // ignore: avoid_print
+            //       //
             //       print("unread_count가 이미 0이지만 리스트 새로고침 (UI 업데이트 보장)");
             //       reloadList();
             //     }
             //   }
             // } else {
-            //   // ignore: avoid_print
+            //   //
             //   print("실시간 업데이트: roomId가 null");
             // }
           },
         )
         .subscribe();
 
-    // ignore: avoid_print
     print("실시간 구독 설정 완료: chatting_room_users 테이블 감시 시작 (user_id=$currentId)");
   }
 
