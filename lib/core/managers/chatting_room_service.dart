@@ -19,7 +19,6 @@ class ChattingRoomService {
   }
 
   Future<void> leaveRoom(String roomId) async {
-    // ignore: avoid_print
     print("ChattingRoomService leaveRoom roomId : ${roomId}");
     try {
       await supabase.functions.invoke(
@@ -28,10 +27,8 @@ class ChattingRoomService {
         headers: NetworkApiManager.headers,
         body: {'roomId': roomId},
       );
-      // ignore: avoid_print
       print("ChattingRoomService leaveRoom 성공");
     } catch (e) {
-      // ignore: avoid_print
       print("leaveRoom 실패 : ${e}");
       rethrow;
     }

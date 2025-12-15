@@ -8,12 +8,15 @@ import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
+import 'package:bidbird/core/widgets/components/role_badge.dart';
+import 'package:bidbird/core/widgets/chat/trade_cancel_reason_bottom_sheet.dart';
+import 'package:bidbird/core/widgets/chat/trade_context_card.dart';
 import 'package:bidbird/core/widgets/video_player_widget.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:bidbird/features/report/screen/report_screen.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -29,6 +32,8 @@ class ChattingRoomScreen extends StatefulWidget {
 
 class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     with RouteAware, WidgetsBindingObserver {
+  final FocusNode _inputFocusNode = FocusNode();
+  
   void _showImageSourceSheet(
     BuildContext context,
     ChattingRoomViewmodel viewModel,
@@ -51,6 +56,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
   @override
   void initState() {
     super.initState();
+    _inputFocusNode.addListener(() {
+      setState(() {}); // 포커스 상태 변경 시 리빌드
+    });
     WidgetsBinding.instance.addObserver(this);
     viewModel = ChattingRoomViewmodel(
       itemId: widget.itemId,
@@ -66,6 +74,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
 
   @override
   void dispose() {
+    _inputFocusNode.dispose();
     routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     // 채팅방을 나갈 때 읽음 처리를 위해 disposeViewModel 호출
@@ -74,7 +83,6 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
       // dispose는 동기 메서드이므로 Future를 기다릴 수 없지만,
       // disposeViewModel 내부에서 leaveRoom이 완료될 때까지 기다리도록 처리
       viewModel.disposeViewModel().catchError((e) {
-        // ignore: avoid_print
         print("dispose에서 disposeViewModel 실패: $e");
       });
     }
@@ -99,11 +107,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
           .leaveRoom()
           .then((_) {
             // leaveRoom 완료 후 약간의 지연을 두고 실시간 업데이트가 반영되도록 함
-            // ignore: avoid_print
             print("didPop: leaveRoom 완료");
           })
           .catchError((e) {
-            // ignore: avoid_print
             print("didPop: leaveRoom 실패: $e");
           });
     }
@@ -141,16 +147,51 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                 surfaceTintColor: Colors.white,
                 elevation: 0.5,
                 titleSpacing: 0,
-                title: Text(
-                  viewModel.roomInfo != null
-                      ? viewModel.roomInfo?.opponent.nickName ?? "사용자"
-                      : "로딩중",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                title: Builder(
+                  builder: (context) {
+                    // 현재 사용자가 판매자인지 확인
+                    final currentUserId = SupabaseManager
+                        .shared
+                        .supabase
+                        .auth
+                        .currentUser
+                        ?.id;
+                    final isSeller = currentUserId != null &&
+                        viewModel.itemInfo != null &&
+                        viewModel.itemInfo!.sellerId == currentUserId;
+                    
+                    // 낙찰자 여부 확인
+                    final isTopBidder = viewModel.isTopBidder;
+                    final isOpponentTopBidder = isSeller && !isTopBidder && viewModel.hasTopBidder;
+                    
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            viewModel.roomInfo != null
+                                ? viewModel.roomInfo?.opponent.nickName ?? "사용자"
+                                : "로딩중",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (isTopBidder || isOpponentTopBidder)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: RoleBadge(
+                              isSeller: isSeller,
+                              isTopBidder: isTopBidder,
+                              isOpponentTopBidder: isOpponentTopBidder,
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
                 actions: [
                   PopupMenuButton(
@@ -218,83 +259,73 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
               ),
               body: Column(
                 children: [
-                  // 매물 정보 섹션
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: chatItemCardBackground,
-                      boxShadow: const [
-                        BoxShadow(
-                          color: shadowLow,
-                          blurRadius: 2,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      spacing: 16,
-                      children: [
-                        if (viewModel.itemInfo?.thumbnailImage != null &&
-                            viewModel.itemInfo!.thumbnailImage!.isNotEmpty)
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: ImageBackgroundColor,
-                              borderRadius: defaultBorder,
-                            ),
-                            child: AspectRatio(
-                              aspectRatio: 1,
-                              child: ClipRRect(
-                                borderRadius: defaultBorder,
-                                child: CachedNetworkImage(
-                                  imageUrl: viewModel.itemInfo!.thumbnailImage!,
-                                  cacheManager: ItemImageCacheManager.instance,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          SizedBox(
-                            width: 60,
-                            height: 60,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: ImageBackgroundColor,
-                                borderRadius: defaultBorder,
-                              ),
-                            ),
-                          ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                viewModel.itemInfo?.title ?? "로딩중",
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: chatTextColor,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                viewModel.auctionInfo?.currentPrice == null
-                                    ? "로딩중"
-                                    : "${formatPrice(viewModel.auctionInfo!.currentPrice)}원",
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  color: chatTextColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                  // 거래 컨텍스트 카드
+                  Builder(
+                    builder: (context) {
+                      // 현재 사용자가 판매자인지 구매자인지 확인
+                      final currentUserId = SupabaseManager
+                          .shared
+                          .supabase
+                          .auth
+                          .currentUser
+                          ?.id;
+                      final isSeller = currentUserId != null &&
+                          viewModel.itemInfo != null &&
+                          viewModel.itemInfo!.sellerId == currentUserId;
+
+                      // 거래 상태 텍스트 결정
+                      String tradeStatusText = '거래 중';
+                      if (viewModel.tradeInfo != null) {
+                        switch (viewModel.tradeInfo!.tradeStatusCode) {
+                          case 510:
+                            tradeStatusText = '결제 대기';
+                            break;
+                          case 520:
+                            tradeStatusText = '거래 중';
+                            break;
+                          case 550:
+                            tradeStatusText = '거래 완료';
+                            break;
+                          default:
+                            tradeStatusText = '거래 중';
+                        }
+                      } else if (viewModel.itemInfo != null) {
+                        // tradeInfo가 없으면 auctionInfo 기반으로 판단
+                        tradeStatusText = '거래 중';
+                      }
+
+                      // 거래 완료 상태에서는 거래 취소 옵션 제거
+                      final canShowTradeCancel = viewModel.tradeInfo != null &&
+                          viewModel.tradeInfo!.tradeStatusCode != 550;
+
+                      return TradeContextCard(
+                        itemTitle: viewModel.itemInfo?.title ?? "로딩중",
+                        itemThumbnail: viewModel.itemInfo?.thumbnailImage,
+                        itemPrice: viewModel.auctionInfo?.currentPrice ?? 0,
+                        isSeller: isSeller,
+                        tradeStatus: tradeStatusText,
+                        tradeStatusCode: viewModel.tradeInfo?.tradeStatusCode,
+                        hasShippingInfo: viewModel.hasShippingInfo,
+                        onCardTap: () {
+                          if (viewModel.itemId.isNotEmpty) {
+                            context.push('/item/${viewModel.itemId}');
+                          }
+                        },
+                        onTradeComplete: viewModel.tradeInfo != null &&
+                                viewModel.tradeInfo!.tradeStatusCode != 550
+                            ? () {
+                                // 거래 완료 액션
+                                _showTradeCompleteDialog(context, viewModel);
+                              }
+                            : null,
+                        onTradeCancel: canShowTradeCancel
+                            ? () {
+                                // 거래 취소 액션 (사유 선택 포함)
+                                _showTradeCancelWithReason(context, viewModel);
+                              }
+                            : null,
+                      );
+                    },
                   ),
                   Expanded(
                     child: AnimatedOpacity(
@@ -555,77 +586,137 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                     ),
                   ),
                   SafeArea(
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                      color: Colors.transparent,
-                      child: Row(
-                        children: [
-                          // 왼쪽 플러스 버튼
-                          InkWell(
-                            onTap: () {
-                              _showImageSourceSheet(context, viewModel);
-                            },
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: const BoxDecoration(
-                                color: myMessageBubbleColor, // 내 버블 색상
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 24,
+                    child: Builder(
+                      builder: (context) {
+                        // 거래 완료 상태 확인
+                        final isTradeCompleted = viewModel.tradeInfo?.tradeStatusCode == 550;
+                        final hasText = viewModel.messageController.text.trim().isNotEmpty;
+                        
+                        return Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFFFFFF), // 입력 영역 배경
+                            border: Border(
+                              top: BorderSide(
+                                color: Color(0xFFE5E7EB), // 상단 divider
+                                width: 1,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          // 가운데 입력 필드
-                          Expanded(
-                            child: viewModel.image == null
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 0,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          myMessageBubbleColor, // 플러스 버튼과 같은 파란색 배경
-                                      borderRadius: BorderRadius.circular(22),
-                                    ),
-                                    child: TextField(
-                                      minLines: 1,
-                                      maxLines: 5,
-                                      controller: viewModel.messageController,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.white, // 흰색 텍스트
-                                      ),
-                                      textAlignVertical:
-                                          TextAlignVertical.center,
-                                      decoration: InputDecoration(
-                                        hintText: "메시지 입력",
-                                        hintStyle: const TextStyle(
-                                          color: Colors.white, // 흰색 플레이스홀더
-                                          fontSize: 16,
-                                        ),
-                                        border: InputBorder.none,
-                                        isCollapsed: true,
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              vertical: 12,
+                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                          child: Row(
+                            children: [
+                              // 왼쪽 + 버튼
+                              InkWell(
+                                onTap: isTradeCompleted ? null : () {
+                                  _showImageSourceSheet(context, viewModel);
+                                },
+                                borderRadius: BorderRadius.circular(18),
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: isTradeCompleted
+                                        ? const Color(0xFFE0E3E7)
+                                        : const Color(0xFFF1F3F4),
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  child: Icon(
+                                    Icons.add,
+                                    color: isTradeCompleted
+                                        ? const Color(0xFF9AA0A6)
+                                        : const Color(0xFF5F6368),
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // 가운데 입력 필드
+                              Expanded(
+                                child: viewModel.image == null
+                                    ? Builder(
+                                        builder: (context) {
+                                          final hasFocus = _inputFocusNode.hasFocus;
+                                          
+                                          return Container(
+                                            constraints: const BoxConstraints(
+                                              minHeight: 40,
+                                              maxHeight: 96,
                                             ),
-                                      ),
-                                      onSubmitted: (value) {
-                                        if (!viewModel.isSending &&
-                                            value.trim().isNotEmpty) {
-                                          // 키보드 닫기
-                                          FocusScope.of(context).unfocus();
-                                          viewModel.sendMessage();
-                                        }
-                                      },
-                                    ),
-                                  )
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 0,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isTradeCompleted
+                                                  ? const Color(0xFFF7F8FA)
+                                                  : (hasFocus
+                                                      ? const Color(0xFFFFFFFF)
+                                                      : const Color(0xFFF5F6F8)),
+                                              borderRadius: BorderRadius.circular(20),
+                                              border: hasFocus
+                                                  ? Border.all(
+                                                      color: const Color(0xFFD0D5DD),
+                                                      width: 1,
+                                                    )
+                                                  : null,
+                                              boxShadow: hasFocus
+                                                  ? [
+                                                      BoxShadow(
+                                                        color: Colors.black.withValues(alpha: 0.06),
+                                                        blurRadius: 2,
+                                                        offset: const Offset(0, 1),
+                                                      ),
+                                                    ]
+                                                  : null,
+                                            ),
+                                            child: TextField(
+                                              focusNode: _inputFocusNode,
+                                              minLines: 1,
+                                              maxLines: 4,
+                                              controller: viewModel.messageController,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFF111111),
+                                              ),
+                                              textAlignVertical: TextAlignVertical.center,
+                                              decoration: InputDecoration(
+                                                hintText: isTradeCompleted
+                                                    ? "거래 완료 후 메시지를 보낼 수 있습니다"
+                                                    : "메시지를 입력하세요",
+                                                hintStyle: const TextStyle(
+                                                  color: Color(0xFF9AA0A6),
+                                                  fontSize: 14,
+                                                ),
+                                                border: InputBorder.none,
+                                                isCollapsed: true,
+                                                contentPadding: const EdgeInsets.symmetric(
+                                                  vertical: 10,
+                                                ),
+                                              ),
+                                              onChanged: (value) {
+                                                setState(() {}); // 전송 버튼 상태 업데이트
+                                              },
+                                              onTap: () {
+                                                setState(() {}); // 포커스 상태 업데이트
+                                              },
+                                              onSubmitted: (value) {
+                                                if (!viewModel.isSending &&
+                                                    value.trim().isNotEmpty) {
+                                                  // 키보드 닫기
+                                                  _inputFocusNode.unfocus();
+                                                  viewModel.sendMessage();
+                                                  // 입력창 리셋
+                                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                    if (mounted) {
+                                                      setState(() {});
+                                                    }
+                                                  });
+                                                }
+                                              },
+                                            ),
+                                          );
+                                        },
+                                      )
                                 : Stack(
                                     children: [
                                       ClipRRect(
@@ -696,47 +787,60 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                       ),
                                     ],
                                   ),
-                          ),
-                          const SizedBox(width: 8),
-                          // 오른쪽 전송 버튼
-                          InkWell(
-                            onTap: () {
-                              if (!viewModel.isSending) {
-                                // 키보드 닫기
-                                FocusScope.of(context).unfocus();
-                                viewModel.sendMessage();
-                              }
-                            },
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: const BoxDecoration(
-                                color: myMessageBubbleColor, // 내 버블 색상
-                                shape: BoxShape.circle,
                               ),
-                              child: Center(
-                                child: viewModel.isSending
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.send,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
+                              const SizedBox(width: 8),
+                              // 오른쪽 전송 버튼
+                              InkWell(
+                                onTap: (!hasText || viewModel.isSending)
+                                    ? null
+                                    : () {
+                                        // 키보드 닫기
+                                        FocusScope.of(context).unfocus();
+                                        viewModel.sendMessage();
+                                        // 입력창 리셋
+                                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                                          if (mounted) {
+                                            setState(() {});
+                                          }
+                                        });
+                                      },
+                                borderRadius: BorderRadius.circular(18),
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: (!hasText || isTradeCompleted)
+                                        ? const Color(0xFFE0E3E7) // Disabled
+                                        : const Color(0xFF4F7CF5), // Enabled
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  child: Center(
+                                    child: viewModel.isSending
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Colors.white,
+                                                  ),
+                                            ),
+                                          )
+                                        : Icon(
+                                            Icons.send,
+                                            color: (!hasText || isTradeCompleted)
+                                                ? const Color(0xFF9AA0A6) // Disabled
+                                                : Colors.white, // Enabled
+                                            size: 20,
+                                          ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -744,6 +848,92 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
             ),
           );
         },
+      ),
+    );
+  }
+
+  /// 거래 완료 다이얼로그 표시
+  void _showTradeCompleteDialog(
+    BuildContext context,
+    ChattingRoomViewmodel viewModel,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('거래 완료'),
+        content: const Text('거래를 완료하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              // TODO: 거래 완료 API 호출
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('거래 완료 기능은 준비 중입니다.')),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: roleSalePrimary,
+            ),
+            child: const Text('완료'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 거래 취소 사유 선택 후 확인 다이얼로그 표시
+  void _showTradeCancelWithReason(
+    BuildContext context,
+    ChattingRoomViewmodel viewModel,
+  ) {
+    // 1단계: 사유 선택 바텀시트
+    TradeCancelReasonBottomSheet.show(
+      context,
+      onReasonSelected: (reasonCode) {
+        // 2단계: 확인 다이얼로그
+        _showTradeCancelConfirmDialog(context, viewModel, reasonCode);
+      },
+    );
+  }
+
+  /// 거래 취소 확인 다이얼로그 표시
+  void _showTradeCancelConfirmDialog(
+    BuildContext context,
+    ChattingRoomViewmodel viewModel,
+    String reasonCode,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('거래 취소'),
+        content: const Text(
+          '거래를 취소하시겠습니까?\n취소 사유가 상대에게 전달됩니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('돌아가기'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              // TODO: 거래 취소 API 호출 (reasonCode 포함)
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('거래 취소 기능은 준비 중입니다. (사유: $reasonCode)'),
+                ),
+              );
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: RedColor,
+            ),
+            child: const Text('거래 취소'),
+          ),
+        ],
       ),
     );
   }

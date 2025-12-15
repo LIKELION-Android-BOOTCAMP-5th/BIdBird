@@ -26,7 +26,6 @@ class ChatSupabaseDatasource {
         return jsonList.map((json) => ChatMessageEntity.fromJson(json)).toList();
       }
     } catch (e) {
-      // ignore: avoid_print
       print("캐시 불러오기 실패 : $e");
     }
     return [];
@@ -40,7 +39,6 @@ class ChatSupabaseDatasource {
       final jsonList = messages.map((msg) => msg.toJson()).toList();
       await prefs.setString(cacheKey, jsonEncode(jsonList));
     } catch (e) {
-      // ignore: avoid_print
       print("캐시 저장 실패 : $e");
     }
   }
@@ -56,6 +54,7 @@ class ChatSupabaseDatasource {
           .eq('room_id', chattingRoomId)
           .order('created_at', ascending: false)
           .limit(50);
+      
       if (response.isNotEmpty) {
         final List<dynamic> data = response;
         final List<ChatMessageEntity> results = data.map((json) {
@@ -77,7 +76,6 @@ class ChatSupabaseDatasource {
         }
       }
     } catch (e) {
-      // ignore: avoid_print
       print("불러오기 실패 : $e");
       // 네트워크 오류 시 캐시 반환
       if (cachedMessages.isNotEmpty) {
@@ -115,7 +113,6 @@ class ChatSupabaseDatasource {
       // 함수에서 created_at desc 로 내려주므로, UI에서는 asc 로 보이게 뒤집기
       return results.reversed.toList();
     } catch (e) {
-      // ignore: avoid_print
       print('이전 메세지 불러오기 실패 : $e');
       return List.empty();
     }
@@ -137,7 +134,6 @@ class ChatSupabaseDatasource {
         return data;
       }
     } catch (e) {
-      // ignore: avoid_print
       print("불러오기 실패 : $e");
       return null;
     }
@@ -156,7 +152,6 @@ class ChatSupabaseDatasource {
         'text': message,
       });
     } catch (e) {
-      // ignore: avoid_print
       print('메시지 전송에 실패했습니다 : $e');
     }
   }
@@ -173,7 +168,6 @@ class ChatSupabaseDatasource {
         'image_url': imageUrl,
       });
     } catch (e) {
-      // ignore: avoid_print
       print('메시지 전송에 실패했습니다 : $e');
     }
   }
@@ -196,7 +190,6 @@ class ChatSupabaseDatasource {
         return data;
       }
     } catch (e) {
-      // ignore: avoid_print
       print("알림 셋팅 불러오기 실패 : $e");
       return null;
     }
@@ -215,7 +208,6 @@ class ChatSupabaseDatasource {
           .eq('room_id', roomId)
           .eq('user_id', currentUserId);
     } catch (e) {
-      // ignore: avoid_print
       print('푸시알림 키는데 실패했습니다 : $e');
       return;
     }
@@ -234,7 +226,6 @@ class ChatSupabaseDatasource {
           .eq('room_id', roomId)
           .eq('user_id', currentUserId);
     } catch (e) {
-      // ignore: avoid_print
       print('푸시알림 키는데 실패했습니다 : $e');
       return;
     }

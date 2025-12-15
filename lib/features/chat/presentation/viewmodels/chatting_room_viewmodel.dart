@@ -5,6 +5,7 @@ import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/managers/heartbeat_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
+import 'package:bidbird/features/item/shipping/data/repository/shipping_info_repository.dart';
 import 'package:bidbird/features/chat/domain/entities/auction_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
@@ -37,6 +38,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   ItemInfoEntity? itemInfo;
   AuctionInfoEntity? auctionInfo;
   TradeInfoEntity? tradeInfo;
+  bool _hasShippingInfo = false;
+  bool get hasShippingInfo => _hasShippingInfo;
   double? imageAspectRatio; // width / height
   final ImagePicker _picker = ImagePicker();
   final TextEditingController messageController = TextEditingController();
@@ -60,6 +63,19 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   bool _isScrollPositionReady = false; // 스크롤 위치가 준비되어 화면을 표시해도 되는지 여부
 
   bool get isScrollPositionReady => _isScrollPositionReady;
+
+  /// 현재 사용자가 낙찰자인지 확인
+  bool get isTopBidder {
+    final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null || auctionInfo == null) return false;
+    
+    return auctionInfo!.lastBidUserId == currentUserId;
+  }
+
+  /// 낙찰자가 존재하는지 확인 (last_bid_user_id가 null이 아닌지)
+  bool get hasTopBidder {
+    return auctionInfo?.lastBidUserId != null && auctionInfo!.lastBidUserId!.isNotEmpty;
+  }
 
   final ChatRepositoryImpl _repository = ChatRepositoryImpl();
 
@@ -97,13 +113,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     }
 
     if (!scrollController.hasClients) {
-      // ignore: avoid_print
       print('[스크롤 위치 설정] scrollController.hasClients=false, 재시도');
       return;
     }
 
     if (messages.isEmpty) {
-      // ignore: avoid_print
       print('[스크롤 위치 설정] messages.isEmpty, 재시도');
       return;
     }
@@ -112,7 +126,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
     // maxScrollExtent가 0이면 아직 레이아웃이 완료되지 않은 것
     if (maxScroll == 0) {
-      // ignore: avoid_print
       print('[스크롤 위치 설정] maxScroll=0, 재시도');
       return;
     }
@@ -120,11 +133,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     // 스크롤 위치 계산 및 즉시 적용 (애니메이션 없이)
     if (_shouldScrollToBottom) {
       scrollController.jumpTo(maxScroll);
-      // ignore: avoid_print
       print('[Pre-render 위치 설정] 하단으로 설정: maxScroll=$maxScroll');
     } else {
       scrollController.jumpTo(0);
-      // ignore: avoid_print
       print('[Pre-render 위치 설정] 상단으로 설정');
     }
 
@@ -134,7 +145,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     _isScrollPositionReady = true; // 화면 표시 준비 완료
     isInitialLoad = false;
     notifyListeners();
-    // ignore: avoid_print
     print('[Pre-render 위치 설정 완료] 화면 표시 준비 완료: maxScroll=$maxScroll');
 
     // 한 번 더 확인하여 확실하게 위치 설정
@@ -170,7 +180,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         if (maxScroll > 0) {
           if (_shouldScrollToBottom) {
             // 하단으로 즉시 이동 (애니메이션 없이)
-            // ignore: avoid_print
             print('[스크롤 리스너] 하단으로 즉시 이동: maxScroll=$maxScroll');
             scrollController.jumpTo(maxScroll);
             _isScrollPositionSet = true;
@@ -181,7 +190,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
                 final newMaxScroll = scrollController.position.maxScrollExtent;
                 final newCurrentScroll = scrollController.position.pixels;
                 if (newCurrentScroll < newMaxScroll - 1) {
-                  // ignore: avoid_print
                   print(
                     '[스크롤 리스너] 하단으로 재이동: newMaxScroll=$newMaxScroll, newCurrentScroll=$newCurrentScroll',
                   );
@@ -191,7 +199,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
             });
           } else {
             // 상단으로 즉시 이동 (애니메이션 없이)
-            // ignore: avoid_print
             print('[스크롤 리스너] 상단으로 즉시 이동');
             scrollController.jumpTo(0);
             _isScrollPositionSet = true;
@@ -201,7 +208,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
               if (scrollController.hasClients) {
                 final newCurrentScroll = scrollController.position.pixels;
                 if (newCurrentScroll > 1) {
-                  // ignore: avoid_print
                   print(
                     '[스크롤 리스너] 상단으로 재이동: newCurrentScroll=$newCurrentScroll',
                   );
@@ -281,8 +287,26 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     itemInfo = roomInfo?.item;
     auctionInfo = roomInfo?.auction;
     tradeInfo = roomInfo?.trade;
+    
+    // 배송 정보 확인
+    await _checkShippingInfo();
+    
     setupRealtimeRoomInfoSubscription();
     notifyListeners();
+  }
+
+  /// 배송 정보 입력 여부 확인
+  Future<void> _checkShippingInfo() async {
+    try {
+      final shippingInfoRepository = ShippingInfoRepository();
+      final shippingInfo = await shippingInfoRepository.getShippingInfo(itemId);
+      
+      _hasShippingInfo = shippingInfo != null &&
+          shippingInfo['tracking_number'] != null &&
+          (shippingInfo['tracking_number'] as String?)?.isNotEmpty == true;
+    } catch (e) {
+      _hasShippingInfo = false;
+    }
   }
 
   // 디바운스를 적용한 fetchRoomInfo 호출
@@ -367,7 +391,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           // 여기서는 메시지 엔티티에 읽음 표시를 할 수 없으므로
           // roomInfo의 lastMessageAt을 업데이트하는 것으로 대체
           // 실제 읽음 처리는 서버에서 처리되므로 여기서는 로그만 남김
-          // ignore: avoid_print
           print(
             '[읽음 처리] 메시지 ${messages[i].id} 읽음 처리 (마지막으로 본 메시지: ${lastViewedMessage.id})',
           );
@@ -451,16 +474,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   Future<void> fetchMessage() async {
     try {
-      // ignore: avoid_print
-      print('fetchMessage 시작: roomId=$roomId, itemId=$itemId');
-
       final currentRoomId = roomId;
       if (currentRoomId != null) {
-        // ignore: avoid_print
-        print('roomId로 메시지 불러오기 시작: $currentRoomId');
         final chattings = await _getMessagesUseCase(currentRoomId);
-        // ignore: avoid_print
-        print('메시지 불러오기 완료: ${chattings.length}개');
 
         messages.clear(); // 기존 메시지 초기화
         messages.addAll(chattings);
@@ -518,8 +534,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           // 최대 200ms 후에는 강제로 화면 표시 (타임아웃)
           Future.delayed(const Duration(milliseconds: 200), () {
             if (!_isScrollPositionReady && isInitialLoad) {
-              // ignore: avoid_print
-              print('[타임아웃] 스크롤 위치 설정 타임아웃, 강제로 화면 표시');
               listViewPhysics = const ClampingScrollPhysics();
               _isScrollPositionSet = true;
               _isScrollPositionReady = true;
@@ -535,28 +549,85 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         setupRealtimeSubscription();
         init();
       } else {
-        // ignore: avoid_print
-        print('roomId가 null이므로 itemId로 roomId 가져오기 시도');
         // roomId가 없으면 itemId로 roomId를 먼저 가져오기 시도
         final fetchedRoomId = await _getRoomIdUseCase(itemId);
-        // ignore: avoid_print
-        print('가져온 roomId: $fetchedRoomId');
 
         if (fetchedRoomId != null) {
           roomId = fetchedRoomId;
           await fetchMessage(); // 재귀 호출로 다시 시도
         } else {
-          // ignore: avoid_print
-          print('roomId를 가져올 수 없음');
           notifyListeners();
         }
       }
     } catch (e, stackTrace) {
-      // ignore: avoid_print
       print('메시지 불러오기 실패: $e');
-      // ignore: avoid_print
-      print('스택 트레이스: $stackTrace');
       notifyListeners();
+    }
+  }
+
+  // 에러 처리 헬퍼 메서드
+  void _handleSendError(String error, [Object? e]) {
+    if (e != null) {
+      print("$error: $e");
+    } else {
+      print(error);
+    }
+    isSending = false;
+    notifyListeners();
+  }
+
+  // 이미지 업로드 헬퍼 메서드
+  Future<String?> _uploadMedia(XFile file) async {
+    try {
+      if (isVideoFile(file.path)) {
+        return await CloudinaryManager.shared.uploadVideoToCloudinary(file);
+      } else {
+        return await CloudinaryManager.shared.uploadImageToCloudinary(file);
+      }
+    } catch (e) {
+      print('미디어 업로드 실패: $e');
+      return null;
+    }
+  }
+
+  // 첫 메시지 전송 후 처리 헬퍼 메서드
+  Future<void> _handleFirstMessageSent() async {
+    try {
+      // 메시지 전송 후 DB 반영을 위해 잠시 대기
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // fetchMessage를 호출하여 메시지 리스트를 다시 불러오기
+      // fetchMessage 내부에서 setupRealtimeSubscription()과 init()을 호출하므로 여기서는 호출하지 않음
+      await fetchMessage();
+      
+      // fetchMessage 내부에서 이미 setupRealtimeSubscription()과 init()을 호출하지만,
+      // roomInfo는 별도로 업데이트 필요
+      await fetchRoomInfo();
+      
+      isSending = false;
+      notifyListeners();
+      scrollToBottom(force: true);
+    } catch (e) {
+      print("메시지 불러오기 실패: $e");
+      isSending = false;
+      notifyListeners();
+    }
+  }
+
+  // 기존 채팅방에서 메시지 전송 후 최신 메시지 불러오기 헬퍼 메서드
+  Future<void> _refreshLatestMessage(String roomId) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 300));
+      final latestMessages = await _repository.getMessages(roomId);
+      if (latestMessages.isNotEmpty) {
+        final latestMessage = latestMessages.last;
+        final exists = messages.any((msg) => msg.id == latestMessage.id);
+        if (!exists) {
+          messages.add(latestMessage);
+        }
+      }
+    } catch (e) {
+      print('최신 메시지 불러오기 실패: $e');
     }
   }
 
@@ -564,11 +635,12 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (isSending == true) return;
     isSending = true;
     final currentRoomId = roomId;
+    
     if (currentRoomId == null) {
+      // 첫 메시지 전송
       if (type == MessageType.text) {
         if (messageController.text.isEmpty) {
-          isSending = false;
-          notifyListeners();
+          _handleSendError("메시지가 비어있습니다");
           return;
         }
         try {
@@ -577,44 +649,27 @@ class ChattingRoomViewmodel extends ChangeNotifier {
             messageType: type,
             message: messageController.text,
           );
-        } catch (e) {
-          // ignore: avoid_print
-          print("메세지 전송 실패");
-          isSending = false;
+          if (roomId == null) {
+            _handleSendError("메세지 전송 실패: roomId가 null입니다");
+            return;
+          }
+          messageController.text = "";
           notifyListeners();
-          return;
+          await _handleFirstMessageSent();
+        } catch (e) {
+          _handleSendError("메세지 전송 실패", e);
         }
-        final chattings = await _repository.getMessages(roomId!);
-        messages.addAll(chattings);
-        messageController.text = "";
-        notifyListeners();
-        setupRealtimeSubscription();
-        init();
-        isSending = false;
-        notifyListeners();
-        // 메시지 전송 후 하단으로 스크롤
-        scrollToBottom(force: true);
       } else {
+        // 이미지/비디오 메시지
         final thisImage = image;
         if (thisImage == null) {
-          isSending = false;
-          notifyListeners();
+          _handleSendError("이미지가 없습니다");
           return;
         }
         try {
-          final String? mediaUrl;
-          if (isVideoFile(thisImage.path)) {
-            mediaUrl = await CloudinaryManager.shared.uploadVideoToCloudinary(
-              thisImage,
-            );
-          } else {
-            mediaUrl = await CloudinaryManager.shared.uploadImageToCloudinary(
-              thisImage,
-            );
-          }
+          final mediaUrl = await _uploadMedia(thisImage);
           if (mediaUrl == null) {
-            isSending = false;
-            notifyListeners();
+            _handleSendError("미디어 업로드 실패");
             return;
           }
           roomId = await _sendFirstMessageUseCase(
@@ -622,83 +677,64 @@ class ChattingRoomViewmodel extends ChangeNotifier {
             messageType: type,
             imageUrl: mediaUrl,
           );
-        } catch (e) {
-          // ignore: avoid_print
-          print("메세지 전송 실패: $e");
-          isSending = false;
+          if (roomId == null) {
+            _handleSendError("메세지 전송 실패: roomId가 null입니다");
+            return;
+          }
+          image = null;
+          type = MessageType.text;
           notifyListeners();
-          return;
+          await _handleFirstMessageSent();
+        } catch (e) {
+          _handleSendError("메세지 전송 실패", e);
         }
-        final chattings = await _repository.getMessages(roomId!);
-        messages.addAll(chattings);
-        image = null;
-        type = MessageType.text;
-        notifyListeners();
-        setupRealtimeSubscription();
-        init();
-        isSending = false;
-        notifyListeners();
-        // 메시지 전송 후 하단으로 스크롤
-        scrollToBottom(force: true);
       }
     } else {
+      // 기존 채팅방에서 메시지 전송
+      // 실시간 구독이 설정되어 있지 않으면 설정
+      if (_subscribeMessageChannel == null) {
+        setupRealtimeSubscription();
+      }
+      
       if (type == MessageType.text) {
         if (messageController.text.isEmpty) {
-          isSending = false;
-          notifyListeners();
+          _handleSendError("메시지가 비어있습니다");
           return;
         }
+        final messageText = messageController.text;
         try {
-          await _sendTextMessageUseCase(currentRoomId, messageController.text);
-        } catch (e) {
-          // ignore: avoid_print
-          print('메세지 전송 실패 : $e');
+          await _sendTextMessageUseCase(currentRoomId, messageText);
+          messageController.text = "";
+          await _refreshLatestMessage(currentRoomId);
           isSending = false;
           notifyListeners();
-          return;
+          scrollToBottom(force: true);
+        } catch (e) {
+          _handleSendError('메세지 전송 실패', e);
         }
-        messageController.text = "";
-        isSending = false;
-        notifyListeners();
-        // 메시지 전송 후 하단으로 스크롤
-        scrollToBottom(force: true);
       } else {
+        // 이미지/비디오 메시지
         final thisImage = image;
         if (thisImage == null) {
-          isSending = false;
-          notifyListeners();
+          _handleSendError("이미지가 없습니다");
           return;
         }
         try {
-          final String? mediaUrl;
-          if (isVideoFile(thisImage.path)) {
-            mediaUrl = await CloudinaryManager.shared.uploadVideoToCloudinary(
-              thisImage,
-            );
-          } else {
-            mediaUrl = await CloudinaryManager.shared.uploadImageToCloudinary(
-              thisImage,
-            );
-          }
+          final mediaUrl = await _uploadMedia(thisImage);
           if (mediaUrl == null) {
-            isSending = false;
-            notifyListeners();
+            _handleSendError("미디어 업로드 실패");
             return;
           }
           await _sendImageMessageUseCase(currentRoomId, mediaUrl);
-        } catch (e) {
-          // ignore: avoid_print
-          print('메세지 전송 실패 : $e');
+          image = null;
+          type = MessageType.text;
+          await _refreshLatestMessage(currentRoomId);
           isSending = false;
           notifyListeners();
-          return;
+          scrollToBottom(force: true);
+        } catch (e) {
+          _handleSendError('메세지 전송 실패', e);
         }
-        image = null;
-        type = MessageType.text;
-        isSending = false;
-        notifyListeners();
-        // 메시지 전송 후 하단으로 스크롤
-        scrollToBottom(force: true);
       }
     }
   }
@@ -712,7 +748,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     try {
       await chattingRoomService.enterRoom(thisRoomId);
     } catch (e) {
-      // ignore: avoid_print
       print("enterRoom 실패: $e");
     }
 
@@ -729,13 +764,10 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       // 채팅방을 나갈 때 읽음 처리
       // leaveRoom이 읽음 처리를 하므로 먼저 호출
       try {
-        // ignore: avoid_print
         print("disposeViewModel: leaveRoom 호출 시작, roomId=$thisRoomId");
         await chattingRoomService.leaveRoom(thisRoomId);
-        // ignore: avoid_print
         print("disposeViewModel: leaveRoom 호출 완료");
       } catch (e) {
-        // ignore: avoid_print
         print("leaveRoom 실패: $e");
       }
       heartbeatManager.stop();
@@ -747,7 +779,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     // disposeViewModel에서 leaveRoom이 호출되므로 여기서는 disposeViewModel만 호출
     // dispose는 자동으로 호출되므로 여기서 호출하지 않음
     if (isActive && roomId != null) {
-      // ignore: avoid_print
       print("leaveRoom 호출: disposeViewModel 실행");
       await disposeViewModel();
     }
@@ -948,8 +979,19 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
   void setupRealtimeSubscription() {
+    final currentRoomId = roomId;
+    if (currentRoomId == null) {
+      return;
+    }
+
+    // 기존 채널 정리 (중복 구독 방지)
+    if (_subscribeMessageChannel != null) {
+      SupabaseManager.shared.supabase.removeChannel(_subscribeMessageChannel!);
+      _subscribeMessageChannel = null;
+    }
+
     _subscribeMessageChannel = SupabaseManager.shared.supabase.channel(
-      'chatting_message$roomId',
+      'chatting_message$currentRoomId',
     );
     _subscribeMessageChannel!
         .onPostgresChanges(
@@ -959,7 +1001,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
             column: 'room_id',
-            value: roomId,
+            value: currentRoomId,
           ),
           callback: (payload) {
             final newMessage = payload.newRecord;
@@ -985,7 +1027,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       // disposeViewModel은 비동기이므로 await 없이 호출
       // dispose는 동기 메서드이므로 Future를 기다릴 수 없음
       disposeViewModel().catchError((e) {
-        // ignore: avoid_print
         print("disposeViewModel 실패: $e");
       });
     }
@@ -1105,7 +1146,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         }
       }
     } catch (e) {
-      // ignore: avoid_print
       print('이전 메시지 로딩 실패: $e');
     }
 
