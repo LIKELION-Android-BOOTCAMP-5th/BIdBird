@@ -215,6 +215,7 @@ class ChatListViewmodel extends ChangeNotifier {
       print("변경 감지된 Room id : ${room.id}");
       print("unread_count : ${room.count} => ${data['unread_count']}");
       room.count = data['unread_count'] as int?;
+      notifyListeners();
       return true;
     }
     return false;
