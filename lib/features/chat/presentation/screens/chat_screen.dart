@@ -4,6 +4,7 @@ import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
@@ -64,7 +65,6 @@ class _ChatScreenState extends State<ChatScreen>
   // 이전 화면에서 돌아왔을 때 (채팅방에서 돌아올 때)
   @override
   void didPopNext() {
-    print("didPopNext: 채팅방에서 나옴 - 즉시 리스트 새로고침");
     _refreshListOnce();
   }
 
@@ -74,7 +74,6 @@ class _ChatScreenState extends State<ChatScreen>
     final now = DateTime.now();
     if (_lastRefreshTime != null &&
         now.difference(_lastRefreshTime!).inMilliseconds < 500) {
-      print("새로고침 스킵: 너무 최근에 새로고침됨");
       return;
     }
     _lastRefreshTime = now;
@@ -85,7 +84,6 @@ class _ChatScreenState extends State<ChatScreen>
   void _refreshListOnce() {
     if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
 
-    print("채팅 리스트 새로고침 시작");
     _viewModel!.reloadList();
   }
 
@@ -98,9 +96,6 @@ class _ChatScreenState extends State<ChatScreen>
     if (currentRoute == '/chat') {
       final previousRoute = _previousRoute;
       if (previousRoute != null && previousRoute.startsWith('/chat/room')) {
-        print(
-          "경로 변경 감지 (build): 채팅방($previousRoute)에서 채팅 리스트($currentRoute)로 복귀 - 즉시 리스트 새로고침",
-        );
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             // 즉시 한 번만 새로고침
@@ -145,10 +140,23 @@ class _ChatScreenState extends State<ChatScreen>
       return const Center(child: Text('참여 중인 채팅방이 없습니다.'));
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      itemCount: viewModel.chattingRoomList.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+    // 반응형: 큰 화면에서는 최대 너비 제한 및 중앙 정렬
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth >= 800;
+    final maxWidth = isLargeScreen ? 800.0 : double.infinity;
+    final horizontalPadding = context.hPadding;
+    final verticalPadding = context.vPadding;
+    
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: ListView.separated(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: verticalPadding,
+          ),
+          itemCount: viewModel.chattingRoomList.length,
+          separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
       itemBuilder: (context, index) {
         final chattingRoom = viewModel.chattingRoomList[index];
         return GestureDetector(
@@ -213,12 +221,12 @@ class _ChatScreenState extends State<ChatScreen>
                   // 메인 컨텐츠
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(context.screenPadding),
                       child: Row(
-                        spacing: 8,
+                        spacing: context.spacingSmall,
                         children: [
                           CircleAvatar(
-                            radius: 24,
+                            radius: context.isLargeScreen() ? 28 : 24,
                             backgroundColor: BorderColor,
                             backgroundImage:
                                 chattingRoom.profileImage != null &&
@@ -266,9 +274,9 @@ class _ChatScreenState extends State<ChatScreen>
                                               chattingRoom.itemTitle,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 16,
+                                                fontSize: context.fontSizeLarge,
                                               ),
                                             ),
                                           ),
@@ -279,7 +287,7 @@ class _ChatScreenState extends State<ChatScreen>
                                       chattingRoom.lastMessageSendAt.toTimesAgo(),
                                       style: TextStyle(
                                         color: iconColor,
-                                        fontSize: 12,
+                                        fontSize: context.fontSizeSmall,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -294,22 +302,22 @@ class _ChatScreenState extends State<ChatScreen>
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            chattingRoom.lastMessage,
+                                            chattingRoom.lastMessage.replaceAll(RegExp(r'\s*\(?\s*낙찰자\s*\)?\s*'), ''),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               color: Colors.grey[600],
-                                              fontSize: 13,
+                                              fontSize: context.fontSizeMedium,
                                             ),
                                             textAlign: TextAlign.left,
                                           ),
                                         ),
                                         if (chattingRoom.count! > 0)
                                           Padding(
-                                            padding: const EdgeInsets.only(left: 6),
+                                            padding: EdgeInsets.only(left: context.spacingSmall),
                                             child: Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 8,
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: context.spacingSmall,
                                                 vertical: 4,
                                               ),
                                               decoration: BoxDecoration(
@@ -320,7 +328,7 @@ class _ChatScreenState extends State<ChatScreen>
                                                 "${chattingRoom.count ?? 0}",
                                                 style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: 12,
+                                                  fontSize: context.fontSizeSmall,
                                                   fontWeight: FontWeight.w600,
                                                 ),
                                               ),
@@ -342,6 +350,8 @@ class _ChatScreenState extends State<ChatScreen>
           ),
         );
       },
+        ),
+      ),
     );
   }
 }

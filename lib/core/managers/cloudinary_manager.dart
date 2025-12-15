@@ -17,6 +17,13 @@ class CloudinaryManager {
       final filePath = inputImage.path;
       final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
       
+      // 파일 존재 확인
+      final file = await inputImage.length();
+      if (file == 0) {
+        print('이미지 업로드 실패: 파일이 비어있습니다');
+        return null;
+      }
+      
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(
           filePath,
@@ -34,11 +41,20 @@ class CloudinaryManager {
       );
 
       if (response.statusCode == 200) {
-        return response.data['secure_url'] as String?;
+        final secureUrl = response.data['secure_url'] as String?;
+        if (secureUrl != null) {
+          return secureUrl;
+        } else {
+          print('이미지 업로드 실패: secure_url이 null입니다');
+          return null;
+        }
       } else {
+        print('이미지 업로드 실패: statusCode=${response.statusCode}');
         return null;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('이미지 업로드 에러: $e');
+      print('스택 트레이스: $stackTrace');
       return null;
     }
   }

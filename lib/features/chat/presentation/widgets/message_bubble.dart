@@ -35,7 +35,8 @@ class MessageBubble extends StatelessWidget {
     if (message.messageType == "image" && imageUrlForMessage != null) {
       return LayoutBuilder(
         builder: (context, constraints) {
-          final maxWidth = MediaQuery.of(context).size.width * 0.72;
+          // 이미지 표시 크기 축소: 화면의 60%로 제한, 최대 높이 400px
+          final maxWidth = MediaQuery.of(context).size.width * 0.60;
           
           // 동영상 URL인지 확인
           final bool isVideo = originalUrl != null && isVideoFile(originalUrl);
@@ -48,7 +49,7 @@ class MessageBubble extends StatelessWidget {
             mediaWidget = ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: maxWidth,
-                maxHeight: 600,
+                maxHeight: 400,
               ),
               child: GestureDetector(
                 onTap: () {
@@ -111,11 +112,11 @@ class MessageBubble extends StatelessWidget {
               ),
             );
           } else {
-            // 이미지인 경우 기존 방식 사용
+            // 이미지인 경우 - 긴 사진 정렬 개선
             mediaWidget = ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: maxWidth,
-                maxHeight: 600, // 세로로 긴 이미지를 위해 최대 높이 증가
+                maxHeight: 600, // 최대 높이 증가 (400 -> 600)
               ),
               child: GestureDetector(
                 onTap: () {
@@ -128,8 +129,8 @@ class MessageBubble extends StatelessWidget {
                   child: CachedNetworkImage(
                     imageUrl: imageUrlForMessage,
                     cacheManager: ItemImageCacheManager.instance,
-                    fit: BoxFit.contain, // 이미지 전체가 보이도록 변경
-                    width: maxWidth,
+                    fit: BoxFit.contain, // 비율 유지하면서 표시
+                    width: null, // width 제거하여 비율에 맞게 자동 조정
                     placeholder: (context, url) => Container(
                       width: maxWidth,
                       height: 200,
@@ -165,7 +166,7 @@ class MessageBubble extends StatelessWidget {
               child: Container(
                 margin: EdgeInsets.only(
                   left: isCurrentUser ? 12 : 0,
-                  right: isCurrentUser ? 0 : 12,
+                  right: isCurrentUser ? 12 : 0, // 텍스트 버블과 동일한 마진
                 ),
                 child: mediaWidget,
               ),
@@ -205,7 +206,7 @@ class MessageBubble extends StatelessWidget {
             child: Container(
               margin: EdgeInsets.only(
                 left: isCurrentUser ? 12 : 0,
-                right: isCurrentUser ? 0 : 12,
+                right: isCurrentUser ? 12 : 0, // 텍스트 버블과 동일한 마진
               ),
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.85,
@@ -267,7 +268,7 @@ class MessageBubble extends StatelessWidget {
               ],
       ),
       child: Text(
-        message.text ?? "메세지",
+        (message.text ?? "메세지").replaceAll(RegExp(r'\s*\(?\s*낙찰자\s*\)?\s*'), ''),
         style: TextStyle(
           color: isCurrentUser ? Colors.white : chatTextColor,
           fontSize: 15,
@@ -280,7 +281,10 @@ class MessageBubble extends StatelessWidget {
       return Align(
         alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12),
+          margin: EdgeInsets.only(
+            left: isCurrentUser ? 12 : 0,
+            right: isCurrentUser ? 12 : 0,
+          ),
           constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.72,
           ),
@@ -321,7 +325,10 @@ class MessageBubble extends StatelessWidget {
     return Align(
       alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12),
+        margin: EdgeInsets.only(
+          left: isCurrentUser ? 12 : 0,
+          right: isCurrentUser ? 12 : 0,
+        ),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.85,
         ),
