@@ -69,6 +69,12 @@ class ChatRepositoryImpl implements ChatRepository {
           messageType: "image",
           imageUrl: imageUrl,
         );
+      case MessageType.video:
+        return await _networkApiChatDatasource.firstMessage(
+          itemId: itemId,
+          messageType: "image",
+          imageUrl: imageUrl,
+        );
     }
   }
 
