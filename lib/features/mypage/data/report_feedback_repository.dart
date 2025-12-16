@@ -16,7 +16,7 @@ class ReportFeedbackRepository {
     }
 
     final List<dynamic> rows = await _client
-        .from('reports')
+        .from('report')
         .select()
         .eq('user_id', user.id)
         .order('created_at', ascending: false);
@@ -50,8 +50,8 @@ class ReportFeedbackRepository {
     final String targetUserId = row['target_user_id']?.toString() ?? '';
     final String targetUserNickname =
         row['target_user_nickname']?.toString() ?? '';
-    final String reportTypeId = row['report_type_id']?.toString() ?? '';
-    final String reportTypeName = getReportStatusString(row['report_type_id']);
+    final String reportCode = row['report_code']?.toString() ?? '';
+    final String reportCodeName = getReportStatusString(row['report_code']);
     final String? itemId = row['item_id']?.toString();
     final String? itemTitle = row['item_title']?.toString();
     final String content = row['report_content']?.toString() ?? '';
@@ -64,8 +64,8 @@ class ReportFeedbackRepository {
       id: id,
       targetUserId: targetUserId,
       targetUserNickname: targetUserNickname,
-      reportTypeId: reportTypeId,
-      reportTypeName: reportTypeName,
+      reportCode: reportCode,
+      reportCodeName: reportCodeName,
       itemId: itemId,
       itemTitle: itemTitle,
       content: content,
@@ -76,6 +76,7 @@ class ReportFeedbackRepository {
     );
   }
 
+  //이부분수정하기
   DateTime _parseDateTime(dynamic value) {
     if (value is int) {
       return DateTime.fromMillisecondsSinceEpoch(value);
@@ -83,6 +84,7 @@ class ReportFeedbackRepository {
     return DateTime.now();
   }
 
+  //이부분수정하기
   DateTime? _parseNullableDateTime(dynamic value) {
     if (value == null) return null;
     if (value is int) {

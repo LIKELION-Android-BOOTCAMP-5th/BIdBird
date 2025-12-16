@@ -23,13 +23,13 @@ class FavoritesRepository {
     if (rows.isEmpty) return [];
 
     final List<String> itemIds = [];
-    final Map<String, Map<String, dynamic>> favoritesByItem = {};
+    final Map<String, Map<String, dynamic>> favoritesById = {};
     for (final dynamic row in rows) {
       if (row is! Map<String, dynamic>) continue;
       final itemId = row['item_id']?.toString();
       if (itemId == null || itemId.isEmpty) continue;
       itemIds.add(itemId);
-      favoritesByItem[itemId] = row;
+      favoritesById[itemId] = row;
     }
 
     if (itemIds.isEmpty) return [];
@@ -44,7 +44,7 @@ class FavoritesRepository {
         .map(
           (itemId) => _mapFavorites(
             itemId: itemId,
-            favoriteRow: favoritesByItem[itemId],
+            favoriteRow: favoritesById[itemId],
             itemRow: itemsById[itemId],
             auctionRow: auctionsByItemId[itemId],
           ),
@@ -78,8 +78,8 @@ class FavoritesRepository {
     final List<dynamic> rows = await _client
         .from('auctions')
         .select(
-          'item_id, current_price, auction_status_code, trade_status_code',
-        )
+          'item_id, current_price, auction_status_code',
+        ) //, trade_status_code',)
         .inFilter('item_id', itemIds)
         .eq('round', 1);
 
@@ -134,9 +134,8 @@ class FavoritesRepository {
         (auctionRow?['current_price'] as num?)?.toInt() ?? 0;
     final int? buyNowPrice = (itemRow?['buy_now_price'] as num?)?.toInt();
     final int statusCode =
-        (auctionRow?['trade_status_code'] as int?) ??
-        (auctionRow?['auction_status_code'] as int?) ??
-        0;
+        //(auctionRow?['trade_status_code'] as int?) ??
+        (auctionRow?['auction_status_code'] as int?) ?? 0;
 
     return FavoritesItem(
       favoriteId: favoriteId,

@@ -7,8 +7,6 @@ class ProfileViewModel extends ChangeNotifier {
   final ProfileRepository _repository;
 
   Profile? profile;
-  List<int> _keywordIds = [];
-  List<int> get keywordIds => _keywordIds;
   bool isLoading = false;
 
   String? errorMessage; //나중에팝업으로쓸것
@@ -26,7 +24,6 @@ class ProfileViewModel extends ChangeNotifier {
 
     try {
       profile = await _repository.fetchProfile();
-      _keywordIds = await _repository.fetchUserKeywordIds();
     } catch (e) {
       errorMessage = e.toString(); //e는String임
     } finally {

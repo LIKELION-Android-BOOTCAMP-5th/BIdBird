@@ -57,8 +57,8 @@ class ReportFeedbackModel {
   final String id;
   final String targetUserId;
   final String targetUserNickname;
-  final String reportTypeId;
-  final String reportTypeName;
+  final String reportCode;
+  final String reportCodeName;
   final String? itemId;
   final String? itemTitle;
   final String content;
@@ -71,8 +71,8 @@ class ReportFeedbackModel {
     required this.id,
     required this.targetUserId,
     required this.targetUserNickname,
-    required this.reportTypeId,
-    required this.reportTypeName,
+    required this.reportCode,
+    required this.reportCodeName,
     required this.itemId,
     required this.itemTitle,
     required this.content,

@@ -61,7 +61,7 @@ class _DetailBody extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(report.reportTypeName),
+                    Text(report.reportCodeName),
                     const SizedBox(height: 6),
                     const SizedBox(height: 4),
                     Text('신고 대상: ${report.targetUserNickname}'),
