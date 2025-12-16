@@ -194,29 +194,37 @@ GoRouter createAppRouter(BuildContext context) {
                   if (extra is Map<String, dynamic>) {
                     final actionType = extra['actionType'] as TradeActionType;
                     final isSeller = extra['isSeller'] as bool?;
-                    final actionTypes = extra['actionTypes'] as List<TradeActionType>?;
-                    
+                    final actionTypes =
+                        extra['actionTypes'] as List<TradeActionType>?;
+
                     // 부모 경로의 ViewModel 찾기
                     CurrentTradeViewModel? parentViewModel;
                     try {
                       // Navigator를 통해 부모 위젯 트리에서 Provider 찾기
-                      final navigatorContext = Navigator.of(context, rootNavigator: false).context;
-                      parentViewModel = Provider.of<CurrentTradeViewModel>(navigatorContext, listen: false);
+                      final navigatorContext = Navigator.of(
+                        context,
+                        rootNavigator: false,
+                      ).context;
+                      parentViewModel = Provider.of<CurrentTradeViewModel>(
+                        navigatorContext,
+                        listen: false,
+                      );
                     } catch (e) {
                       // Provider를 찾을 수 없으면 null
                     }
-                    
+
                     // 기존 ViewModel이 있으면 재사용, 없으면 새로 생성
                     if (parentViewModel != null) {
                       return NoTransitionPage(
-                        child: ChangeNotifierProvider<CurrentTradeViewModel>.value(
-                          value: parentViewModel,
-                          child: FilteredTradeListScreen(
-                            actionType: actionType,
-                            isSeller: isSeller,
-                            actionTypes: actionTypes,
-                          ),
-                        ),
+                        child:
+                            ChangeNotifierProvider<CurrentTradeViewModel>.value(
+                              value: parentViewModel,
+                              child: FilteredTradeListScreen(
+                                actionType: actionType,
+                                isSeller: isSeller,
+                                actionTypes: actionTypes,
+                              ),
+                            ),
                       );
                     } else {
                       return NoTransitionPage(
