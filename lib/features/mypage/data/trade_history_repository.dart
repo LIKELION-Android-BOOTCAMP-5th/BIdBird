@@ -45,7 +45,7 @@ class TradeHistoryRepository {
       throw Exception('로그인 정보가 없습니다.');
     }
 
-    final rows = await _client
+    final List<dynamic> rows = await _client
         .from('items_detail')
         .select('item_id, title, thumbnail_image, buy_now_price, created_at')
         .eq('seller_id', user.id)
@@ -54,12 +54,13 @@ class TradeHistoryRepository {
     if (rows.isEmpty) return [];
 
     final List<String> itemIds = [];
-    final Map<String, Map<String, dynamic>> itemsById = {};
+    final Map<String, Map<String, dynamic>> tradesById = {};
     for (final row in rows) {
+      if (row is! Map<String, dynamic>) continue;
       final itemId = row['item_id']?.toString();
       if (itemId == null) continue;
       itemIds.add(itemId);
-      itemsById[itemId] = row;
+      tradesById[itemId] = row;
     }
 
     final Map<String, Map<String, dynamic>> auctionsByItemId = {};
@@ -67,7 +68,7 @@ class TradeHistoryRepository {
       final auctionRows = await _client
           .from('auctions')
           .select(
-            'item_id, current_price, auction_status_code, trade_status_code, auction_end_at',
+            'item_id, auction_end_at, current_price, last_bid_user_id, auction_status_code, trade_status_code',
           )
           .inFilter('item_id', itemIds)
           .eq('round', 1);
@@ -81,7 +82,7 @@ class TradeHistoryRepository {
     }
 
     final List<TradeHistoryItem> results = itemIds.map((itemId) {
-      final item = itemsById[itemId] ?? <String, dynamic>{};
+      final item = tradesById[itemId] ?? <String, dynamic>{};
       final auction = auctionsByItemId[itemId] ?? <String, dynamic>{};
       final price = (auction['current_price'] as num?)?.toInt() ?? 0;
       final auctionCode = auction['auction_status_code'] as int?;
@@ -144,9 +145,7 @@ class TradeHistoryRepository {
       final prevCreated = DateTime.tryParse(
         existing['created_at']?.toString() ?? '',
       );
-      final curCreated = DateTime.tryParse(
-        row['created_at']?.toString() ?? '',
-      );
+      final curCreated = DateTime.tryParse(row['created_at']?.toString() ?? '');
 
       if (prevCreated == null) {
         latestLogByAuctionId[auctionId] = row;
@@ -155,8 +154,8 @@ class TradeHistoryRepository {
       }
     }
 
-    final List<Map<String, dynamic>> logRows =
-        latestLogByAuctionId.values.toList();
+    final List<Map<String, dynamic>> logRows = latestLogByAuctionId.values
+        .toList();
 
     final tradeRows = await _client
         .from('trade_status')
@@ -181,7 +180,7 @@ class TradeHistoryRepository {
       final auctionsRows = await _client
           .from('auctions')
           .select(
-            'auction_id, item_id, current_price, auction_status_code, trade_status_code, auction_end_at',
+            'auction_id, item_id, current_price, auction_status_code, trade_status_code, auction_end_at, last_bid_user_id',
           )
           .inFilter('auction_id', auctionIds.toList());
 
@@ -206,7 +205,7 @@ class TradeHistoryRepository {
     if (missingItemEndIds.isNotEmpty) {
       final extraRows = await _client
           .from('auctions')
-          .select('auction_id, item_id, auction_end_at')
+          .select('auction_id, item_id, auction_end_at, last_bid_user_id')
           .inFilter('item_id', missingItemEndIds);
 
       for (final row in extraRows) {
@@ -245,56 +244,102 @@ class TradeHistoryRepository {
       }
     }
 
-    final List<TradeHistoryItem> results = [];
+    //500번대우선없으면400번대사용
+    final Map<String, Map<String, dynamic>> latestTradeByItem = {};
+    for (final row in tradeRows) {
+      final itemId = row['item_id']?.toString();
+      if (itemId == null || itemId.isEmpty) continue;
+      final created = DateTime.tryParse(row['created_at']?.toString() ?? '');
+      final prevCreated = DateTime.tryParse(
+        latestTradeByItem[itemId]?['created_at']?.toString() ?? '',
+      );
+      if (prevCreated == null ||
+          (created != null && created.isAfter(prevCreated))) {
+        latestTradeByItem[itemId] = row;
+      }
+    }
 
+    final Map<String, Map<String, dynamic>> latestLogByItem = {};
     for (final row in logRows) {
       final auctionId = row['bid_status_id']?.toString();
       final auction = auctionsById[auctionId] ?? <String, dynamic>{};
       final itemId = auction['item_id']?.toString();
       if (itemId == null || itemId.isEmpty) continue;
-      final item = itemsById[itemId] ?? <String, dynamic>{};
-
-      final logCode = row['auction_log_code'] as int?;
-      final statusCode = logCode ?? 0;
-      final price = (row['bid_price'] as num?)?.toInt() ?? 0;
-      final endAt = auctionEndByItem[itemId];
-
-      results.add(
-        TradeHistoryItem(
-          itemId: itemId,
-          role: TradeRole.buyer,
-          title: item['title']?.toString() ?? '',
-          currentPrice: price,
-          statusCode: statusCode,
-          buyNowPrice: (item['buy_now_price'] as num?)?.toInt(),
-          thumbnailUrl: item['thumbnail_image']?.toString(),
-          createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
-          endAt: endAt,
-        ),
+      final created = DateTime.tryParse(row['created_at']?.toString() ?? '');
+      final prevCreated = DateTime.tryParse(
+        latestLogByItem[itemId]?['created_at']?.toString() ?? '',
       );
+      if (prevCreated == null ||
+          (created != null && created.isAfter(prevCreated))) {
+        latestLogByItem[itemId] = row;
+      }
     }
 
-    for (final row in tradeRows) {
-      final itemId = row['item_id']?.toString();
-      if (itemId == null || itemId.isEmpty) continue;
-      final item = itemsById[itemId] ?? <String, dynamic>{};
-      final tradeCode = row['trade_status_code'] as int?;
-      final statusCode = tradeCode ?? 0;
-      final endAt = auctionEndByItem[itemId];
+    final Set<String> itemKeys = {};
+    itemKeys.addAll(latestTradeByItem.keys);
+    itemKeys.addAll(latestLogByItem.keys);
 
-      results.add(
-        TradeHistoryItem(
-          itemId: itemId,
-          role: TradeRole.buyer,
-          title: item['title']?.toString() ?? '',
-          currentPrice: (row['price'] as num?)?.toInt() ?? 0,
-          statusCode: statusCode,
-          buyNowPrice: item['buy_now_price']?.toInt(),
-          thumbnailUrl: item['thumbnail_image']?.toString(),
-          createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
-          endAt: endAt,
-        ),
-      );
+    final List<TradeHistoryItem> results = [];
+    final nowUtc = DateTime.now().toUtc();
+
+    for (final itemId in itemKeys) {
+      final item = itemsById[itemId] ?? <String, dynamic>{};
+      final endAt = auctionEndByItem[itemId];
+      final tradeRow = latestTradeByItem[itemId];
+
+      if (tradeRow != null) {
+        final tradeCode = tradeRow['trade_status_code'] as int?;
+        results.add(
+          TradeHistoryItem(
+            itemId: itemId,
+            role: TradeRole.buyer,
+            title: item['title']?.toString() ?? '',
+            currentPrice: (tradeRow['price'] as num?)?.toInt() ?? 0,
+            statusCode: tradeCode ?? 0,
+            buyNowPrice: item['buy_now_price']?.toInt(),
+            thumbnailUrl: item['thumbnail_image']?.toString(),
+            createdAt: DateTime.tryParse(
+              tradeRow['created_at']?.toString() ?? '',
+            ),
+            endAt: endAt,
+          ),
+        );
+        continue;
+      }
+
+      final logRow = latestLogByItem[itemId];
+      if (logRow != null) {
+        final auctionId = logRow['bid_status_id']?.toString();
+        final auction = auctionsById[auctionId] ?? <String, dynamic>{};
+        final lastBidUserId = auction['last_bid_user_id']?.toString();
+        final logCode = logRow['auction_log_code'] as int?;
+        final createdAt = DateTime.tryParse(
+          logRow['created_at']?.toString() ?? '',
+        );
+        final auctionStatus = auction['auction_status_code'] as int?;
+        const endedStatusCodes = {321, 322};
+        final endAtUtc = endAt?.toUtc();
+        final isEndedByTime = endAtUtc != null && endAtUtc.isBefore(nowUtc);
+        final isEndedByCode =
+            auctionStatus != null && endedStatusCodes.contains(auctionStatus);
+        final isEnded = isEndedByTime || isEndedByCode;
+        final isWinner = lastBidUserId != null && lastBidUserId == user.id;
+        final statusCode = (!isWinner && isEnded) ? 433 : (logCode ?? 0);
+
+        results.add(
+          TradeHistoryItem(
+            itemId: itemId,
+            role: TradeRole.buyer,
+            title: item['title']?.toString() ?? '',
+            currentPrice: (logRow['bid_price'] as num?)?.toInt() ?? 0,
+            statusCode: statusCode,
+            buyNowPrice: (item['buy_now_price'] as num?)?.toInt(),
+            thumbnailUrl: item['thumbnail_image']?.toString(),
+            createdAt: createdAt,
+            endAt: endAt,
+          ),
+        );
+      }
     }
 
     results.sort((a, b) {

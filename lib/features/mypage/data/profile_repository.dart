@@ -1,7 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/managers/supabase_manager.dart';
-import '../../../core/models/keywordType_entity.dart';
 import '../model/profile_model.dart';
 
 class ProfileRepository {
@@ -35,31 +34,36 @@ class ProfileRepository {
 
   Future<void> updateProfile({
     String? nickName,
+    // String? phoneNumber,
     String? profileImageUrl,
-    List<int>? keywordIds,
     bool deleteProfileImage = false,
   }) async {
     final user = _client.auth.currentUser;
-    if (user == null) throw Exception('Failed updateProfile');
+
+    if (user == null) {
+      throw Exception('Failed updateProfile'); //나중에팝업으로쓸것
+    }
 
     final Map<String, dynamic> updateData = {};
-    if (nickName != null) updateData['nick_name'] = nickName;
+
+    if (nickName != null) {
+      updateData['nick_name'] = nickName;
+    }
     if (deleteProfileImage) {
       updateData['profile_image'] = null;
+      //updateData['profile_image']//null일땐이미지서버에서도지워야함//진짜쓸서버에삭제기능추가한다음에만들면됨
     } else if (profileImageUrl != null) {
       updateData['profile_image'] = profileImageUrl;
     }
 
-    if (keywordIds != null) {
-      updateData['keyword_code'] = keywordIds; // users 테이블에 컬럼 존재 시
+    if (updateData.isEmpty) {
+      return;
     }
-
-    if (updateData.isEmpty) return;
 
     try {
       await _client.from('users').update(updateData).eq('id', user.id);
     } catch (e) {
-      throw Exception('Failed updateProfile: $e');
+      throw Exception('Failed updateProfile: $e'); //나중에팝업으로쓸것
     }
   }
 
@@ -131,23 +135,5 @@ class ProfileRepository {
         throw Exception('Failed deleteAccount})');
       }
     }
-  }
-
-  // 반드시 추가해야 함
-  Future<List<int>> fetchUserKeywordIds() async {
-    final user = _client.auth.currentUser;
-    if (user == null) throw Exception('Not logged in');
-
-    final response = await _client
-        .from('user_keyword')
-        .select('keyword_code')
-        .eq('user_id', user.id);
-
-    return response.map<int>((e) => e['keyword_id'] as int).toList();
-  }
-
-  Future<List<KeywordType>> getKeywordType() async {
-    final response = await _client.from('user_keyword').select();
-    return response.map<KeywordType>(KeywordType.fromJson).toList();
   }
 }

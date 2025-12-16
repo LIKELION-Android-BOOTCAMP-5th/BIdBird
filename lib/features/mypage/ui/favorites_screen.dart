@@ -10,42 +10,41 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-class FavoriteStatusInfo {
-  const FavoriteStatusInfo(this.label, this.color);
-  final String label;
-  final Color color;
-}
-
-FavoriteStatusInfo statusInfoText(int code) {
-  switch (code) {
-    case 321:
-      return const FavoriteStatusInfo('낙찰', tradeSaleDoneColor);
-    case 322:
-      return const FavoriteStatusInfo('즉시 구매 완료', tradeSaleDoneColor);
-    case 323:
-      return const FavoriteStatusInfo('유찰', RedColor);
-    case 430:
-      return const FavoriteStatusInfo('입찰 낙찰', tradePurchaseDoneColor);
-    case 431:
-      return const FavoriteStatusInfo('즉시 구매 낙찰', tradePurchaseDoneColor);
-    case 520:
-      return const FavoriteStatusInfo('결제 완료', tradePurchaseDoneColor);
-    case 550:
-      return const FavoriteStatusInfo('거래 완료', tradeSaleDoneColor);
-    default: //db코드나중에확인하기
-      return const FavoriteStatusInfo(
-        '진행중',
-        blueColor,
-      ); //아이템이삭제됐을때도진행중이라고뜨는문제가있음
-  }
-}
-
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<FavoritesViewModel>();
+    Widget body;
+    if (vm.isLoading) {
+      body = const Center(
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    } else if (vm.items.isEmpty) {
+      body = const Center(child: Text('관심 등록한 상품이 없습니다.'));
+    } else {
+      body = RefreshIndicator(
+        onRefresh: vm.loadFavorites,
+        child: ListView.separated(
+          itemBuilder: (context, index) {
+            final item = vm.items[index];
+            final bool isProcessing = vm.isProcessing(item.itemId);
+            return _Item(
+              item: item,
+              isProcessing: isProcessing,
+              onPressed: () => vm.toggleFavorite(item),
+            );
+          },
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemCount: vm.items.length,
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: BackgroundColor,
@@ -59,52 +58,48 @@ class FavoritesScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _FavoritesBody(vm: vm),
-        ),
+        child: Padding(padding: const EdgeInsets.all(16), child: body),
       ),
     );
   }
 }
 
-class _FavoritesBody extends StatelessWidget {
-  const _FavoritesBody({required this.vm});
+class FavoriteStatusInfo {
+  const FavoriteStatusInfo(this.label, this.color);
+  final String label;
+  final Color color;
+}
 
-  final FavoritesViewModel vm;
-
-  @override
-  Widget build(BuildContext context) {
-    if (vm.isLoading) {
-      return const Center(
-        child: SizedBox(
-          width: 32,
-          height: 32,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
-    }
-
-    if (vm.items.isEmpty) {
-      return const Center(child: Text('관심 등록한 상품이 없습니다.'));
-    }
-
-    return RefreshIndicator(
-      onRefresh: vm.loadFavorites,
-      child: ListView.separated(
-        itemBuilder: (context, index) {
-          final item = vm.items[index];
-          final bool isProcessing = vm.isProcessing(item.itemId);
-          return _Item(
-            item: item,
-            isProcessing: isProcessing,
-            onPressed: () => vm.toggleFavorite(item),
-          );
-        },
-        separatorBuilder: (_, __) => const SizedBox(height: 6),
-        itemCount: vm.items.length,
-      ),
-    );
+//이부분은repository로빼는게맞겠네
+//auctions테이블의auction_status_code
+//관심물품은300번대만보여줘도될거같음
+//관심물품은기본적으로구매자사이드//300번은필요없음
+FavoriteStatusInfo statusInfoText(int code) {
+  switch (code) {
+    case 310:
+      return const FavoriteStatusInfo(
+        '경매진행중',
+        tradeSaleDoneColor,
+      ); //경매진행//"경매 진행 중"
+    case 311:
+      return const FavoriteStatusInfo(
+        '즉시구매중',
+        tradeSaleDoneColor,
+      ); //경매진행//??//즉시 구매 결제 전
+    case 321:
+      return const FavoriteStatusInfo(
+        '낙찰종료',
+        tradePurchaseDoneColor,
+      ); //경매종료//"낙찰"인데내가이긴게아닐수있으니"종료(낙찰)"로표시하자
+    case 322:
+      return const FavoriteStatusInfo(
+        '즉시구매종료',
+        tradePurchaseDoneColor,
+      ); //경매종료//"즉시 구매 완료"인데내가이긴게아닐수있으니"종료(즉시 구매)"로표시하자
+    case 323:
+      return const FavoriteStatusInfo('유찰', RedColor); //경매종료
+    default:
+      return FavoriteStatusInfo('$code', tradeBlockedColor); //아이템이삭제되면이리오려나
   }
 }
 
@@ -122,6 +117,7 @@ class _Item extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusInfo = statusInfoText(item.statusCode);
+    final hasImage = item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty;
 
     return GestureDetector(
       onTap: () {
@@ -130,9 +126,9 @@ class _Item extends StatelessWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: BorderColor,
+          color: Colors.white, //앱칼라가없어서그냥이렇게씀,
           borderRadius: defaultBorder,
         ),
         child: Row(
@@ -140,25 +136,22 @@ class _Item extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: defaultBorder,
-              child: item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: item.thumbnailUrl!,
-                      cacheManager: ItemImageCacheManager.instance,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      width: 80,
-                      height: 80,
-                      color: ImageBackgroundColor,
-                      child: const Icon(
-                        Icons.image_not_supported,
-                        color: iconColor,
-                      ),
-                    ),
+              child: Container(
+                width: 80,
+                height: 80,
+                color: ImageBackgroundColor,
+                child: hasImage
+                    ? CachedNetworkImage(
+                        imageUrl: item.thumbnailUrl!,
+                        cacheManager: ItemImageCacheManager.instance,
+                        fit: BoxFit.cover,
+                        errorWidget: (_, __, ___) =>
+                            const Icon(Icons.image_outlined, color: iconColor),
+                      )
+                    : const Icon(Icons.image_outlined, color: iconColor),
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,8 +161,8 @@ class _Item extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 6,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
                           color: statusInfo.color.withValues(alpha: 0.1),
@@ -177,10 +170,7 @@ class _Item extends StatelessWidget {
                         ),
                         child: Text(
                           statusInfo.label,
-                          style: TextStyle(
-                            color: statusInfo.color,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: statusInfo.color),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -189,38 +179,52 @@ class _Item extends StatelessWidget {
                           item.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 16),
+                          style: TextStyle(fontSize: 16),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+
                   if (item.currentPrice > 0)
                     Text(
-                      '현재가격 ${item.currentPrice.toCommaString()}원',
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                      '최고입찰가 ${item.currentPrice.toCommaString()}원',
+                      style: TextStyle(fontSize: 14, color: textColor),
+                    )
+                  else //else if (item.currentPrice <= 0)
+                    const SizedBox(height: 14),
+
+                  const SizedBox(height: 4),
                   if (item.buyNowPrice != null && item.buyNowPrice! > 0)
                     Text(
-                      '즉시가격 ${item.buyNowPrice!.toCommaString()}원',
-                      style: const TextStyle(fontSize: 14),
+                      '즉시구매가 ${item.buyNowPrice!.toCommaString()}원',
+                      style: TextStyle(fontSize: 14, color: BorderColor),
                     ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            IconButton(
-              onPressed: isProcessing ? null : onPressed,
-              icon: isProcessing
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: const CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(
-                      item.isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: item.isFavorite ? RedColor : iconColor,
-                    ),
+            SizedBox(
+              height: 80, //섬네일높이
+              child: Center(
+                child: IconButton(
+                  onPressed: isProcessing ? null : onPressed,
+                  icon: isProcessing
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(
+                          item.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: item.isFavorite ? RedColor : iconColor,
+                        ),
+                ),
+              ),
             ),
           ],
         ),

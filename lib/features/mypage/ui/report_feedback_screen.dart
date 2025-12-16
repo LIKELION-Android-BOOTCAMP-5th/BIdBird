@@ -105,7 +105,7 @@ class _Item extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    report.reportTypeName,
+                    report.reportCodeName,
                     style: const TextStyle(fontSize: 18),
                   ),
                 ),
