@@ -373,9 +373,11 @@ class _HistoryItem extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          item.title,
+                          item.title.length > 8
+                              ? '${item.title.substring(0, 8)}...'
+                              : item.title,
                           style: const TextStyle(fontSize: 15),
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

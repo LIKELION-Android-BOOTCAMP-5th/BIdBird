@@ -1,3 +1,5 @@
+import 'package:bidbird/core/managers/cloudinary_manager.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
 import 'package:bidbird/features/chat/domain/usecases/send_first_message_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/send_image_message_usecase.dart';
@@ -153,17 +155,25 @@ class MessageSendManager {
       return MessageSendResult.failure("roomId가 null입니다");
     }
 
-    // 나머지 이미지들을 순차적으로 전송
+    // 나머지 이미지들을 병렬로 업로드한 후 순차적으로 전송
     if (images.length > 1) {
-      for (int i = 1; i < images.length; i++) {
-        final imageSender = ImageMessageSender(
-          sendImageMessageUseCase: _sendImageMessageUseCase,
-          roomId: result.roomId!,
-          image: images[i],
-        );
-        final imageResult = await imageSender.send();
-        if (!imageResult.success) {
-          onError(imageResult.errorMessage ?? "이미지 전송 실패");
+      final remainingImages = images.sublist(1);
+      // 모든 이미지를 병렬로 업로드
+      final uploadFutures = remainingImages.map((image) => _uploadMedia(image)).toList();
+      final mediaUrls = await Future.wait(uploadFutures);
+
+      // 업로드된 이미지들을 순차적으로 메시지로 전송 (순서 유지)
+      for (int i = 0; i < mediaUrls.length; i++) {
+        final mediaUrl = mediaUrls[i];
+        if (mediaUrl == null) {
+          onError("이미지 ${i + 2}/${images.length} 업로드 실패");
+          continue;
+        }
+
+        try {
+          await _sendImageMessageUseCase(result.roomId!, mediaUrl);
+        } catch (e) {
+          onError("이미지 ${i + 2}/${images.length} 전송 실패: $e");
           // 에러가 나도 나머지 이미지는 계속 전송 시도
         }
       }
@@ -197,24 +207,48 @@ class MessageSendManager {
       }
     }
 
-    // 모든 이미지들을 순차적으로 전송
-    for (int i = 0; i < images.length; i++) {
-      final imageToSend = images[i];
-      final sender = ImageMessageSender(
-        sendImageMessageUseCase: _sendImageMessageUseCase,
-        roomId: roomId,
-        image: imageToSend,
-      );
-      final result = await sender.send();
-      if (!result.success) {
+    // 모든 이미지를 병렬로 업로드
+    final uploadFutures = images.map((image) => _uploadMedia(image)).toList();
+    final mediaUrls = await Future.wait(uploadFutures);
+
+    // 업로드된 이미지들을 순차적으로 메시지로 전송 (순서 유지)
+    for (int i = 0; i < mediaUrls.length; i++) {
+      final mediaUrl = mediaUrls[i];
+      if (mediaUrl == null) {
+        onError("이미지 ${i + 1}/${images.length} 업로드 실패");
+        continue;
+      }
+
+      try {
+        await _sendImageMessageUseCase(roomId, mediaUrl);
+      } catch (e) {
         onError(
-          "이미지 ${i + 1}/${images.length} 전송 실패: ${result.errorMessage ?? "알 수 없는 오류"}",
+          "이미지 ${i + 1}/${images.length} 전송 실패: $e",
         );
         // 에러가 나도 나머지 이미지는 계속 전송 시도
       }
     }
 
     return MessageSendResult.success();
+  }
+
+  /// 미디어 업로드 헬퍼 메서드
+  Future<String?> _uploadMedia(XFile file) async {
+    try {
+      // 파일 존재 확인
+      final fileLength = await file.length();
+      if (fileLength == 0) {
+        return null;
+      }
+      
+      if (isVideoFile(file.path)) {
+        return await CloudinaryManager.shared.uploadVideoToCloudinary(file);
+      } else {
+        return await CloudinaryManager.shared.uploadImageToCloudinary(file);
+      }
+    } catch (e) {
+      return null;
+    }
   }
 
   /// 텍스트 메시지 전송

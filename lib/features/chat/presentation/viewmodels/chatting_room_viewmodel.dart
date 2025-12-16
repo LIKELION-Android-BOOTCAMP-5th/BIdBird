@@ -28,6 +28,7 @@ import 'package:bidbird/features/chat/presentation/managers/read_status_manager.
 import 'package:bidbird/features/chat/presentation/managers/realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/room_info_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/scroll_manager.dart';
+import 'package:bidbird/features/item/model/trade_status_codes.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -69,16 +70,29 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   bool get isUserScrolling => _scrollManager.isUserScrolling;
 
   /// 현재 사용자가 낙찰자인지 확인
+  /// 경매가 종료되고 낙찰된 경우에만 true 반환
   bool get isTopBidder {
     final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentUserId == null || auctionInfo == null) return false;
     
-    return auctionInfo!.lastBidUserId == currentUserId;
+    // 경매가 종료되고 낙찰된 경우에만 낙찰자로 인정
+    // auction_status_code가 bidWon이고, 내가 최고 입찰자인 경우
+    final isAuctionWon = auctionInfo!.auctionStatusCode == AuctionStatusCode.bidWon;
+    final isLastBidder = auctionInfo!.lastBidUserId == currentUserId;
+    
+    return isAuctionWon && isLastBidder;
   }
 
-  /// 낙찰자가 존재하는지 확인 (last_bid_user_id가 null이 아닌지)
+  /// 낙찰자가 존재하는지 확인 (경매 종료 후 낙찰된 경우)
   bool get hasTopBidder {
-    return auctionInfo?.lastBidUserId != null && auctionInfo!.lastBidUserId!.isNotEmpty;
+    if (auctionInfo == null) return false;
+    
+    // 경매가 종료되고 낙찰된 경우에만 true
+    final isAuctionWon = auctionInfo!.auctionStatusCode == AuctionStatusCode.bidWon;
+    final hasLastBidder = auctionInfo!.lastBidUserId != null && 
+                          auctionInfo!.lastBidUserId!.isNotEmpty;
+    
+    return isAuctionWon && hasLastBidder;
   }
 
   final ChatRepositoryImpl _repository = ChatRepositoryImpl();
@@ -307,9 +321,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   // 첫 메시지 전송 후 처리 헬퍼 메서드
   Future<void> _handleFirstMessageSent() async {
     try {
-      // 메시지 전송 후 DB 반영을 위해 잠시 대기
-      await Future.delayed(const Duration(milliseconds: 500));
-      
       // fetchMessage를 호출하여 메시지 리스트를 다시 불러오기
       // fetchMessage 내부에서 setupRealtimeSubscription()과 init()을 호출하므로 여기서는 호출하지 않음
       await fetchMessage();
@@ -324,23 +335,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     } catch (e) {
       isSending = false;
       notifyListeners();
-    }
-  }
-
-  // 기존 채팅방에서 메시지 전송 후 최신 메시지 불러오기 헬퍼 메서드
-  Future<void> _refreshLatestMessage(String roomId) async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 300));
-      final latestMessages = await _repository.getMessages(roomId);
-      if (latestMessages.isNotEmpty) {
-        final latestMessage = latestMessages.last;
-        final exists = messages.any((msg) => msg.id == latestMessage.id);
-        if (!exists) {
-          messages.add(latestMessage);
-        }
-      }
-    } catch (e) {
-      // 에러 발생 시 무시 (이미 로딩 상태는 false로 설정됨)
     }
   }
 
@@ -379,19 +373,12 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       type = MessageType.text;
       notifyListeners();
       await _handleFirstMessageSent();
-      
-      // 여러 이미지 전송 후 최신 메시지 새로고침
-      if (imagesToSend.length > 1) {
-        await _refreshLatestMessage(result.roomId!);
-        scrollToBottom(force: true);
-      }
     } else if (currentRoomId != null) {
       // 기존 채팅방에서 메시지 전송 성공
+      // Realtime subscription이 자동으로 새 메시지를 추가하므로 별도로 새로고침 불필요
       messageController.text = "";
       images.clear();
       type = MessageType.text;
-      setupRealtimeSubscription();
-      await _refreshLatestMessage(currentRoomId);
       isSending = false;
       notifyListeners();
       scrollToBottom(force: true);
