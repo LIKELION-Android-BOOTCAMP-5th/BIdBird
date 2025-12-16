@@ -1,6 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/mypage/model/blacklist_user_model.dart';
 import 'package:bidbird/features/mypage/viewmodel/blacklist_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -60,7 +61,7 @@ class _Blacklist extends StatelessWidget {
     }
 
     //차단토글확인할수있도록//RefreshIndicator
-    return RefreshIndicator(
+    return TransparentRefreshIndicator(
       onRefresh: vm.loadBlacklist,
       child: ListView.separated(
         itemBuilder: (context, index) {
