@@ -1,15 +1,13 @@
 import 'dart:async';
 
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/identity_verification/identity_verification_helper.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
+import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -249,66 +247,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                               children: [
                                                 Stack(
                                                   children: [
-                                                    AspectRatio(
-                                                      aspectRatio: 1,
-                                                      child: ClipRRect(
-                                                        borderRadius:
-                                                            defaultBorder,
-                                                        child: Builder(
-                                                          builder: (context) {
-                                                            final bool
-                                                            isVideo = isVideoFile(
-                                                              item.thumbnail_image,
-                                                            );
-                                                            final String
-                                                            displayUrl = isVideo
-                                                                ? getVideoThumbnailUrl(
-                                                                    item.thumbnail_image,
-                                                                  )
-                                                                : item.thumbnail_image;
-
-                                                            return CachedNetworkImage(
-                                                              imageUrl:
-                                                                  displayUrl,
-                                                              cacheManager:
-                                                                  ItemImageCacheManager
-                                                                      .instance,
-                                                              fit: BoxFit.cover,
-                                                              placeholder:
-                                                                  (
-                                                                    context,
-                                                                    url,
-                                                                  ) => Container(
-                                                                    color:
-                                                                        ImageBackgroundColor,
-                                                                    child: const Center(
-                                                                      child: CircularProgressIndicator(
-                                                                        strokeWidth:
-                                                                            2,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                              errorWidget:
-                                                                  (
-                                                                    context,
-                                                                    url,
-                                                                    error,
-                                                                  ) => Container(
-                                                                    color:
-                                                                        ImageBackgroundColor,
-                                                                    child: const Center(
-                                                                      child: Icon(
-                                                                        Icons
-                                                                            .image_not_supported,
-                                                                        color:
-                                                                            iconColor,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                            );
-                                                          },
-                                                        ),
-                                                      ),
+                                                    FixedRatioThumbnail(
+                                                      imageUrl: item.thumbnail_image,
+                                                      aspectRatio: 1.0,
+                                                      borderRadius: BorderRadius.circular(defaultRadius),
                                                     ),
 
                                                     // 잔여 시간 (상세 화면과 동일 스타일)
@@ -553,66 +495,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                               children: [
                                                 Stack(
                                                   children: [
-                                                    AspectRatio(
-                                                      aspectRatio: 1,
-                                                      child: ClipRRect(
-                                                        borderRadius:
-                                                            defaultBorder,
-                                                        child: Builder(
-                                                          builder: (context) {
-                                                            final bool
-                                                            isVideo = isVideoFile(
-                                                              item.thumbnail_image,
-                                                            );
-                                                            final String
-                                                            displayUrl = isVideo
-                                                                ? getVideoThumbnailUrl(
-                                                                    item.thumbnail_image,
-                                                                  )
-                                                                : item.thumbnail_image;
-
-                                                            return CachedNetworkImage(
-                                                              imageUrl:
-                                                                  displayUrl,
-                                                              cacheManager:
-                                                                  ItemImageCacheManager
-                                                                      .instance,
-                                                              fit: BoxFit.cover,
-                                                              placeholder:
-                                                                  (
-                                                                    context,
-                                                                    url,
-                                                                  ) => Container(
-                                                                    color:
-                                                                        ImageBackgroundColor,
-                                                                    child: const Center(
-                                                                      child: CircularProgressIndicator(
-                                                                        strokeWidth:
-                                                                            2,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                              errorWidget:
-                                                                  (
-                                                                    context,
-                                                                    url,
-                                                                    error,
-                                                                  ) => Container(
-                                                                    color:
-                                                                        ImageBackgroundColor,
-                                                                    child: const Center(
-                                                                      child: Icon(
-                                                                        Icons
-                                                                            .image_not_supported,
-                                                                        color:
-                                                                            iconColor,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                            );
-                                                          },
-                                                        ),
-                                                      ),
+                                                    FixedRatioThumbnail(
+                                                      imageUrl: item.thumbnail_image,
+                                                      aspectRatio: 1.0,
+                                                      borderRadius: BorderRadius.circular(defaultRadius),
                                                     ),
 
                                                     // 잔여 시간 (상세 화면과 동일 스타일)
