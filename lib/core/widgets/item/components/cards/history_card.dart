@@ -2,9 +2,7 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/item/item_trade_status_utils.dart';
 import 'package:bidbird/core/widgets/item/components/chips/trade_status_chip.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:flutter/material.dart';
 
 class HistoryCard extends StatelessWidget {
@@ -49,59 +47,18 @@ class HistoryCard extends StatelessWidget {
           children: [
             SizedBox(
               width: 96,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: BackgroundColor,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(defaultRadius),
+                  bottomLeft: Radius.circular(defaultRadius),
+                ),
+                child: FixedRatioThumbnail(
+                  imageUrl: thumbnailUrl,
+                  width: 96,
+                  aspectRatio: 1.0,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(defaultRadius),
                     bottomLeft: Radius.circular(defaultRadius),
-                  ),
-                ),
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(defaultRadius),
-                      child: (thumbnailUrl != null && thumbnailUrl!.isNotEmpty)
-                          ? Builder(
-                              builder: (context) {
-                                final bool isVideo = isVideoFile(thumbnailUrl!);
-                                final String displayUrl = isVideo
-                                    ? getVideoThumbnailUrl(thumbnailUrl!)
-                                    : thumbnailUrl!;
-                                
-                                return CachedNetworkImage(
-                                  imageUrl: displayUrl,
-                                  cacheManager: ItemImageCacheManager.instance,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: BackgroundColor,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) => Container(
-                                    color: BackgroundColor,
-                                    child: const Icon(
-                                      Icons.image,
-                                      size: 32,
-                                      color: iconColor,
-                                    ),
-                                  ),
-                                );
-                              },
-                            )
-                          : Container(
-                              color: BackgroundColor,
-                              child: const Icon(
-                                Icons.image,
-                                size: 32,
-                                color: iconColor,
-                              ),
-                            ),
-                    ),
                   ),
                 ),
               ),

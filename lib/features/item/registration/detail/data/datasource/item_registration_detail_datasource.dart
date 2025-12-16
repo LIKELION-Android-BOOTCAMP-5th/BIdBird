@@ -42,6 +42,34 @@ class ItemRegistrationDetailDatasource {
     }
   }
 
+  Future<String?> fetchFirstImageUrl(String itemId) async {
+    try {
+      final List<dynamic> imageRows = await _supabase
+          .from('item_images')
+          .select('image_url')
+          .eq('item_id', itemId)
+          .order('sort_order', ascending: true)
+          .limit(1);
+
+      if (imageRows.isEmpty) {
+        return null;
+      }
+
+      final firstRow = imageRows.first;
+      if (firstRow is Map<String, dynamic>) {
+        final imageUrl = getNullableStringFromRow(firstRow, 'image_url');
+        if (imageUrl != null && imageUrl.isNotEmpty) {
+          return imageUrl;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      // 이미지 조회 실패 시 null 반환
+      return null;
+    }
+  }
+
   Future<void> deleteItem(String itemId) async {
     try {
       await ItemSecurityUtils.requireAuthAndVerifyOwnership(
@@ -49,10 +77,6 @@ class ItemRegistrationDetailDatasource {
         itemId,
       );
 
-      // 트랜잭션 처리: 두 작업이 모두 성공해야 함
-      // Supabase는 RPC를 통해 트랜잭션을 처리하거나,
-      // 순차 실행 후 실패 시 롤백 로직을 구현할 수 있습니다.
-      // 여기서는 순차 실행 후 실패 시 예외를 던져 롤백을 유도합니다.
 
       // 1. item_images 삭제
       await _supabase

@@ -1,7 +1,6 @@
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:flutter/material.dart';
 
 /// 거래 현황 아이템 카드 컴포넌트
@@ -149,28 +148,12 @@ class TradeStatusItemCard extends StatelessWidget {
               // 썸네일
               Padding(
                 padding: const EdgeInsets.only(right: 16, top: 16, bottom: 16),
-                child: ClipRRect(
+                child: FixedRatioThumbnail(
+                  imageUrl: thumbnailUrl,
+                  width: 80,
+                  height: 80,
+                  aspectRatio: 1.0,
                   borderRadius: BorderRadius.circular(8),
-                  child: thumbnailUrl != null && thumbnailUrl!.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: thumbnailUrl!,
-                          cacheManager: ItemImageCacheManager.instance,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorWidget: (context, url, error) => Container(
-                            width: 80,
-                            height: 80,
-                            color: ImageBackgroundColor,
-                            child: const Icon(Icons.image_outlined),
-                          ),
-                        )
-                      : Container(
-                          width: 80,
-                          height: 80,
-                          color: ImageBackgroundColor,
-                          child: const Icon(Icons.image_outlined),
-                        ),
                 ),
               ),
             ],

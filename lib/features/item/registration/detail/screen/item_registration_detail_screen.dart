@@ -29,7 +29,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
         formatAuctionDurationForDisplay(item.auctionDurationHours);
 
     return ChangeNotifierProvider<ItemRegistrationDetailViewModel>(
-      create: (_) => ItemRegistrationDetailViewModel(item: item)..loadTerms(),
+      create: (_) => ItemRegistrationDetailViewModel(item: item)
+        ..loadTerms()
+        ..loadImage(),
       child: Consumer<ItemRegistrationDetailViewModel>(
         builder: (context, viewModel, _) {
           return Scaffold(
@@ -62,7 +64,11 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildImageSection(context),
+                          Consumer<ItemRegistrationDetailViewModel>(
+                            builder: (context, viewModel, _) {
+                              return _buildImageSection(context, viewModel);
+                            },
+                          ),
                           const SizedBox(height: 16),
                           _buildInfoCard(
                             startPriceText,
@@ -83,16 +89,16 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection(BuildContext context) {
-    final thumbnailUrl = item.thumbnailUrl;
-    final bool isVideo = thumbnailUrl != null && isVideoFile(thumbnailUrl);
+  Widget _buildImageSection(BuildContext context, ItemRegistrationDetailViewModel viewModel) {
+    final imageUrl = viewModel.imageUrl ?? item.thumbnailUrl;
+    final bool isVideo = imageUrl != null && isVideoFile(imageUrl);
     final displayUrl = isVideo 
-        ? getVideoThumbnailUrl(thumbnailUrl) 
-        : thumbnailUrl;
+        ? getVideoThumbnailUrl(imageUrl) 
+        : imageUrl;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.hardEdge,
@@ -103,25 +109,27 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
             Positioned.fill(
               child: displayUrl != null && displayUrl.isNotEmpty
                   ? GestureDetector(
-                      onTap: isVideo
+                      onTap: isVideo && imageUrl != null
                           ? () {
                               // 전체 화면 비디오 플레이어로 재생
-                              FullScreenVideoViewer.show(context, thumbnailUrl);
+                              FullScreenVideoViewer.show(context, imageUrl);
                             }
                           : null,
                       child: Stack(
                         children: [
-                          CachedNetworkImage(
-                            imageUrl: displayUrl,
-                            cacheManager: ItemImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            errorWidget: (context, url, error) => const Center(
-                              child: Text(
-                                '이미지 없음',
-                                style: TextStyle(color: Colors.white, fontSize: 16),
+                          Center(
+                            child: CachedNetworkImage(
+                              imageUrl: displayUrl,
+                              cacheManager: ItemImageCacheManager.instance,
+                              fit: BoxFit.contain,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              errorWidget: (context, url, error) => const Center(
+                                child: Text(
+                                  '이미지 없음',
+                                  style: TextStyle(color: Colors.black, fontSize: 16),
+                                ),
                               ),
                             ),
                           ),
@@ -144,7 +152,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                   : const Center(
                       child: Text(
                         '이미지 없음',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: TextStyle(color: Colors.black, fontSize: 16),
                       ),
                     ),
             ),
@@ -153,7 +161,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
               bottom: 8,
               child: Text(
                 '1/1',
-                style: TextStyle(color: Colors.white, fontSize: 12),
+                style: TextStyle(color: Colors.black, fontSize: 12),
               ),
             ),
           ],

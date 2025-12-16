@@ -1,8 +1,7 @@
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/chat/trade_action_bottom_sheet.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:flutter/material.dart';
 
 /// 거래 컨텍스트 카드 컴포넌트
@@ -85,43 +84,12 @@ class TradeContextCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                 // 썸네일 (48x48)
-                Container(
+                FixedRatioThumbnail(
+                  imageUrl: itemThumbnail,
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(
-                    color: ImageBackgroundColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: itemThumbnail != null && itemThumbnail!.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: itemThumbnail!,
-                            cacheManager: ItemImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: ImageBackgroundColor,
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: ImageBackgroundColor,
-                              child: const Icon(
-                                Icons.image_outlined,
-                                color: BorderColor,
-                                size: 24,
-                              ),
-                            ),
-                          )
-                        : const Icon(
-                            Icons.image_outlined,
-                            color: BorderColor,
-                            size: 24,
-                          ),
-                  ),
+                  aspectRatio: 1.0,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 const SizedBox(width: 12),
                 // 정보 영역

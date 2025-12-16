@@ -1,15 +1,13 @@
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/utils/item/item_trade_status_utils.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
+import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:bidbird/features/item/current_trade/model/current_trade_entity.dart';
 import 'package:bidbird/features/item/registration/list/model/item_registration_entity.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -115,57 +113,12 @@ class TradeHistoryCard extends StatelessWidget {
                                       final thumbnailSize = useResponsive
                                           ? context.widthRatio(0.16, min: 64.0, max: 80.0)
                                           : 64.0;
-                                      return ClipRRect(
+                                      return FixedRatioThumbnail(
+                                        imageUrl: thumbnailUrl,
+                                        width: thumbnailSize,
+                                        height: thumbnailSize,
+                                        aspectRatio: 1.0,
                                         borderRadius: BorderRadius.circular(8),
-                                        child: Container(
-                                          width: thumbnailSize,
-                                          height: thumbnailSize,
-                                          color: BackgroundColor,
-                                          child: thumbnailUrl != null &&
-                                                  thumbnailUrl!.isNotEmpty
-                                              ? Builder(
-                                                  builder: (context) {
-                                                    final bool isVideo =
-                                                        isVideoFile(thumbnailUrl!);
-                                                    final String displayUrl = isVideo
-                                                        ? getVideoThumbnailUrl(
-                                                            thumbnailUrl!)
-                                                        : thumbnailUrl!;
-
-                                                    return CachedNetworkImage(
-                                                      imageUrl: displayUrl,
-                                                      cacheManager:
-                                                          ItemImageCacheManager
-                                                              .instance,
-                                                      fit: BoxFit.cover,
-                                                      placeholder:
-                                                          (context, url) =>
-                                                              Container(
-                                                        color: BackgroundColor,
-                                                        child: const Center(
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                            strokeWidth: 2,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      errorWidget:
-                                                          (context, url, error) =>
-                                                              Container(
-                                                        color: BackgroundColor,
-                                                        child: const Icon(
-                                                          Icons.image_outlined,
-                                                          color: BorderColor,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                )
-                                              : const Icon(
-                                                  Icons.image_outlined,
-                                                  color: BorderColor,
-                                                ),
-                                        ),
                                       );
                                     },
                                   ),
