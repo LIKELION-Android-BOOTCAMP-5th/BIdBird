@@ -2,33 +2,55 @@ import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/models/user_entity.dart';
-import '../../../main.dart';
+
+//사용자 상태 관리
+enum AuthStatus {
+  initializing, // 앱 시작 직후, 아직 로그인 여부 판단 중
+  unauthenticated, // 앱 실행했는데 정보 X
+  authenticated, // 앱 실행했는데 정보 O
+}
 
 class AuthViewModel extends ChangeNotifier {
-  bool _isLoggedIn = false;
-  bool get isLoggedIn => _isLoggedIn;
+  AuthStatus _status = AuthStatus.initializing;
+  AuthStatus get status => _status;
+
+  bool get isLoggedIn => _status == AuthStatus.authenticated;
+
   UserEntity? _user;
   UserEntity? get user => _user;
   late StreamSubscription<AuthState> _subscription;
 
   AuthViewModel() {
     // Supabase 인증 상태 구독
-    _subscription = _subscribeAuthEvent();
+    _subscription = SupabaseManager.shared.supabase.auth.onAuthStateChange
+        .listen((data) async {
+          final session = data.session;
+
+          if (session == null) {
+            _user = null;
+            _status = AuthStatus.unauthenticated;
+          } else {
+            _user = await SupabaseManager.shared.fetchUser(session.user.id);
+            _status = AuthStatus.authenticated;
+            await FirebaseManager.setupFCMTokenAtLogin();
+          }
+
+          notifyListeners();
+        });
   }
 
   // 로그아웃 함수 (빠른 반응 + 백그라운드 처리)
   Future<void> logout({VoidCallback? onLoggedOut}) async {
-    _isLoggedIn = false;
+    _status = AuthStatus.unauthenticated;
+    _user = null;
     notifyListeners();
 
     onLoggedOut?.call();
-
     unawaited(_performLogoutTasks());
   }
 
@@ -69,25 +91,25 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   //  Supabase 인증 상태 구독
-  StreamSubscription<AuthState> _subscribeAuthEvent() {
-    return SupabaseManager.shared.supabase.auth.onAuthStateChange.listen((
-      data,
-    ) async {
-      final AuthChangeEvent event = data.event;
-      final Session? session = data.session;
-
-      _isLoggedIn = session != null;
-      if (_isLoggedIn && session != null) {
-        // 인증 상태 변경 시 사용자 정보 가져오기
-        _user = await SupabaseManager.shared.fetchUser(session.user.id);
-        await FirebaseManager.setupFCMTokenAtLogin();
-      }
-      eventBus.fire(LoginEventBus());
-      notifyListeners();
-
-      debugPrint('[AuthVM] event: $event, session: $session');
-    });
-  }
+  // StreamSubscription<AuthState> _subscribeAuthEvent() {
+  //   return SupabaseManager.shared.supabase.auth.onAuthStateChange.listen((
+  //     data,
+  //   ) async {
+  //     final AuthChangeEvent event = data.event;
+  //     final Session? session = data.session;
+  //
+  //     _isLoggedIn = session != null;
+  //     if (_isLoggedIn && session != null) {
+  //       // 인증 상태 변경 시 사용자 정보 가져오기
+  //       _user = await SupabaseManager.shared.fetchUser(session.user.id);
+  //       await FirebaseManager.setupFCMTokenAtLogin();
+  //     }
+  //     eventBus.fire(LoginEventBus());
+  //     notifyListeners();
+  //
+  //     debugPrint('[AuthVM] event: $event, session: $session');
+  //   });
+  // }
 
   //  추가된 함수: 최신 사용자 정보를 수동으로 가져와 갱신
   Future<void> fetchUser() async {
@@ -112,6 +134,33 @@ class AuthViewModel extends ChangeNotifier {
     }
 
     // GoRouter 리디렉션 로직이 사용자 갱신을 감지하도록 notifyListeners 호출
+    notifyListeners();
+  }
+
+  // splash 앱 시작 시 사용자 정보 관리
+  Future<void> initialize() async {
+    _status = AuthStatus.initializing;
+    notifyListeners();
+
+    final session = SupabaseManager.shared.supabase.auth.currentSession;
+
+    if (session == null) {
+      _user = null;
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+      return;
+    }
+
+    try {
+      _user = await SupabaseManager.shared.fetchUser(session.user.id);
+      await FirebaseManager.setupFCMTokenAtLogin();
+      _status = AuthStatus.authenticated;
+    } catch (e) {
+      debugPrint('[AuthVM] initialize failed: $e');
+      _user = null;
+      _status = AuthStatus.unauthenticated;
+    }
+
     notifyListeners();
   }
 }

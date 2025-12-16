@@ -1,6 +1,5 @@
 import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/item/components/others/double_back_exit_handler.dart';
-import 'package:bidbird/core/widgets/splash_screen.dart';
 import 'package:bidbird/features/auth/data/repository/tos_repository.dart';
 import 'package:bidbird/features/auth/ui/auth_set_profile_screen.dart';
 import 'package:bidbird/features/auth/ui/login_screen.dart';
@@ -47,6 +46,7 @@ import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
 import 'package:bidbird/features/notification/screen/notification_screen.dart';
 import 'package:bidbird/features/payment/payment_history/screen/payment_history_screen.dart';
+import 'package:bidbird/features/splash/ui/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -65,47 +65,36 @@ GoRouter createAppRouter(BuildContext context) {
       routeObserver, // ← 여기!!
     ],
     navigatorKey: rootNavigatorKey,
-    initialLocation: '/login',
+    initialLocation: '/splash',
     refreshListenable: authVM,
     redirect: (context, state) {
-      final isLoggedIn = authVM.isLoggedIn;
-      final user = authVM.user;
-      final currentRoute = state.uri.toString();
+      final authVM = context.read<AuthViewModel>();
+      final location = state.uri.toString();
 
-      // 1. 비로그인 접근 제어
-      final publicRoutes = [
-        '/login',
-        '/splash',
-        '/home',
-        '/login/ToS',
-        '/login/ToS/auth_set_profile',
-      ];
-
-      final isPublic = publicRoutes.any(
-        (path) => currentRoute.startsWith(path),
-      );
-
-      //로그인 안했을 시 로그인 화면으로
-      if (!isLoggedIn) {
-        if (!isPublic) return '/login';
-        return null;
+      // 1. 초기화 중이면 Splash 고정
+      if (authVM.status == AuthStatus.initializing) {
+        return location == '/splash' ? null : '/splash';
       }
 
-      // 2. 로그인 했지만 닉네임 없음 → 프로필 설정 강제
-      if (user?.nick_name == null) {
-        if (!currentRoute.startsWith('/login/ToS')) {
-          return '/login/ToS';
-        }
-        return null;
+      // 2. 비로그인
+      if (authVM.status == AuthStatus.unauthenticated) {
+        return location.startsWith('/login') ? null : '/login';
       }
 
-      // 3. 로그인 완료 상태
-      if (isLoggedIn && currentRoute == '/login') {
+      // 3. 로그인 완료 + 유저 정보 있음
+      final user = authVM.user!;
+      if (user.nick_name == null) {
+        return location.startsWith('/login/ToS') ? null : '/login/ToS';
+      }
+
+      // 4. 정상 로그인 상태
+      if (location == '/login' || location == '/splash') {
         return '/home';
       }
 
       return null;
     },
+
     routes: [
       GoRoute(
         path: '/splash',
