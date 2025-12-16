@@ -17,13 +17,14 @@ import '../data/repository/keyword_repository.dart';
 import '../data/repository/edit_item_repository.dart';
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 import 'package:bidbird/core/upload/usecases/upload_images_usecase.dart';
+import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import '../usecase/add_item_usecase.dart';
 import '../usecase/get_edit_item_usecase.dart';
 import '../usecase/get_keyword_types_usecase.dart';
 import '../model/item_add_entity.dart';
 import '../model/keyword_type_entity.dart';
 
-class ItemAddViewModel extends ChangeNotifier {
+class ItemAddViewModel extends ItemBaseViewModel {
   ItemAddViewModel()
     : _addItemUseCase = AddItemUseCase(ItemAddGatewayImpl()),
       _getKeywordTypesUseCase =
@@ -52,10 +53,13 @@ class ItemAddViewModel extends ChangeNotifier {
   int? selectedKeywordTypeId;
   String? selectedDuration;
   bool agreed = false;
-  bool isLoadingKeywords = false;
-  bool isSubmitting = false;
+  bool _isLoadingKeywords = false;
+  bool _isSubmitting = false;
   bool useInstantPrice = false;
   int primaryImageIndex = 0;
+
+  bool get isLoadingKeywords => _isLoadingKeywords;
+  bool get isSubmitting => _isSubmitting;
 
   void disposeControllers() {
     titleController.dispose();
@@ -77,7 +81,7 @@ class ItemAddViewModel extends ChangeNotifier {
   }
 
   Future<void> fetchKeywordTypes() async {
-    isLoadingKeywords = true;
+    _isLoadingKeywords = true;
     notifyListeners();
 
     try {
@@ -96,7 +100,7 @@ class ItemAddViewModel extends ChangeNotifier {
     } catch (e) {
       throw Exception(ItemRegistrationErrorMessages.categoryLoadError(e));
     } finally {
-      isLoadingKeywords = false;
+      _isLoadingKeywords = false;
       notifyListeners();
     }
   }
@@ -314,6 +318,11 @@ class ItemAddViewModel extends ChangeNotifier {
   }
 
   Future<void> submit(BuildContext context) async {
+    // 중복 제출 방지
+    if (_isSubmitting) {
+      return;
+    }
+
     final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
@@ -321,7 +330,7 @@ class ItemAddViewModel extends ChangeNotifier {
       return;
     }
 
-    isSubmitting = true;
+    _isSubmitting = true;
     notifyListeners();
 
     bool loadingDialogOpen = true;
@@ -351,7 +360,7 @@ class ItemAddViewModel extends ChangeNotifier {
         _showError(context, scaffoldMessenger, ItemRegistrationErrorMessages.registrationError(e));
       }
     } finally {
-      isSubmitting = false;
+      _isSubmitting = false;
       notifyListeners();
       _closeLoadingDialog(navigator, loadingDialogOpen);
     }

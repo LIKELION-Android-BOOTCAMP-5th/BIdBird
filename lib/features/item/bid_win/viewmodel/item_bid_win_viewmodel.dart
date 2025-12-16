@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../data/repository/item_bid_win_repository.dart';
+import '../data/datasource/item_bid_win_datasource.dart';
 import '../model/item_bid_win_entity.dart';
 import '../../detail/model/item_detail_entity.dart';
 
 class ItemBidWinViewModel extends ChangeNotifier {
-  ItemBidWinViewModel({ItemBidWinRepository? repository})
-      : _repository = repository ?? ItemBidWinRepository();
+  ItemBidWinViewModel({ItemBidWinDatasource? datasource})
+      : _datasource = datasource ?? ItemBidWinDatasource();
 
-  final ItemBidWinRepository _repository;
+  final ItemBidWinDatasource _datasource;
 
   ItemBidWinEntity? _item;
   ItemBidWinEntity? get item => _item;
@@ -20,7 +20,7 @@ class ItemBidWinViewModel extends ChangeNotifier {
   String? get error => _error;
 
   void initWithDetail(ItemDetail detail) {
-    _item = _repository.fromItemDetail(detail);
+    _item = _datasource.toEntityFromDetail(detail);
     notifyListeners();
   }
 

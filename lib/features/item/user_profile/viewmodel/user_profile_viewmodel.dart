@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../data/repository/user_profile_repository.dart';
+import '../data/datasource/user_profile_datasource.dart';
 import '../model/user_profile_entity.dart';
 
 class UserProfileViewModel extends ChangeNotifier {
-  UserProfileViewModel({UserProfileRepository? repository})
-      : _repository = repository ?? UserProfileRepository();
+  UserProfileViewModel({UserProfileDatasource? datasource})
+      : _datasource = datasource ?? UserProfileDatasource();
 
-  final UserProfileRepository _repository;
+  final UserProfileDatasource _datasource;
 
   UserProfile? _profile;
 
   UserProfile? get profile => _profile;
 
   Future<void> loadProfile(String userId) async {
-    _profile = await _repository.fetchUserProfile(userId);
+    _profile = await _datasource.fetchUserProfile(userId);
     notifyListeners();
   }
 }

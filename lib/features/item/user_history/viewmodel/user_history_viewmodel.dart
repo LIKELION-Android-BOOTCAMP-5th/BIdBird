@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
-
-import '../data/repository/user_history_repository.dart';
-import '../model/user_history_entity.dart';
+import 'package:bidbird/features/item/user_history/data/datasource/user_history_datasource.dart';
+import 'package:bidbird/features/item/user_history/model/user_history_entity.dart';
 
 class UserHistoryViewModel extends ChangeNotifier {
-  UserHistoryViewModel({UserHistoryRepository? repository})
-      : _repository = repository ?? UserHistoryRepository();
+  UserHistoryViewModel({UserHistoryDatasource? datasource})
+      : _datasource = datasource ?? UserHistoryDatasource();
 
-  final UserHistoryRepository _repository;
+  final UserHistoryDatasource _datasource;
 
   List<UserTradeSummary> _trades = [];
 
   List<UserTradeSummary> get trades => _trades;
 
   Future<void> loadTrades(String userId) async {
-    _trades = await _repository.fetchUserTrades(userId);
+    _trades = await _datasource.fetchUserTrades(userId);
     notifyListeners();
   }
 }

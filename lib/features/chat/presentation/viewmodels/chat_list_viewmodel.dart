@@ -1,13 +1,12 @@
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_chatting_room_list_usecase.dart';
+import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart' as domain;
 import 'package:bidbird/features/chat/presentation/managers/chat_list_cache_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/chat_list_realtime_subscription_manager.dart';
 import 'package:flutter/material.dart';
 
 class ChatListViewmodel extends ChangeNotifier {
-  final ChatRepositoryImpl _repository = ChatRepositoryImpl();
-  late final GetChattingRoomListUseCase _getChattingRoomListUseCase;
+  final domain.ChatRepository _repository;
   
   // Manager 클래스들
   late final ChatListRealtimeSubscriptionManager _realtimeSubscriptionManager;
@@ -24,8 +23,9 @@ class ChatListViewmodel extends ChangeNotifier {
   static ChatListViewmodel? _instance;
   static ChatListViewmodel? get instance => _instance;
 
-  ChatListViewmodel(BuildContext context) {
-    _getChattingRoomListUseCase = GetChattingRoomListUseCase(_repository);
+  ChatListViewmodel({
+    domain.ChatRepository? repository,
+  }) : _repository = repository ?? ChatRepositoryImpl() {
     _realtimeSubscriptionManager = ChatListRealtimeSubscriptionManager();
     _cacheManager = ChatListCacheManager();
     
@@ -64,7 +64,7 @@ class ChatListViewmodel extends ChangeNotifier {
     }
     
     try {
-      final newList = await _getChattingRoomListUseCase();
+      final newList = await _repository.fetchChattingRoomList();
       chattingRoomList = newList;
       
       _sortRoomListByLastMessage();

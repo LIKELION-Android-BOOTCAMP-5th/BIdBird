@@ -8,7 +8,7 @@ class SellerPaymentCompleteViewModel extends ChangeNotifier {
   SellerPaymentCompleteViewModel({
     required this.item,
     ShippingInfoRepository? repository,
-  }) : _repository = repository ?? ShippingInfoRepository();
+  }) : _repository = repository ?? ShippingInfoRepositoryImpl();
 
   final ItemBidWinEntity item;
   final ShippingInfoRepository _repository;

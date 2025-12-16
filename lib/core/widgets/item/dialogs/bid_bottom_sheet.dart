@@ -59,11 +59,14 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   }
 
   String _formatBidUnit(int price) {
-    if (price % ItemBidStepConstants.tenThousandUnit == 0) {
-      final unit = price ~/ ItemBidStepConstants.tenThousandUnit;
+    // 100원 단위까지 버림
+    final roundedPrice = (price ~/ 100) * 100;
+    
+    if (roundedPrice % ItemBidStepConstants.tenThousandUnit == 0) {
+      final unit = roundedPrice ~/ ItemBidStepConstants.tenThousandUnit;
       return '$unit만원';
     }
-    return '${formatPrice(price)}원';
+    return '${formatPrice(roundedPrice)}원';
   }
 
   @override

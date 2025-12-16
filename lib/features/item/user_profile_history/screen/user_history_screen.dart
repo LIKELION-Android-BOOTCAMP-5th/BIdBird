@@ -1,6 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/features/item/user_history/data/repository/user_history_repository.dart';
+import 'package:bidbird/features/item/user_history/data/datasource/user_history_datasource.dart';
 import 'package:bidbird/features/item/user_history/model/user_history_entity.dart';
 import 'package:bidbird/core/widgets/item/components/chips/trade_status_chip.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
@@ -19,7 +19,7 @@ class UserTradeHistoryScreen extends StatelessWidget {
       backgroundColor: BackgroundColor,
       body: SafeArea(
         child: FutureBuilder<List<UserTradeSummary>>(
-          future: UserHistoryRepository().fetchUserTrades(userId),
+          future: UserHistoryDatasource().fetchUserTrades(userId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());

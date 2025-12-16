@@ -34,6 +34,43 @@ class ItemDetail {
   final int sellerReviewCount;
   final int statusCode;
   final int? tradeStatusCode;
+
+  /// 부분 업데이트를 위한 copyWith 메서드
+  ItemDetail copyWith({
+    String? itemId,
+    String? sellerId,
+    String? itemTitle,
+    List<String>? itemImages,
+    DateTime? finishTime,
+    String? sellerTitle,
+    int? buyNowPrice,
+    int? biddingCount,
+    String? itemContent,
+    int? currentPrice,
+    int? bidPrice,
+    double? sellerRating,
+    int? sellerReviewCount,
+    int? statusCode,
+    int? tradeStatusCode,
+  }) {
+    return ItemDetail(
+      itemId: itemId ?? this.itemId,
+      sellerId: sellerId ?? this.sellerId,
+      itemTitle: itemTitle ?? this.itemTitle,
+      itemImages: itemImages ?? this.itemImages,
+      finishTime: finishTime ?? this.finishTime,
+      sellerTitle: sellerTitle ?? this.sellerTitle,
+      buyNowPrice: buyNowPrice ?? this.buyNowPrice,
+      biddingCount: biddingCount ?? this.biddingCount,
+      itemContent: itemContent ?? this.itemContent,
+      currentPrice: currentPrice ?? this.currentPrice,
+      bidPrice: bidPrice ?? this.bidPrice,
+      sellerRating: sellerRating ?? this.sellerRating,
+      sellerReviewCount: sellerReviewCount ?? this.sellerReviewCount,
+      statusCode: statusCode ?? this.statusCode,
+      tradeStatusCode: tradeStatusCode ?? this.tradeStatusCode,
+    );
+  }
 }
 
 class SellerRatingSummary {

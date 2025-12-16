@@ -52,7 +52,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   final CheckBidRestrictionUseCase _checkBidRestrictionUseCase =
       CheckBidRestrictionUseCase(BidRestrictionGatewayImpl());
-  final ShippingInfoRepository _shippingInfoRepository = ShippingInfoRepository();
+  final ShippingInfoRepository _shippingInfoRepository = ShippingInfoRepositoryImpl();
 
   Future<bool> _ensureIdentityVerified() async {
     if (!mounted) return false;
@@ -138,8 +138,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   @override
   Widget build(BuildContext context) {
+    // 즐겨찾기 상태만 Selector로 분리하여 불필요한 리빌드 방지
     final itemDetailViewModel = context.watch<ItemDetailViewModel?>();
-    final isFavorite = itemDetailViewModel?.isFavorite ?? false;
     final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
     final isMyItem = widget.isMyItem;
     final bool isBidRestricted = _isBidRestricted;
@@ -271,7 +271,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           ]
           // 일반 사용자: 하트 + 입찰/즉시구매 버튼
           else if (!isMyItem) ...[
-            _buildFavoriteButton(isFavorite, itemDetailViewModel),
+            _buildFavoriteButton(itemDetailViewModel),
             const SizedBox(width: 12),
             Expanded(child: _buildBidButton(isTopBidder)),
             if (showBuyNow) ...[
@@ -314,7 +314,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                 child: ElevatedButton(
                   onPressed: () async {
                     // 배송 정보 조회
-                    final shippingInfoRepository = ShippingInfoRepository();
+                    final shippingInfoRepository = ShippingInfoRepositoryImpl();
                     try {
                       final shippingInfo = await shippingInfoRepository.getShippingInfo(widget.item.itemId);
                       
@@ -448,27 +448,34 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     );
   }
 
-  Widget _buildFavoriteButton(
-    bool isFavorite,
-    ItemDetailViewModel? itemDetailViewModel,
-  ) {
-    return InkWell(
-      onTap: () {
-        itemDetailViewModel?.toggleFavorite();
+  Widget _buildFavoriteButton(ItemDetailViewModel? itemDetailViewModel) {
+    if (itemDetailViewModel == null) {
+      return const SizedBox.shrink();
+    }
+    
+    // 즐겨찾기 상태만 Selector로 분리
+    return Selector<ItemDetailViewModel, bool>(
+      selector: (_, vm) => vm.isFavorite,
+      builder: (context, isFavorite, _) {
+        return InkWell(
+          onTap: () {
+            itemDetailViewModel.toggleFavorite();
+          },
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: BorderColor),
+            ),
+            child: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite ? Colors.red : iconColor,
+              size: 22,
+            ),
+          ),
+        );
       },
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: BorderColor),
-        ),
-        child: Icon(
-          isFavorite ? Icons.favorite : Icons.favorite_border,
-          color: isFavorite ? Colors.red : iconColor,
-          size: 22,
-        ),
-      ),
     );
   }
 
@@ -550,7 +557,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             child: ElevatedButton(
               onPressed: () async {
                 // 배송 정보 조회
-                final shippingInfoRepository = ShippingInfoRepository();
+                final shippingInfoRepository = ShippingInfoRepositoryImpl();
                 try {
                   final shippingInfo = await shippingInfoRepository.getShippingInfo(widget.item.itemId);
                   

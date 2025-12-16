@@ -26,27 +26,17 @@ class ItemRegistrationDetailDatasource {
     }
   }
 
-  Future<DateTime> confirmRegistration(String itemId) async {
+  Future<void> confirmRegistration(String itemId) async {
     try {
       final userId = ItemSecurityUtils.requireAuth(_supabase);
 
-      final response = await _supabase.functions.invoke(
-        'schedule-item-registration',
+      await _supabase.functions.invoke(
+        'register-item',
         body: <String, dynamic>{
           'itemId': itemId,
           'userId': userId,
         },
       );
-
-      final dynamic data = response.data;
-      if (data is Map<String, dynamic>) {
-        final scheduledAt = getNullableStringFromRow(data, 'scheduled_at');
-        if (scheduledAt != null) {
-          return DateTime.parse(scheduledAt).toLocal();
-        }
-      }
-
-      throw Exception('잘못된 Edge Function 응답입니다: ${response.data}');
     } catch (e) {
       rethrow;
     }

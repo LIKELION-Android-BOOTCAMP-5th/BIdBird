@@ -35,17 +35,33 @@ class _ItemDetailScaffold extends StatefulWidget {
 class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<ItemDetailViewModel>(
-      builder: (context, vm, _) {
-        if (vm.isLoading) {
+    // 로딩 상태만 Selector로 분리
+    return Selector<ItemDetailViewModel, bool>(
+      selector: (_, vm) => vm.isLoading,
+      builder: (context, isLoading, _) {
+        if (isLoading) {
           return const Scaffold(
             body: SafeArea(
               child: Center(child: CircularProgressIndicator()),
             ),
           );
         }
+        return const _ItemDetailContent();
+      },
+    );
+  }
+}
 
-        if (vm.error != null || vm.itemDetail == null) {
+class _ItemDetailContent extends StatelessWidget {
+  const _ItemDetailContent();
+
+  @override
+  Widget build(BuildContext context) {
+    // 에러 상태와 itemDetail을 함께 Selector로 분리
+    return Selector<ItemDetailViewModel, ({String? error, ItemDetail? itemDetail})>(
+      selector: (_, vm) => (error: vm.error, itemDetail: vm.itemDetail),
+      builder: (context, data, _) {
+        if (data.error != null || data.itemDetail == null) {
           return const Scaffold(
             body: SafeArea(
               child: Center(
@@ -58,51 +74,11 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
           );
         }
 
-        final ItemDetail item = vm.itemDetail!;
+        final ItemDetail item = data.itemDetail!;
 
         return Scaffold(
           backgroundColor: Colors.white,
-          appBar: AppBar(
-            title: const Text('상세 보기'),
-            actions: [
-              if (!vm.isMyItem)
-                TextButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) => ReportScreen(
-                          itemId: item.itemId,
-                          itemTitle: item.itemTitle,
-                          targetUserId: item.sellerId,
-                          targetNickname: vm.sellerProfile?['nick_name'] as String?,
-                        ),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    minimumSize: const Size(48, 48),
-                  ),
-                  icon: const Icon(
-                    Icons.warning_outlined,
-                    color: Colors.red,
-                    size: 20,
-                  ),
-                  label: const Text(
-                    '신고',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          appBar: _ItemDetailAppBar(item: item),
           body: SafeArea(
             child: Column(
               children: [
@@ -113,18 +89,114 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
                       children: [
                         ItemImageSection(item: item),
                         const SizedBox(height: 8),
-                        ItemMainInfoSection(item: item, isMyItem: vm.isMyItem),
+                        _ItemMainInfoSection(item: item),
                         const SizedBox(height: 0),
                         ItemDescriptionSection(item: item),
                       ],
                     ),
                   ),
                 ),
-                ItemBottomActionBar(item: item, isMyItem: vm.isMyItem),
+                _ItemBottomActionBar(item: item),
               ],
             ),
           ),
         );
+      },
+    );
+  }
+}
+
+class _ItemDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _ItemDetailAppBar({required this.item});
+
+  final ItemDetail item;
+
+  @override
+  Widget build(BuildContext context) {
+    // isMyItem과 sellerProfile만 Selector로 분리
+    return Selector<ItemDetailViewModel, ({bool isMyItem, Map<String, dynamic>? sellerProfile})>(
+      selector: (_, vm) => (isMyItem: vm.isMyItem, sellerProfile: vm.sellerProfile),
+      builder: (context, data, _) {
+        return AppBar(
+          title: const Text('상세 보기'),
+          actions: [
+            if (!data.isMyItem)
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => ReportScreen(
+                        itemId: item.itemId,
+                        itemTitle: item.itemTitle,
+                        targetUserId: item.sellerId,
+                        targetNickname: data.sellerProfile?['nick_name'] as String?,
+                      ),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  minimumSize: const Size(48, 48),
+                ),
+                icon: const Icon(
+                  Icons.warning_outlined,
+                  color: Colors.red,
+                  size: 20,
+                ),
+                label: const Text(
+                  '신고',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _ItemMainInfoSection extends StatelessWidget {
+  const _ItemMainInfoSection({required this.item});
+
+  final ItemDetail item;
+
+  @override
+  Widget build(BuildContext context) {
+    // isMyItem만 Selector로 분리
+    return Selector<ItemDetailViewModel, bool>(
+      selector: (_, vm) => vm.isMyItem,
+      builder: (context, isMyItem, _) {
+        return ItemMainInfoSection(item: item, isMyItem: isMyItem);
+      },
+    );
+  }
+}
+
+class _ItemBottomActionBar extends StatelessWidget {
+  const _ItemBottomActionBar({required this.item});
+
+  final ItemDetail item;
+
+  @override
+  Widget build(BuildContext context) {
+    // isMyItem과 isFavorite를 함께 Selector로 분리
+    return Selector<ItemDetailViewModel, ({bool isMyItem, bool isFavorite})>(
+      selector: (_, vm) => (isMyItem: vm.isMyItem, isFavorite: vm.isFavorite),
+      builder: (context, data, _) {
+        // ItemBottomActionBar는 내부에서 context.watch를 사용하므로
+        // ViewModel을 전달하지 않고 직접 사용하도록 함
+        return ItemBottomActionBar(item: item, isMyItem: data.isMyItem);
       },
     );
   }
