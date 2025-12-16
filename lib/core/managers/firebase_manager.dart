@@ -3,6 +3,9 @@ import 'dart:io';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
+import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
+import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
+import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -468,7 +471,9 @@ class FirebaseManager {
     return descriptions[channelId] ?? '알림을 받습니다.';
   }
 
-  static void _onNotificationTapped(NotificationResponse notificationResponse) {
+  static Future<void> _onNotificationTapped(
+    NotificationResponse notificationResponse,
+  ) async {
     // Deep linking 처리 필요시 구현
     final String? payload = notificationResponse.payload;
 
@@ -483,8 +488,27 @@ class FirebaseManager {
         //안드로이드에서 로컬푸시생성시 반드시 고유한 아이디가 필요해서 alarm테이블의 기본키를 사용할것
         final String targetRoute = _generateRoute(alarmType, fcmData);
 
-        //GoRouter를 사용하여 해당 경로로 이동 (push 대신 go를 사용할 수도 있음)
-        rootNavigatorKey.currentContext?.push(targetRoute);
+        if (alarmType == "WIN") {
+          ItemDetailDatasource _datasource = ItemDetailDatasource();
+          final String? itemId = fcmData['item_id'] as String;
+          if (itemId == null) return;
+          final ItemDetail? item = await _datasource.fetchItemDetail(itemId);
+          if (item == null) {
+            rootNavigatorKey.currentContext?.push(targetRoute);
+            return;
+          }
+          ItemBidWinEntity itemBidWinEntity = ItemBidWinEntity.fromItemDetail(
+            item,
+          );
+          rootNavigatorKey.currentContext?.push(
+            targetRoute,
+            extra: itemBidWinEntity,
+          );
+          print('FCM 탭으로 라우팅 성공: $targetRoute');
+        } else {
+          rootNavigatorKey.currentContext?.push(targetRoute);
+          print('FCM 탭으로 라우팅 성공: $targetRoute');
+        }
 
         print('알림탭. 경로: $targetRoute');
       } catch (e) {
@@ -493,16 +517,32 @@ class FirebaseManager {
     }
   }
 
-  static void _handleNotificationTap(RemoteMessage message) {
+  static Future<void> _handleNotificationTap(RemoteMessage message) async {
     final fcmData = message.data;
     // Deep linking 처리 필요시 구현
-
     final String alarmType = fcmData['alarm_type']?.toString() ?? 'UNKNOWN';
 
     // _generateRoute 함수를 사용하여 알림 타입과 데이터에 맞는 라우팅 경로 생성
     final String targetRoute = _generateRoute(alarmType, fcmData);
-    rootNavigatorKey.currentContext?.push(targetRoute);
-    print('FCM 탭으로 라우팅 성공: $targetRoute');
+    if (alarmType == "WIN") {
+      ItemDetailDatasource _datasource = ItemDetailDatasource();
+      final String? itemId = fcmData['item_id'] as String;
+      if (itemId == null) return;
+      final ItemDetail? item = await _datasource.fetchItemDetail(itemId);
+      if (item == null) {
+        rootNavigatorKey.currentContext?.push(targetRoute);
+        return;
+      }
+      ItemBidWinEntity itemBidWinEntity = ItemBidWinEntity.fromItemDetail(item);
+      rootNavigatorKey.currentContext?.push(
+        targetRoute,
+        extra: itemBidWinEntity,
+      );
+      print('FCM 탭으로 라우팅 성공: $targetRoute');
+    } else {
+      rootNavigatorKey.currentContext?.push(targetRoute);
+      print('FCM 탭으로 라우팅 성공: $targetRoute');
+    }
   }
 
   static Future<String?> getToken() async {
@@ -535,20 +575,48 @@ class FirebaseManager {
         final String itemId = deepLinkData['item_id']?.toString() ?? '0';
         final String roomId = deepLinkData['room_id']?.toString() ?? '0';
         return '/chat/room?itemId=$itemId&roomId=$roomId';
-      case 'NEW_ITEM':
-        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
-        return '/item/$itemId';
       case 'AUCTION_START':
         final String itemId = deepLinkData['item_id']?.toString() ?? '0';
-        return '/item/$itemId';
-      case 'NEW_BID':
-        // 게시물 ID를 사용하여 해당 게시물 상세 페이지로 이동
-        final String postId = deepLinkData['post_id']?.toString() ?? '0';
-        return '/post_detail_page/$postId';
-      case 'NEW_FRIEND':
-        // 친구 목록 페이지로 이동
-        final String friendId = deepLinkData['friend_id']?.toString() ?? '0';
-        return '/friend/feed/$friendId';
+        return '/item/${itemId}';
+      case 'BID_SUCCESS':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
+      case 'BID':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
+      case 'OUTBID':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
+      case 'WIN':
+        // 결제 화면으로
+        return '/item_bid_win';
+      case 'AUCTION_END_SUCCESS':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
+      // 유찰 화면
+      case 'AUCTION_FAILED':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}/relist';
+      // 결제 완료 푸시 알림
+      case 'PAID_SUCCESS':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
+      // 구매 확정 요구 알림
+      case 'PURCHASE_CONFIRM_REQUEST':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
+      // 자동 구매 확정 알림(구매자에게)
+      case 'PURCHASE_AUTO_CONFIRMED':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
+      // 구매 확정 알림(판매자에게)
+      case 'PURCHASE_CONFIRMED':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
+      // 구매 거부 알림(구매자 판매자에게 공통으로)
+      case 'PURCHASE_REJECTED':
+        final String itemId = deepLinkData['item_id']?.toString() ?? '0';
+        return '/item/${itemId}';
       default:
         return '/home';
     }
