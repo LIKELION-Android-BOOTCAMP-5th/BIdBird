@@ -4,7 +4,7 @@
     <application
         android:label="bidbird"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/bidbird_image_text_logo">
         <!-- FCM 메시지 서비스 (필요한 경우만 추가) -->
         <service
             android:name="com.google.firebase.messaging.FirebaseMessagingService"

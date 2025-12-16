@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:flutter/foundation.dart';
@@ -13,12 +14,16 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Responsive values
     final horizontalPadding = context.hPadding;
-    final logoHeight = context.heightRatio(0.3, min: 200.0, max: 300.0); // 특수 케이스: 로고 높이
+    final logoHeight = context.heightRatio(
+      0.3,
+      min: 412.0,
+      max: 512.0,
+    ); // 특수 케이스: 로고 높이
     final buttonHeight = context.buttonHeight;
     final buttonFontSize = context.buttonFontSize;
     final spacing = context.spacingSmall;
     final logoSpacing = context.spacingSmall * 0.5;
-    
+
     return WillPopScope(
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -74,7 +79,13 @@ class LoginScreen extends StatelessWidget {
                                 fontFamily: 'GoogleFont',
                               ),
                             ),
-                            SizedBox(width: context.widthRatio(0.025, min: 8.0, max: 14.0)), // 특수 케이스: 버튼 내부 간격
+                            SizedBox(
+                              width: context.widthRatio(
+                                0.025,
+                                min: 8.0,
+                                max: 14.0,
+                              ),
+                            ), // 특수 케이스: 버튼 내부 간격
                           ],
                         ),
                       ),
