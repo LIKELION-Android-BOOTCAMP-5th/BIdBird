@@ -1,25 +1,25 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/features/item/model/trade_status_codes.dart';
 import 'package:bidbird/features/item/trade_status/data/repository/trade_status_repository.dart';
 import 'package:bidbird/features/item/trade_status/model/trade_status_entity.dart';
 import 'package:flutter/material.dart';
 
-class TradeStatusViewModel extends ChangeNotifier {
+class TradeStatusViewModel extends ItemBaseViewModel {
   final String itemId;
   final TradeStatusRepository _repository;
 
   TradeStatusViewModel({
     required this.itemId,
     TradeStatusRepository? repository,
-  }) : _repository = repository ?? TradeStatusRepositoryImpl();
+  }) : _repository = repository ?? TradeStatusRepositoryImpl() {
+    // 초기 로딩 상태 설정
+    setLoading(true);
+  }
 
   TradeStatusEntity? _tradeStatus;
-  bool _isLoading = true;
-  String? _error;
 
   TradeStatusEntity? get tradeStatus => _tradeStatus;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
 
   /// 현재 사용자가 판매자인지 확인
   bool get isSeller {
@@ -111,18 +111,13 @@ class TradeStatusViewModel extends ChangeNotifier {
 
   /// 데이터 로드
   Future<void> loadData() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    startLoading();
 
     try {
       _tradeStatus = await _repository.fetchTradeStatus(itemId);
-      _isLoading = false;
-      notifyListeners();
+      stopLoading();
     } catch (e) {
-      _error = e.toString();
-      _isLoading = false;
-      notifyListeners();
+      stopLoadingWithError(e.toString());
     }
   }
 

@@ -10,18 +10,8 @@ import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_
 import 'package:bidbird/features/chat/domain/entities/item_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/trade_info_entity.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_messages_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_older_messages_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_room_id_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_room_info_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_room_info_with_room_id_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_room_notification_setting_usecase.dart';
+import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart' as domain;
 import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
-import 'package:bidbird/features/chat/domain/usecases/send_first_message_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/send_image_message_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/send_text_message_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/turn_off_notification_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/turn_on_notification_usecase.dart';
 import 'package:bidbird/features/chat/presentation/managers/image_picker_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/message_send_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/read_status_manager.dart';
@@ -96,60 +86,31 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     return isAuctionWon && hasLastBidder;
   }
 
-  final ChatRepositoryImpl _repository = ChatRepositoryImpl();
-
-  // UseCases - 생성자에서 직접 초기화
-  late final GetMessagesUseCase _getMessagesUseCase = GetMessagesUseCase(
-    _repository,
-  );
-  late final GetOlderMessagesUseCase _getOlderMessagesUseCase =
-      GetOlderMessagesUseCase(_repository);
-  late final GetRoomIdUseCase _getRoomIdUseCase = GetRoomIdUseCase(_repository);
-  late final GetRoomInfoUseCase _getRoomInfoUseCase = GetRoomInfoUseCase(
-    _repository,
-  );
-  late final GetRoomInfoWithRoomIdUseCase _getRoomInfoWithRoomIdUseCase =
-      GetRoomInfoWithRoomIdUseCase(_repository);
-  late final GetRoomNotificationSettingUseCase
-  _getRoomNotificationSettingUseCase = GetRoomNotificationSettingUseCase(
-    _repository,
-  );
-  late final SendTextMessageUseCase _sendTextMessageUseCase =
-      SendTextMessageUseCase(_repository);
-  late final SendImageMessageUseCase _sendImageMessageUseCase =
-      SendImageMessageUseCase(_repository);
-  late final SendFirstMessageUseCase _sendFirstMessageUseCase =
-      SendFirstMessageUseCase(_repository);
-  late final TurnOnNotificationUseCase _turnOnNotificationUseCase =
-      TurnOnNotificationUseCase(_repository);
-  late final TurnOffNotificationUseCase _turnOffNotificationUseCase =
-      TurnOffNotificationUseCase(_repository);
+  final domain.ChatRepository _repository;
 
 
   ChattingRoomViewmodel({
     required this.itemId,
     required this.roomId,
+    domain.ChatRepository? repository,
     ScrollManager? scrollManager,
     RealtimeSubscriptionManager? subscriptionManager,
     ReadStatusManager? readStatusManager,
     MessageSendManager? messageSendManager,
     RoomInfoManager? roomInfoManager,
     ImagePickerManager? imagePickerManager,
-  }) {
+  }) : _repository = repository ?? ChatRepositoryImpl() {
     // Manager 클래스 초기화
     _scrollManager = scrollManager ?? ScrollManager(ScrollController());
     _subscriptionManager = subscriptionManager ?? RealtimeSubscriptionManager();
     _readStatusManager = readStatusManager ?? ReadStatusManager();
     _messageSendManager = messageSendManager ??
         MessageSendManager(
-          sendFirstMessageUseCase: _sendFirstMessageUseCase,
-          sendTextMessageUseCase: _sendTextMessageUseCase,
-          sendImageMessageUseCase: _sendImageMessageUseCase,
+          repository: _repository,
         );
     _roomInfoManager = roomInfoManager ??
         RoomInfoManager(
-          getRoomInfoUseCase: _getRoomInfoUseCase,
-          getRoomInfoWithRoomIdUseCase: _getRoomInfoWithRoomIdUseCase,
+          repository: _repository,
         );
     _imagePickerManager = imagePickerManager ?? ImagePickerManager();
 
@@ -281,7 +242,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     try {
       final currentRoomId = roomId;
       if (currentRoomId != null) {
-        final chattings = await _getMessagesUseCase(currentRoomId);
+        final chattings = await _repository.getMessages(currentRoomId);
 
         messages.clear(); // 기존 메시지 초기화
         messages.addAll(chattings);
@@ -298,7 +259,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         init();
       } else {
         // roomId가 없으면 itemId로 roomId를 먼저 가져오기 시도
-        final fetchedRoomId = await _getRoomIdUseCase(itemId);
+        final fetchedRoomId = await _repository.getRoomId(itemId);
 
         if (fetchedRoomId != null) {
           roomId = fetchedRoomId;
@@ -527,7 +488,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   Future<void> getRoomNotificationSetting() async {
     final thisRoomId = roomId;
     if (thisRoomId == null) return;
-    notificationSetting = await _getRoomNotificationSettingUseCase(thisRoomId);
+    notificationSetting = await _repository.getRoomNotificationSetting(thisRoomId);
     notifyListeners();
   }
 
@@ -547,7 +508,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     notificationSetting?.isNotificationOn = false;
     notifyListeners();
     try {
-      _turnOffNotificationUseCase(thisRoomId);
+      await _repository.notificationOff(thisRoomId);
     } catch (e) {
       notificationSetting?.isNotificationOn = true;
       notifyListeners();
@@ -560,7 +521,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     notificationSetting?.isNotificationOn = true;
     notifyListeners();
     try {
-      _turnOnNotificationUseCase(thisRoomId);
+      await _repository.notificationOn(thisRoomId);
     } catch (e) {
       notificationSetting?.isNotificationOn = false;
       notifyListeners();
@@ -754,7 +715,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         previousScrollOffset = scrollController.offset;
       }
 
-      final olderMessages = await _getOlderMessagesUseCase(
+      final olderMessages = await _repository.getOlderMessages(
         currentRoomId,
         beforeCreatedAtIso,
         limit: 50,

@@ -4,8 +4,7 @@ import 'package:bidbird/features/chat/domain/entities/auction_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/item_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/trade_info_entity.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_room_info_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_room_info_with_room_id_usecase.dart';
+import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart';
 import 'package:bidbird/features/item/shipping/data/repository/shipping_info_repository.dart';
 
 /// RoomInfo 관리 결과
@@ -30,19 +29,16 @@ class RoomInfoResult {
 /// RoomInfo 관리자
 /// 채팅방 정보(RoomInfo)를 가져오고 관리하는 클래스
 class RoomInfoManager {
-  final GetRoomInfoUseCase _getRoomInfoUseCase;
-  final GetRoomInfoWithRoomIdUseCase _getRoomInfoWithRoomIdUseCase;
+  final ChatRepository _repository;
   final ShippingInfoRepository _shippingInfoRepository;
 
   Timer? _debounceTimer;
 
   RoomInfoManager({
-    required GetRoomInfoUseCase getRoomInfoUseCase,
-    required GetRoomInfoWithRoomIdUseCase getRoomInfoWithRoomIdUseCase,
+    required ChatRepository repository,
     ShippingInfoRepository? shippingInfoRepository,
-  })  : _getRoomInfoUseCase = getRoomInfoUseCase,
-        _getRoomInfoWithRoomIdUseCase = getRoomInfoWithRoomIdUseCase,
-        _shippingInfoRepository = shippingInfoRepository ?? ShippingInfoRepository();
+  })  : _repository = repository,
+        _shippingInfoRepository = shippingInfoRepository ?? ShippingInfoRepositoryImpl();
 
   /// RoomInfo 가져오기
   /// [roomId] 채팅방 ID (null이면 itemId로 조회)
@@ -54,9 +50,9 @@ class RoomInfoManager {
     RoomInfoEntity? newRoomInfo;
     try {
       if (roomId != null) {
-        newRoomInfo = await _getRoomInfoWithRoomIdUseCase(roomId);
+        newRoomInfo = await _repository.fetchRoomInfoWithRoomId(roomId);
       } else {
-        newRoomInfo = await _getRoomInfoUseCase(itemId);
+        newRoomInfo = await _repository.fetchRoomInfo(itemId);
       }
     } catch (e) {
       // 에러 발생 시 null 반환

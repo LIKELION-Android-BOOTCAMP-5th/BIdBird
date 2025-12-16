@@ -1,19 +1,28 @@
 import '../datasource/item_registration_detail_datasource.dart';
 
-class ItemRegistrationDetailRepository {
-  ItemRegistrationDetailRepository({ItemRegistrationDetailDatasource? datasource})
+abstract class ItemRegistrationDetailRepository {
+  Future<String> fetchTermsText();
+  Future<void> confirmRegistration(String itemId);
+  Future<void> deleteItem(String itemId);
+}
+
+class ItemRegistrationDetailRepositoryImpl implements ItemRegistrationDetailRepository {
+  ItemRegistrationDetailRepositoryImpl({ItemRegistrationDetailDatasource? datasource})
       : _datasource = datasource ?? ItemRegistrationDetailDatasource();
 
   final ItemRegistrationDetailDatasource _datasource;
 
+  @override
   Future<String> fetchTermsText() {
     return _datasource.fetchTermsText();
   }
 
-  Future<DateTime> confirmRegistration(String itemId) {
+  @override
+  Future<void> confirmRegistration(String itemId) {
     return _datasource.confirmRegistration(itemId);
   }
 
+  @override
   Future<void> deleteItem(String itemId) {
     return _datasource.deleteItem(itemId);
   }

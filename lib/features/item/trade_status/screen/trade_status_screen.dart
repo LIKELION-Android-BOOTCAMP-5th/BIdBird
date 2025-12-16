@@ -411,7 +411,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
     }
     
     if (currentStep == TradeStep.shipping) {
-      final shippingInfoRepository = ShippingInfoRepository();
+      final shippingInfoRepository = ShippingInfoRepositoryImpl();
       final tradeStatus = viewModel.tradeStatus;
       final shippingInfo = tradeStatus?.shippingInfo;
 

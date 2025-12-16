@@ -327,7 +327,7 @@ class FilteredTradeListScreen extends StatelessWidget {
   }
 
   Future<void> _handleShippingInfo(BuildContext context, String itemId) async {
-    final shippingInfoRepository = ShippingInfoRepository();
+    final shippingInfoRepository = ShippingInfoRepositoryImpl();
     try {
       final shippingInfo = await shippingInfoRepository.getShippingInfo(itemId);
       if (!context.mounted) return;

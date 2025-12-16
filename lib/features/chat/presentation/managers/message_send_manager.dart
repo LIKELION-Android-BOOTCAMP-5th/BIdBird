@@ -1,10 +1,7 @@
 import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
+import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart';
 import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
-import 'package:bidbird/features/chat/domain/usecases/send_first_message_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/send_image_message_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/send_text_message_usecase.dart';
-import 'package:bidbird/features/chat/presentation/managers/message_sender.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// 메시지 전송 결과
@@ -43,17 +40,11 @@ class MessageSendResult {
 /// 메시지 전송 관리자
 /// ChattingRoomViewmodel의 sendMessage() 로직을 분리한 클래스
 class MessageSendManager {
-  final SendFirstMessageUseCase _sendFirstMessageUseCase;
-  final SendTextMessageUseCase _sendTextMessageUseCase;
-  final SendImageMessageUseCase _sendImageMessageUseCase;
+  final ChatRepository _repository;
 
   MessageSendManager({
-    required SendFirstMessageUseCase sendFirstMessageUseCase,
-    required SendTextMessageUseCase sendTextMessageUseCase,
-    required SendImageMessageUseCase sendImageMessageUseCase,
-  })  : _sendFirstMessageUseCase = sendFirstMessageUseCase,
-        _sendTextMessageUseCase = sendTextMessageUseCase,
-        _sendImageMessageUseCase = sendImageMessageUseCase;
+    required ChatRepository repository,
+  }) : _repository = repository;
 
   /// 메시지 전송 실행
   /// [roomId] 현재 채팅방 ID (null이면 첫 메시지)
@@ -138,13 +129,11 @@ class MessageSendManager {
     }
 
     // 첫 번째 이미지로 첫 메시지 전송
-    final sender = FirstImageMessageSender(
-      sendFirstMessageUseCase: _sendFirstMessageUseCase,
+    final result = await _sendFirstImageMessage(
       itemId: itemId,
       image: images.first,
+      messageType: messageType,
     );
-
-    final result = await sender.send();
     if (!result.success) {
       return MessageSendResult.failure(
         result.errorMessage ?? "메시지 전송 실패",
@@ -171,7 +160,7 @@ class MessageSendManager {
         }
 
         try {
-          await _sendImageMessageUseCase(result.roomId!, mediaUrl);
+          await _repository.sendImageMessage(result.roomId!, mediaUrl);
         } catch (e) {
           onError("이미지 ${i + 2}/${images.length} 전송 실패: $e");
           // 에러가 나도 나머지 이미지는 계속 전송 시도
@@ -194,16 +183,10 @@ class MessageSendManager {
   }) async {
     // 텍스트가 있으면 먼저 텍스트 메시지 전송
     if (messageText.trim().isNotEmpty) {
-      final textSender = TextMessageSender(
-        sendTextMessageUseCase: _sendTextMessageUseCase,
-        roomId: roomId,
-        message: messageText,
-      );
-      final textResult = await textSender.send();
-      if (!textResult.success) {
-        return MessageSendResult.failure(
-          textResult.errorMessage ?? "메시지 전송 실패",
-        );
+      try {
+        await _repository.sendTextMessage(roomId, messageText);
+      } catch (e) {
+        return MessageSendResult.failure("메시지 전송 실패: $e");
       }
     }
 
@@ -220,7 +203,7 @@ class MessageSendManager {
       }
 
       try {
-        await _sendImageMessageUseCase(roomId, mediaUrl);
+        await _repository.sendImageMessage(roomId, mediaUrl);
       } catch (e) {
         onError(
           "이미지 ${i + 1}/${images.length} 전송 실패: $e",
@@ -258,35 +241,66 @@ class MessageSendManager {
     required String messageText,
     required void Function(String) onError,
   }) async {
-    final MessageSender sender;
-
     if (roomId == null) {
       // 첫 메시지 전송
-      sender = FirstTextMessageSender(
-        sendFirstMessageUseCase: _sendFirstMessageUseCase,
-        itemId: itemId,
-        message: messageText,
-      );
+      try {
+        final roomId = await _repository.firstMessage(
+          itemId: itemId,
+          message: messageText,
+          messageType: MessageType.text,
+        );
+        if (roomId == null) {
+          return MessageSendResult.failure("메시지 전송 실패: roomId가 null입니다");
+        }
+        return MessageSendResult.success(
+          roomId: roomId,
+          isFirstMessage: true,
+        );
+      } catch (e) {
+        return MessageSendResult.failure("메시지 전송 실패: $e");
+      }
     } else {
       // 기존 채팅방에서 메시지 전송
-      sender = TextMessageSender(
-        sendTextMessageUseCase: _sendTextMessageUseCase,
+      try {
+        await _repository.sendTextMessage(roomId, messageText);
+        return MessageSendResult.success();
+      } catch (e) {
+        return MessageSendResult.failure("메시지 전송 실패: $e");
+      }
+    }
+  }
+
+  /// 첫 메시지 전송 (이미지 포함) - 내부 헬퍼
+  Future<MessageSendResult> _sendFirstImageMessage({
+    required String itemId,
+    required XFile image,
+    required MessageType messageType,
+  }) async {
+    try {
+      // 미디어 업로드
+      final mediaUrl = await _uploadMedia(image);
+      if (mediaUrl == null) {
+        return MessageSendResult.failure("미디어 업로드 실패");
+      }
+
+      // 첫 메시지 전송
+      final roomId = await _repository.firstMessage(
+        itemId: itemId,
+        messageType: messageType,
+        imageUrl: mediaUrl,
+      );
+
+      if (roomId == null) {
+        return MessageSendResult.failure("메시지 전송 실패: roomId가 null입니다");
+      }
+
+      return MessageSendResult.success(
         roomId: roomId,
-        message: messageText,
+        isFirstMessage: true,
       );
+    } catch (e) {
+      return MessageSendResult.failure("메시지 전송 실패: $e");
     }
-
-    final result = await sender.send();
-    if (!result.success) {
-      return MessageSendResult.failure(
-        result.errorMessage ?? "메시지 전송 실패",
-      );
-    }
-
-    return MessageSendResult.success(
-      roomId: result.roomId,
-      isFirstMessage: roomId == null && result.roomId != null,
-    );
   }
 }
 

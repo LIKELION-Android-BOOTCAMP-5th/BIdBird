@@ -5,7 +5,6 @@ import 'package:bidbird/features/chat/domain/entities/auction_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/item_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/trade_info_entity.dart';
 import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart' as domain;
-import 'package:bidbird/features/chat/domain/usecases/get_room_info_usecase.dart';
 import 'package:bidbird/features/item/model/trade_status_codes.dart';
 import 'package:bidbird/features/item/trade_status/model/trade_status_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,8 +21,7 @@ class TradeStatusDatasource {
 
   /// 거래 현황 정보 조회
   Future<TradeStatusEntity> fetchTradeStatus(String itemId) async {
-    final getRoomInfo = GetRoomInfoUseCase(_chatRepository);
-    final roomInfo = await getRoomInfo(itemId);
+    final roomInfo = await _chatRepository.fetchRoomInfo(itemId);
 
     if (roomInfo == null) {
       throw Exception('거래 정보를 불러올 수 없습니다.');

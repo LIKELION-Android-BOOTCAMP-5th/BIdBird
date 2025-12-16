@@ -2,12 +2,17 @@ import 'package:bidbird/features/item/registration/list/model/item_registration_
 
 import '../datasource/item_registration_list_datasource.dart';
 
-class RegistrationRepository {
-  RegistrationRepository({RegistrationDatasource? datasource})
+abstract class RegistrationRepository {
+  Future<List<ItemRegistrationData>> fetchMyPendingItems();
+}
+
+class RegistrationRepositoryImpl implements RegistrationRepository {
+  RegistrationRepositoryImpl({RegistrationDatasource? datasource})
       : _datasource = datasource ?? RegistrationDatasource();
 
   final RegistrationDatasource _datasource;
 
+  @override
   Future<List<ItemRegistrationData>> fetchMyPendingItems() {
     return _datasource.fetchMyPendingItems();
   }

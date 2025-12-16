@@ -10,7 +10,7 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     required ItemRegistrationData item,
     ItemRegistrationDetailRepository? repository,
   })  : _item = item,
-        _repository = repository ?? ItemRegistrationDetailRepository();
+        _repository = repository ?? ItemRegistrationDetailRepositoryImpl();
 
   final ItemRegistrationDetailRepository _repository;
 
@@ -33,14 +33,6 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     }
   }
 
-  String _formatScheduledAt(DateTime dt) {
-    final String month = dt.month.toString().padLeft(2, '0');
-    final String day = dt.day.toString().padLeft(2, '0');
-    final String hour = dt.hour.toString().padLeft(2, '0');
-    final String minute = dt.minute.toString().padLeft(2, '0');
-    return '$month월 $day일 $hour시 $minute분';
-  }
-
   Future<void> confirmRegistration(BuildContext context) async {
     if (_isSubmitting) return;
     _isSubmitting = true;
@@ -49,18 +41,16 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      final DateTime scheduledAt = await _repository.confirmRegistration(_item.id);
+      await _repository.confirmRegistration(_item.id);
 
       if (!context.mounted) return;
-
-      final String formatted = _formatScheduledAt(scheduledAt);
 
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (dialogContext) {
           return AskPopup(
-            content: '$formatted 에 등록될 예정입니다.',
+            content: '매물이 등록되었습니다.',
             yesText: '확인',
             yesLogic: () async {
               Navigator.of(dialogContext).pop();

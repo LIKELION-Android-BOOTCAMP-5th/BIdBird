@@ -27,7 +27,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     routeObserver.subscribe(this, ModalRoute.of(context)!);
 
     if (!_isViewModelInitialized) {
-      _viewModel = ChatListViewmodel(context);
+      _viewModel = ChatListViewmodel();
       _isViewModelInitialized = true;
     }
   }

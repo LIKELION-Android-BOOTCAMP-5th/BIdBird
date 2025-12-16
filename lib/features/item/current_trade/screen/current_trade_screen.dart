@@ -32,8 +32,6 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<CurrentTradeViewModel>();
-
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -44,27 +42,19 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Layer 2: 액션 허브
-            if (!viewModel.isLoading && viewModel.error == null) ...[
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ActionHub(
-                  saleItems: viewModel.saleActionHubItems,
-                  bidItems: viewModel.bidActionHubItems,
-                  todoSaleItems: viewModel.todoSaleItems,
-                  todoBidItems: viewModel.todoBidItems,
-                  saleHistory: viewModel.saleHistory,
-                  bidHistory: viewModel.bidHistory,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ] else ...[
-              const SizedBox.shrink(),
-            ],
+            // Layer 2: 액션 허브 - 로딩/에러 상태만 Selector
+            Selector<CurrentTradeViewModel, ({bool isLoading, String? error})>(
+              selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error),
+              builder: (context, data, _) {
+                if (!data.isLoading && data.error == null) {
+                  return const _ActionHubSection();
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             // Layer 3: 통합된 리스트
             Expanded(
-              child: _buildContent(viewModel),
+              child: _buildContent(),
             ),
           ],
         ),
@@ -72,125 +62,227 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
     );
   }
 
-  Widget _buildContent(CurrentTradeViewModel viewModel) {
-    if (viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    
-    if (viewModel.error != null) {
-      return RefreshIndicator(
-        onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height - 200,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    viewModel.error ?? '오류가 발생했습니다.',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.read<CurrentTradeViewModel>().refresh(),
-                    child: const Text('다시 시도'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    
-    return _buildUnifiedHistoryList(viewModel);
+  Widget _buildContent() {
+    // 로딩 상태만 Selector
+    return Selector<CurrentTradeViewModel, bool>(
+      selector: (_, vm) => vm.isLoading,
+      builder: (context, isLoading, _) {
+        if (isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return _buildErrorOrContent();
+      },
+    );
   }
 
-  Widget _buildUnifiedHistoryList(CurrentTradeViewModel viewModel) {
-    // 판매와 입찰 내역을 모두 합치기
-    final allSaleItems = [
-      ...viewModel.todoSaleItems,
-      ...viewModel.inProgressSaleItems,
-      ...viewModel.completedSaleItems,
-    ].where((item) => !item.status.contains('유찰')).toList();
-    
-    final allBidItems = [
-      ...viewModel.todoBidItems,
-      ...viewModel.inProgressBidItems,
-      ...viewModel.completedBidItems,
-    ].where((item) => !item.status.contains('유찰')).toList();
-
-    if (allSaleItems.isEmpty && allBidItems.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-        child: const Center(child: Text('거래 내역이 없습니다.')),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        children: [
-          // 판매 내역
-          ...allSaleItems.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: TradeHistoryCard(
-                  title: item.title,
-                  thumbnailUrl: item.thumbnailUrl,
-                  status: item.status,
-                  price: item.price,
-                  itemId: item.itemId,
-                  isSeller: true,
-                  isHighlighted: item.itemStatus == TradeItemStatus.todo,
-                ),
-              )),
-          // 입찰 내역
-          ...allBidItems.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: TradeHistoryCard(
-                  title: item.title,
-                  thumbnailUrl: item.thumbnailUrl,
-                  status: item.status,
-                  price: item.price,
-                  itemId: item.itemId,
-                  isSeller: false,
-                  isHighlighted: item.itemStatus == TradeItemStatus.todo,
-                ),
-              )),
-          // 전체 보기 링크
-          Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 24),
-            child: Center(
-              child: GestureDetector(
-                onTap: () {
-                  context.push('/mypage/trade');
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '전체 보기',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textColor,
+  Widget _buildErrorOrContent() {
+    // 에러 상태만 Selector
+    return Selector<CurrentTradeViewModel, String?>(
+      selector: (_, vm) => vm.error,
+      builder: (context, error, _) {
+        if (error != null) {
+          return RefreshIndicator(
+            onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height - 200,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        error,
+                        style: const TextStyle(color: Colors.red),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 16,
-                      color: textColor,
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => context.read<CurrentTradeViewModel>().refresh(),
+                        child: const Text('다시 시도'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          );
+        }
+        
+        return _buildUnifiedHistoryList();
+      },
+    );
+  }
+
+  Widget _buildUnifiedHistoryList() {
+    // ViewModel의 캐싱된 getter를 사용하도록 Selector 구성
+    return Selector<CurrentTradeViewModel, ({
+      List<SaleHistoryItem> todoSaleItems,
+      List<SaleHistoryItem> inProgressSaleItems,
+      List<SaleHistoryItem> completedSaleItems,
+      List<BidHistoryItem> todoBidItems,
+      List<BidHistoryItem> inProgressBidItems,
+      List<BidHistoryItem> completedBidItems,
+    })>(
+      selector: (_, vm) => (
+        todoSaleItems: vm.todoSaleItems,
+        inProgressSaleItems: vm.inProgressSaleItems,
+        completedSaleItems: vm.completedSaleItems,
+        todoBidItems: vm.todoBidItems,
+        inProgressBidItems: vm.inProgressBidItems,
+        completedBidItems: vm.completedBidItems,
       ),
+      builder: (context, data, _) {
+        // 판매와 입찰 내역을 필터링 (유찰 제외) - 지연 계산을 위해 getter로 처리
+        final filteredSaleItems = [
+          ...data.todoSaleItems,
+          ...data.inProgressSaleItems,
+          ...data.completedSaleItems,
+        ].where((item) => !item.status.contains('유찰')).toList();
+        
+        final filteredBidItems = [
+          ...data.todoBidItems,
+          ...data.inProgressBidItems,
+          ...data.completedBidItems,
+        ].where((item) => !item.status.contains('유찰')).toList();
+
+        final totalItemCount = filteredSaleItems.length + filteredBidItems.length;
+
+        if (totalItemCount == 0) {
+          return RefreshIndicator(
+            onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
+            child: const Center(child: Text('거래 내역이 없습니다.')),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            itemCount: totalItemCount + 1, // +1 for "전체 보기" 링크
+            itemBuilder: (context, index) {
+              // 마지막 아이템은 "전체 보기" 링크
+              if (index == totalItemCount) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 24),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        context.push('/mypage/trade');
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '전체 보기',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: textColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              // 판매 아이템과 입찰 아이템을 인덱스로 구분
+              bool isSeller;
+              bool isHighlighted;
+              
+              if (index < filteredSaleItems.length) {
+                // 판매 아이템
+                final item = filteredSaleItems[index];
+                isSeller = true;
+                isHighlighted = item.itemStatus == TradeItemStatus.todo;
+                
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: TradeHistoryCard(
+                    title: item.title,
+                    thumbnailUrl: item.thumbnailUrl,
+                    status: item.status,
+                    price: item.price,
+                    itemId: item.itemId,
+                    isSeller: isSeller,
+                    isHighlighted: isHighlighted,
+                  ),
+                );
+              } else {
+                // 입찰 아이템
+                final bidIndex = index - filteredSaleItems.length;
+                final item = filteredBidItems[bidIndex];
+                isSeller = false;
+                isHighlighted = item.itemStatus == TradeItemStatus.todo;
+                
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: TradeHistoryCard(
+                    title: item.title,
+                    thumbnailUrl: item.thumbnailUrl,
+                    status: item.status,
+                    price: item.price,
+                    itemId: item.itemId,
+                    isSeller: isSeller,
+                    isHighlighted: isHighlighted,
+                  ),
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+// 액션 허브 섹션을 별도 위젯으로 분리
+class _ActionHubSection extends StatelessWidget {
+  const _ActionHubSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<CurrentTradeViewModel, ({
+      List<ActionHubItem> saleActionHubItems,
+      List<ActionHubItem> bidActionHubItems,
+      List<SaleHistoryItem> todoSaleItems,
+      List<BidHistoryItem> todoBidItems,
+      List<SaleHistoryItem> saleHistory,
+      List<BidHistoryItem> bidHistory,
+    })>(
+      selector: (_, vm) => (
+        saleActionHubItems: vm.saleActionHubItems,
+        bidActionHubItems: vm.bidActionHubItems,
+        todoSaleItems: vm.todoSaleItems,
+        todoBidItems: vm.todoBidItems,
+        saleHistory: vm.saleHistory,
+        bidHistory: vm.bidHistory,
+      ),
+      builder: (context, data, _) {
+        return Column(
+          children: [
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ActionHub(
+                saleItems: data.saleActionHubItems,
+                bidItems: data.bidActionHubItems,
+                todoSaleItems: data.todoSaleItems,
+                todoBidItems: data.todoBidItems,
+                saleHistory: data.saleHistory,
+                bidHistory: data.bidHistory,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
     );
   }
 }
