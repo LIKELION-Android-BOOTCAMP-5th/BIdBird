@@ -11,8 +11,13 @@ class ToSViewmodel extends ChangeNotifier {
   ToSViewmodel(this._tosRepository) {
     fetchToSinfo();
   }
+
   Future<void> fetchToSinfo() async {
     _tosInfo = await _tosRepository.getToSinfo();
     notifyListeners();
+  }
+
+  Future<void> tosAgreed() async {
+    await _tosRepository.tosAgreed();
   }
 }

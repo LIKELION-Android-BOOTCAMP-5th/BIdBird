@@ -12,6 +12,7 @@ class UserEntity {
   final String? nick_name;
   final String? unregister_at;
   final String? email;
+  final String? ToS_agreed_at;
 
   UserEntity({
     required this.id,
@@ -27,6 +28,7 @@ class UserEntity {
     required this.nick_name,
     required this.unregister_at,
     required this.email,
+    required this.ToS_agreed_at,
   });
 
   factory UserEntity.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class UserEntity {
       nick_name: json['nick_name'] as String?,
       unregister_at: json['unregister_at'] as String?,
       email: json['email'] as String?,
+      ToS_agreed_at: json['ToS_agreed_at'] as String?,
     );
   }
 }

@@ -43,6 +43,7 @@ class ToSScreen extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
+                        viewmodel.tosAgreed();
                         context.go('/login/ToS/auth_set_profile');
                       },
                       style: ElevatedButton.styleFrom(
