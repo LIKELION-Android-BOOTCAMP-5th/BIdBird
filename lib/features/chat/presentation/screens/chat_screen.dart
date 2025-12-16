@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
@@ -19,26 +17,15 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen>
-    with RouteAware, WidgetsBindingObserver {
-  String? _previousRoute;
-  DateTime? _lastRefreshTime;
-  Timer? _periodicRefreshTimer;
+class _ChatScreenState extends State<ChatScreen> with RouteAware {
   ChatListViewmodel? _viewModel;
   bool _isViewModelInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context)!);
 
-    // ViewModel을 한 번만 생성하여 실시간 구독이 끊기지 않도록 함
     if (!_isViewModelInitialized) {
       _viewModel = ChatListViewmodel(context);
       _isViewModelInitialized = true;
@@ -47,67 +34,23 @@ class _ChatScreenState extends State<ChatScreen>
 
   @override
   void dispose() {
-    _periodicRefreshTimer?.cancel();
     routeObserver.unsubscribe(this);
-    WidgetsBinding.instance.removeObserver(this);
-    // ViewModel dispose는 Provider가 자동으로 처리
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // 앱이 다시 활성화될 때 리스트 새로고침
-    if (state == AppLifecycleState.resumed && mounted) {
-      _refreshListIfNeeded();
-    }
-  }
-
-  // 이전 화면에서 돌아왔을 때 (채팅방에서 돌아올 때)
+  /// 채팅방에서 돌아왔을 때 목록 새로고침
+  /// 실시간 구독이 자동으로 처리하지만, 읽음 처리 후 즉시 반영을 위해 새로고침
   @override
   void didPopNext() {
-    _refreshListOnce();
-  }
-
-  void _refreshListIfNeeded() {
-    if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
-
-    final now = DateTime.now();
-    if (_lastRefreshTime != null &&
-        now.difference(_lastRefreshTime!).inMilliseconds < 500) {
-      return;
-    }
-    _lastRefreshTime = now;
-
-    _refreshListOnce();
-  }
-
-  void _refreshListOnce() {
-    if (!mounted || !_isViewModelInitialized || _viewModel == null) return;
-
-    _viewModel!.reloadList();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted && _viewModel != null) {
+        _viewModel!.reloadList(forceRefresh: true);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // 경로 변경 감지 (채팅방에서 나올 때)
-    final currentRoute = GoRouterState.of(context).uri.toString();
-
-    // 채팅 리스트 화면으로 돌아왔을 때 (채팅방에서 나왔을 때)
-    if (currentRoute == '/chat') {
-      final previousRoute = _previousRoute;
-      if (previousRoute != null && previousRoute.startsWith('/chat/room')) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            // 즉시 한 번만 새로고침
-            _refreshListOnce();
-          }
-        });
-      }
-    }
-
-    _previousRoute = currentRoute;
-
-    // ViewModel이 아직 초기화되지 않았으면 로딩 표시
     if (!_isViewModelInitialized || _viewModel == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -161,6 +104,7 @@ class _ChatScreenState extends State<ChatScreen>
         final chattingRoom = viewModel.chattingRoomList[index];
         return GestureDetector(
           onTap: () {
+            viewModel.markRoomAsReadLocally(chattingRoom.id);
             context.push(
               '/chat/room?itemId=${chattingRoom.itemId}&roomId=${chattingRoom.id}',
             );
@@ -303,7 +247,7 @@ class _ChatScreenState extends State<ChatScreen>
                                         Expanded(
                                           child: Text(
                                             chattingRoom.lastMessage.replaceAll(RegExp(r'\s*\(?\s*낙찰자\s*\)?\s*'), ''),
-                                            maxLines: 2,
+                                            maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               color: Colors.grey[600],

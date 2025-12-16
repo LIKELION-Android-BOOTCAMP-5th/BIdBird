@@ -1,3 +1,4 @@
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_media_widget.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_text_bubble.dart';
@@ -37,7 +38,8 @@ class MessageBubble extends StatelessWidget {
 
   /// 미디어 메시지 빌드 (이미지/비디오)
   Widget _buildMediaMessage(BuildContext context) {
-    final maxWidth = MediaQuery.of(context).size.width * 0.60;
+    final maxWidth = _getMaxMessageWidth(context);
+    
     final mediaWidget = MessageMediaWidget(
       message: message,
       maxWidth: maxWidth,
@@ -52,6 +54,9 @@ class MessageBubble extends StatelessWidget {
           margin: EdgeInsets.only(
             left: isCurrentUser ? 12 : 0,
             right: isCurrentUser ? 12 : 0,
+          ),
+          constraints: BoxConstraints(
+            maxWidth: maxWidth,
           ),
           child: mediaWidget,
         ),
@@ -73,22 +78,25 @@ class MessageBubble extends StatelessWidget {
           left: isCurrentUser ? 12 : 0,
           right: isCurrentUser ? 12 : 0,
         ),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.85,
-        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: isCurrentUser
               ? [
-                  Flexible(child: timeAndReadStatus),
+                  timeAndReadStatus,
                   const SizedBox(width: 6),
-                  Flexible(child: mediaWidget),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: mediaWidget,
+                  ),
                 ]
               : [
-                  Flexible(child: mediaWidget),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: mediaWidget,
+                  ),
                   const SizedBox(width: 6),
-                  Flexible(child: timeAndReadStatus),
+                  timeAndReadStatus,
                 ],
         ),
       ),
@@ -112,7 +120,7 @@ class MessageBubble extends StatelessWidget {
             right: isCurrentUser ? 12 : 0,
           ),
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.72,
+            maxWidth: _getMaxMessageWidth(context),
           ),
           child: bubble,
         ),
@@ -127,6 +135,8 @@ class MessageBubble extends StatelessWidget {
       isUnread: isUnread,
     );
 
+    final maxWidth = _getMaxMessageWidth(context);
+
     return Align(
       alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -134,25 +144,35 @@ class MessageBubble extends StatelessWidget {
           left: isCurrentUser ? 12 : 0,
           right: isCurrentUser ? 12 : 0,
         ),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.85,
-        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: isCurrentUser
               ? [
-                  Flexible(child: timeAndReadStatus),
+                  timeAndReadStatus,
                   const SizedBox(width: 6),
-                  Flexible(child: bubble),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: bubble,
+                  ),
                 ]
               : [
-                  Flexible(child: bubble),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxWidth),
+                    child: bubble,
+                  ),
                   const SizedBox(width: 6),
-                  Flexible(child: timeAndReadStatus),
+                  timeAndReadStatus,
                 ],
         ),
       ),
     );
+  }
+
+  /// 메시지 최대 너비 계산 (시간 표시 여부와 관계없이 동일)
+  /// 화면의 70% 활용
+  double _getMaxMessageWidth(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return screenWidth * 0.70;
   }
 }

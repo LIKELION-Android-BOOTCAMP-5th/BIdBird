@@ -28,6 +28,7 @@ import 'package:bidbird/features/chat/presentation/managers/read_status_manager.
 import 'package:bidbird/features/chat/presentation/managers/realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/room_info_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/scroll_manager.dart';
+import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'package:bidbird/features/item/model/trade_status_codes.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -317,6 +318,13 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 채팅방 목록에 방 업데이트 알림 (메시지 전송 시)
+  /// 실시간 구독이 chatting_room 테이블 변경을 감지하여 자동으로 reloadList()를 호출하므로
+  /// 여기서는 즉시 방을 최상단으로 이동만 qq
+  void _notifyChatListRoomUpdate(String roomId) {
+    ChatListViewmodel.instance?.moveRoomToTop(roomId);
+  }
+
 
   // 첫 메시지 전송 후 처리 헬퍼 메서드
   Future<void> _handleFirstMessageSent() async {
@@ -387,6 +395,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       type = MessageType.text;
       notifyListeners();
       await _handleFirstMessageSent();
+      
+      // 채팅방 목록에서 해당 방을 최상단으로 이동
+      _notifyChatListRoomUpdate(result.roomId!);
     } else if (currentRoomId != null) {
       // 기존 채팅방에서 메시지 전송 성공
       // Realtime subscription이 실제 메시지를 추가하면 임시 메시지가 자동으로 교체됨
@@ -396,6 +407,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       isSending = false;
       notifyListeners();
       scrollToBottom(force: true);
+      
+      // 채팅방 목록에서 해당 방을 최상단으로 이동
+      _notifyChatListRoomUpdate(currentRoomId);
     } else {
       // 예상치 못한 경우
       isSending = false;

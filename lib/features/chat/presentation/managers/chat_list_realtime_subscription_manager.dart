@@ -2,21 +2,19 @@ import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// 채팅 리스트 실시간 구독 관리자
-/// 채팅 리스트의 실시간 업데이트를 관리하는 클래스
 class ChatListRealtimeSubscriptionManager {
   final _supabase = SupabaseManager.shared.supabase;
 
   RealtimeChannel? _buyerChannel;
   RealtimeChannel? _sellerChannel;
   RealtimeChannel? _roomUsersChannel;
+  RealtimeChannel? _messageChannel;
 
   /// 실시간 구독 설정
-  /// [onRoomListUpdate] 채팅방 리스트 업데이트 콜백
-  /// [onUnreadCountUpdate] 읽지 않은 메시지 수 업데이트 콜백
-  /// [checkUpdate] unread_count 변경 확인 함수
   void setupSubscription({
     required void Function() onRoomListUpdate,
     required bool Function(Map<String, dynamic>) checkUpdate,
+    void Function(String roomId)? onNewMessage,
   }) {
     final currentId = _supabase.auth.currentUser?.id;
     if (currentId == null) {
@@ -80,6 +78,24 @@ class ChatListRealtimeSubscriptionManager {
           },
         )
         .subscribe();
+
+    // 새 메시지 감지
+    if (onNewMessage != null) {
+      _messageChannel = _supabase.channel('chatting_message_list');
+      _messageChannel!
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'chatting_message',
+            callback: (payload) {
+              final roomId = payload.newRecord['room_id'] as String?;
+              if (roomId != null) {
+                onNewMessage(roomId);
+              }
+            },
+          )
+          .subscribe();
+    }
   }
 
   /// 모든 구독 해제
@@ -95,6 +111,10 @@ class ChatListRealtimeSubscriptionManager {
     if (_roomUsersChannel != null) {
       _supabase.removeChannel(_roomUsersChannel!);
       _roomUsersChannel = null;
+    }
+    if (_messageChannel != null) {
+      _supabase.removeChannel(_messageChannel!);
+      _messageChannel = null;
     }
   }
 }
