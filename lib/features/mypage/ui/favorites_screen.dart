@@ -2,7 +2,6 @@ import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/mypage/model/favorites_model.dart';
 import 'package:bidbird/features/mypage/viewmodel/favorites_viewmodel.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
@@ -29,7 +28,7 @@ class FavoritesScreen extends StatelessWidget {
     } else if (vm.items.isEmpty) {
       body = const Center(child: Text('관심 등록한 상품이 없습니다.'));
     } else {
-      body = TransparentRefreshIndicator(
+      body = RefreshIndicator(
         onRefresh: vm.loadFavorites,
         child: ListView.separated(
           itemBuilder: (context, index) {

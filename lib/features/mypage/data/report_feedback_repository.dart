@@ -17,7 +17,19 @@ class ReportFeedbackRepository {
 
     final List<dynamic> rows = await _client
         .from('report')
-        .select()
+        .select('''
+          id,
+          target_user_id,
+          target_ci,
+          report_code,
+          item_id,
+          report_content,
+          report_status,
+          created_at,
+          report_feedback,
+          feedbacked_at,
+          items_detail(title)
+        ''')
         .eq('user_id', user.id)
         .order('created_at', ascending: false);
 
@@ -48,14 +60,13 @@ class ReportFeedbackRepository {
   Future<ReportFeedbackModel> _mapReport(Map<String, dynamic> row) async {
     final String id = row['id']?.toString() ?? '';
     final String targetUserId = row['target_user_id']?.toString() ?? '';
-    final String targetUserNickname =
-        row['target_user_nickname']?.toString() ?? '';
+    final String? targetCi = row['target_ci']?.toString();
     final String reportCode = row['report_code']?.toString() ?? '';
-    final String reportCodeName = getReportStatusString(row['report_code']);
+    final String reportCodeName = getReportCodeName(row['report_code']);
     final String? itemId = row['item_id']?.toString();
-    final String? itemTitle = row['item_title']?.toString();
+    final String? itemTitle = _extractItemTitle(row['items_detail']);
     final String content = row['report_content']?.toString() ?? '';
-    final int status = (row['report_status'] as int?) ?? 0;
+    final int status = _parseInt(row['report_status']);
     final DateTime createdAt = _parseDateTime(row['created_at']);
     final String? feedback = row['report_feedback']?.toString();
     final DateTime? feedbackedAt = _parseNullableDateTime(row['feedbacked_at']);
@@ -63,7 +74,7 @@ class ReportFeedbackRepository {
     return ReportFeedbackModel(
       id: id,
       targetUserId: targetUserId,
-      targetUserNickname: targetUserNickname,
+      targetCi: targetCi,
       reportCode: reportCode,
       reportCodeName: reportCodeName,
       itemId: itemId,
@@ -76,10 +87,31 @@ class ReportFeedbackRepository {
     );
   }
 
+  String? _extractItemTitle(dynamic itemsDetail) {
+    if (itemsDetail is Map<String, dynamic>) {
+      final dynamic title = itemsDetail['title'];
+      return title?.toString();
+    }
+
+    if (itemsDetail is List && itemsDetail.isNotEmpty) {
+      final dynamic first = itemsDetail.first;
+      if (first is Map<String, dynamic>) {
+        final dynamic title = first['title'];
+        return title?.toString();
+      }
+    }
+
+    return null;
+  }
+
   //이부분수정하기
   DateTime _parseDateTime(dynamic value) {
-    if (value is int) {
-      return DateTime.fromMillisecondsSinceEpoch(value);
+    // if (value is int) {
+    //   return DateTime.fromMillisecondsSinceEpoch(value);
+    // }
+    if (value is String) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) return parsed.toLocal();
     }
     return DateTime.now();
   }
@@ -87,9 +119,19 @@ class ReportFeedbackRepository {
   //이부분수정하기
   DateTime? _parseNullableDateTime(dynamic value) {
     if (value == null) return null;
-    if (value is int) {
-      return DateTime.fromMillisecondsSinceEpoch(value);
+    // if (value is int) {
+    //   return DateTime.fromMillisecondsSinceEpoch(value);
+    // }
+    if (value is String) {
+      final parsed = DateTime.tryParse(value);
+      return parsed?.toLocal();
     }
     return null;
+  }
+
+  int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 }

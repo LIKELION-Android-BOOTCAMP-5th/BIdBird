@@ -61,23 +61,24 @@ class _DetailBody extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(report.reportCodeName),
-                    const SizedBox(height: 6),
-                    const SizedBox(height: 4),
-                    Text('신고 대상: ${report.targetUserNickname}'),
+                    Text('신고 사유: ${report.reportCodeName}'),
+                    const SizedBox(height: 8),
+                    Text('신고 대상: ${report.targetUserId}'), //report.targetCi
                     if ((report.itemTitle ?? '').isNotEmpty)
-                      Text('관련 상품: ${report.itemTitle}'),
+                      const SizedBox(height: 4),
+                    if ((report.itemTitle ?? '').isNotEmpty)
+                      Text('신고 상품: ${report.itemTitle}'),
                     const SizedBox(height: 8),
                     Text(_formatFullDate(report.createdAt)),
                   ],
                 ),
               ),
-              _ReportStatus(status: report.status),
+              _ReportCode(reportCode: report.reportCode),
             ],
           ),
           const SizedBox(height: 16),
           const Divider(height: 1),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _InfoSection(title: '신고 내용', content: report.content),
           const SizedBox(height: 16),
           _InfoSection(
@@ -89,7 +90,6 @@ class _DetailBody extends StatelessWidget {
     );
   }
 
-  //utc수정해야함
   String _formatFullDate(DateTime date) {
     final month = date.month.toString();
     final day = date.day.toString();
@@ -119,7 +119,7 @@ class _InfoSection extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: BorderColor,
+            color: Colors.white, //앱칼라가없어서그냥이렇게씀,,
             borderRadius: defaultBorder,
           ),
           child: Text(content),
@@ -129,20 +129,20 @@ class _InfoSection extends StatelessWidget {
   }
 }
 
-class _ReportStatus extends StatelessWidget {
-  final int status;
+class _ReportCode extends StatelessWidget {
+  final String reportCode;
 
-  const _ReportStatus({required this.status});
+  const _ReportCode({required this.reportCode});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: getReportStatusColor(status),
+        color: getReportCodeColor(reportCode),
         borderRadius: defaultBorder,
       ),
-      child: Text(getReportStatusString(status)),
+      child: Text(getReportCodeName(reportCode)),
     );
   }
 }
