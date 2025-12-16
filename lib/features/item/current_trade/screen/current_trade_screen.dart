@@ -1,6 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/item/components/cards/trade_history_card.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -81,7 +82,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       selector: (_, vm) => vm.error,
       builder: (context, error, _) {
         if (error != null) {
-          return RefreshIndicator(
+          return TransparentRefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -154,7 +155,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           );
         }
 
-        return RefreshIndicator(
+        return TransparentRefreshIndicator(
           onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

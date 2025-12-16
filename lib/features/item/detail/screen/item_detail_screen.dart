@@ -8,6 +8,7 @@ import 'package:bidbird/core/widgets/item/components/sections/item_image_section
 import 'package:bidbird/core/widgets/item/components/sections/item_main_info_section.dart';
 import 'package:bidbird/core/widgets/item/components/sections/item_description_section.dart';
 import 'package:bidbird/core/widgets/item/components/others/item_bottom_action_bar.dart';
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key, required this.itemId});
@@ -83,16 +84,22 @@ class _ItemDetailContent extends StatelessWidget {
             child: Column(
               children: [
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ItemImageSection(item: item),
-                        const SizedBox(height: 8),
-                        _ItemMainInfoSection(item: item),
-                        const SizedBox(height: 0),
-                        ItemDescriptionSection(item: item),
-                      ],
+                  child: TransparentRefreshIndicator(
+                    onRefresh: () async {
+                      await context.read<ItemDetailViewModel>().loadItemDetail(forceRefresh: true);
+                    },
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ItemImageSection(item: item),
+                          const SizedBox(height: 8),
+                          _ItemMainInfoSection(item: item),
+                          const SizedBox(height: 0),
+                          ItemDescriptionSection(item: item),
+                        ],
+                      ),
                     ),
                   ),
                 ),
