@@ -1,6 +1,10 @@
+import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
+import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
+import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:bidbird/features/notification/screen/widgets/notification_card.dart';
 import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class NotificationScreen extends StatelessWidget {
@@ -62,6 +66,7 @@ class NotificationScreen extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final notify = viewModel.notifyList[index];
+            final type = notify.alarm_type;
             return NotificationCard(
               title: notify.title,
               status: '',
@@ -71,9 +76,30 @@ class NotificationScreen extends StatelessWidget {
               onDelete: () {
                 viewModel.deleteNotification(notify.id);
               },
-              onTap: () {
+              onTap: () async {
                 if (!notify.is_checked) {
                   viewModel.checkNotification(notify.id);
+                }
+                if (type == "BID" ||
+                    type == "OUTBID" ||
+                    type == "AUCTION_START") {
+                  context.push('/item/${notify.item_id}');
+                }
+
+                if (type == "WIN") {
+                  ItemDetailDatasource _datasource = ItemDetailDatasource();
+                  final String? itemId = notify.item_id;
+                  if (itemId == null) return;
+                  final ItemDetail? item = await _datasource.fetchItemDetail(
+                    itemId,
+                  );
+                  if (item == null) {
+                    context.push('/item_bid_win');
+                    return;
+                  }
+                  ItemBidWinEntity itemBidWinEntity =
+                      ItemBidWinEntity.fromItemDetail(item);
+                  context.push('/item_bid_win', extra: itemBidWinEntity);
                 }
               },
             );
