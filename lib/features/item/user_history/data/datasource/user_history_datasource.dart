@@ -90,6 +90,8 @@ class UserHistoryDatasource {
           statusLabel: status.label,
           statusColor: status.color,
           thumbnailUrl: thumbnailUrl,
+          itemId: itemId,
+          isSeller: true, // 현재는 판매자 기준으로만 조회
         );
       }).toList();
     } catch (e) {

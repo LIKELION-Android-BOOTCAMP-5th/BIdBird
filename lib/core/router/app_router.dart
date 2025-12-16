@@ -9,6 +9,7 @@ import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/auth/viewmodel/tos_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/screens/chat_screen.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
+import 'package:bidbird/features/item/trade_status/screen/trade_status_screen.dart';
 import 'package:bidbird/features/feed/ui/home_screen.dart';
 import 'package:bidbird/features/item/add/screen/item_add_screen.dart';
 import 'package:bidbird/features/item/add/viewmodel/item_add_viewmodel.dart';
@@ -369,6 +370,18 @@ GoRouter createAppRouter(BuildContext context) {
             child: ChattingRoomScreen(itemId: thisItemId, roomId: thisRoomId),
           );
         },
+        routes: [
+          GoRoute(
+            path: 'trade-status',
+            pageBuilder: (context, state) {
+              final String itemId =
+                  state.uri.queryParameters["itemId"] ?? "";
+              return NoTransitionPage(
+                child: TradeStatusScreen(itemId: itemId),
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/payment',

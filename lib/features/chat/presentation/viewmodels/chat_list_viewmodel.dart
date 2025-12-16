@@ -64,23 +64,10 @@ class ChatListViewmodel extends ChangeNotifier {
     try {
       final newList = await _getChattingRoomListUseCase();
       chattingRoomList = newList;
-      
-      // loadSellerIds와 loadTopBidders를 병렬로 처리
-      await Future.wait([
-        _cacheManager.loadSellerIds(chattingRoomList),
-        _cacheManager.loadTopBidders(chattingRoomList),
-      ], eagerError: false);
-      
-      _lastFetchTime = DateTime.now();
+      await _cacheManager.loadSellerIds(chattingRoomList);
+      await _cacheManager.loadTopBidders(chattingRoomList);
       notifyListeners();
-    } catch (e) {
-      // 에러 발생 시에도 기존 데이터 유지
-    }
-  }
-  
-  /// 캐시 무효화
-  void invalidateCache() {
-    _lastFetchTime = null;
+    } catch (e) {}
   }
 
   /// 특정 itemId에 대해 현재 사용자가 판매자인지 확인

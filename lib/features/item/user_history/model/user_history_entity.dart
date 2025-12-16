@@ -8,6 +8,8 @@ class UserTradeSummary {
     required this.statusLabel,
     required this.statusColor,
     this.thumbnailUrl,
+    this.itemId,
+    this.isSeller = true,
   });
 
   final String title;
@@ -16,4 +18,6 @@ class UserTradeSummary {
   final String statusLabel;
   final Color statusColor;
   final String? thumbnailUrl;
+  final String? itemId;
+  final bool isSeller; // 판매자인지 구매자인지
 }

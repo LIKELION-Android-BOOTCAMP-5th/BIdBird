@@ -1,11 +1,9 @@
-import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/widgets/item/components/cards/trade_status_item_card.dart';
 import 'package:bidbird/features/item/user_history/data/repository/user_history_repository.dart';
 import 'package:bidbird/features/item/user_history/model/user_history_entity.dart';
-import 'package:bidbird/core/widgets/item/components/chips/trade_status_chip.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class UserTradeHistoryScreen extends StatelessWidget {
   const UserTradeHistoryScreen({super.key, required this.userId});
@@ -36,69 +34,27 @@ class UserTradeHistoryScreen extends StatelessWidget {
             }
 
             return ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               itemCount: trades.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final trade = trades[index];
-                return Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: BackgroundColor,
-                    borderRadius: defaultBorder,
-                  ),
-                  child: Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child:
-                              trade.thumbnailUrl != null &&
-                                  trade.thumbnailUrl!.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: trade.thumbnailUrl!,
-                                  cacheManager:
-                                      ItemImageCacheManager.instance,
-                                  fit: BoxFit.cover,
-                                  errorWidget:
-                                      (context, error, stackTrace) =>
-                                          Container(color: BackgroundColor),
-                                )
-                              : Container(color: BackgroundColor),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              trade.title,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${trade.price}  ·  ${trade.date}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: BorderColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      TradeStatusChip(
-                        label: trade.statusLabel,
-                        color: trade.statusColor,
-                      ),
-                    ],
-                  ),
+                // 가격 문자열에서 숫자만 추출 (예: "144,867원" -> 144867)
+                final priceValue = int.tryParse(
+                  trade.price.replaceAll(RegExp(r'[^0-9]'), ''),
+                ) ?? 0;
+                
+                return TradeStatusItemCard(
+                  title: trade.title,
+                  price: priceValue,
+                  thumbnailUrl: trade.thumbnailUrl,
+                  roleText: trade.isSeller ? '판매자' : '구매자',
+                  statusText: trade.statusLabel,
+                  onTap: trade.itemId != null
+                      ? () {
+                          context.push('/item/${trade.itemId}');
+                        }
+                      : null,
                 );
               },
             );
