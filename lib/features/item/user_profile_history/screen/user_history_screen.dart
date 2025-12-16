@@ -3,8 +3,7 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item/user_history/data/datasource/user_history_datasource.dart';
 import 'package:bidbird/features/item/user_history/model/user_history_entity.dart';
 import 'package:bidbird/core/widgets/item/components/chips/trade_status_chip.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:flutter/material.dart';
 
 class UserTradeHistoryScreen extends StatelessWidget {
@@ -49,24 +48,12 @@ class UserTradeHistoryScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      ClipRRect(
+                      FixedRatioThumbnail(
+                        imageUrl: trade.thumbnailUrl,
+                        width: 48,
+                        height: 48,
+                        aspectRatio: 1.0,
                         borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: trade.thumbnailUrl != null &&
-                                  trade.thumbnailUrl!.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: trade.thumbnailUrl!,
-                                  cacheManager:
-                                      ItemImageCacheManager.instance,
-                                  fit: BoxFit.cover,
-                                  errorWidget:
-                                      (context, error, stackTrace) =>
-                                          Container(color: BackgroundColor),
-                                )
-                              : Container(color: BackgroundColor),
-                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

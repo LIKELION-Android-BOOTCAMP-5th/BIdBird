@@ -23,12 +23,40 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
   String? _termsText;
   String? get termsText => _termsText;
 
+  String? _imageUrl;
+  String? get imageUrl => _imageUrl;
+  bool _isLoadingImage = false;
+  bool get isLoadingImage => _isLoadingImage;
+
   Future<void> loadTerms() async {
     try {
       _termsText = await _repository.fetchTermsText();
     } catch (e) {
       // 약관 로드 실패 시에도 계속 진행 가능하도록 조용히 처리
     } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadImage() async {
+    // thumbnailUrl이 있으면 사용, 없으면 item_images에서 가져오기
+    if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
+      _imageUrl = _item.thumbnailUrl;
+      notifyListeners();
+      return;
+    }
+
+    _isLoadingImage = true;
+    notifyListeners();
+
+    try {
+      final imageUrl = await _repository.fetchFirstImageUrl(_item.id);
+      _imageUrl = imageUrl ?? _item.thumbnailUrl;
+    } catch (e) {
+      // 이미지 로드 실패 시 기존 thumbnailUrl 사용
+      _imageUrl = _item.thumbnailUrl;
+    } finally {
+      _isLoadingImage = false;
       notifyListeners();
     }
   }

@@ -4,6 +4,7 @@ abstract class ItemRegistrationDetailRepository {
   Future<String> fetchTermsText();
   Future<void> confirmRegistration(String itemId);
   Future<void> deleteItem(String itemId);
+  Future<String?> fetchFirstImageUrl(String itemId);
 }
 
 class ItemRegistrationDetailRepositoryImpl implements ItemRegistrationDetailRepository {
@@ -25,5 +26,10 @@ class ItemRegistrationDetailRepositoryImpl implements ItemRegistrationDetailRepo
   @override
   Future<void> deleteItem(String itemId) {
     return _datasource.deleteItem(itemId);
+  }
+
+  @override
+  Future<String?> fetchFirstImageUrl(String itemId) {
+    return _datasource.fetchFirstImageUrl(itemId);
   }
 }
