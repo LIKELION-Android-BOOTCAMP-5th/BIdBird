@@ -1,5 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
+import 'package:bidbird/features/item/model/trade_status_codes.dart';
 
 /// 채팅 리스트 캐시 관리자
 /// sellerId, topBidder 등의 캐싱 로직을 관리하는 클래스
@@ -12,8 +13,11 @@ class ChatListCacheManager {
   // itemId -> isTopBidder 매핑 캐시 (내가 낙찰자인지 여부)
   final Map<String, bool> _topBidderCache = {};
   
-  // itemId -> lastBidUserId 매핑 캐시 (낙찰자 ID 저장)
+  // itemId -> lastBidUserId 매핑 캐시 (최고 입찰자 ID 저장)
   final Map<String, String?> _lastBidUserIdCache = {};
+  
+  // itemId -> auctionStatusCode 매핑 캐시 (경매 상태 코드 저장)
+  final Map<String, int> _auctionStatusCodeCache = {};
 
   /// 모든 채팅방의 itemId에 대한 seller_id를 한 번에 가져와서 캐시에 저장
   Future<void> loadSellerIds(List<ChattingRoomEntity> chattingRoomList) async {
@@ -66,19 +70,26 @@ class ChatListCacheManager {
 
       final response = await _supabase
           .from('auctions')
-          .select('item_id, last_bid_user_id')
+          .select('item_id, last_bid_user_id, auction_status_code')
           .inFilter('item_id', uncachedItemIds)
           .eq('round', 1);
 
       for (final row in response) {
         final itemId = row['item_id'] as String?;
         final lastBidUserId = row['last_bid_user_id'] as String?;
+        final auctionStatusCode = row['auction_status_code'] as int?;
         if (itemId != null) {
           // last_bid_user_id 저장
           _lastBidUserIdCache[itemId] = lastBidUserId;
-          // 내가 낙찰자인지 확인
-          _topBidderCache[itemId] =
-              lastBidUserId != null && lastBidUserId == currentUserId;
+          // auction_status_code 저장
+          if (auctionStatusCode != null) {
+            _auctionStatusCodeCache[itemId] = auctionStatusCode;
+          }
+          // 내가 낙찰자인지 확인 (경매 종료 및 낙찰된 경우에만)
+          // auction_status_code가 321(bidWon)이고, 내가 최고 입찰자인 경우에만 낙찰자
+          final isAuctionWon = auctionStatusCode == AuctionStatusCode.bidWon;
+          final isLastBidder = lastBidUserId != null && lastBidUserId == currentUserId;
+          _topBidderCache[itemId] = isAuctionWon && isLastBidder;
         }
       }
     } catch (e) {
@@ -109,7 +120,11 @@ class ChatListCacheManager {
     }
 
     // 내가 판매자인 경우, 상대방(구매자)이 낙찰자인지 확인
-    // last_bid_user_id가 존재하고, 내가 아니면 상대방이 낙찰자
+    // 경매가 종료되고 낙찰된 경우에만 true
+    final auctionStatusCode = _auctionStatusCodeCache[itemId];
+    final isAuctionWon = auctionStatusCode == AuctionStatusCode.bidWon;
+    if (!isAuctionWon) return false; // 경매가 종료되지 않았으면 false
+
     final lastBidUserId = _lastBidUserIdCache[itemId];
     if (lastBidUserId == null) return false; // 낙찰자가 없으면 false
 
@@ -125,6 +140,7 @@ class ChatListCacheManager {
     _sellerIdCache.clear();
     _topBidderCache.clear();
     _lastBidUserIdCache.clear();
+    _auctionStatusCodeCache.clear();
   }
 }
 
