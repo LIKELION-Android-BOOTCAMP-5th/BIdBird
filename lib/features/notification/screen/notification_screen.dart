@@ -80,9 +80,7 @@ class NotificationScreen extends StatelessWidget {
                 if (!notify.is_checked) {
                   viewModel.checkNotification(notify.id);
                 }
-                if (type == "BID" ||
-                    type == "OUTBID" ||
-                    type == "AUCTION_START") {
+                if (viewModel.toItemDetail.contains(type)) {
                   context.push('/item/${notify.item_id}');
                 }
 
@@ -94,6 +92,7 @@ class NotificationScreen extends StatelessWidget {
                     itemId,
                   );
                   if (item == null) {
+                    print("낙찰 화면으로 이동");
                     context.push('/item_bid_win');
                     return;
                   }

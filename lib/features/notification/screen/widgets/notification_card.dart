@@ -1,3 +1,4 @@
+import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +31,7 @@ class NotificationCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: !is_checked ? Colors.white : Color(0xff6B7280),
+          color: !is_checked ? Colors.white : Colors.white38,
           border: Border.all(color: iconColor.withValues(alpha: 0.2), width: 1),
           borderRadius: defaultBorder,
           boxShadow: const [
@@ -100,6 +101,7 @@ class NotificationCard extends StatelessWidget {
                         //     color: CurrentTradeViewModel.getStatusColor(status),
                         //   ),
                         // ),
+                        Text(date?.toTimesAgo() as String),
                       ],
                     ),
                   ),

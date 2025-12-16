@@ -19,7 +19,18 @@ class NotificationViewmodel extends ChangeNotifier {
   RealtimeChannel? _notifyChannel;
   StreamSubscription? _loginSubscription;
   List<NotificationEntity> notifyList = [];
-
+  final List<String> toItemDetail = [
+    "BID",
+    "OUTBID",
+    "AUCTION_START",
+    "AUCTION_END_SUCCESS",
+    "AUCTION_FAILED",
+    "PAID_SUCCESS",
+    "PURCHASE_CONFIRM_REQUEST",
+    "PURCHASE_AUTO_CONFIRMED",
+    "PURCHASE_CONFIRMED",
+    "PURCHASE_REJECTED",
+  ];
   int get unCheckedCount =>
       notifyList.where((e) => e.is_checked == false).length;
   // int inputCount = 0;
