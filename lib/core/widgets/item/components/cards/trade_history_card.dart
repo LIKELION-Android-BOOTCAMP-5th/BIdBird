@@ -226,7 +226,7 @@ class TradeHistoryCard extends StatelessWidget {
                                                     style: TextStyle(
                                                       fontSize: titleFontSize,
                                                     ),
-                                                    maxLines: 2,
+                                                    maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,
                                                   );
@@ -285,6 +285,8 @@ class TradeHistoryCard extends StatelessWidget {
                                                           status),
                                                       fontSize: badgeFontSize,
                                                     ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
                                                 );
                                               },

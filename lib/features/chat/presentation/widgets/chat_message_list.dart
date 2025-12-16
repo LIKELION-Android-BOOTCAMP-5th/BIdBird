@@ -202,7 +202,7 @@ class ChatMessageList extends StatelessWidget {
           children: [
             avatarWidget,
             SizedBox(width: context.spacingSmall),
-            Expanded(
+            Flexible(
               child: MessageBubble(
                 message: message,
                 isCurrentUser: false,

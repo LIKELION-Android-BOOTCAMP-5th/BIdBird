@@ -20,32 +20,55 @@ class ChatListViewmodel extends ChangeNotifier {
   DateTime? _lastFetchTime;
   static const Duration _cacheValidDuration = Duration(minutes: 2);
 
-  // 뷰모델 생성자, context를 통해 리포지토리를 받아올 수 있음.
+  // 정적 인스턴스 (외부에서 접근 가능)
+  static ChatListViewmodel? _instance;
+  static ChatListViewmodel? get instance => _instance;
+
   ChatListViewmodel(BuildContext context) {
     _getChattingRoomListUseCase = GetChattingRoomListUseCase(_repository);
     _realtimeSubscriptionManager = ChatListRealtimeSubscriptionManager();
     _cacheManager = ChatListCacheManager();
     
+    _instance = this;
+    
     fetchChattingRoomList();
     _setupRealtimeSubscription();
   }
 
+  /// 채팅방 목록 조회 (초기 로드 시 사용)
   Future<void> fetchChattingRoomList({bool forceRefresh = false}) async {
-    // 캐시가 유효하고 강제 새로고침이 아니면 캐시 사용
+    await _loadChattingRoomList(forceRefresh: forceRefresh, showLoading: true);
+  }
+
+  /// 채팅방 목록 새로고침 (실시간 업데이트 시 사용)
+  Future<void> reloadList({bool forceRefresh = false}) async {
+    await _loadChattingRoomList(forceRefresh: forceRefresh, showLoading: false);
+  }
+
+  /// 채팅방 목록 로드 공통 로직
+  Future<void> _loadChattingRoomList({
+    required bool forceRefresh,
+    required bool showLoading,
+  }) async {
+    // 캐시 검증 (forceRefresh가 아니고 캐시가 유효한 경우)
     if (!forceRefresh && 
         _lastFetchTime != null && 
         DateTime.now().difference(_lastFetchTime!) < _cacheValidDuration &&
         chattingRoomList.isNotEmpty) {
-      return; // 캐시된 데이터 사용
+      return;
     }
     
-    isLoading = true;
-    notifyListeners();
+    if (showLoading) {
+      isLoading = true;
+      notifyListeners();
+    }
     
     try {
-      chattingRoomList = await _getChattingRoomListUseCase();
+      final newList = await _getChattingRoomListUseCase();
+      chattingRoomList = newList;
       
-      // loadSellerIds와 loadTopBidders를 병렬로 처리
+      _sortRoomListByLastMessage();
+      
       await Future.wait([
         _cacheManager.loadSellerIds(chattingRoomList),
         _cacheManager.loadTopBidders(chattingRoomList),
@@ -53,21 +76,13 @@ class ChatListViewmodel extends ChangeNotifier {
       
       _lastFetchTime = DateTime.now();
     } catch (e) {
-      // 에러 발생 시에도 캐시된 데이터는 유지
+      // 에러 발생 시에도 기존 데이터 유지
     } finally {
-      isLoading = false;
+      if (showLoading) {
+        isLoading = false;
+      }
       notifyListeners();
     }
-  }
-
-  Future<void> reloadList() async {
-    try {
-      final newList = await _getChattingRoomListUseCase();
-      chattingRoomList = newList;
-      await _cacheManager.loadSellerIds(chattingRoomList);
-      await _cacheManager.loadTopBidders(chattingRoomList);
-      notifyListeners();
-    } catch (e) {}
   }
 
   /// 특정 itemId에 대해 현재 사용자가 판매자인지 확인
@@ -88,34 +103,72 @@ class ChatListViewmodel extends ChangeNotifier {
 
   void _setupRealtimeSubscription() {
     _realtimeSubscriptionManager.setupSubscription(
-      onRoomListUpdate: () {
-        reloadList();
-      },
-      checkUpdate: (data) {
-        return checkUpdate(data);
-      },
+      onRoomListUpdate: reloadList,
+      checkUpdate: checkUpdate,
+      onNewMessage: _handleNewMessage,
     );
   }
 
   @override
   void dispose() {
+    if (_instance == this) {
+      _instance = null;
+    }
     _realtimeSubscriptionManager.dispose();
     super.dispose();
   }
 
+  /// 실시간 unread_count 변경 감지
   bool checkUpdate(Map<String, dynamic> data) {
-    final index = chattingRoomList.indexWhere(
-      (e) => e.id == data["room_id"] as String,
-    );
+    final roomId = data["room_id"] as String?;
+    if (roomId == null) return false;
+    
+    final index = chattingRoomList.indexWhere((e) => e.id == roomId);
     if (index == -1) return false;
     
-    final room = chattingRoomList[index];
-    // 변동 사항이 있다면 true
-    if (room.count != data['unread_count'] as int?) {
-      room.count = data['unread_count'] as int?;
+    final newUnreadCount = data['unread_count'] as int? ?? 0;
+    if (chattingRoomList[index].count != newUnreadCount) {
+      chattingRoomList[index].count = newUnreadCount;
       notifyListeners();
       return true;
     }
     return false;
+  }
+
+  /// 새 메시지 수신/전송 시 해당 방을 최상단으로 이동
+  void _handleNewMessage(String roomId) {
+    moveRoomToTop(roomId);
+  }
+
+  /// 방을 최상단으로 이동
+  void moveRoomToTop(String roomId) {
+    final index = chattingRoomList.indexWhere((room) => room.id == roomId);
+    if (index != -1 && index != 0) {
+      final room = chattingRoomList.removeAt(index);
+      chattingRoomList.insert(0, room);
+      notifyListeners();
+    }
+  }
+
+  /// 방 진입 시 로컬에서 즉시 unreadCount를 0으로 변경
+  void markRoomAsReadLocally(String roomId) {
+    final index = chattingRoomList.indexWhere((room) => room.id == roomId);
+    if (index != -1 && chattingRoomList[index].count != null && chattingRoomList[index].count! > 0) {
+      chattingRoomList[index].count = 0;
+      notifyListeners();
+    }
+  }
+
+  /// lastMessageSendAt desc 기준으로 목록 정렬
+  void _sortRoomListByLastMessage() {
+    chattingRoomList.sort((a, b) {
+      try {
+        final aTime = DateTime.parse(a.lastMessageSendAt);
+        final bTime = DateTime.parse(b.lastMessageSendAt);
+        return bTime.compareTo(aTime);
+      } catch (e) {
+        return 0;
+      }
+    });
   }
 }
