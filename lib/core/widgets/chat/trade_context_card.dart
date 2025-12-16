@@ -17,7 +17,8 @@ class TradeContextCard extends StatelessWidget {
     required this.tradeStatus,
     required this.tradeStatusCode,
     required this.hasShippingInfo,
-    this.onCardTap,
+    this.onItemTap,
+    this.onTradeStatusTap,
     this.onTradeComplete,
     this.onTradeCancel,
   });
@@ -29,7 +30,8 @@ class TradeContextCard extends StatelessWidget {
   final String tradeStatus;
   final int? tradeStatusCode;
   final bool hasShippingInfo;
-  final VoidCallback? onCardTap;
+  final VoidCallback? onItemTap;
+  final VoidCallback? onTradeStatusTap;
   final VoidCallback? onTradeComplete;
   final VoidCallback? onTradeCancel;
 
@@ -72,7 +74,7 @@ class TradeContextCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onCardTap,
+          onTap: onItemTap,
           borderRadius: BorderRadius.zero,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -80,87 +82,128 @@ class TradeContextCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // 썸네일 (48x48)
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: ImageBackgroundColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: itemThumbnail != null && itemThumbnail!.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: itemThumbnail!,
-                                cacheManager: ItemImageCacheManager.instance,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: ImageBackgroundColor,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
+                // 썸네일 (48x48)
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: ImageBackgroundColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: itemThumbnail != null && itemThumbnail!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: itemThumbnail!,
+                            cacheManager: ItemImageCacheManager.instance,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: ImageBackgroundColor,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                                errorWidget: (context, url, error) => Container(
-                                  color: ImageBackgroundColor,
-                                  child: const Icon(
-                                    Icons.image_outlined,
-                                    color: BorderColor,
-                                    size: 24,
-                                  ),
-                                ),
-                              )
-                            : const Icon(
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: ImageBackgroundColor,
+                              child: const Icon(
                                 Icons.image_outlined,
                                 color: BorderColor,
                                 size: 24,
                               ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // 정보 영역
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // 1행: 매물명
-                          Text(
-                            itemTitle,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500, // Medium
-                              color: Color(0xFF111111),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          )
+                        : const Icon(
+                            Icons.image_outlined,
+                            color: BorderColor,
+                            size: 24,
                           ),
-                          const SizedBox(height: 4),
-                          // 2행: 가격
-                          Text(
-                            "${formatPrice(itemPrice)}원",
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700, // Bold
-                              color: Color(0xFF111111),
-                            ),
-                          ),
-                        ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // 정보 영역
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // 1행: 매물명
+                      Text(
+                        itemTitle,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500, // Medium
+                          color: Color(0xFF111111),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // 우측 액션 영역 (분리된 터치 영역)
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        // 거래 관리 버튼 (텍스트) - 거래 액션
-                        if (showOverflowMenu)
-                          TextButton(
+                      const SizedBox(height: 4),
+                      // 2행: 가격
+                      Text(
+                        "${formatPrice(itemPrice)}원",
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700, // Bold
+                          color: Color(0xFF111111),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // 우측 액션 영역
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 거래 현황 보기 버튼
+                    if (onTradeStatusTap != null)
+                      GestureDetector(
+                        onTap: () {
+                          // 버튼 탭 이벤트가 카드 탭 이벤트로 전파되지 않도록
+                        },
+                        child: TextButton(
+                          onPressed: onTradeStatusTap,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Text(
+                                '거래 현황 보기',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: blueColor,
+                                ),
+                              ),
+                              SizedBox(width: 2),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 12,
+                                color: blueColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    // 거래 관리 버튼 (텍스트) - 거래 액션
+                    if (showOverflowMenu)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: GestureDetector(
+                          onTap: () {
+                            // 버튼 탭 이벤트가 카드 탭 이벤트로 전파되지 않도록
+                          },
+                          child: TextButton(
                             onPressed: () {
                               TradeActionBottomSheet.show(
                                 context,
@@ -183,24 +226,14 @@ class TradeContextCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        // 매물 상세 보기 (거래 관리 하단)
-                        if (showOverflowMenu)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4, right: 8),
-                            child: Text(
-                              '매물 상세 보기',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF8A8D91), // 보조 링크 색상
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+                        ),
+                      ),
                   ],
                 ),
               ],
             ),
+          ],
+        ),
           ),
         ),
       ),

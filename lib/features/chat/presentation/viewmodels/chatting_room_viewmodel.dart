@@ -347,6 +347,18 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     final messageText = messageController.text;
     final imagesToSend = List<XFile>.from(images);
 
+    // 낙관적 업데이트: 메시지 전송 전에 임시 메시지 추가
+    final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentRoomId != null && userId != null) {
+      _addOptimisticMessage(
+        roomId: currentRoomId,
+        senderId: userId,
+        messageText: messageText,
+        images: imagesToSend,
+        messageType: type,
+      );
+    }
+
     // MessageSendManager를 통해 메시지 전송
     final result = await _messageSendManager.sendMessage(
       roomId: currentRoomId,
@@ -358,6 +370,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     );
 
     if (!result.success) {
+      // 전송 실패 시 임시 메시지 제거
+      _removeOptimisticMessages(messageText, imagesToSend);
       _handleSendError(result.errorMessage ?? "메시지 전송 실패");
       isSending = false;
       notifyListeners();
@@ -375,7 +389,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       await _handleFirstMessageSent();
     } else if (currentRoomId != null) {
       // 기존 채팅방에서 메시지 전송 성공
-      // Realtime subscription이 자동으로 새 메시지를 추가하므로 별도로 새로고침 불필요
+      // Realtime subscription이 실제 메시지를 추가하면 임시 메시지가 자동으로 교체됨
       messageController.text = "";
       images.clear();
       type = MessageType.text;
@@ -387,6 +401,63 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       isSending = false;
       notifyListeners();
     }
+  }
+
+  /// 낙관적 업데이트: 임시 메시지를 추가
+  void _addOptimisticMessage({
+    required String roomId,
+    required String senderId,
+    required String messageText,
+    required List<XFile> images,
+    required MessageType messageType,
+  }) {
+    final now = DateTime.now().toUtc().toIso8601String();
+    
+    if (messageText.trim().isNotEmpty) {
+      // 텍스트 메시지 추가
+      final tempMessage = ChatMessageEntity(
+        id: 'temp_${DateTime.now().millisecondsSinceEpoch}_text',
+        roomId: roomId,
+        senderId: senderId,
+        messageType: 'text',
+        text: messageText,
+        imageUrl: null,
+        thumbnailUrl: null,
+        createdAt: now,
+      );
+      messages.add(tempMessage);
+      notifyListeners();
+    }
+
+    // 이미지 메시지 추가
+    for (final image in images) {
+      final isVideo = image.path.toLowerCase().endsWith('.mp4') ||
+          image.path.toLowerCase().endsWith('.mov') ||
+          image.path.toLowerCase().endsWith('.avi');
+      
+      final tempMessage = ChatMessageEntity(
+        id: 'temp_${DateTime.now().millisecondsSinceEpoch}_${image.path}',
+        roomId: roomId,
+        senderId: senderId,
+        messageType: isVideo ? 'video' : 'image',
+        text: null,
+        imageUrl: image.path, // 임시로 로컬 경로 사용
+        thumbnailUrl: null,
+        createdAt: now,
+      );
+      messages.add(tempMessage);
+    }
+    
+    if (images.isNotEmpty || messageText.trim().isNotEmpty) {
+      notifyListeners();
+      scrollToBottom(force: true);
+    }
+  }
+
+  /// 전송 실패 시 임시 메시지 제거
+  void _removeOptimisticMessages(String messageText, List<XFile> images) {
+    messages.removeWhere((msg) => msg.id.startsWith('temp_'));
+    notifyListeners();
   }
 
   // Call when view appears
@@ -527,17 +598,66 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     _subscriptionManager.subscribeToMessages(
       currentRoomId,
       (newChattingMessage) {
-        messages.add(newChattingMessage);
+        // 임시 메시지가 있으면 제거하고 실제 메시지로 교체
+        final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+        final isMyMessage = userId != null && newChattingMessage.senderId == userId;
+        
+        if (isMyMessage) {
+          // 본인이 보낸 메시지인 경우, 임시 메시지와 매칭하여 교체
+          _replaceOptimisticMessage(newChattingMessage);
+        } else {
+          // 다른 사람이 보낸 메시지는 그냥 추가
+          messages.add(newChattingMessage);
+        }
+        
         notifyListeners();
 
         // 본인이 보낸 메시지일 때만 하단으로 스크롤
-        final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-        if (userId != null && newChattingMessage.senderId == userId) {
+        if (isMyMessage) {
           scrollToBottom(force: true);
         }
       },
       notifyListeners,
     );
+  }
+
+  /// 임시 메시지를 실제 메시지로 교체
+  void _replaceOptimisticMessage(ChatMessageEntity realMessage) {
+    // 같은 내용의 임시 메시지를 찾아서 교체
+    bool foundMatch = false;
+    
+    for (int i = messages.length - 1; i >= 0; i--) {
+      final msg = messages[i];
+      
+      // 임시 메시지인지 확인
+      if (msg.id.startsWith('temp_')) {
+        // 텍스트 메시지 매칭
+        if (realMessage.messageType == 'text' && 
+            msg.messageType == 'text' && 
+            msg.text == realMessage.text) {
+          messages[i] = realMessage;
+          foundMatch = true;
+          break;
+        }
+        
+        // 이미지/비디오 메시지 매칭 (내용이 같고 최근 5초 이내)
+        if ((realMessage.messageType == 'image' || realMessage.messageType == 'video') &&
+            (msg.messageType == 'image' || msg.messageType == 'video')) {
+          // 임시 메시지가 있고 같은 타입이면 교체
+          // 첫 번째 매칭되는 임시 메시지를 교체
+          if (!foundMatch) {
+            messages[i] = realMessage;
+            foundMatch = true;
+            break;
+          }
+        }
+      }
+    }
+    
+    // 매칭되는 임시 메시지가 없으면 그냥 추가
+    if (!foundMatch) {
+      messages.add(realMessage);
+    }
   }
 
   @override

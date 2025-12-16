@@ -189,9 +189,15 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         tradeStatus: tradeStatusText,
                         tradeStatusCode: viewModel.tradeInfo?.tradeStatusCode,
                         hasShippingInfo: viewModel.hasShippingInfo,
-                        onCardTap: () {
+                        onItemTap: () {
                           if (viewModel.itemId.isNotEmpty) {
                             context.push('/item/${viewModel.itemId}');
+                          }
+                        },
+                        onTradeStatusTap: () {
+                          // 거래 현황 화면으로 이동
+                          if (viewModel.itemId.isNotEmpty) {
+                            context.push('/chat/room/trade-status?itemId=${viewModel.itemId}');
                           }
                         },
                         onTradeComplete: viewModel.tradeInfo != null &&
