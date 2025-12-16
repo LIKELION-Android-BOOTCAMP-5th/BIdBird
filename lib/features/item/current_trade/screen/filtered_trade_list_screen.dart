@@ -6,6 +6,7 @@ import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/shipping_info_input_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/shipping_info_view_popup.dart';
 import 'package:bidbird/core/widgets/item/components/cards/trade_history_card.dart';
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/item/shipping/data/repository/shipping_info_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -109,7 +110,7 @@ class FilteredTradeListScreen extends StatelessWidget {
         child: viewModel.isLoading
             ? const Center(child: CircularProgressIndicator())
             : viewModel.error != null
-                ? RefreshIndicator(
+                ? TransparentRefreshIndicator(
                     onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
                     child: Center(
                       child: Column(
@@ -126,11 +127,11 @@ class FilteredTradeListScreen extends StatelessWidget {
                     ),
                   )
                 : totalItems == 0
-                    ? RefreshIndicator(
+                    ? TransparentRefreshIndicator(
                         onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
                         child: const Center(child: Text('해당 내역이 없습니다.')),
                   )
-                : RefreshIndicator(
+                : TransparentRefreshIndicator(
                     onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
                     child: Builder(
                       builder: (context) {

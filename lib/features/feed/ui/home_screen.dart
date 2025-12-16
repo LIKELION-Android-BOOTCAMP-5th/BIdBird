@@ -5,6 +5,7 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
@@ -102,10 +103,11 @@ class _HomeScreenState extends State<HomeScreen> {
               body: SafeArea(
                 child: Stack(
                   children: [
-                    RefreshIndicator(
+                    TransparentRefreshIndicator(
                       onRefresh: viewModel.handleRefresh,
                       child: CustomScrollView(
                         controller: viewModel.scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
                           // 키워드 영역
                           SliverToBoxAdapter(

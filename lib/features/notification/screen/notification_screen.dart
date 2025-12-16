@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
 import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
@@ -58,7 +59,7 @@ class NotificationScreen extends StatelessWidget {
     }
 
     return Expanded(
-      child: RefreshIndicator(
+      child: TransparentRefreshIndicator(
         onRefresh: viewModel.fetchNotify,
         child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
