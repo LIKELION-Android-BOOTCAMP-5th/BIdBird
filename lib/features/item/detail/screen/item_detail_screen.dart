@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
 import 'package:bidbird/features/report/screen/report_screen.dart';
+import 'package:bidbird/core/widgets/components/loading_indicator.dart';
 import 'package:bidbird/core/widgets/item/components/others/item_bottom_action_bar.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/core/widgets/item/components/sections/item_detail_image_gallery.dart';
@@ -46,7 +47,7 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
         if (isLoading) {
           return const Scaffold(
             body: SafeArea(
-              child: Center(child: CircularProgressIndicator()),
+              child: CenteredLoadingIndicator(),
             ),
           );
         }
@@ -288,7 +289,7 @@ class _ItemDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                   alignment: Alignment.center,
                   child: const Icon(
-                    Icons.report_outlined,
+                    Icons.warning,
                     color: Colors.white,
                     size: 20,
                   ),

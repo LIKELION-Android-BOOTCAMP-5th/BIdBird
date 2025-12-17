@@ -1,6 +1,5 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,6 +8,7 @@ class ItemDetailDatasource {
       : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   final SupabaseClient _supabase;
+  bool? _lastIsTopBidder;
 
   Future<ItemDetail?> fetchItemDetail(String itemId) async {
     try {
@@ -34,8 +34,8 @@ class ItemDetailDatasource {
           ? DateTime.tryParse(finishTimeRaw) ?? DateTime.now()
           : DateTime.now();
 
-      // 엣지 펑션에서 반환한 isTopBidder 저장 (나중에 활용 가능)
-      final isTopBidderFromResponse = itemData['isTopBidder'] as bool? ?? false;
+      // 엣지 펑션에서 반환한 isTopBidder 저장
+      _lastIsTopBidder = itemData['isTopBidder'] as bool? ?? false;
 
       return ItemDetail(
         itemId: getStringFromRow(itemData, 'itemId', itemId),
@@ -59,152 +59,15 @@ class ItemDetailDatasource {
         tradeStatusCode: getNullableIntFromRow(itemData, 'tradeStatusCode'),
       );
     } catch (e, stackTrace) {
-      // 엣지 펑션 호출 실패 시 기존 방식으로 fallback
-      return _fetchItemDetailFallback(itemId);
+      // 엣지 펑션 호출 실패 시 null 반환
+      _lastIsTopBidder = null;
+      return null;
     }
   }
 
-  /// 엣지 펑션 실패 시 기존 방식으로 fallback
-  Future<ItemDetail?> _fetchItemDetailFallback(String itemId) async {
-    final List<dynamic> result = await _supabase
-        .from('items_detail')
-        .select()
-        .eq('item_id', itemId)
-        .limit(1);
-
-    if (result.isEmpty) return null;
-
-    final firstResult = result.first;
-    if (firstResult is! Map<String, dynamic>) return null;
-    final row = firstResult;
-
-    DateTime? finishTime;
-
-    final String sellerId = getStringFromRow(row, 'seller_id');
-    String sellerTitle = await _fetchSellerName(sellerId, row);
-
-    SellerRatingSummary? ratingSummary;
-    if (sellerId.isNotEmpty) {
-      ratingSummary = await _fetchSellerRating(sellerId);
-    }
-
-    final List<String> images = await _fetchImages(itemId);
-
-    int biddingCount = 0;
-    int currentPrice = 0;
-    int statusCode = 0;
-    int? tradeStatusCode;
-
-    try {
-      final auctionRow = await _supabase
-          .from('auctions')
-          .select(
-            'current_price, bid_count, auction_status_code, trade_status_code, auction_end_at',
-          )
-          .eq('item_id', itemId)
-          .eq('round', 1)
-          .maybeSingle();
-
-      if (auctionRow is Map<String, dynamic>) {
-        currentPrice = getIntFromRow(auctionRow, 'current_price');
-        biddingCount = getIntFromRow(auctionRow, 'bid_count');
-        statusCode = getIntFromRow(auctionRow, 'auction_status_code');
-        tradeStatusCode = getNullableIntFromRow(auctionRow, 'trade_status_code');
-
-        final endRaw = getNullableStringFromRow(auctionRow, 'auction_end_at');
-        if (endRaw != null && endRaw.isNotEmpty) {
-          finishTime = DateTime.tryParse(endRaw);
-        }
-      }
-    } catch (e, stackTrace) {
-      // auction info 조회 실패 시 조용히 처리
-    }
-
-    final minBidStep = ItemPriceHelper.calculateBidStep(currentPrice);
-
-    DateTime effectiveFinishTime;
-    if (finishTime != null) {
-      effectiveFinishTime = finishTime;
-    } else {
-      final createdAtRaw = getNullableStringFromRow(row, 'created_at');
-      final createdAt = createdAtRaw != null
-          ? DateTime.tryParse(createdAtRaw) ?? DateTime.now()
-          : DateTime.now();
-      final durationHours = getIntFromRow(row, 'auction_duration_hours', 24);
-      effectiveFinishTime = createdAt.add(Duration(hours: durationHours));
-    }
-
-    return ItemDetail(
-      itemId: getStringFromRow(row, 'item_id', itemId),
-      sellerId: sellerId,
-      itemTitle: getStringFromRow(row, 'title'),
-      itemImages: images,
-      finishTime: effectiveFinishTime,
-      sellerTitle: sellerTitle,
-      buyNowPrice: getIntFromRow(row, 'buy_now_price'),
-      biddingCount: biddingCount,
-      itemContent: getStringFromRow(row, 'description'),
-      currentPrice: currentPrice,
-      bidPrice: minBidStep,
-      sellerRating: ratingSummary?.rating ??
-          getDoubleFromRow(row, 'seller_rating'),
-      sellerReviewCount: ratingSummary?.reviewCount ??
-          getIntFromRow(row, 'seller_review_count'),
-      statusCode: statusCode,
-      tradeStatusCode: tradeStatusCode,
-    );
-  }
-
-  Future<String> _fetchSellerName(
-    String sellerId,
-    Map<String, dynamic> row,
-  ) async {
-    String sellerTitle = getStringFromRow(row, 'seller_name');
-
-    if (sellerTitle.isEmpty && sellerId.isNotEmpty) {
-      try {
-        final userRow = await _supabase
-            .from('users')
-            .select('nick_name, name')
-            .eq('id', sellerId)
-            .maybeSingle();
-
-        if (userRow is Map<String, dynamic>) {
-          final rawNick = getStringFromRow(userRow, 'nick_name');
-          sellerTitle = rawNick.isNotEmpty
-              ? rawNick
-              : getStringFromRow(userRow, 'name');
-        }
-      } catch (e, stackTrace) {
-        // seller name 조회 실패 시 조용히 처리
-      }
-    }
-
-    return sellerTitle;
-  }
-
-  Future<List<String>> _fetchImages(String itemId) async {
-    final List<String> images = [];
-
-    try {
-      final imageRows = await _supabase
-          .from('item_images')
-          .select('image_url')
-          .eq('item_id', itemId)
-          .order('sort_order', ascending: true);
-
-      for (final Map<String, dynamic> imgRow in imageRows) {
-        final imageUrl = getNullableStringFromRow(imgRow, 'image_url');
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          images.add(imageUrl);
-        }
-      }
-    } catch (e, stackTrace) {
-      // images 조회 실패 시 조용히 처리
-    }
-
-    return images;
-  }
+  /// 마지막으로 fetchItemDetail에서 받은 isTopBidder 값 반환
+  /// 엣지 펑션을 사용하는 경우에만 유효
+  bool? getLastIsTopBidder() => _lastIsTopBidder;
 
   Future<bool> checkIsFavorite(String itemId) async {
     final user = _supabase.auth.currentUser;
@@ -241,27 +104,6 @@ class ItemDetailDatasource {
         'item_id': itemId,
         'user_id': user.id,
       });
-    }
-  }
-
-  Future<bool> checkIsTopBidder(String itemId) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return false;
-
-    try {
-      final row = await _supabase
-          .from('auctions')
-          .select('last_bid_user_id')
-          .eq('item_id', itemId)
-          .eq('round', 1)
-          .maybeSingle();
-
-      if (row is! Map<String, dynamic>) return false;
-
-      final String? lastBidUserId = getNullableStringFromRow(row, 'last_bid_user_id');
-      return lastBidUserId != null && lastBidUserId == user.id;
-    } catch (e, stackTrace) {
-      return false;
     }
   }
 
