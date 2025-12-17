@@ -4,26 +4,61 @@ import 'package:flutter/material.dart';
 //DB의숫자가뭔지모르겠어서일단이렇게함//enum을쓸필요가있나
 String getReportCodeName(String? reportCode) {
   switch (reportCode) {
-    case 0:
-      return 'type_0';
-    case 1:
-      return 'type_1';
-    case 2:
-      return 'type_2';
-    case 3:
-      return 'type_3';
-    case 4:
-      return 'type_4';
-    case 5:
-      return 'type_5';
-    case 6:
-      return 'type_6';
-    case 7:
-      return 'type_7';
-    case 8:
-      return 'type_8';
+    case 'communication_report_01':
+      return '욕설·비방';
+    case 'communication_report_02':
+      return '스팸·도배';
+    case 'communication_report_03':
+      return '사기 유도 메시지';
+    case 'communication_report_04':
+      return '외부 거래 유도';
+
+    case 'item_report_01':
+      return '허위매물';
+    case 'item_report_02':
+      return '광고';
+    case 'item_report_03':
+      return '거래 금지 품목';
+    case 'item_report_04':
+      return '위조품·가품 의심';
+    case 'item_report_05':
+      return '상품 정보 불일치';
+    case 'item_report_06':
+      return '이미지 도용';
+    case 'item_report_07':
+      return '가격 조작 의심';
+
+    case 'policy_report_01':
+      return '약관 위반';
+    case 'policy_report_02':
+      return '운영자 검토 요청';
+    case 'policy_report_03':
+      return '시스템 오류';
+
+    case 'transaction_report_01':
+      return '결제 사기 의심';
+    case 'transaction_report_02':
+      return '환불 분쟁';
+    case 'transaction_report_03':
+      return '배송 지연';
+    case 'transaction_report_04':
+      return '배송 미이행';
+    case 'transaction_report_05':
+      return '송장 정보 허위';
+
+    case 'user_report_01':
+      return '사기 의심';
+    case 'user_report_02':
+      return '반복 미결제';
+    case 'user_report_03':
+      return '악의적 입찰';
+    case 'user_report_04':
+      return '계정 도용 의심';
+    case 'user_report_05':
+      return '다중 계정 의심';
+
     default:
-      return 'type_9';
+      return '';
   }
 }
 

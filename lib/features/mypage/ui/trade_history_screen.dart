@@ -357,6 +357,10 @@ class _HistoryItem extends StatelessWidget {
 
     final hasImage = item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty;
 
+    final priceLabel = item.role == TradeRole.buyer
+        ? '내 입찰가'
+        : '최고입찰가'; //item.currentPrice 다르게나와서수정함
+
     return GestureDetector(
       onTap: () {
         if (item.itemId.isNotEmpty) {
@@ -426,7 +430,7 @@ class _HistoryItem extends StatelessWidget {
 
                   if (item.currentPrice > 0)
                     Text(
-                      '최고입찰가 ${item.currentPrice.toCommaString()}원',
+                      '$priceLabel ${item.currentPrice.toCommaString()}원',
                       style: TextStyle(fontSize: 14, color: textColor),
                     )
                   else if (labelText.contains('유찰') || item.currentPrice <= 0)
