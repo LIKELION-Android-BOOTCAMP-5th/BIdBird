@@ -31,8 +31,6 @@ class _ChatInputAreaState extends State<ChatInputArea> {
 
   @override
   Widget build(BuildContext context) {
-    // 거래 완료 상태 확인
-    final isTradeCompleted = widget.viewModel.tradeInfo?.tradeStatusCode == 550;
     final hasText = widget.viewModel.messageController.text.trim().isNotEmpty;
     final hasImages = widget.viewModel.images.isNotEmpty;
     final canSend = hasText || hasImages; // 텍스트 또는 이미지가 있으면 전송 가능
@@ -58,22 +56,18 @@ class _ChatInputAreaState extends State<ChatInputArea> {
           children: [
             // 왼쪽 + 버튼
             InkWell(
-              onTap: isTradeCompleted ? null : widget.onImageSourceSheet,
+              onTap: widget.onImageSourceSheet,
               borderRadius: BorderRadius.circular(18),
               child: Container(
                 width: context.isLargeScreen() ? 40 : 36,
                 height: context.isLargeScreen() ? 40 : 36,
                 decoration: BoxDecoration(
-                  color: isTradeCompleted
-                      ? const Color(0xFFE0E3E7)
-                      : const Color(0xFFF1F3F4),
+                  color: const Color(0xFFF1F3F4),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.add,
-                  color: isTradeCompleted
-                      ? const Color(0xFF9AA0A6)
-                      : const Color(0xFF5F6368),
+                  color: Color(0xFF5F6368),
                   size: 20,
                 ),
               ),
@@ -95,11 +89,9 @@ class _ChatInputAreaState extends State<ChatInputArea> {
                       vertical: 0,
                     ),
                     decoration: BoxDecoration(
-                      color: isTradeCompleted
-                          ? const Color(0xFFF7F8FA)
-                          : (hasFocus
-                              ? const Color(0xFFFFFFFF)
-                              : const Color(0xFFF5F6F8)),
+                      color: hasFocus
+                          ? const Color(0xFFFFFFFF)
+                          : const Color(0xFFF5F6F8),
                       borderRadius: BorderRadius.circular(20),
                       border: hasFocus
                           ? Border.all(
@@ -128,9 +120,7 @@ class _ChatInputAreaState extends State<ChatInputArea> {
                       ),
                       textAlignVertical: TextAlignVertical.center,
                       decoration: InputDecoration(
-                        hintText: isTradeCompleted
-                            ? "거래 완료 후 메시지를 보낼 수 있습니다"
-                            : "메시지를 입력하세요",
+                        hintText: "메시지를 입력하세요",
                         hintStyle: TextStyle(
                           color: const Color(0xFF9AA0A6),
                           fontSize: context.fontSizeMedium,
@@ -168,7 +158,7 @@ class _ChatInputAreaState extends State<ChatInputArea> {
             SizedBox(width: context.spacingSmall),
             // 오른쪽 전송 버튼
             InkWell(
-              onTap: (!canSend || widget.viewModel.isSending || isTradeCompleted)
+              onTap: (!canSend || widget.viewModel.isSending)
                   ? null
                   : () {
                       // 키보드 닫기
@@ -186,7 +176,7 @@ class _ChatInputAreaState extends State<ChatInputArea> {
                 width: context.isLargeScreen() ? 40 : 36,
                 height: context.isLargeScreen() ? 40 : 36,
                 decoration: BoxDecoration(
-                  color: (!canSend || isTradeCompleted)
+                  color: !canSend
                       ? const Color(0xFFE0E3E7) // Disabled
                       : const Color(0xFF4F7CF5), // Enabled
                   borderRadius: BorderRadius.circular(18),
@@ -205,7 +195,7 @@ class _ChatInputAreaState extends State<ChatInputArea> {
                         )
                       : Icon(
                           Icons.send,
-                          color: (!canSend || isTradeCompleted)
+                          color: !canSend
                               ? const Color(0xFF9AA0A6) // Disabled
                               : Colors.white, // Enabled
                           size: 20,

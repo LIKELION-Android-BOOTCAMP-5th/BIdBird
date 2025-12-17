@@ -16,12 +16,14 @@ class ItemAddGatewayImpl implements ItemAddGateway {
     required List<String> imageUrls,
     required int primaryImageIndex,
     String? editingItemId,
+    String? thumbnailUrl,
   }) {
     return _datasource.saveItem(
       entity: entity,
       imageUrls: imageUrls,
       primaryImageIndex: primaryImageIndex,
       editingItemId: editingItemId,
+      thumbnailUrl: thumbnailUrl,
     );
   }
 }
