@@ -227,7 +227,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         final winItem = ItemBidWinEntity(
                                           itemId: item.item_id,
                                           title: title,
-                                          images: [item.thumbnail_image],
+                                          images: item.thumbnail_image.isNotEmpty
+                                              ? [item.thumbnail_image]
+                                              : [],
                                           winPrice: item.auctions.current_price,
                                           tradeStatusCode:
                                               item.auctions.trade_status_code,
@@ -479,7 +481,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         final winItem = ItemBidWinEntity(
                                           itemId: item.item_id,
                                           title: title,
-                                          images: [item.thumbnail_image],
+                                          images: item.thumbnail_image.isNotEmpty
+                                              ? [item.thumbnail_image]
+                                              : [],
                                           winPrice: item.auctions.current_price,
                                           tradeStatusCode:
                                               item.auctions.trade_status_code,

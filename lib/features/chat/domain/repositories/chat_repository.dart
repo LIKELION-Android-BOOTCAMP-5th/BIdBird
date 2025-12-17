@@ -29,4 +29,6 @@ abstract class ChatRepository {
   );
   Future<void> notificationOff(String roomId);
   Future<void> notificationOn(String roomId);
+  Future<void> completeTrade(String itemId);
+  Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault);
 }

@@ -49,3 +49,4 @@ Podfile.lock
 devtools_options.yaml
 .env
 .env.*
+!.env.example
