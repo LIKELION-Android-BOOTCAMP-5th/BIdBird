@@ -179,6 +179,10 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                       final canShowTradeCancel = viewModel.tradeInfo != null &&
                           viewModel.tradeInfo!.tradeStatusCode != 550;
 
+                      // 거래 현황 보기 버튼 표시 조건: 낙찰자 또는 판매자만, 그리고 tradeInfo가 있어야 함
+                      final canShowTradeStatus = viewModel.tradeInfo != null &&
+                          (viewModel.isTopBidder || isSeller);
+
                       return TradeContextCard(
                         itemTitle: viewModel.itemInfo?.title ?? "로딩중",
                         itemThumbnail: viewModel.itemInfo?.thumbnailImage,
@@ -192,20 +196,23 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             context.push('/item/${viewModel.itemId}');
                           }
                         },
-                        onTradeStatusTap: () {
-                          // 거래 현황 화면으로 이동
-                          if (viewModel.itemId.isNotEmpty) {
-                            context.push('/chat/room/trade-status?itemId=${viewModel.itemId}');
-                          }
-                        },
+                        onTradeStatusTap: canShowTradeStatus
+                            ? () {
+                                // 거래 현황 화면으로 이동
+                                if (viewModel.itemId.isNotEmpty) {
+                                  context.push('/chat/room/trade-status?itemId=${viewModel.itemId}');
+                                }
+                              }
+                            : null,
                         onTradeComplete: viewModel.tradeInfo != null &&
-                                viewModel.tradeInfo!.tradeStatusCode != 550
+                                viewModel.tradeInfo!.tradeStatusCode != 550 &&
+                                viewModel.hasShippingInfo
                             ? () {
                                 // 거래 완료 액션
                                 _showTradeCompleteDialog(context, viewModel);
                               }
                             : null,
-                        onTradeCancel: canShowTradeCancel
+                        onTradeCancel: canShowTradeCancel && viewModel.hasShippingInfo
                             ? () {
                                 // 거래 취소 액션 (사유 선택 포함)
                                 _showTradeCancelWithReason(context, viewModel);
