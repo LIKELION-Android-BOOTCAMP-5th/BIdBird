@@ -499,6 +499,14 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     // 먼저 isActive를 false로 설정하여 실시간 구독 업데이트가 무시되도록 함
     heartbeatManager.stop();
     isActive = false;
+    
+    // 서버에 leaveRoom API 호출
+    try {
+      await chattingRoomService.leaveRoom(thisRoomId);
+    } catch (e) {
+      // 에러 발생 시 무시 (읽음 처리 실패해도 계속 진행)
+      print("leaveRoom 실패 : ${e}");
+    }
   }
 
   Future<void> leaveRoom() async {
