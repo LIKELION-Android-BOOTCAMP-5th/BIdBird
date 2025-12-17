@@ -8,7 +8,6 @@ class ChatListRealtimeSubscriptionManager {
   RealtimeChannel? _buyerChannel;
   RealtimeChannel? _sellerChannel;
   RealtimeChannel? _roomUsersChannel;
-  RealtimeChannel? _messageChannel;
 
   /// 실시간 구독 설정
   void setupSubscription({
@@ -38,6 +37,12 @@ class ChatListRealtimeSubscriptionManager {
           ),
           callback: (payload) {
             onRoomListUpdate();
+            if (onNewMessage != null) {
+              final roomId = payload.newRecord['id'] as String?;
+              if (roomId != null) {
+                onNewMessage(roomId);
+              }
+            }
           },
         )
         .subscribe();
@@ -56,6 +61,12 @@ class ChatListRealtimeSubscriptionManager {
           ),
           callback: (payload) {
             onRoomListUpdate();
+            if (onNewMessage != null) {
+              final roomId = payload.newRecord['id'] as String?;
+              if (roomId != null) {
+                onNewMessage(roomId);
+              }
+            }
           },
         )
         .subscribe();
@@ -78,24 +89,6 @@ class ChatListRealtimeSubscriptionManager {
           },
         )
         .subscribe();
-
-    // 새 메시지 감지
-    if (onNewMessage != null) {
-      _messageChannel = _supabase.channel('chatting_message_list');
-      _messageChannel!
-          .onPostgresChanges(
-            event: PostgresChangeEvent.insert,
-            schema: 'public',
-            table: 'chatting_message',
-            callback: (payload) {
-              final roomId = payload.newRecord['room_id'] as String?;
-              if (roomId != null) {
-                onNewMessage(roomId);
-              }
-            },
-          )
-          .subscribe();
-    }
   }
 
   /// 모든 구독 해제
@@ -111,10 +104,6 @@ class ChatListRealtimeSubscriptionManager {
     if (_roomUsersChannel != null) {
       _supabase.removeChannel(_roomUsersChannel!);
       _roomUsersChannel = null;
-    }
-    if (_messageChannel != null) {
-      _supabase.removeChannel(_messageChannel!);
-      _messageChannel = null;
     }
   }
 }
