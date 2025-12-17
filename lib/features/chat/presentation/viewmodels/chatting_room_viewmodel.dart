@@ -43,6 +43,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   bool hasMore = false;
 
   int? previousUnreadCount; // 이전 unreadCount 값을 저장
+  bool _isFetchingRoomInfo = false; // fetchRoomInfo 호출 중인지 확인하는 플래그
 
   // Manager 클래스들
   late final ScrollManager _scrollManager;
@@ -126,17 +127,25 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
 
   Future<void> fetchRoomInfo() async {
-    final result = await _roomInfoManager.fetchRoomInfo(
-      roomId: roomId,
-      itemId: itemId,
-    );
-
-    final newUnreadCount = result.unreadCount;
-
-    // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
-    if (messages.isNotEmpty) {
-      _markMessagesAsReadUpToLastViewed(newUnreadCount);
+    // 중복 호출 방지
+    if (_isFetchingRoomInfo) {
+      return;
     }
+    _isFetchingRoomInfo = true;
+    
+    try {
+      final result = await _roomInfoManager.fetchRoomInfo(
+        roomId: roomId,
+        itemId: itemId,
+      );
+
+      final newUnreadCount = result.unreadCount;
+
+      // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
+      // fetchRoomInfo 호출 중이므로 fetchRoomInfoDebounced를 호출하지 않도록 플래그 전달
+      if (messages.isNotEmpty) {
+        _markMessagesAsReadUpToLastViewed(newUnreadCount, skipFetchRoomInfo: true);
+      }
 
     // unreadCount 변경 감지: 이전에 읽지 않은 메시지가 있었는데 지금 0이 되면 하단으로 스크롤
     // 단, 사용자가 수동으로 스크롤 중이 아니고, 초기 로드가 아닐 때만
@@ -149,29 +158,41 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       scrollToBottom(force: true);
     }
 
-    previousUnreadCount = newUnreadCount;
-    roomInfo = result.roomInfo;
-    itemInfo = result.itemInfo;
-    auctionInfo = result.auctionInfo;
-    tradeInfo = result.tradeInfo;
-    _hasShippingInfo = result.hasShippingInfo;
-    
-    setupRealtimeRoomInfoSubscription();
-    notifyListeners();
+      previousUnreadCount = newUnreadCount;
+      roomInfo = result.roomInfo;
+      itemInfo = result.itemInfo;
+      auctionInfo = result.auctionInfo;
+      tradeInfo = result.tradeInfo;
+      _hasShippingInfo = result.hasShippingInfo;
+      
+      setupRealtimeRoomInfoSubscription();
+      notifyListeners();
+    } catch (e) {
+      // 에러 발생 시 조용히 처리
+    } finally {
+      _isFetchingRoomInfo = false;
+    }
   }
 
   // 디바운스를 적용한 fetchRoomInfo 호출
   void fetchRoomInfoDebounced() {
+    // 중복 호출 방지
+    if (_isFetchingRoomInfo) {
+      return;
+    }
     _roomInfoManager.fetchRoomInfoDebounced(
       roomId: roomId,
       itemId: itemId,
       callback: (result) async {
-        final newUnreadCount = result.unreadCount;
+        _isFetchingRoomInfo = true;
+        try {
+          final newUnreadCount = result.unreadCount;
 
-        // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
-        if (messages.isNotEmpty) {
-          _markMessagesAsReadUpToLastViewed(newUnreadCount);
-        }
+          // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
+          // fetchRoomInfoDebounced 호출 중이므로 fetchRoomInfoDebounced를 호출하지 않도록 플래그 전달
+          if (messages.isNotEmpty) {
+            _markMessagesAsReadUpToLastViewed(newUnreadCount, skipFetchRoomInfo: true);
+          }
 
         // unreadCount 변경 감지
         if (previousUnreadCount != null &&
@@ -182,15 +203,20 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           scrollToBottom(force: true);
         }
 
-        previousUnreadCount = newUnreadCount;
-        roomInfo = result.roomInfo;
-        itemInfo = result.itemInfo;
-        auctionInfo = result.auctionInfo;
-        tradeInfo = result.tradeInfo;
-        _hasShippingInfo = result.hasShippingInfo;
-        
-        setupRealtimeRoomInfoSubscription();
-        notifyListeners();
+          previousUnreadCount = newUnreadCount;
+          roomInfo = result.roomInfo;
+          itemInfo = result.itemInfo;
+          auctionInfo = result.auctionInfo;
+          tradeInfo = result.tradeInfo;
+          _hasShippingInfo = result.hasShippingInfo;
+          
+          setupRealtimeRoomInfoSubscription();
+          notifyListeners();
+        } catch (e) {
+          // 에러 발생 시 조용히 처리
+        } finally {
+          _isFetchingRoomInfo = false;
+        }
       },
     );
   }
@@ -202,7 +228,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
   // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
-  void _markMessagesAsReadUpToLastViewed(int unreadCount) {
+  void _markMessagesAsReadUpToLastViewed(int unreadCount, {bool skipFetchRoomInfo = false}) {
     _readStatusManager.markMessagesAsReadUpToLastViewed(
       messages,
       unreadCount,
@@ -212,13 +238,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       },
     );
 
-    // roomInfo의 lastMessageAt을 마지막으로 본 메시지 시간으로 업데이트
-    if (roomInfo != null) {
-      // roomInfo는 immutable이므로 직접 업데이트할 수 없음
-      // 대신 fetchRoomInfo를 호출하여 최신 정보를 가져옴
-      // 하지만 무한 루프를 방지하기 위해 디바운스 적용
-      fetchRoomInfoDebounced();
-    }
   }
 
   // 읽지 않은 메시지가 있는지 확인하고 첫 번째 읽지 않은 메시지의 인덱스를 반환
@@ -545,9 +564,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         notifyListeners();
       },
       onUnreadCountUpdate: (newUnreadCount) {
+        // 중복 호출 방지: 같은 값이면 처리하지 않음
+        if (previousUnreadCount == newUnreadCount) {
+          return;
+        }
+        
         // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
+        // 실시간 구독에서 호출되므로 fetchRoomInfoDebounced를 호출하지 않도록 플래그 전달
         if (messages.isNotEmpty) {
-          _markMessagesAsReadUpToLastViewed(newUnreadCount);
+          _markMessagesAsReadUpToLastViewed(newUnreadCount, skipFetchRoomInfo: true);
         }
 
         // 이전에 읽지 않은 메시지가 있었는데 지금 0이 되면 하단으로 스크롤
