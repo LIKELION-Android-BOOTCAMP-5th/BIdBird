@@ -126,4 +126,59 @@ class ChatNetworkApiDatasource {
       throw Exception('거래 취소 처리 중 오류가 발생했습니다: $e');
     }
   }
+
+  /// 거래 평가 작성 API 호출
+  Future<void> submitTradeReview({
+    required String itemId,
+    required String toUserId,
+    required String role,
+    required double rating,
+    required String comment,
+  }) async {
+    try {
+      final response = await SupabaseManager.shared.supabase.functions.invoke(
+        'submitTradeReview',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: {
+          'itemId': itemId,
+          'toUserId': toUserId,
+          'role': role,
+          'rating': rating,
+          'comment': comment,
+        },
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        if (data['success'] != true) {
+          final errorMessage = data['error'] ?? '거래 평가 작성에 실패했습니다.';
+          throw Exception(errorMessage);
+        }
+      }
+    } catch (e) {
+      throw Exception('거래 평가 작성 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  /// 거래 평가 작성 여부 확인
+  Future<bool> hasSubmittedReview(String itemId) async {
+    try {
+      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        return false;
+      }
+
+      final response = await SupabaseManager.shared.supabase
+          .from('user_review')
+          .select('id')
+          .eq('item_id', itemId)
+          .eq('from_user_id', currentUserId)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      return false;
+    }
+  }
 }

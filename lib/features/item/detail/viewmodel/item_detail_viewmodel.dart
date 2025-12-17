@@ -90,7 +90,7 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       _loadFavoriteState(),
       _checkTopBidder(),
       _loadSellerProfile(),
-      _loadBidHistory(),
+      // 입찰 내역은 바텀 시트가 열릴 때만 로드
     ], eagerError: false);
   }
 
@@ -136,12 +136,15 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     }
   }
 
-  Future<void> _loadBidHistory() async {
+  /// 입찰 내역을 로드합니다. 바텀 시트가 열릴 때 호출됩니다.
+  Future<void> loadBidHistory() async {
     try {
       _bidHistory = await _repository.fetchBidHistory(itemId);
-      // notifyListeners() 제거 - 상위에서 배치 호출
+      notifyListeners();
     } catch (e) {
       // 입찰 내역 로드 실패 시 빈 리스트 유지
+      _bidHistory = [];
+      notifyListeners();
     }
   }
 

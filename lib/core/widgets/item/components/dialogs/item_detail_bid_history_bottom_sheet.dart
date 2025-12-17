@@ -1,7 +1,9 @@
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
 import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
+import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ItemDetailBidHistoryBottomSheet extends StatefulWidget {
   const ItemDetailBidHistoryBottomSheet({
@@ -35,18 +37,42 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
   @override
   void initState() {
     super.initState();
-    _loadBidHistory();
+    // build가 완료된 후 입찰 내역 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadBidHistory();
+      }
+    });
   }
 
   Future<void> _loadBidHistory() async {
     if (_state == _BidHistoryState.loading) return;
 
+    if (!mounted) return;
+    
     setState(() {
       _state = _BidHistoryState.loading;
     });
 
     try {
-      final bids = await _datasource.fetchBidHistory(widget.itemId);
+      List<Map<String, dynamic>> bids = [];
+      
+      // ViewModel에서 이미 로드된 입찰 내역이 있는지 확인
+      try {
+        final viewModel = context.read<ItemDetailViewModel>();
+        if (viewModel.bidHistory.isNotEmpty) {
+          bids = viewModel.bidHistory;
+        } else {
+          // ViewModel에 없으면 ViewModel을 통해 로드
+          await viewModel.loadBidHistory();
+          bids = viewModel.bidHistory;
+        }
+      } catch (e) {
+        // ViewModel을 찾을 수 없으면 직접 로드
+        bids = await _datasource.fetchBidHistory(widget.itemId);
+      }
+      
+      if (!mounted) return;
       
       // 가격이 0원인 입찰은 필터링
       final filteredBids = bids.where((bid) {

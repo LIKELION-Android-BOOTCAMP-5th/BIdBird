@@ -11,6 +11,61 @@ class ItemDetailDatasource {
   final SupabaseClient _supabase;
 
   Future<ItemDetail?> fetchItemDetail(String itemId) async {
+    try {
+      // 엣지 펑션 호출
+      final response = await _supabase.functions.invoke(
+        'getItemDetail',
+        body: {'itemId': itemId},
+      );
+
+      final data = response.data;
+      if (data is! Map<String, dynamic>) return null;
+
+      if (data['success'] != true) {
+        return null;
+      }
+
+      final itemData = data['data'] as Map<String, dynamic>;
+      if (itemData.isEmpty) return null;
+
+      // finishTime 파싱
+      final finishTimeRaw = getStringFromRow(itemData, 'finishTime');
+      final effectiveFinishTime = finishTimeRaw.isNotEmpty
+          ? DateTime.tryParse(finishTimeRaw) ?? DateTime.now()
+          : DateTime.now();
+
+      // 엣지 펑션에서 반환한 isTopBidder 저장 (나중에 활용 가능)
+      final isTopBidderFromResponse = itemData['isTopBidder'] as bool? ?? false;
+
+      return ItemDetail(
+        itemId: getStringFromRow(itemData, 'itemId', itemId),
+        sellerId: getStringFromRow(itemData, 'sellerId'),
+        itemTitle: getStringFromRow(itemData, 'itemTitle'),
+        itemImages: (itemData['itemImages'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .where((e) => e.isNotEmpty)
+                .toList() ??
+            [],
+        finishTime: effectiveFinishTime,
+        sellerTitle: getStringFromRow(itemData, 'sellerTitle'),
+        buyNowPrice: getIntFromRow(itemData, 'buyNowPrice'),
+        biddingCount: getIntFromRow(itemData, 'biddingCount'),
+        itemContent: getStringFromRow(itemData, 'itemContent'),
+        currentPrice: getIntFromRow(itemData, 'currentPrice'),
+        bidPrice: getIntFromRow(itemData, 'bidPrice'),
+        sellerRating: getDoubleFromRow(itemData, 'sellerRating'),
+        sellerReviewCount: getIntFromRow(itemData, 'sellerReviewCount'),
+        statusCode: getIntFromRow(itemData, 'statusCode'),
+        tradeStatusCode: getNullableIntFromRow(itemData, 'tradeStatusCode'),
+      );
+    } catch (e, stackTrace) {
+      // 엣지 펑션 호출 실패 시 기존 방식으로 fallback
+      return _fetchItemDetailFallback(itemId);
+    }
+  }
+
+  /// 엣지 펑션 실패 시 기존 방식으로 fallback
+  Future<ItemDetail?> _fetchItemDetailFallback(String itemId) async {
     final List<dynamic> result = await _supabase
         .from('items_detail')
         .select()

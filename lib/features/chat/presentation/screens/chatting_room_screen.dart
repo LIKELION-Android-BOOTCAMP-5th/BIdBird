@@ -5,6 +5,7 @@ import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/check_confirm_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/trade_cancel_fault_popup.dart';
+import 'package:bidbird/core/widgets/components/pop_up/trade_review_popup.dart';
 import 'package:bidbird/core/widgets/chat/trade_cancel_reason_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/chat/trade_context_card.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
@@ -183,9 +184,11 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                           viewModel.tradeInfo!.tradeStatusCode != 540 && // 이미 취소된 거래는 불가
                           viewModel.isTopBidder; // 구매자(낙찰자)만 가능
 
-                      // 거래 현황 보기 버튼 표시 조건: 낙찰자 또는 판매자만, 그리고 tradeInfo가 있어야 함
+                      // 거래 현황 보기 / 거래 평가 버튼 표시 조건: 낙찰자 또는 판매자만, 그리고 tradeInfo가 있어야 함
+                      // 거래 완료 상태(550)일 때는 평가를 작성하지 않았을 때만 표시
                       final canShowTradeStatus = viewModel.tradeInfo != null &&
-                          (viewModel.isTopBidder || isSeller);
+                          (viewModel.isTopBidder || isSeller) &&
+                          !(viewModel.tradeInfo?.tradeStatusCode == 550 && viewModel.hasSubmittedReview);
 
                       return TradeContextCard(
                         itemTitle: viewModel.itemInfo?.title ?? "로딩중",
@@ -202,9 +205,15 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         },
                         onTradeStatusTap: canShowTradeStatus
                             ? () {
-                                // 거래 현황 화면으로 이동
+                                // 거래 완료 상태(550)일 때는 거래 평가 팝업 표시, 그 외에는 거래 현황 화면으로 이동
                                 if (viewModel.itemId.isNotEmpty) {
-                                  context.push('/chat/room/trade-status?itemId=${viewModel.itemId}');
+                                  if (viewModel.tradeInfo?.tradeStatusCode == 550) {
+                                    // 거래 평가 팝업 표시
+                                    _showTradeReviewPopup(context, viewModel);
+                                  } else {
+                                    // 거래 현황 화면으로 이동
+                                    context.push('/chat/room/trade-status?itemId=${viewModel.itemId}');
+                                  }
                                 }
                               }
                             : null,
@@ -378,5 +387,53 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
         ),
       );
     }
+  }
+
+  /// 거래 평가 팝업 표시
+  void _showTradeReviewPopup(
+    BuildContext context,
+    ChattingRoomViewmodel viewModel,
+  ) {
+    TradeReviewPopup.show(
+      context,
+      onSubmit: (rating, review) async {
+        // 로딩 표시
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('거래 평가 작성 중...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+
+        try {
+          // 거래 평가 API 호출
+          await viewModel.submitTradeReview(rating, review);
+          
+          if (!context.mounted) return;
+          
+          // 성공 메시지
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('거래 평가가 작성되었습니다.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } catch (e) {
+          if (!context.mounted) return;
+          
+          // 에러 메시지
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('거래 평가 작성 중 오류가 발생했습니다: ${e.toString()}'),
+              backgroundColor: RedColor,
+            ),
+          );
+        }
+      },
+      onCancel: () {
+        // 취소 시 아무 동작 없음
+      },
+    );
   }
 }

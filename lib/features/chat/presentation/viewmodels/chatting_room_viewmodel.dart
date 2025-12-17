@@ -34,6 +34,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   TradeInfoEntity? tradeInfo;
   bool _hasShippingInfo = false;
   bool get hasShippingInfo => _hasShippingInfo;
+  bool _hasSubmittedReview = false;
+  bool get hasSubmittedReview => _hasSubmittedReview;
   final TextEditingController messageController = TextEditingController();
   List<ChatMessageEntity> messages = [];
   MessageType type = MessageType.text;
@@ -165,6 +167,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       tradeInfo = result.tradeInfo;
       _hasShippingInfo = result.hasShippingInfo;
       
+      // 평가 작성 여부 확인
+      if (itemId.isNotEmpty) {
+        _hasSubmittedReview = await _repository.hasSubmittedReview(itemId);
+      }
+      
       setupRealtimeRoomInfoSubscription();
       notifyListeners();
     } catch (e) {
@@ -209,6 +216,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           auctionInfo = result.auctionInfo;
           tradeInfo = result.tradeInfo;
           _hasShippingInfo = result.hasShippingInfo;
+          
+          // 평가 작성 여부 확인
+          if (itemId.isNotEmpty) {
+            _hasSubmittedReview = await _repository.hasSubmittedReview(itemId);
+          }
           
           setupRealtimeRoomInfoSubscription();
           notifyListeners();
@@ -551,6 +563,48 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     
     // 거래 취소 후 룸 정보 새로고침
     await fetchRoomInfo();
+  }
+
+  /// 거래 평가 작성 처리
+  Future<void> submitTradeReview(double rating, String comment) async {
+    if (itemId.isEmpty) {
+      throw Exception('매물 ID가 없습니다.');
+    }
+
+    final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) {
+      throw Exception('로그인이 필요합니다.');
+    }
+
+    // 현재 사용자가 판매자인지 구매자인지 확인
+    final isSeller = itemInfo != null && itemInfo!.sellerId == currentUserId;
+    final role = isSeller ? 'seller' : 'buyer';
+
+    // 상대방 사용자 ID 확인
+    String? toUserId;
+    if (isSeller) {
+      // 판매자인 경우, 구매자(낙찰자) ID
+      toUserId = auctionInfo?.lastBidUserId;
+    } else {
+      // 구매자인 경우, 판매자 ID
+      toUserId = itemInfo?.sellerId;
+    }
+
+    if (toUserId == null || toUserId.isEmpty) {
+      throw Exception('상대방 정보를 찾을 수 없습니다.');
+    }
+
+    await _repository.submitTradeReview(
+      itemId: itemId,
+      toUserId: toUserId,
+      role: role,
+      rating: rating,
+      comment: comment,
+    );
+
+    // 평가 작성 완료 후 상태 업데이트
+    _hasSubmittedReview = true;
+    notifyListeners();
   }
 
   Future<void> getRoomNotificationSetting() async {
