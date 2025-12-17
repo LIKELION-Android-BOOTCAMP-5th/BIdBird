@@ -118,6 +118,7 @@ class ProfileEditScreen extends StatelessWidget {
                                       children: [
                                         _LogoutLink(),
                                         _UnregisterLink(vm: vm),
+                                        //gorouter에의해login으로이동하게됨
                                       ],
                                     ),
                                   ],
@@ -188,7 +189,7 @@ class _UnregisterLink extends StatelessWidget {
           context: context,
           builder: (dialogContext) {
             return AskPopup(
-              content: '회원탈퇴 하시겠습니까? \n복구가능 기간은 30일입니다.',
+              content: '회원탈퇴 하시겠습니까? \n탈퇴 후 복원은 불가능합니다.',
               yesText: '확인',
               noText: '취소',
               yesLogic: () async {

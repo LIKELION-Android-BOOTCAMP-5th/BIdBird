@@ -62,29 +62,63 @@ String getReportCodeName(String? reportCode) {
   }
 }
 
-//나중에색맞추기
 Color getReportCodeColor(String? reportCode) {
   switch (reportCode) {
-    case 0:
+    case 'communication_report_01':
       return blueColor;
-    case 1:
-      return iconColor;
-    case 2:
-      return BackgroundColor;
-    case 3:
-      return textColor;
-    case 4:
-      return RedColor;
-    case 5:
+    case 'communication_report_02':
+      return blueColor;
+    case 'communication_report_03':
+      return blueColor;
+    case 'communication_report_04':
+      return blueColor;
+
+    case 'item_report_01':
       return yellowColor;
-    case 6:
-      return BorderColor;
-    case 7:
-      return shadowHigh;
-    case 8:
-      return shadowLow;
+    case 'item_report_02':
+      return yellowColor;
+    case 'item_report_03':
+      return yellowColor;
+    case 'item_report_04':
+      return yellowColor;
+    case 'item_report_05':
+      return yellowColor;
+    case 'item_report_06':
+      return yellowColor;
+    case 'item_report_07':
+      return yellowColor;
+
+    case 'policy_report_01':
+      return iconColor;
+    case 'policy_report_02':
+      return iconColor;
+    case 'policy_report_03':
+      return iconColor;
+
+    case 'transaction_report_01':
+      return RedColor;
+    case 'transaction_report_02':
+      return RedColor;
+    case 'transaction_report_03':
+      return RedColor;
+    case 'transaction_report_04':
+      return RedColor;
+    case 'transaction_report_05':
+      return RedColor;
+
+    case 'user_report_01':
+      return textColor;
+    case 'user_report_02':
+      return textColor;
+    case 'user_report_03':
+      return textColor;
+    case 'user_report_04':
+      return textColor;
+    case 'user_report_05':
+      return textColor;
+
     default:
-      return itemRegistrationCardShadowColor;
+      return BorderColor;
   }
 }
 
