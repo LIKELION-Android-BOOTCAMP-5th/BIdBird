@@ -41,7 +41,7 @@ class ChatListViewmodel extends ChangeNotifier {
   }
 
   /// 채팅방 목록 새로고침 (실시간 업데이트 시 사용)
-  Future<void> reloadList({bool forceRefresh = false}) async {
+  Future<void> reloadList({bool forceRefresh = true}) async {
     await _loadChattingRoomList(forceRefresh: forceRefresh, showLoading: false);
   }
 
@@ -103,7 +103,7 @@ class ChatListViewmodel extends ChangeNotifier {
 
   void _setupRealtimeSubscription() {
     _realtimeSubscriptionManager.setupSubscription(
-      onRoomListUpdate: reloadList,
+      onRoomListUpdate: () => reloadList(forceRefresh: true),
       checkUpdate: checkUpdate,
       onNewMessage: _handleNewMessage,
     );
