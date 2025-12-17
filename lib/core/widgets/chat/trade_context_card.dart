@@ -1,6 +1,5 @@
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/widgets/chat/trade_action_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:flutter/material.dart';
 
@@ -34,23 +33,16 @@ class TradeContextCard extends StatelessWidget {
   final VoidCallback? onTradeComplete;
   final VoidCallback? onTradeCancel;
 
-  /// 거래 액션 표시 여부 (오버플로 메뉴)
-  /// 배송 정보가 입력되었을 때만 표시
-  bool _shouldShowOverflowMenu() {
+  /// 거래 액션 버튼 표시 여부
+  bool get _shouldShowTradeActions {
     if (tradeStatusCode == null) return false;
-    
-    // 거래 완료 상태에서는 액션 메뉴 숨김
-    if (tradeStatusCode == 550) return false;
-    
-    // 배송 정보가 입력되었을 때만 표시
-    if (!hasShippingInfo) return false;
-    
+    if (tradeStatusCode == 550) return false; // 거래 완료 상태에서는 숨김
+    if (!hasShippingInfo) return false; // 배송 정보가 없으면 숨김
     return onTradeComplete != null || onTradeCancel != null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final showOverflowMenu = _shouldShowOverflowMenu();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
@@ -72,137 +64,156 @@ class TradeContextCard extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: onItemTap,
-          borderRadius: BorderRadius.zero,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 매물 정보 영역 (클릭 가능)
+            InkWell(
+              onTap: onItemTap,
+              borderRadius: BorderRadius.zero,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                // 썸네일 (48x48)
-                FixedRatioThumbnail(
-                  imageUrl: itemThumbnail,
-                  width: 48,
-                  height: 48,
-                  aspectRatio: 1.0,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                const SizedBox(width: 12),
-                // 정보 영역
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 1행: 매물명
-                      Text(
-                        itemTitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500, // Medium
-                          color: Color(0xFF111111),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      // 2행: 가격
-                      Text(
-                        "${formatPrice(itemPrice)}원",
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700, // Bold
-                          color: Color(0xFF111111),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // 우측 액션 영역
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 거래 현황 보기 버튼
-                    if (onTradeStatusTap != null)
-                      GestureDetector(
-                        onTap: () {
-                          // 버튼 탭 이벤트가 카드 탭 이벤트로 전파되지 않도록
-                        },
-                        child: TextButton(
-                          onPressed: onTradeStatusTap,
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    // 썸네일 (48x48)
+                    FixedRatioThumbnail(
+                      imageUrl: itemThumbnail,
+                      width: 48,
+                      height: 48,
+                      aspectRatio: 1.0,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    const SizedBox(width: 12),
+                    // 정보 영역
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 1행: 매물명
+                          Text(
+                            itemTitle,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500, // Medium
+                              color: Color(0xFF111111),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Text(
-                                '거래 현황 보기',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: blueColor,
-                                ),
-                              ),
-                              SizedBox(width: 2),
-                              Icon(
-                                Icons.arrow_forward_ios,
-                                size: 12,
-                                color: blueColor,
-                              ),
-                            ],
+                          const SizedBox(height: 4),
+                          // 2행: 가격
+                          Text(
+                            "${formatPrice(itemPrice)}원",
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700, // Bold
+                              color: Color(0xFF111111),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    // 거래 관리 버튼 (텍스트) - 거래 액션
-                    if (showOverflowMenu)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: GestureDetector(
-                          onTap: () {
-                            // 버튼 탭 이벤트가 카드 탭 이벤트로 전파되지 않도록
-                          },
-                          child: TextButton(
-                            onPressed: () {
-                              TradeActionBottomSheet.show(
-                                context,
-                                onTradeComplete: onTradeComplete ?? () {},
-                                onTradeCancel: onTradeCancel,
-                                isTradeCompleted: tradeStatusCode == 550,
-                              );
+                    ),
+                    const SizedBox(width: 8),
+                    // 우측 액션 영역
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // 거래 현황 보기 버튼
+                        if (onTradeStatusTap != null)
+                          GestureDetector(
+                            onTap: () {
+                              // 버튼 탭 이벤트가 카드 탭 이벤트로 전파되지 않도록
                             },
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text(
-                              '거래 관리',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A73E8), // 액션 색상
+                            child: TextButton(
+                              onPressed: onTradeStatusTap,
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Text(
+                                    '거래 현황 보기',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: blueColor,
+                                    ),
+                                  ),
+                                  SizedBox(width: 2),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 12,
+                                    color: blueColor,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ),
-                      ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
+            // 거래 관리 버튼 영역 (카드 내부에 포함)
+            if (_shouldShowTradeActions)
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onTradeCancel,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: const BorderSide(color: RedColor, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          '거래 취소',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: RedColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onTradeComplete,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor: blueColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          '거래 완료',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
-        ),
-          ),
         ),
       ),
     );

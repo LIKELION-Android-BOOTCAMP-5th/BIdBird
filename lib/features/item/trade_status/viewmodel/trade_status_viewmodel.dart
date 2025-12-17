@@ -115,6 +115,13 @@ class TradeStatusViewModel extends ItemBaseViewModel {
 
     try {
       _tradeStatus = await _repository.fetchTradeStatus(itemId);
+      
+      // 거래 정보(tradeInfo)가 없으면 에러 처리
+      if (_tradeStatus?.tradeInfo == null) {
+        stopLoadingWithError('거래 정보가 없습니다.');
+        return;
+      }
+      
       stopLoading();
     } catch (e) {
       stopLoadingWithError(e.toString());
