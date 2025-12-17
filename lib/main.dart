@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bidbird/core/config/portone_config.dart';
 import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
+import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/mypage/data/profile_repository.dart';
@@ -13,6 +14,7 @@ import 'package:cloudinary_url_gen/cloudinary.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,14 +24,18 @@ import 'features/feed/data/repository/home_repository.dart';
 EventBus eventBus = EventBus();
 
 class SupabaseConfig {
-  static const String url = 'https://mdwelwjletorehxsptqa.supabase.co';
-  static const String anonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kd2Vsd2psZXRvcmVoeHNwdHFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTEwNzksImV4cCI6MjA3OTg2NzA3OX0.tpCDNi74KoMcpr3BN7D6fT2SxsteCM9sf7RrEwnVPHg';
+  static final String url = dotenv.env['SUPABASE_URL'] ?? '';
+  static final String anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 }
 
 void main() async {
   // 1. 초기화는 한 번만!
   WidgetsFlutterBinding.ensureInitialized();
+
+  //2. env 로드
+  await dotenv.load(fileName: ".env");
+  //3. 검증해서 키 없으면 바로 터지게
+  NetworkApiManager.shared.checkEnv();
 
   // Supabase 초기화
   await Supabase.initialize(

@@ -1,5 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class NetworkApiManager {
   static final NetworkApiManager _shared = NetworkApiManager();
@@ -10,12 +11,11 @@ class NetworkApiManager {
   NetworkApiManager() {}
 
   //위에것은 걍 정의하는 것임
-  static final String supabaseUrl =
-      "https://mdwelwjletorehxsptqa.supabase.co/rest/v1";
-  static final String apikey = 'sb_publishable_NQq1CoDOtr9FkfOSod8VHA_aqMLFp0x';
+  static final String supabaseUrl = dotenv.env['SUPABASE_API_URL'] ?? '';
+  static final String apiKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 
   static final Map<String, String> headers = {
-    'apikey': apikey,
+    'apikey': apiKey,
     // 'Authorization': SupabaseManager.shared.getAuthorizationKey(),
     'Content-Type': 'application/json',
   };
@@ -43,5 +43,12 @@ class NetworkApiManager {
       startIndex = (currentIndex - 1) * perPage;
     }
     return "$startIndex-$endIndex";
+  }
+
+  //체크해서 url이나 apiKey가 없으면 바로 터지게 하는 로직
+  void checkEnv() {
+    assert(NetworkApiManager.supabaseUrl.isNotEmpty, 'SUPABASE_URL is missing');
+
+    assert(NetworkApiManager.apiKey.isNotEmpty, 'SUPABASE_ANON_KEY is missing');
   }
 }

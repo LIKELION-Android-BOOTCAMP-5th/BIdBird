@@ -57,6 +57,7 @@ dependencies:
   cached_network_image: ^3.3.1
   flutter_cache_manager: ^3.3.2
   video_player: ^2.8.2
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -103,6 +104,7 @@ flutter:
     - assets/logos/bidbird_image_text_logo.png
     - assets/logos/apple_logo.png
     - assets/logos/google_logo.png
+    - .env
 
 
 
