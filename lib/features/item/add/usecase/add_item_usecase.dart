@@ -12,12 +12,14 @@ class AddItemUseCase {
     required List<String> imageUrls,
     required int primaryImageIndex,
     String? editingItemId,
+    String? thumbnailUrl,
   }) {
     return _gateway.saveItem(
       entity: entity,
       imageUrls: imageUrls,
       primaryImageIndex: primaryImageIndex,
       editingItemId: editingItemId,
+      thumbnailUrl: thumbnailUrl,
     );
   }
 }

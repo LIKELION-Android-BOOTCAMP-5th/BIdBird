@@ -63,6 +63,12 @@ class TradeStatusViewModel extends ItemBaseViewModel {
 
   /// 현재 상태 텍스트
   String get currentStatusText {
+    // 거래 완료 상태를 우선 확인
+    if (_tradeStatus?.tradeInfo != null &&
+        _tradeStatus!.tradeInfo!.tradeStatusCode == TradeStatusCode.completed) {
+      return '거래 완료';
+    }
+    
     final step = currentStep;
     switch (step) {
       case TradeStep.bidding:

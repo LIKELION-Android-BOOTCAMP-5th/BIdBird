@@ -2,13 +2,16 @@ import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 import 'package:bidbird/features/report/screen/report_screen.dart';
-import 'package:bidbird/core/widgets/item/components/sections/item_image_section.dart';
-import 'package:bidbird/core/widgets/item/components/sections/item_main_info_section.dart';
-import 'package:bidbird/core/widgets/item/components/sections/item_description_section.dart';
 import 'package:bidbird/core/widgets/item/components/others/item_bottom_action_bar.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_detail_image_gallery.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_detail_summary_section.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_detail_description_section.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_detail_seller_row.dart';
+import 'package:bidbird/core/widgets/item/components/sections/item_detail_bid_history_entry.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key, required this.itemId});
@@ -53,14 +56,28 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
   }
 }
 
-class _ItemDetailContent extends StatelessWidget {
+class _ItemDetailContent extends StatefulWidget {
   const _ItemDetailContent();
 
   @override
+  State<_ItemDetailContent> createState() => _ItemDetailContentState();
+}
+
+class _ItemDetailContentState extends State<_ItemDetailContent> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+
+  @override
   Widget build(BuildContext context) {
-    // 에러 상태와 itemDetail을 함께 Selector로 분리
-    return Selector<ItemDetailViewModel, ({String? error, ItemDetail? itemDetail})>(
-      selector: (_, vm) => (error: vm.error, itemDetail: vm.itemDetail),
+    // 에러 상태와 itemDetail, isMyItem을 함께 Selector로 분리
+    return Selector<ItemDetailViewModel, ({String? error, ItemDetail? itemDetail, bool isMyItem})>(
+      selector: (_, vm) => (error: vm.error, itemDetail: vm.itemDetail, isMyItem: vm.isMyItem),
       builder: (context, data, _) {
         if (data.error != null || data.itemDetail == null) {
           return const Scaffold(
@@ -79,33 +96,70 @@ class _ItemDetailContent extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: Colors.white,
+          extendBodyBehindAppBar: true,
           appBar: _ItemDetailAppBar(item: item),
-          body: SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: TransparentRefreshIndicator(
-                    onRefresh: () async {
-                      await context.read<ItemDetailViewModel>().loadItemDetail(forceRefresh: true);
-                    },
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ItemImageSection(item: item),
-                          const SizedBox(height: 8),
-                          _ItemMainInfoSection(item: item),
-                          const SizedBox(height: 0),
-                          ItemDescriptionSection(item: item),
-                        ],
-                      ),
+          body: Column(
+            children: [
+              Expanded(
+                child: TransparentRefreshIndicator(
+                  onRefresh: () async {
+                    await context.read<ItemDetailViewModel>().loadItemDetail(forceRefresh: true);
+                  },
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Image Section - AppBar 아래까지 확장
+                        ItemDetailImageGallery(item: item),
+                        // Metric Section - 라운드 처리된 카드 (이미지 위로 올라가도록)
+                        Transform.translate(
+                          offset: const Offset(0, -30),
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
+                            ),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  ItemDetailSummarySection(item: item, isMyItem: data.isMyItem),
+                                  ItemDetailSellerRow(item: item),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Info Section - padding 24 (라인 없이 바로 연결)
+                        ItemDetailDescriptionSection(item: item),
+                        // Divider
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          child: Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        // Bid History Section - padding 0
+                        ItemDetailBidHistoryEntry(item: item),
+                        // Safe Area Spacer 48
+                        const SizedBox(height: 48),
+                      ],
                     ),
                   ),
                 ),
-                _ItemBottomActionBar(item: item),
-              ],
-            ),
+              ),
+              _ItemBottomActionBar(item: item),
+            ],
           ),
         );
       },
@@ -120,49 +174,127 @@ class _ItemDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    // isMyItem과 sellerProfile만 Selector로 분리
-    return Selector<ItemDetailViewModel, ({bool isMyItem, Map<String, dynamic>? sellerProfile})>(
-      selector: (_, vm) => (isMyItem: vm.isMyItem, sellerProfile: vm.sellerProfile),
-      builder: (context, data, _) {
+    return Consumer<ItemDetailViewModel>(
+      builder: (context, viewModel, _) {
+        final isMyItem = viewModel.isMyItem;
+        final sellerProfile = viewModel.sellerProfile;
+        
         return AppBar(
-          title: const Text('상세 보기'),
-          actions: [
-            if (!data.isMyItem)
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) => ReportScreen(
-                        itemId: item.itemId,
-                        itemTitle: item.itemTitle,
-                        targetUserId: item.sellerId,
-                        targetNickname: data.sellerProfile?['nick_name'] as String?,
-                      ),
-                      transitionDuration: Duration.zero,
-                      reverseTransitionDuration: Duration.zero,
-                    ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  minimumSize: const Size(48, 48),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          toolbarHeight: 56,
+          leading: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
                 ),
-                icon: const Icon(
-                  Icons.warning_outlined,
-                  color: Colors.red,
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
                   size: 20,
                 ),
-                label: const Text(
-                  '신고',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.red,
+              ),
+            ),
+          ),
+          title: const SizedBox.shrink(),
+          centerTitle: false,
+          actions: [
+            // 공유 버튼
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () async {
+                  // 공유 기능 구현
+                  final shareText = '${item.itemTitle}\n현재 입찰가: ${item.currentPrice}원';
+                  await Clipboard.setData(ClipboardData(text: shareText));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('링크가 클립보드에 복사되었습니다'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 4, top: 8, bottom: 8),
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.share_outlined,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
               ),
+            ),
+            // 신고 버튼
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  if (isMyItem) {
+                    // 내 아이템이면 신고 불가 안내
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('본인의 상품은 신고할 수 없습니다'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  if (item.sellerId.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('판매자 정보를 불러올 수 없습니다'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ReportScreen(
+                        itemId: item.itemId,
+                        itemTitle: item.itemTitle,
+                        targetUserId: item.sellerId,
+                        targetNickname: sellerProfile?['nick_name'] as String?,
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.report_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
           ],
         );
       },
@@ -171,23 +303,6 @@ class _ItemDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-}
-
-class _ItemMainInfoSection extends StatelessWidget {
-  const _ItemMainInfoSection({required this.item});
-
-  final ItemDetail item;
-
-  @override
-  Widget build(BuildContext context) {
-    // isMyItem만 Selector로 분리
-    return Selector<ItemDetailViewModel, bool>(
-      selector: (_, vm) => vm.isMyItem,
-      builder: (context, isMyItem, _) {
-        return ItemMainInfoSection(item: item, isMyItem: isMyItem);
-      },
-    );
-  }
 }
 
 class _ItemBottomActionBar extends StatelessWidget {

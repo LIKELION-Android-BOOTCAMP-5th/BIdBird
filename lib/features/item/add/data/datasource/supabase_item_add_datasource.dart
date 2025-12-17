@@ -19,6 +19,7 @@ class SupabaseItemAddDatasource {
     required List<String> imageUrls,
     required int primaryImageIndex,
     String? editingItemId,
+    String? thumbnailUrl,
   }) async {
     final userId = ItemSecurityUtils.requireAuth(_supabase);
 
@@ -142,29 +143,20 @@ class SupabaseItemAddDatasource {
       await _supabase.from('item_images').insert(imageRows);
     }
 
-    try {
-      int index = 0;
+    // 썸네일 URL 결정 (전달받은 썸네일 URL이 있으면 사용, 없으면 primaryImageIndex의 이미지 URL 사용)
+    String finalThumbnailUrl;
+    if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
+      finalThumbnailUrl = thumbnailUrl;
+    } else {
+      int thumbnailIndex = 0;
       if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
-        index = primaryImageIndex;
+        thumbnailIndex = primaryImageIndex;
       }
-      await _supabase.functions.invoke(
-        'create-thumbnail',
-        body: <String, dynamic>{
-          'itemId': itemId,
-          'imageUrl': imageUrls[index],
-        },
-      );
-    } catch (e) {
-      // create-thumbnail 실패 시 조용히 처리
-    }
-
-    int thumbnailIndex = 0;
-    if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
-      thumbnailIndex = primaryImageIndex;
+      finalThumbnailUrl = imageUrls[thumbnailIndex];
     }
 
     await _supabase.from('items_detail').update(<String, dynamic>{
-      'thumbnail_image': imageUrls[thumbnailIndex],
+      'thumbnail_image': finalThumbnailUrl,
     }).eq('item_id', itemId);
 
     return ItemRegistrationData(
@@ -174,7 +166,7 @@ class SupabaseItemAddDatasource {
       startPrice: entity.startPrice,
       instantPrice: entity.instantPrice,
       auctionDurationHours: entity.auctionDurationHours,
-      thumbnailUrl: imageUrls[thumbnailIndex],
+      thumbnailUrl: finalThumbnailUrl,
       keywordTypeId: entity.keywordTypeId,
     );
   }

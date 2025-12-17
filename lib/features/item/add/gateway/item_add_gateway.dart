@@ -8,5 +8,6 @@ abstract class ItemAddGateway {
     required List<String> imageUrls,
     required int primaryImageIndex,
     String? editingItemId,
+    String? thumbnailUrl,
   });
 }

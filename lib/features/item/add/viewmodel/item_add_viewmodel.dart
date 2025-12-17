@@ -7,6 +7,8 @@ import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/utils/item/item_registration_validator.dart';
 import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/managers/cloudinary_manager.dart';
+import 'package:bidbird/features/item/utils/media_resizer.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -111,7 +113,10 @@ class ItemAddViewModel extends ItemBaseViewModel {
       return;
     }
 
-    final List<XFile> all = <XFile>[...selectedImages, ...images];
+    // 리사이징 처리
+    final List<XFile> resizedImages = await MediaResizer.resizeMedia(images);
+
+    final List<XFile> all = <XFile>[...selectedImages, ...resizedImages];
     if (all.length > ItemImageLimits.maxImageCount) {
       selectedImages = all.take(ItemImageLimits.maxImageCount).toList();
     } else {
@@ -131,7 +136,13 @@ class ItemAddViewModel extends ItemBaseViewModel {
       return;
     }
 
-    selectedImages = <XFile>[...selectedImages, image];
+    // 리사이징 처리
+    final XFile? resizedImage = await MediaResizer.resizeImage(image);
+    if (resizedImage != null) {
+      selectedImages = <XFile>[...selectedImages, resizedImage];
+    } else {
+      selectedImages = <XFile>[...selectedImages, image];
+    }
     notifyListeners();
   }
 
@@ -147,7 +158,13 @@ class ItemAddViewModel extends ItemBaseViewModel {
       return;
     }
 
-    selectedImages = <XFile>[...selectedImages, video];
+    // 리사이징 처리
+    final XFile? resizedVideo = await MediaResizer.resizeVideo(video);
+    if (resizedVideo != null) {
+      selectedImages = <XFile>[...selectedImages, resizedVideo];
+    } else {
+      selectedImages = <XFile>[...selectedImages, video];
+    }
     notifyListeners();
   }
 
@@ -343,12 +360,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
         return;
       }
 
-      final imageUrls = await _uploadItemImages(context, scaffoldMessenger);
-      if (imageUrls == null) {
+      final uploadResult = await _uploadItemImagesWithThumbnail(context, scaffoldMessenger);
+      if (uploadResult == null) {
         return;
       }
 
-      await _saveItem(itemData, imageUrls);
+      await _saveItem(itemData, uploadResult.imageUrls, uploadResult.thumbnailUrl);
 
       _closeLoadingDialog(navigator, loadingDialogOpen);
       loadingDialogOpen = false;
@@ -439,10 +456,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
     );
   }
 
-  Future<List<String>?> _uploadItemImages(
+  Future<_ImageUploadResult?> _uploadItemImagesWithThumbnail(
     BuildContext context,
     ScaffoldMessengerState scaffoldMessenger,
   ) async {
+    // 이미지 업로드
     final List<String> imageUrls = await _uploadImagesUseCase(selectedImages);
 
     if (imageUrls.isEmpty) {
@@ -454,10 +472,42 @@ class ItemAddViewModel extends ItemBaseViewModel {
       return null;
     }
 
-    return imageUrls;
+    // 썸네일 생성 및 업로드
+    String? thumbnailUrl;
+    if (selectedImages.isNotEmpty && primaryImageIndex >= 0 && primaryImageIndex < selectedImages.length) {
+      try {
+        final primaryImage = selectedImages[primaryImageIndex];
+        final thumbnailFile = await MediaResizer.createThumbnail(primaryImage);
+        
+        if (thumbnailFile != null) {
+          thumbnailUrl = await CloudinaryManager.shared.uploadImageToCloudinary(thumbnailFile);
+        }
+      } catch (e) {
+        // 썸네일 생성 실패 시 조용히 처리 (이미지 URL 사용)
+        print('썸네일 생성 실패: $e');
+      }
+    }
+
+    // 썸네일이 없으면 primaryImageIndex의 이미지 URL 사용
+    if (thumbnailUrl == null && imageUrls.isNotEmpty) {
+      int index = 0;
+      if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
+        index = primaryImageIndex;
+      }
+      thumbnailUrl = imageUrls[index];
+    }
+
+    return _ImageUploadResult(
+      imageUrls: imageUrls,
+      thumbnailUrl: thumbnailUrl,
+    );
   }
 
-  Future<void> _saveItem(ItemAddEntity itemData, List<String> imageUrls) async {
+  Future<void> _saveItem(
+    ItemAddEntity itemData,
+    List<String> imageUrls,
+    String? thumbnailUrl,
+  ) async {
     final updatedData = ItemAddEntity(
       title: itemData.title,
       description: itemData.description,
@@ -476,6 +526,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
       imageUrls: imageUrls,
       primaryImageIndex: primaryImageIndex,
       editingItemId: editingItemId,
+      thumbnailUrl: thumbnailUrl,
     );
   }
 
@@ -519,4 +570,15 @@ class ItemAddViewModel extends ItemBaseViewModel {
       navigator.pop();
     }
   }
+}
+
+/// 이미지 업로드 결과
+class _ImageUploadResult {
+  final List<String> imageUrls;
+  final String? thumbnailUrl;
+
+  _ImageUploadResult({
+    required this.imageUrls,
+    this.thumbnailUrl,
+  });
 }
