@@ -23,7 +23,7 @@ class ChatListRealtimeSubscriptionManager {
     // 기존 채널 정리
     dispose();
 
-    // 구매자 채널 구독
+    // 구매자 채널 구독 (INSERT, UPDATE만 처리)
     _buyerChannel = _supabase.channel('chattingRoomByBuyer');
     _buyerChannel!
         .onPostgresChanges(
@@ -36,6 +36,9 @@ class ChatListRealtimeSubscriptionManager {
             value: currentId,
           ),
           callback: (payload) {
+            // DELETE 이벤트는 무시 (INSERT, UPDATE만 처리)
+            if (payload.newRecord == null) return;
+            
             onRoomListUpdate();
             if (onNewMessage != null) {
               final roomId = payload.newRecord['id'] as String?;
@@ -47,7 +50,7 @@ class ChatListRealtimeSubscriptionManager {
         )
         .subscribe();
 
-    // 판매자 채널 구독
+    // 판매자 채널 구독 (INSERT, UPDATE만 처리)
     _sellerChannel = _supabase.channel('chattingRoomBySeller');
     _sellerChannel!
         .onPostgresChanges(
@@ -60,6 +63,9 @@ class ChatListRealtimeSubscriptionManager {
             value: currentId,
           ),
           callback: (payload) {
+            // DELETE 이벤트는 무시 (INSERT, UPDATE만 처리)
+            if (payload.newRecord == null) return;
+            
             onRoomListUpdate();
             if (onNewMessage != null) {
               final roomId = payload.newRecord['id'] as String?;
