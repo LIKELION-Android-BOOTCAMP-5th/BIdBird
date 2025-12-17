@@ -529,6 +529,30 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 거래 완료 처리
+  Future<void> completeTrade() async {
+    if (itemId.isEmpty) {
+      throw Exception('매물 ID가 없습니다.');
+    }
+    
+    await _repository.completeTrade(itemId);
+    
+    // 거래 완료 후 룸 정보 새로고침
+    await fetchRoomInfo();
+  }
+
+  /// 거래 취소 처리
+  Future<void> cancelTrade(String reasonCode, bool isSellerFault) async {
+    if (itemId.isEmpty) {
+      throw Exception('매물 ID가 없습니다.');
+    }
+    
+    await _repository.cancelTrade(itemId, reasonCode, isSellerFault);
+    
+    // 거래 취소 후 룸 정보 새로고침
+    await fetchRoomInfo();
+  }
+
   Future<void> getRoomNotificationSetting() async {
     final thisRoomId = roomId;
     if (thisRoomId == null) return;

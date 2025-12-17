@@ -350,11 +350,12 @@ class _TradeStatusScreenContent extends StatelessWidget {
 
             if (result == true) {
               // 결제 성공 시 결제 완료 화면으로 이동
+              final thumbnailImage = tradeStatus.itemInfo!.thumbnailImage;
               final bidWinEntity = ItemBidWinEntity(
                 itemId: viewModel.itemId,
                 title: tradeStatus.itemInfo!.title,
-                images: tradeStatus.itemInfo!.thumbnailImage != null
-                    ? [tradeStatus.itemInfo!.thumbnailImage!]
+                images: (thumbnailImage != null && thumbnailImage.isNotEmpty)
+                    ? [thumbnailImage]
                     : [],
                 winPrice: tradeStatus.auctionInfo!.currentPrice,
                 tradeStatusCode: tradeStatus.tradeInfo?.tradeStatusCode,

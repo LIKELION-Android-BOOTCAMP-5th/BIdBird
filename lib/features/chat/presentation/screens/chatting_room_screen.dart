@@ -3,6 +3,8 @@ import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/widgets/components/pop_up/check_confirm_popup.dart';
+import 'package:bidbird/core/widgets/components/pop_up/trade_cancel_fault_popup.dart';
 import 'package:bidbird/core/widgets/chat/trade_cancel_reason_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/chat/trade_context_card.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
@@ -175,9 +177,11 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                         tradeStatusText = '거래 중';
                       }
 
-                      // 거래 완료 상태에서는 거래 취소 옵션 제거
+                      // 거래 취소는 구매자(낙찰자)만 가능, 거래 완료/취소 상태에서는 불가
                       final canShowTradeCancel = viewModel.tradeInfo != null &&
-                          viewModel.tradeInfo!.tradeStatusCode != 550;
+                          viewModel.tradeInfo!.tradeStatusCode != 550 &&
+                          viewModel.tradeInfo!.tradeStatusCode != 540 && // 이미 취소된 거래는 불가
+                          viewModel.isTopBidder; // 구매자(낙찰자)만 가능
 
                       // 거래 현황 보기 버튼 표시 조건: 낙찰자 또는 판매자만, 그리고 tradeInfo가 있어야 함
                       final canShowTradeStatus = viewModel.tradeInfo != null &&
@@ -206,7 +210,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             : null,
                         onTradeComplete: viewModel.tradeInfo != null &&
                                 viewModel.tradeInfo!.tradeStatusCode != 550 &&
-                                viewModel.hasShippingInfo
+                                viewModel.hasShippingInfo &&
+                                viewModel.isTopBidder // 구매자(낙찰자)만 가능
                             ? () {
                                 // 거래 완료 액션
                                 _showTradeCompleteDialog(context, viewModel);
@@ -250,20 +255,51 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     BuildContext context,
     ChattingRoomViewmodel viewModel,
   ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AskPopup(
-        content: '거래를 완료하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
-        noText: '취소',
-        yesText: '완료',
-        yesLogic: () async {
-          Navigator.of(dialogContext).pop();
-          // TODO: 거래 완료 API 호출
+    CheckConfirmPopup.show(
+      context,
+      title: '거래 완료',
+      description: '거래를 완료하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
+      checkLabel: '위 내용을 확인했습니다.',
+      confirmText: '완료',
+      cancelText: '취소',
+      onConfirm: () async {
+        // 로딩 표시
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('거래 완료 처리 중...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+
+        try {
+          // 거래 완료 API 호출
+          await viewModel.completeTrade();
+          
+          if (!context.mounted) return;
+          
+          // 성공 메시지
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('거래 완료 기능은 준비 중입니다.')),
+            const SnackBar(
+              content: Text('거래가 완료되었습니다.'),
+              backgroundColor: Colors.green,
+            ),
           );
-        },
-      ),
+          
+          // 뷰모델 새로고침하여 UI 업데이트
+          await viewModel.fetchRoomInfo();
+        } catch (e) {
+          if (!context.mounted) return;
+          
+          // 에러 메시지
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('거래 완료 처리 중 오류가 발생했습니다: ${e.toString()}'),
+              backgroundColor: RedColor,
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -272,51 +308,75 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     BuildContext context,
     ChattingRoomViewmodel viewModel,
   ) {
-    // 1단계: 사유 선택 바텀시트
-    TradeCancelReasonBottomSheet.show(
+    // 1단계: 귀책 사유 선택 팝업 (먼저)
+    TradeCancelFaultPopup.show(
       context,
-      onReasonSelected: (reasonCode) {
-        // 2단계: 확인 다이얼로그
-        _showTradeCancelConfirmDialog(context, viewModel, reasonCode);
+      onSelected: (isSellerFault) {
+        // 2단계: 취소 사유 선택 바텀시트
+        TradeCancelReasonBottomSheet.show(
+          context,
+          onReasonSelected: (reasonCode) {
+            // 3단계: 체크박스 확인 팝업
+            CheckConfirmPopup.show(
+              context,
+              title: '거래 취소',
+              description: '거래를 취소하시겠습니까?\n취소 사유가 상대에게 전달됩니다.',
+              checkLabel: '위 내용을 확인했습니다.',
+              confirmText: '거래 취소',
+              cancelText: '돌아가기',
+              onConfirm: () {
+                // 4단계: 최종 확인 및 처리
+                _processTradeCancel(context, viewModel, reasonCode, isSellerFault);
+              },
+            );
+          },
+        );
       },
     );
   }
 
-  /// 거래 취소 확인 다이얼로그 표시
-  void _showTradeCancelConfirmDialog(
+  /// 거래 취소 처리
+  void _processTradeCancel(
     BuildContext context,
     ChattingRoomViewmodel viewModel,
     String reasonCode,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('거래 취소'),
-        content: const Text(
-          '거래를 취소하시겠습니까?\n취소 사유가 상대에게 전달됩니다.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('돌아가기'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              // TODO: 거래 취소 API 호출 (reasonCode 포함)
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('거래 취소 기능은 준비 중입니다. (사유: $reasonCode)'),
-                ),
-              );
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: RedColor,
-            ),
-            child: const Text('거래 취소'),
-          ),
-        ],
+    bool isSellerFault,
+  ) async {
+    // 로딩 표시
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('거래 취소 처리 중...'),
+        duration: Duration(seconds: 1),
       ),
     );
+
+    try {
+      // 거래 취소 API 호출
+      await viewModel.cancelTrade(reasonCode, isSellerFault);
+      
+      if (!context.mounted) return;
+      
+      // 성공 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('거래가 취소되었습니다.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // 뷰모델 새로고침하여 UI 업데이트
+      await viewModel.fetchRoomInfo();
+    } catch (e) {
+      if (!context.mounted) return;
+      
+      // 에러 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('거래 취소 처리 중 오류가 발생했습니다: ${e.toString()}'),
+          backgroundColor: RedColor,
+        ),
+      );
+    }
   }
 }

@@ -2,9 +2,7 @@ import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:flutter/material.dart';
 
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
@@ -46,6 +44,7 @@ class ItemBidResultBody extends StatelessWidget {
     final smallSpacing = context.spacingSmall;
     
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Align(
           alignment: Alignment.centerRight,
@@ -96,110 +95,14 @@ class ItemBidResultBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AspectRatio(
-                  aspectRatio: 1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: ImageBackgroundColor,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(defaultRadius),
-                        topRight: Radius.circular(defaultRadius),
-                      ),
-                    ),
-                    clipBehavior: Clip.hardEdge,
-                    child: item.images.isNotEmpty
-                        ? Builder(
-                            builder: (context) {
-                              final imageUrl = item.images.first;
-                              if (imageUrl.isEmpty) {
-                                return Container(
-                                  color: ImageBackgroundColor,
-                                  child: Center(
-                                    child: Text(
-                                      '이미지 없음',
-                                      style: TextStyle(
-                                        color: iconColor,
-                                        fontSize: subtitleFontSize,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
-                              
-                              final bool isVideo = isVideoFile(imageUrl);
-                              final String displayUrl = isVideo
-                                  ? getVideoThumbnailUrl(imageUrl)
-                                  : imageUrl;
-                              
-                              return displayUrl.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: displayUrl,
-                                      cacheManager: ItemImageCacheManager.instance,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        color: ImageBackgroundColor,
-                                        child: const Center(
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        ),
-                                      ),
-                                      errorWidget: (context, url, error) {
-                                        // 에러 발생 시 원본 URL로 재시도 (비디오가 아닌 경우)
-                                        if (!isVideo && imageUrl.isNotEmpty && imageUrl != displayUrl) {
-                                          return CachedNetworkImage(
-                                            imageUrl: imageUrl,
-                                            cacheManager: ItemImageCacheManager.instance,
-                                            fit: BoxFit.cover,
-                                            errorWidget: (context, url, error) => Container(
-                                              color: ImageBackgroundColor,
-                                              child: Center(
-                                                child: Text(
-                                                  '이미지 없음',
-                                                  style: TextStyle(
-                                                    color: iconColor,
-                                                    fontSize: subtitleFontSize,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                        return Container(
-                                          color: ImageBackgroundColor,
-                                          child: Center(
-                                            child: Text(
-                                              '이미지 없음',
-                                              style: TextStyle(
-                                                color: iconColor,
-                                                fontSize: subtitleFontSize,
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  : Container(
-                                      color: ImageBackgroundColor,
-                                      child: Center(
-                                        child: Text(
-                                          '이미지 없음',
-                                          style: TextStyle(
-                                            color: iconColor,
-                                            fontSize: subtitleFontSize,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                            },
-                          )
-                        : Center(
-                            child: Text(
-                              '상품 이미지',
-                              style: TextStyle(
-                                color: iconColor,
-                                fontSize: subtitleFontSize,
-                              ),
-                            ),
-                          ),
+                FixedRatioThumbnail(
+                  imageUrl: item.images.isNotEmpty && item.images.first.isNotEmpty
+                      ? item.images.first
+                      : null,
+                  aspectRatio: 1.0,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(defaultRadius),
+                    topRight: Radius.circular(defaultRadius),
                   ),
                 ),
                 Padding(

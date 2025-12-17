@@ -94,4 +94,36 @@ class ChatNetworkApiDatasource {
       return null;
     }
   }
+
+  /// 거래 완료 API 호출
+  Future<void> completeTrade(String itemId) async {
+    try {
+      await SupabaseManager.shared.supabase.functions.invoke(
+        'completeTrade',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: {'itemId': itemId},
+      );
+    } catch (e) {
+      throw Exception('거래 완료 처리 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  /// 거래 취소 API 호출
+  Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault) async {
+    try {
+      await SupabaseManager.shared.supabase.functions.invoke(
+        'cancelTrade',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: {
+          'itemId': itemId,
+          'reasonCode': reasonCode,
+          'isSellerFault': isSellerFault,
+        },
+      );
+    } catch (e) {
+      throw Exception('거래 취소 처리 중 오류가 발생했습니다: $e');
+    }
+  }
 }

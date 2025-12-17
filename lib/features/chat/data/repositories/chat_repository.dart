@@ -104,4 +104,14 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> notificationOn(String roomId) async {
     await _chatDatasource.notificationOn(roomId);
   }
+
+  @override
+  Future<void> completeTrade(String itemId) async {
+    await _networkApiChatDatasource.completeTrade(itemId);
+  }
+
+  @override
+  Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault) async {
+    await _networkApiChatDatasource.cancelTrade(itemId, reasonCode, isSellerFault);
+  }
 }
