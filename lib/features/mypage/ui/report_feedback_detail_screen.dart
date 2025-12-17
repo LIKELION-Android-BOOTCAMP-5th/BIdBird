@@ -63,9 +63,8 @@ class _DetailBody extends StatelessWidget {
                   children: [
                     Text('신고 사유: ${report.reportCodeName}'),
                     const SizedBox(height: 8),
-                    Text('신고 대상: ${report.targetUserId}'), //report.targetCi
-                    if ((report.itemTitle ?? '').isNotEmpty)
-                      const SizedBox(height: 4),
+                    // Text('신고 사용자: ${report.targetUserId}'), //일단주석처리//공개user정보테이블이생기면그때nickname으로추가
+                    // const SizedBox(height: 4),
                     if ((report.itemTitle ?? '').isNotEmpty)
                       Text('신고 상품: ${report.itemTitle}'),
                     const SizedBox(height: 8),

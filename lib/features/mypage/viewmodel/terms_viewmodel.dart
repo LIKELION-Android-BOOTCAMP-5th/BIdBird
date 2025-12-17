@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../data/terms_repository.dart';
+
 class TermsItem {
   final String title;
   final String body;
@@ -7,20 +9,42 @@ class TermsItem {
   const TermsItem({required this.title, required this.body});
 }
 
-//노션생기면노션에서불러오게할부분임
-class TermsViewModel {
-  TermsViewModel();
+class TermsViewModel extends ChangeNotifier {
+  TermsViewModel(this._repository) {
+    loadTerms();
+  }
 
-  List<TermsItem> termsContent = const [
-    TermsItem(
-      title: '서비스 이용약관',
-      body:
-          '서비스 이용약관입니다.\n노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션\n\n서비스 이용약관입니다.\n서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.서비스 이용약관입니다.',
-    ),
-    TermsItem(
-      title: '개인정보 처리방침',
-      body:
-          '개인정보 처리방침입니다.\n노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션노션\n\n개인정보 처리방침입니다.\n개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.개인정보 처리방침입니다.',
-    ),
-  ];
+  final TermsRepository _repository;
+
+  bool isLoading = false;
+  String? errorMessage;
+
+  List<TermsItem> termsContent = [];
+
+  Future<void> loadTerms() async {
+    if (isLoading) return;
+
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final content = await _repository.fetchLatestTermsContent();
+
+      termsContent = [
+        TermsItem(title: '서비스 이용약관', body: content),
+
+        // TermsItem(
+        //   title: '개인정보 처리방침',
+        //   body: '',
+        // ),
+      ];
+    } catch (e) {
+      errorMessage = e.toString();
+      termsContent = [];
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 }
