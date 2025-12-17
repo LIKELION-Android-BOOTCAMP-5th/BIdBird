@@ -9,7 +9,7 @@ abstract class ItemDetailRepository {
   Future<bool> checkIsFavorite(String itemId);
   Future<void> toggleFavorite(String itemId, bool currentState);
   Future<Map<String, dynamic>?> fetchSellerProfile(String sellerId);
-  Future<List<Map<String, dynamic>>> fetchBidHistory(String itemId);
+  Future<List<BidHistoryItem>> fetchBidHistory(String itemId);
   Future<bool> checkIsMyItem(String itemId, String sellerId);
   bool? getLastIsTopBidder();
   SupabaseClient get supabase;
@@ -46,7 +46,7 @@ class ItemDetailRepositoryImpl implements ItemDetailRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> fetchBidHistory(String itemId) {
+  Future<List<BidHistoryItem>> fetchBidHistory(String itemId) {
     return _datasource.fetchBidHistory(itemId);
   }
 

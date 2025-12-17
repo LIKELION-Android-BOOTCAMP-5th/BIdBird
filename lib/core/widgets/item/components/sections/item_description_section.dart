@@ -1,6 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -9,15 +8,36 @@ import 'package:provider/provider.dart';
 
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
 
-class ItemDescriptionSection extends StatelessWidget {
+class ItemDescriptionSection extends StatefulWidget {
   const ItemDescriptionSection({required this.item, super.key});
 
   final ItemDetail item;
 
   @override
+  State<ItemDescriptionSection> createState() => _ItemDescriptionSectionState();
+}
+
+class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
+  bool _hasLoadedBidHistory = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 입찰 기록이 비어있으면 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final vm = context.read<ItemDetailViewModel>();
+      if (vm.bidHistory.isEmpty && !_hasLoadedBidHistory) {
+        _hasLoadedBidHistory = true;
+        vm.loadBidHistory();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vm = context.watch<ItemDetailViewModel>();
     final sellerProfile = vm.sellerProfile;
+    final bids = vm.bidHistory;
 
     final String avatarUrl = (sellerProfile?['profile_image_url'] as String?) ?? '';
     final String rawNickname =
@@ -25,9 +45,9 @@ class ItemDescriptionSection extends StatelessWidget {
     final String sellerNickname =
         rawNickname.isNotEmpty ? rawNickname : '닉네임 없음';
     final double sellerRating =
-        (sellerProfile?['rating'] as num?)?.toDouble() ?? item.sellerRating;
+        (sellerProfile?['rating'] as num?)?.toDouble() ?? widget.item.sellerRating;
     final int sellerReviewCount =
-        (sellerProfile?['review_count'] as int?) ?? item.sellerReviewCount;
+        (sellerProfile?['review_count'] as int?) ?? widget.item.sellerReviewCount;
 
     return Column(
       children: [
@@ -89,8 +109,8 @@ class ItemDescriptionSection extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        if (item.sellerId.isEmpty) return;
-                        context.push('/user/${item.sellerId}');
+                        if (widget.item.sellerId.isEmpty) return;
+                        context.push('/user/${widget.item.sellerId}');
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
@@ -127,7 +147,7 @@ class ItemDescriptionSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  item.itemContent,
+                  widget.item.itemContent,
                   style: const TextStyle(fontSize: 13, height: 1.4),
                 ),
               ],
@@ -152,111 +172,83 @@ class ItemDescriptionSection extends StatelessWidget {
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
-                FutureBuilder<List<Map<String, dynamic>>>(
-                  future: ItemDetailDatasource().fetchBidHistory(item.itemId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    }
-
-                    if (snapshot.hasError) {
-                      return const Text(
-                        '입찰 내역을 불러올 수 없습니다.',
-                        style: TextStyle(fontSize: 12, color: iconColor),
-                      );
-                    }
-
-                    final bids = snapshot.data ?? [];
-
-                    // 가격이 0원인 입찰은 표시하지 않음
-                    final filteredBids = bids.where((bid) {
-                      final dynamic rawPrice = bid['price'];
-                      if (rawPrice == null) return false;
-                      if (rawPrice is num) {
-                        return rawPrice != 0;
-                      }
-                      final parsed = int.tryParse(rawPrice.toString());
-                      return parsed != null && parsed != 0;
-                    }).toList();
-
-                    if (filteredBids.isEmpty) {
-                      return const Text(
-                        '아직 입찰 내역이 없습니다.',
-                        style: TextStyle(fontSize: 12, color: iconColor),
-                      );
-                    }
-
-                    final limited = filteredBids.take(10).toList();
-
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: limited.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 6),
-                      itemBuilder: (context, index) {
-                        final bid = limited[index];
-                        final price = bid['price']?.toString() ?? '';
-                        final createdAtRaw = bid['created_at']?.toString();
-                        final relative = formatRelativeTime(createdAtRaw);
-
-                        // 입찰 타입/상태 표시
-                        final int code = (bid['auction_log_code'] as int?) ?? 0;
-                        String typeLabel = '';
-                        String statusLabel = '';
-
-                        // 현재 정의된 로그 코드 기준
-                        // 410: 경매 진행 중(일반 입찰), 411: 상위 입찰, 430: 입찰 낙찰, 431: 즉시 구매 낙찰
-                        if (code == 431) {
-                          typeLabel = '즉시 입찰';
-                        } else if (code == 410 || code == 411 || code == 430) {
-                          typeLabel = '일반 입찰';
-                        } else if (price.isNotEmpty) {
-                          // 그 외 코드는 가격이 들어와 있으면 즉시 입찰 실패로 간주
-                          typeLabel = '즉시 입찰';
-                          statusLabel = '실패';
-                        }
-
-                        String trailingLabel = '';
-                        if (typeLabel.isNotEmpty && statusLabel.isNotEmpty) {
-                          trailingLabel = ' ($typeLabel · $statusLabel)';
-                        } else if (typeLabel.isNotEmpty) {
-                          trailingLabel = ' ($typeLabel)';
-                        }
-
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${index + 1}. $price원$trailingLabel',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              relative,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: iconColor,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
+                _buildBidHistoryList(bids),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBidHistoryList(List<BidHistoryItem> bids) {
+    // 가격이 0원인 입찰은 표시하지 않음
+    final filteredBids = bids.where((bid) => bid.price != 0).toList();
+
+    if (filteredBids.isEmpty) {
+      return const Text(
+        '아직 입찰 내역이 없습니다.',
+        style: TextStyle(fontSize: 12, color: iconColor),
+      );
+    }
+
+    final limited = filteredBids.take(10).toList();
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: limited.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (context, index) {
+        final bid = limited[index];
+        final price = bid.price.toString();
+        final createdAtRaw = bid.createdAt;
+        final relative = formatRelativeTime(createdAtRaw);
+
+        // 입찰 타입/상태 표시
+        final int code = bid.auctionLogCode ?? 0;
+        String typeLabel = '';
+        String statusLabel = '';
+
+        // 현재 정의된 로그 코드 기준
+        // 410: 경매 진행 중(일반 입찰), 411: 상위 입찰, 430: 입찰 낙찰, 431: 즉시 구매 낙찰
+        if (code == 431) {
+          typeLabel = '즉시 입찰';
+        } else if (code == 410 || code == 411 || code == 430) {
+          typeLabel = '일반 입찰';
+        } else if (price.isNotEmpty) {
+          // 그 외 코드는 가격이 들어와 있으면 즉시 입찰 실패로 간주
+          typeLabel = '즉시 입찰';
+          statusLabel = '실패';
+        }
+
+        String trailingLabel = '';
+        if (typeLabel.isNotEmpty && statusLabel.isNotEmpty) {
+          trailingLabel = ' ($typeLabel · $statusLabel)';
+        } else if (typeLabel.isNotEmpty) {
+          trailingLabel = ' ($typeLabel)';
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${index + 1}. $price원$trailingLabel',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              relative,
+              style: const TextStyle(
+                fontSize: 11,
+                color: iconColor,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

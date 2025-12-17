@@ -1,6 +1,6 @@
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
-import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
+import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -27,12 +27,11 @@ enum _BidHistoryState {
 
 class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBottomSheet> {
   _BidHistoryState _state = _BidHistoryState.initial;
-  List<Map<String, dynamic>> _bidHistory = [];
+  List<BidHistoryItem> _bidHistory = [];
   bool _isLoadingMore = false;
   bool _hasMore = true;
   int _currentPage = 0;
   static const int _pageSize = 20;
-  final ItemDetailDatasource _datasource = ItemDetailDatasource();
 
   @override
   void initState() {
@@ -55,35 +54,22 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
     });
 
     try {
-      List<Map<String, dynamic>> bids = [];
+      // ViewModel에서 입찰 내역 가져오기 (ViewModel은 항상 제공됨)
+      final viewModel = context.read<ItemDetailViewModel>();
+      List<BidHistoryItem> bids = [];
       
-      // ViewModel에서 이미 로드된 입찰 내역이 있는지 확인
-      try {
-        final viewModel = context.read<ItemDetailViewModel>();
-        if (viewModel.bidHistory.isNotEmpty) {
-          bids = viewModel.bidHistory;
-        } else {
-          // ViewModel에 없으면 ViewModel을 통해 로드
-          await viewModel.loadBidHistory();
-          bids = viewModel.bidHistory;
-        }
-      } catch (e) {
-        // ViewModel을 찾을 수 없으면 직접 로드
-        bids = await _datasource.fetchBidHistory(widget.itemId);
+      if (viewModel.bidHistory.isNotEmpty) {
+        bids = viewModel.bidHistory;
+      } else {
+        // ViewModel에 없으면 ViewModel을 통해 로드
+        await viewModel.loadBidHistory();
+        bids = viewModel.bidHistory;
       }
       
       if (!mounted) return;
       
       // 가격이 0원인 입찰은 필터링
-      final filteredBids = bids.where((bid) {
-        final dynamic rawPrice = bid['price'];
-        if (rawPrice == null) return false;
-        if (rawPrice is num) {
-          return rawPrice != 0;
-        }
-        final parsed = int.tryParse(rawPrice.toString());
-        return parsed != null && parsed != 0;
-      }).toList();
+      final filteredBids = bids.where((bid) => bid.price != 0).toList();
 
       if (mounted) {
         setState(() {
@@ -332,13 +318,13 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
         }
 
         final bid = _bidHistory[index];
-        final price = bid['price']?.toString() ?? '0';
-        final createdAtRaw = bid['created_at']?.toString();
+        final price = bid.price.toString();
+        final createdAtRaw = bid.createdAt;
         final relative = formatRelativeTime(createdAtRaw);
-        final int code = (bid['auction_log_code'] as int?) ?? 0;
+        final int code = bid.auctionLogCode ?? 0;
         final typeText = _getBidTypeText(code);
         final bidIndex = _bidHistory.length - index; // 역순으로 표시
-        final userName = bid['user_name']?.toString() ?? '익명 참여자';
+        final userName = bid.userName;
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
