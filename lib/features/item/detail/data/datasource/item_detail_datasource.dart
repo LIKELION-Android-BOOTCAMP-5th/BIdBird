@@ -169,51 +169,25 @@ class ItemDetailDatasource {
 
   Future<List<Map<String, dynamic>>> fetchBidHistory(String itemId) async {
     try {
-      // 1) 해당 아이템의 경매 ID 조회 (round 1 기준)
-      final auctionRow = await _supabase
-          .from('auctions')
-          .select('auction_id')
-          .eq('item_id', itemId)
-          .eq('round', 1)
-          .maybeSingle();
+      final response = await _supabase.functions.invoke(
+        'get-bid-history',
+        body: {'itemId': itemId},
+      );
 
-      if (auctionRow is! Map<String, dynamic>) {
+      if (response.data == null) {
         return [];
       }
 
-      final String? auctionId = getNullableStringFromRow(auctionRow, 'auction_id');
-      if (auctionId == null || auctionId.isEmpty) {
-        return [];
+      final responseData = response.data as Map<String, dynamic>;
+      
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final List<dynamic> bidHistoryList = responseData['data'] as List<dynamic>;
+        return bidHistoryList
+            .map((item) => item as Map<String, dynamic>)
+            .toList();
       }
 
-      // 2) 해당 경매의 모든 로그를 auctions_status_log 에서 조회
-      //    (실제 화면에서는 price가 0이 아닌 기록만 노출함)
-      final List<dynamic> rows = await _supabase
-          .from('auctions_status_log')
-          .select('bid_status_id, bid_price, auction_log_code, created_at')
-          .eq('bid_status_id', auctionId)
-          .order('created_at', ascending: false)
-          .limit(10);
-
-      final List<Map<String, dynamic>> bidHistory = [];
-
-      for (final row in rows) {
-        if (row is! Map<String, dynamic>) continue;
-        final logRow = row;
-
-        final int price = getIntFromRow(logRow, 'bid_price');
-
-        bidHistory.add({
-          'price': price,
-          'user_name': '익명 참여자',
-          'user_id': '',
-          'created_at': getStringFromRow(logRow, 'created_at'),
-          'profile_image_url': null,
-          'auction_log_code': logRow['auction_log_code'],
-        });
-      }
-
-      return bidHistory;
+      return [];
     } catch (e, stackTrace) {
       return [];
     }
