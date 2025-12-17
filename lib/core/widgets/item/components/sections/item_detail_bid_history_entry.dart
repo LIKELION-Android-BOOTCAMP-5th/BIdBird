@@ -31,6 +31,7 @@ class ItemDetailBidHistoryEntry extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
+                  final viewModel = context.read<ItemDetailViewModel>();
                   showModalBottomSheet<void>(
                     context: context,
                     isScrollControlled: true,
@@ -41,8 +42,11 @@ class ItemDetailBidHistoryEntry extends StatelessWidget {
                         top: Radius.circular(20),
                       ),
                     ),
-                    builder: (context) => ItemDetailBidHistoryBottomSheet(
-                      itemId: item.itemId,
+                    builder: (bottomSheetContext) => ChangeNotifierProvider<ItemDetailViewModel>.value(
+                      value: viewModel,
+                      child: ItemDetailBidHistoryBottomSheet(
+                        itemId: item.itemId,
+                      ),
                     ),
                   );
                 },

@@ -114,4 +114,26 @@ class ChatRepositoryImpl implements ChatRepository {
   Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault) async {
     await _networkApiChatDatasource.cancelTrade(itemId, reasonCode, isSellerFault);
   }
+
+  @override
+  Future<void> submitTradeReview({
+    required String itemId,
+    required String toUserId,
+    required String role,
+    required double rating,
+    required String comment,
+  }) async {
+    await _networkApiChatDatasource.submitTradeReview(
+      itemId: itemId,
+      toUserId: toUserId,
+      role: role,
+      rating: rating,
+      comment: comment,
+    );
+  }
+
+  @override
+  Future<bool> hasSubmittedReview(String itemId) async {
+    return await _networkApiChatDatasource.hasSubmittedReview(itemId);
+  }
 }

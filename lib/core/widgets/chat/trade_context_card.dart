@@ -123,7 +123,7 @@ class TradeContextCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // 거래 현황 보기 버튼
+                        // 거래 현황 보기 / 거래 평가 버튼
                         if (onTradeStatusTap != null)
                           GestureDetector(
                             onTap: () {
@@ -138,17 +138,18 @@ class TradeContextCard extends StatelessWidget {
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
-                                children: const [
+                                children: [
                                   Text(
-                                    '거래 현황 보기',
-                                    style: TextStyle(
+                                    // 거래 완료 상태(550)일 때는 "거래 평가", 그 외에는 "거래 현황 보기"
+                                    tradeStatusCode == 550 ? '거래 평가' : '거래 현황 보기',
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                       color: blueColor,
                                     ),
                                   ),
-                                  SizedBox(width: 2),
-                                  Icon(
+                                  const SizedBox(width: 2),
+                                  const Icon(
                                     Icons.arrow_forward_ios,
                                     size: 12,
                                     color: blueColor,
