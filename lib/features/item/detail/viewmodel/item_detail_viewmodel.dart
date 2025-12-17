@@ -210,11 +210,11 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     // 이미 구독 중이면 무시
     if (_bidStatusChannel != null) return;
     
-    // auctions: 현재가, 최고 입찰자, 상태 코드 변경 감지
+    // auctions: 현재가, 최고 입찰자, 상태 코드 변경 감지 (UPDATE만 구독)
     _bidStatusChannel = _repository.supabase.channel('auctions_$itemId');
     _bidStatusChannel!
         .onPostgresChanges(
-          event: PostgresChangeEvent.all,
+          event: PostgresChangeEvent.update, // UPDATE만 구독 (INSERT/DELETE 불필요)
           schema: 'public',
           table: 'auctions',
           filter: PostgresChangeFilter(
