@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,18 +24,17 @@ class SupabaseManager {
   }
 
   String getAuthorizationKey() {
-    String authorizationKey = supabase.auth.currentSession?.accessToken != null
-        ? 'Bearer ${supabase.auth.currentSession?.accessToken}'
-        : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5ZmdmaWNjZWpqZ3R2cG10a3p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIwNTUwNjksImV4cCI6MjA3NzYzMTA2OX0.Ng9atODZnfRocZPtnIb74s6PLeIJ2HqqSaatj1HbRsc';
-    return authorizationKey;
+    final token = supabase.auth.currentSession?.accessToken;
+    if (token == null) {
+      throw Exception("토근이 없습니다");
+    }
+    return 'Bearer $token';
   }
 
   Future<void> googleSignIn() async {
-    const webClientId =
-        '966757848850-cscnd3oli3ts6c8e6ch6p1ev485b9ej5.apps.googleusercontent.com';
+    final webClientId = dotenv.env['GOOGLE_SIGN_IN_WEB_CLIENT_ID'];
 
-    const iosClientId =
-        '966757848850-1cj4f09hqn0nlfk1e2l3i0rbs82gqtos.apps.googleusercontent.com';
+    final iosClientId = dotenv.env['GOOGLE_SIGN_IN_IOS_CLIENT_ID'];
 
     final GoogleSignIn signIn = GoogleSignIn.instance;
 
