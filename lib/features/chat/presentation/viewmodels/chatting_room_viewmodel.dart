@@ -475,29 +475,46 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   // Call when view disappears
   Future<void> disposeViewModel() async {
     final thisRoomId = roomId;
-    if (thisRoomId != null && isActive) {
-      // 채팅방을 나갈 때 읽음 처리
-      // leaveRoom이 읽음 처리를 하므로 먼저 호출
-      try {
-        await chattingRoomService.leaveRoom(thisRoomId);
-      } catch (e) {
-        // 에러 발생 시 무시 (읽음 처리 실패해도 계속 진행)
-      }
-      heartbeatManager.stop();
-      isActive = false;
+    // 중복 호출 방지: 이미 비활성화되었으면 처리하지 않음
+    if (thisRoomId == null || !isActive) {
+      return;
     }
+    
+    // 낙관적 업데이트: 채팅방을 나갈 때 로컬에서 먼저 읽음 처리
+    // unreadCount를 0으로 설정하여 UI를 즉시 업데이트
+    if (roomInfo != null && roomInfo!.unreadCount > 0) {
+      // 낙관적으로 읽음 처리
+      roomInfo = RoomInfoEntity(
+        item: roomInfo!.item,
+        auction: roomInfo!.auction,
+        opponent: roomInfo!.opponent,
+        trade: roomInfo!.trade,
+        unreadCount: 0,
+        lastMessageAt: roomInfo!.lastMessageAt,
+      );
+      previousUnreadCount = 0;
+      notifyListeners();
+    }
+    
+    // 먼저 isActive를 false로 설정하여 실시간 구독 업데이트가 무시되도록 함
+    heartbeatManager.stop();
+    isActive = false;
   }
 
   Future<void> leaveRoom() async {
-    // disposeViewModel에서 leaveRoom이 호출되므로 여기서는 disposeViewModel만 호출
-    // dispose는 자동으로 호출되므로 여기서 호출하지 않음
+    // disposeViewModel에서 낙관적 업데이트로 읽음 처리를 하고, 서버 통신은 백그라운드로 처리
     if (isActive && roomId != null) {
       await disposeViewModel();
     }
   }
 
   Future<void> enterRoom() async {
-    init();
+    // 이미 활성화되어 있으면 중복 호출 방지
+    if (isActive) {
+      return;
+    }
+    
+    await init();
     if (roomId != null) {
       setupRealtimeSubscription();
     }
@@ -551,19 +568,17 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     _subscriptionManager.subscribeToRoomInfo(
       itemId: itemId,
       roomId: roomId,
-      onItemUpdate: (updateItemInfo) {
-        itemInfo = updateItemInfo;
-        notifyListeners();
-      },
-      onAuctionUpdate: (updateAuctionInfo) {
-        auctionInfo = updateAuctionInfo;
-        notifyListeners();
-      },
-      onTradeUpdate: (updateTradeInfo) {
-        tradeInfo = updateTradeInfo;
-        notifyListeners();
-      },
+      // 가격과 매물 관리는 리얼타임으로 가져오지 않음
+      onItemUpdate: null,
+      onAuctionUpdate: null,
+      onTradeUpdate: null,
       onUnreadCountUpdate: (newUnreadCount) {
+        // 채팅방이 비활성화된 상태에서는 실시간 업데이트 무시
+        // (낙관적 업데이트로 이미 처리되었을 수 있음)
+        if (!isActive) {
+          return;
+        }
+        
         // 중복 호출 방지: 같은 값이면 처리하지 않음
         if (previousUnreadCount == newUnreadCount) {
           return;
