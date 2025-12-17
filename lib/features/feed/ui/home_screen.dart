@@ -8,7 +8,6 @@ import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumb
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
-import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -210,39 +209,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           .read<AuthViewModel>();
                                       final myUserId = authVM.user?.id;
 
-                                      final bool isWonByMe =
-                                          item.auctions.last_bid_user_id !=
-                                              null &&
-                                          myUserId != null &&
-                                          item.auctions.last_bid_user_id ==
-                                              myUserId &&
-                                          item.auctions.auction_status_code ==
-                                              321;
-
-                                      final bool isTradePaid =
-                                          item.auctions.trade_status_code ==
-                                          520;
-
-                                      if (isWonByMe && !isTradePaid) {
-                                        final winItem = ItemBidWinEntity(
-                                          itemId: item.item_id,
-                                          title: title,
-                                          images: item.thumbnail_image.isNotEmpty
-                                              ? [item.thumbnail_image]
-                                              : [],
-                                          winPrice: item.auctions.current_price,
-                                          tradeStatusCode:
-                                              item.auctions.trade_status_code,
-                                        );
-
-                                        context.push(
-                                          '/item_bid_win',
-                                          extra: winItem,
-                                        );
-                                      } else {
-                                        // item_detail 페이지로 이동
-                                        context.push('/item/${item.item_id}');
-                                      }
+                                      // item_detail 페이지로 이동
+                                      context.push('/item/${item.item_id}');
                                     },
                                     child: Column(
                                       children: [
@@ -464,39 +432,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           .read<AuthViewModel>();
                                       final myUserId = authVM.user?.id;
 
-                                      final bool isWonByMe =
-                                          item.auctions.last_bid_user_id !=
-                                              null &&
-                                          myUserId != null &&
-                                          item.auctions.last_bid_user_id ==
-                                              myUserId &&
-                                          item.auctions.auction_status_code ==
-                                              321;
-
-                                      final bool isTradePaid =
-                                          item.auctions.trade_status_code ==
-                                          520;
-
-                                      if (isWonByMe && !isTradePaid) {
-                                        final winItem = ItemBidWinEntity(
-                                          itemId: item.item_id,
-                                          title: title,
-                                          images: item.thumbnail_image.isNotEmpty
-                                              ? [item.thumbnail_image]
-                                              : [],
-                                          winPrice: item.auctions.current_price,
-                                          tradeStatusCode:
-                                              item.auctions.trade_status_code,
-                                        );
-
-                                        context.push(
-                                          '/item_bid_win',
-                                          extra: winItem,
-                                        );
-                                      } else {
-                                        // item_detail 페이지로 이동
-                                        context.push('/item/${item.item_id}');
-                                      }
+                                      // item_detail 페이지로 이동
+                                      context.push('/item/${item.item_id}');
                                     },
                                     child: Column(
                                       children: [

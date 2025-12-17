@@ -8,10 +8,10 @@ abstract class ItemDetailRepository {
   Future<ItemDetail?> fetchItemDetail(String itemId);
   Future<bool> checkIsFavorite(String itemId);
   Future<void> toggleFavorite(String itemId, bool currentState);
-  Future<bool> checkIsTopBidder(String itemId);
   Future<Map<String, dynamic>?> fetchSellerProfile(String sellerId);
   Future<List<Map<String, dynamic>>> fetchBidHistory(String itemId);
   Future<bool> checkIsMyItem(String itemId, String sellerId);
+  bool? getLastIsTopBidder();
   SupabaseClient get supabase;
 }
 
@@ -41,11 +41,6 @@ class ItemDetailRepositoryImpl implements ItemDetailRepository {
   }
 
   @override
-  Future<bool> checkIsTopBidder(String itemId) {
-    return _datasource.checkIsTopBidder(itemId);
-  }
-
-  @override
   Future<Map<String, dynamic>?> fetchSellerProfile(String sellerId) {
     return _datasource.fetchSellerProfile(sellerId);
   }
@@ -58,6 +53,11 @@ class ItemDetailRepositoryImpl implements ItemDetailRepository {
   @override
   Future<bool> checkIsMyItem(String itemId, String sellerId) {
     return _datasource.checkIsMyItem(itemId, sellerId);
+  }
+
+  @override
+  bool? getLastIsTopBidder() {
+    return _datasource.getLastIsTopBidder();
   }
 
   @override

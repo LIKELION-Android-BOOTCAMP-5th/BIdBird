@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 
 import '../model/item_bid_win_entity.dart';
 import 'package:bidbird/core/widgets/item/components/others/item_bid_result_body.dart';
+import 'package:bidbird/features/item/detail/viewmodel/item_detail_viewmodel.dart';
 
 class ItemBidSuccessScreen extends StatelessWidget {
   const ItemBidSuccessScreen({super.key, required this.item});
@@ -44,7 +45,22 @@ class ItemBidSuccessScreen extends StatelessWidget {
           icon: Icons.check_circle,
           iconColor: blueColor,
           onClose: () {
-            context.go('/item/${item.itemId}');
+            // Navigator.push로 호출된 경우 (item_bottom_action_bar에서)
+            // Navigator.pop을 사용하여 이전 화면(상세 화면)으로 돌아감
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              // context.push로 호출된 경우 (알림, 홈 화면 등)
+              // context.pop을 시도하고, 실패하면 context.go 사용
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                // 상세 화면이 스택에 없으면 go를 사용
+                // SharedPreferences에 플래그가 이미 저장되어 있으므로
+                // 새로운 ViewModel이 생성되어도 중복 표시되지 않음
+                context.go('/item/${item.itemId}');
+              }
+            }
           },
           actions: [
             Builder(

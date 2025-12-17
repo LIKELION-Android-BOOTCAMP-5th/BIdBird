@@ -1,7 +1,9 @@
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/repository/item_detail_repository.dart';
 
@@ -36,12 +38,55 @@ class ItemDetailViewModel extends ItemBaseViewModel {
   RealtimeChannel? _bidStatusChannel;
   bool _isLoadingDetail = false;
   
+  // 낙찰 성공 화면 표시 여부 추적
+  bool _hasShownBidWinScreen = false;
+  bool _hasLoadedBidWinScreenFlag = false;
+  bool get hasShownBidWinScreen => _hasShownBidWinScreen;
+  
+  static String _getBidWinScreenKey(String itemId) => 'bid_win_screen_shown_$itemId';
+  
+  Future<void> _loadBidWinScreenFlag() async {
+    if (_hasLoadedBidWinScreenFlag) return;
+    _hasLoadedBidWinScreenFlag = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _hasShownBidWinScreen = prefs.getBool(_getBidWinScreenKey(itemId)) ?? false;
+    } catch (e) {
+      _hasShownBidWinScreen = false;
+    }
+  }
+  
+  Future<void> markBidWinScreenAsShown() async {
+    _hasShownBidWinScreen = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_getBidWinScreenKey(itemId), true);
+    } catch (e) {
+      // 저장 실패 시 무시
+    }
+    notifyListeners();
+  }
+  
+  Future<void> resetBidWinScreenFlag() async {
+    _hasShownBidWinScreen = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_getBidWinScreenKey(itemId));
+    } catch (e) {
+      // 삭제 실패 시 무시
+    }
+    notifyListeners();
+  }
+  
   // 캐싱 관련
   static const Duration _cacheValidDuration = Duration(minutes: 3);
 
   Future<void> loadItemDetail({bool forceRefresh = false}) async {
     // 중복 로딩 방지
     if (_isLoadingDetail) return;
+    
+    // SharedPreferences에서 플래그 로드 (최초 1회만)
+    await _loadBidWinScreenFlag();
     
     // 캐시가 유효하고 강제 새로고침이 아니면 캐시 사용
     if (!forceRefresh && 
@@ -58,6 +103,7 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     startLoading();
 
     try {
+      final previousStatusCode = _itemDetail?.statusCode;
       _itemDetail = await _repository.fetchItemDetail(itemId);
 
       if (_itemDetail == null) {
@@ -65,9 +111,20 @@ class ItemDetailViewModel extends ItemBaseViewModel {
         return;
       }
 
+      // 엣지 펑션에서 반환한 isTopBidder 사용
+      final isTopBidderFromEdgeFunction = _repository.getLastIsTopBidder();
+      if (isTopBidderFromEdgeFunction != null) {
+        _isTopBidder = isTopBidderFromEdgeFunction;
+      }
+
+      // 상태 코드가 변경되면 낙찰 성공 화면 표시 플래그 리셋
+      if (previousStatusCode != null && previousStatusCode != _itemDetail!.statusCode) {
+        await resetBidWinScreenFlag();
+      }
+
       stopLoading();
 
-      // 추가 데이터 로딩 - 부분 실패 허용
+      // 추가 데이터 로딩 - 부분 실패 허용 (isTopBidder는 이미 설정됨)
       await _loadAdditionalData();
       
       // 모든 추가 데이터 로드 완료 후 한 번만 notifyListeners 호출
@@ -88,7 +145,7 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     await Future.wait([
       _checkIsMyItem(),
       _loadFavoriteState(),
-      _checkTopBidder(),
+      // _checkTopBidder() 제거 - 엣지 펑션에서 이미 반환함
       _loadSellerProfile(),
       // 입찰 내역은 바텀 시트가 열릴 때만 로드
     ], eagerError: false);
@@ -100,15 +157,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       // notifyListeners() 제거 - 상위에서 배치 호출
     } catch (e) {
       // 즐겨찾기 상태 로드 실패 시 기본값 유지
-    }
-  }
-
-  Future<void> _checkTopBidder() async {
-    try {
-      _isTopBidder = await _repository.checkIsTopBidder(itemId);
-      // notifyListeners() 제거 - 상위에서 배치 호출
-    } catch (e) {
-      // 최고 입찰자 확인 실패 시 기본값 유지
     }
   }
 
@@ -211,6 +259,16 @@ class ItemDetailViewModel extends ItemBaseViewModel {
         _itemDetail = _itemDetail!.copyWith(
           biddingCount: newCount,
         );
+        hasPartialUpdate = true;
+      }
+    }
+    
+    // 최고 입찰자 변경 시 isTopBidder 업데이트
+    if (newRecord.containsKey('last_bid_user_id')) {
+      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      if (currentUserId != null) {
+        final lastBidUserId = newRecord['last_bid_user_id'] as String?;
+        _isTopBidder = lastBidUserId != null && lastBidUserId == currentUserId;
         hasPartialUpdate = true;
       }
     }

@@ -46,7 +46,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   bool _isBidRestricted = false;
   bool _hasShownRelistPopup = false;
   bool _hasShownPaymentCompleteScreen = false;
-  bool _hasShownBidWinScreen = false;
   bool? _hasShippingInfo;
   bool? _hasShippingInfoForSeller;
 
@@ -115,10 +114,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // trade_status_code가 변경되면 플래그 리셋
     if (oldWidget.item.tradeStatusCode != widget.item.tradeStatusCode) {
       _hasShownPaymentCompleteScreen = false;
-    }
-    // status_code가 변경되면 낙찰 팝업 플래그 리셋
-    if (oldWidget.item.statusCode != widget.item.statusCode) {
-      _hasShownBidWinScreen = false;
     }
   }
 
@@ -199,10 +194,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     // 구매자 입장: 낙찰(321) 상태이고 아직 결제하지 않은 경우 자동으로 낙찰 성공 화면 표시
     final int statusCode = _statusCode ?? 0;
-    if (!isMyItem && statusCode == 321 && isTopBidder && !isTradePaid && !_hasShownBidWinScreen) {
-      _hasShownBidWinScreen = true;
+    final bool hasShownBidWinScreen = itemDetailViewModel?.hasShownBidWinScreen ?? false;
+    if (!isMyItem && statusCode == 321 && isTopBidder && !isTradePaid && !hasShownBidWinScreen) {
+      itemDetailViewModel?.markBidWinScreenAsShown();
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
         Navigator.push(
