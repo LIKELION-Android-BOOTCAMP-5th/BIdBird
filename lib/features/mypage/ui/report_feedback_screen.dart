@@ -94,7 +94,7 @@ class _Item extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: BorderColor,
+          color: Colors.white, //앱칼라가없어서그냥이렇게씀,,
           borderRadius: defaultBorder,
         ),
         child: Column(
@@ -109,7 +109,7 @@ class _Item extends StatelessWidget {
                     style: const TextStyle(fontSize: 18),
                   ),
                 ),
-                _ReportStatus(status: report.status),
+                _ReportCode(reportCode: report.reportCode),
               ],
             ),
 
@@ -123,7 +123,7 @@ class _Item extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              _formatListDate(report.createdAt),
+              _formatDate(report.createdAt),
               //style
             ),
           ],
@@ -132,28 +132,27 @@ class _Item extends StatelessWidget {
     );
   }
 
-  //utc수정해야함
-  String _formatListDate(DateTime date) {
+  String _formatDate(DateTime date) {
     final month = date.month.toString();
     final day = date.day.toString();
     return '${date.year}. $month. $day.';
   }
 }
 
-class _ReportStatus extends StatelessWidget {
-  final int status;
+class _ReportCode extends StatelessWidget {
+  final String reportCode;
 
-  const _ReportStatus({required this.status});
+  const _ReportCode({required this.reportCode});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: getReportStatusColor(status),
+        color: getReportCodeColor(reportCode),
         borderRadius: defaultBorder,
       ),
-      child: Text(getReportStatusString(status)),
+      child: Text(getReportCodeName(reportCode)),
     );
   }
 }

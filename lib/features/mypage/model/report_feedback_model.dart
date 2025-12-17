@@ -2,8 +2,8 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
 //DB의숫자가뭔지모르겠어서일단이렇게함//enum을쓸필요가있나
-String getReportStatusString(int? value) {
-  switch (value) {
+String getReportCodeName(String? reportCode) {
+  switch (reportCode) {
     case 0:
       return 'type_0';
     case 1:
@@ -28,8 +28,8 @@ String getReportStatusString(int? value) {
 }
 
 //나중에색맞추기
-Color getReportStatusColor(int? value) {
-  switch (value) {
+Color getReportCodeColor(String? reportCode) {
+  switch (reportCode) {
     case 0:
       return blueColor;
     case 1:
@@ -56,7 +56,7 @@ Color getReportStatusColor(int? value) {
 class ReportFeedbackModel {
   final String id;
   final String targetUserId;
-  final String targetUserNickname;
+  final String? targetCi;
   final String reportCode;
   final String reportCodeName;
   final String? itemId;
@@ -70,7 +70,7 @@ class ReportFeedbackModel {
   const ReportFeedbackModel({
     required this.id,
     required this.targetUserId,
-    required this.targetUserNickname,
+    required this.targetCi,
     required this.reportCode,
     required this.reportCodeName,
     required this.itemId,
