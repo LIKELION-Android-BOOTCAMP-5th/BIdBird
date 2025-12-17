@@ -11,9 +11,6 @@ class RealtimeSubscriptionManager {
   final _supabase = SupabaseManager.shared.supabase;
 
   RealtimeChannel? _messageChannel;
-  RealtimeChannel? _itemsChannel;
-  RealtimeChannel? _auctionsChannel;
-  RealtimeChannel? _tradeChannel;
   RealtimeChannel? _roomUsersChannel;
 
   /// 메시지 구독 설정
@@ -56,9 +53,6 @@ class RealtimeSubscriptionManager {
   /// 
   /// [itemId] 아이템 ID
   /// [roomId] 채팅방 ID (nullable)
-  /// [onItemUpdate] 아이템 정보 업데이트 콜백
-  /// [onAuctionUpdate] 경매 정보 업데이트 콜백
-  /// [onTradeUpdate] 거래 정보 업데이트 콜백
   /// [onUnreadCountUpdate] 읽지 않은 메시지 수 업데이트 콜백
   /// [onNotifyListeners] UI 업데이트 콜백
   void subscribeToRoomInfo({
@@ -72,91 +66,6 @@ class RealtimeSubscriptionManager {
   }) {
     // 기존 채널 정리
     _disposeRoomInfoChannels();
-
-    // 아이템 정보 구독
-    if (onItemUpdate != null) {
-      _itemsChannel = _supabase.channel('items_detail$itemId');
-      _itemsChannel!
-          .onPostgresChanges(
-            event: PostgresChangeEvent.update,
-            schema: 'public',
-            table: 'items_detail',
-            filter: PostgresChangeFilter(
-              type: PostgresChangeFilterType.eq,
-              column: 'item_id',
-              value: itemId,
-            ),
-            callback: (payload) {
-              final updateItem = payload.newRecord;
-              final ItemInfoEntity updateItemInfo =
-                  ItemInfoEntity.fromJson(updateItem);
-              onItemUpdate(updateItemInfo);
-              onNotifyListeners();
-            },
-          )
-          .subscribe();
-    }
-
-    // 경매 정보 구독
-    if (onAuctionUpdate != null) {
-      _auctionsChannel = _supabase.channel('auctions$itemId');
-      _auctionsChannel!
-          .onPostgresChanges(
-            event: PostgresChangeEvent.update,
-            schema: 'public',
-            table: 'auctions',
-            filter: PostgresChangeFilter(
-              type: PostgresChangeFilterType.eq,
-              column: 'item_id',
-              value: itemId,
-            ),
-            callback: (payload) {
-              final updateAuction = payload.newRecord;
-              final AuctionInfoEntity updateAuctionInfo =
-                  AuctionInfoEntity.fromJson(updateAuction);
-              onAuctionUpdate(updateAuctionInfo);
-              onNotifyListeners();
-            },
-          )
-          .subscribe();
-    }
-
-    // 거래 정보 구독
-    if (onTradeUpdate != null) {
-      _tradeChannel = _supabase.channel('trade_status$itemId');
-      _tradeChannel!
-          .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            table: 'trade_info',
-            filter: PostgresChangeFilter(
-              type: PostgresChangeFilterType.eq,
-              column: 'item_id',
-              value: itemId,
-            ),
-            callback: (payload) {
-              final data = payload.newRecord;
-              final userId = _supabase.auth.currentUser?.id;
-              if (userId == null || data['buyer_id'] != userId) {
-                return; // 조건 안 맞으면 무시
-              }
-              switch (payload.eventType) {
-                case PostgresChangeEvent.insert:
-                  onTradeUpdate(TradeInfoEntity.fromJson(payload.newRecord));
-                  break;
-                case PostgresChangeEvent.update:
-                  onTradeUpdate(TradeInfoEntity.fromJson(payload.newRecord));
-                  break;
-                case PostgresChangeEvent.delete:
-                  onTradeUpdate(null);
-                  break;
-                case PostgresChangeEvent.all:
-                  break;
-              }
-              onNotifyListeners();
-            },
-          )
-          .subscribe();
-    }
 
     // 읽지 않은 메시지 수 구독
     if (onUnreadCountUpdate != null && roomId != null) {
@@ -190,18 +99,6 @@ class RealtimeSubscriptionManager {
 
   /// 방 정보 구독 채널 정리
   void _disposeRoomInfoChannels() {
-    if (_itemsChannel != null) {
-      _supabase.removeChannel(_itemsChannel!);
-      _itemsChannel = null;
-    }
-    if (_auctionsChannel != null) {
-      _supabase.removeChannel(_auctionsChannel!);
-      _auctionsChannel = null;
-    }
-    if (_tradeChannel != null) {
-      _supabase.removeChannel(_tradeChannel!);
-      _tradeChannel = null;
-    }
     if (_roomUsersChannel != null) {
       _supabase.removeChannel(_roomUsersChannel!);
       _roomUsersChannel = null;

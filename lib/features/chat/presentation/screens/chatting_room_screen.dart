@@ -71,11 +71,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     _inputFocusNode.dispose();
     routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
-    // 채팅방을 나갈 때 읽음 처리를 위해 disposeViewModel 호출
+    // 채팅방을 나갈 때 낙관적 업데이트로 읽음 처리
     if (viewModel.roomId != null && viewModel.isActive) {
-      // disposeViewModel에서 leaveRoom을 호출하여 읽음 처리
-      // dispose는 동기 메서드이므로 Future를 기다릴 수 없지만,
-      // disposeViewModel 내부에서 leaveRoom이 완료될 때까지 기다리도록 처리
+      // disposeViewModel에서 낙관적으로 읽음 처리하고, 서버 통신은 백그라운드로 처리
       viewModel.disposeViewModel().catchError((e) {});
     }
     super.dispose();
@@ -93,12 +91,12 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
   @override
   void didPop() {
     if (viewModel.roomId != null) {
-      // dispose에서도 leaveRoom이 호출되지만, 명시적으로 호출하여 읽음 처리 보장
-      // leaveRoom이 완료되도록 기다림 (비동기이지만 완료를 보장)
+      // dispose에서도 disposeViewModel이 호출되지만, 명시적으로 호출하여 낙관적 읽음 처리 보장
+      // disposeViewModel에서 낙관적으로 읽음 처리하고, 서버 통신은 백그라운드로 처리
       viewModel
           .leaveRoom()
           .then((_) {
-            // leaveRoom 완료
+            // disposeViewModel 완료
           })
           .catchError((e) {});
     }
@@ -108,7 +106,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
   @override
   void didPushNext() {
     if (viewModel.roomId != null) {
-      // 다른 화면으로 이동할 때도 읽음 처리
+      // 다른 화면으로 이동할 때도 낙관적으로 읽음 처리
       viewModel.disposeViewModel();
     }
   }
