@@ -67,6 +67,7 @@ class FirebaseManager {
     // 안드로이드 설정
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
+    // AndroidInitializationSettings('@mipmap/ic_launcher');
     // ios 설정
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
@@ -329,7 +330,7 @@ class FirebaseManager {
   }
 
   // FCM 메시지를 받아 로컬 푸시
-  static void sendLocalPushFromFCM(RemoteMessage message) async {
+  static Future<void> sendLocalPushFromFCM(RemoteMessage message) async {
     final Map<String, dynamic> fcmData = message.data;
 
     final String title = message.notification?.title ?? "새로운 알림";
@@ -351,6 +352,7 @@ class FirebaseManager {
         channelDescription: "새로운 알림 및 업데이트", //채널설명
         importance: Importance.max, //중요도
         priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
       ),
     );
 
