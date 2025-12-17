@@ -107,3 +107,62 @@ class SellerRatingSummary {
   }
 }
 
+/// 입찰 기록 엔티티
+class BidHistoryItem {
+  BidHistoryItem({
+    required this.price,
+    required this.userName,
+    required this.userId,
+    required this.createdAt,
+    this.profileImageUrl,
+    this.auctionLogCode,
+  });
+
+  final int price;
+  final String userName;
+  final String userId;
+  final String createdAt;
+  final String? profileImageUrl;
+  final int? auctionLogCode;
+
+  /// Map에서 BidHistoryItem 생성
+  factory BidHistoryItem.fromMap(Map<String, dynamic> map) {
+    final dynamic rawPrice = map['price'];
+    int price = 0;
+    if (rawPrice is num) {
+      price = rawPrice.toInt();
+    } else if (rawPrice != null) {
+      price = int.tryParse(rawPrice.toString()) ?? 0;
+    }
+
+    return BidHistoryItem(
+      price: price,
+      userName: map['user_name']?.toString() ?? '익명 참여자',
+      userId: map['user_id']?.toString() ?? '',
+      createdAt: map['created_at']?.toString() ?? '',
+      profileImageUrl: map['profile_image_url']?.toString(),
+      auctionLogCode: map['auction_log_code'] as int?,
+    );
+  }
+
+  /// Map 리스트에서 BidHistoryItem 리스트 생성
+  static List<BidHistoryItem> fromMapList(List<dynamic> list) {
+    return list
+        .where((item) => item is Map<String, dynamic>)
+        .map((item) => BidHistoryItem.fromMap(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Map으로 변환
+  Map<String, dynamic> toMap() {
+    return {
+      'price': price,
+      'user_name': userName,
+      'user_id': userId,
+      'created_at': createdAt,
+      'profile_image_url': profileImageUrl,
+      'auction_log_code': auctionLogCode,
+    };
+  }
+}
+

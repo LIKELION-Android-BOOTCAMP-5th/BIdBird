@@ -13,7 +13,7 @@ class ItemDetailBidHistoryEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<ItemDetailViewModel, List<Map<String, dynamic>>>(
+    return Selector<ItemDetailViewModel, List<BidHistoryItem>>(
       selector: (_, vm) => vm.bidHistory,
       builder: (context, bidHistory, _) {
         return Padding(

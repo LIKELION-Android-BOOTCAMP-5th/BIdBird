@@ -32,8 +32,8 @@ class ItemDetailViewModel extends ItemBaseViewModel {
   Map<String, dynamic>? _sellerProfile;
   Map<String, dynamic>? get sellerProfile => _sellerProfile;
 
-  List<Map<String, dynamic>> _bidHistory = [];
-  List<Map<String, dynamic>> get bidHistory => _bidHistory;
+  List<BidHistoryItem> _bidHistory = [];
+  List<BidHistoryItem> get bidHistory => _bidHistory;
 
   RealtimeChannel? _bidStatusChannel;
   bool _isLoadingDetail = false;

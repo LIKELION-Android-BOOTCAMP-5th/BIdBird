@@ -111,47 +111,24 @@ class ItemDetailDatasource {
     if (sellerId.isEmpty) return null;
 
     try {
-      // 민감 정보(email) 제외
-      final userRow = await _supabase
-          .from('users')
-          .select('''
-            id,
-            name,
-            nick_name,
-            profile_image,
-            created_at
-          ''')
-          .eq('id', sellerId)
-          .maybeSingle();
+      final response = await _supabase.functions.invoke(
+        'get-seller-profile',
+        body: {'sellerId': sellerId},
+      );
 
-      if (userRow is Map<String, dynamic>) {
-        final ratingSummary = await _fetchSellerRating(sellerId);
-
-        return {
-          ...userRow,
-          'profile_image_url': userRow['profile_image'],
-          'rating': ratingSummary.rating,
-          'review_count': ratingSummary.reviewCount,
-        };
+      if (response.data == null) {
+        return null;
       }
+
+      final responseData = response.data as Map<String, dynamic>;
+      
+      if (responseData['success'] == true && responseData['data'] != null) {
+        return responseData['data'] as Map<String, dynamic>;
+      }
+
       return null;
     } catch (e, stackTrace) {
       return null;
-    }
-  }
-
-  Future<SellerRatingSummary> _fetchSellerRating(String sellerId) async {
-    try {
-      // 프로필 화면과 동일하게 user_review 기준으로 평균 평점 계산
-      final reviews = await _supabase
-          .from('user_review')
-          .select('rating')
-          .eq('to_user_id', sellerId)
-          .not('rating', 'is', null);
-
-      return SellerRatingSummary.fromCompletedTrades(reviews);
-    } catch (e, stackTrace) {
-      return SellerRatingSummary(rating: 0.0, reviewCount: 0);
     }
   }
 
@@ -167,7 +144,7 @@ class ItemDetailDatasource {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchBidHistory(String itemId) async {
+  Future<List<BidHistoryItem>> fetchBidHistory(String itemId) async {
     try {
       final response = await _supabase.functions.invoke(
         'get-bid-history',
@@ -182,9 +159,7 @@ class ItemDetailDatasource {
       
       if (responseData['success'] == true && responseData['data'] != null) {
         final List<dynamic> bidHistoryList = responseData['data'] as List<dynamic>;
-        return bidHistoryList
-            .map((item) => item as Map<String, dynamic>)
-            .toList();
+        return BidHistoryItem.fromMapList(bidHistoryList);
       }
 
       return [];
