@@ -85,7 +85,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
   List<ActionHubItem> get saleActionHubItems {
     _cachedSaleActionHubItems ??= _buildActionHubItems(
       _saleHistory,
-      [TradeActionType.paymentRequired, TradeActionType.shippingInfoRequired],
+      [TradeActionType.paymentWaiting, TradeActionType.shippingInfoRequired],
     );
     return _cachedSaleActionHubItems!;
   }

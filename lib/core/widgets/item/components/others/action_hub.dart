@@ -34,7 +34,7 @@ class ActionHub extends StatelessWidget {
       
       // tradeStatusCode를 직접 확인
       if (item.tradeStatusCode == 510) {
-        actionType = TradeActionType.paymentRequired;
+        actionType = TradeActionType.paymentWaiting; // 판매자는 paymentWaiting
       } else if (item.tradeStatusCode == 520 && !item.hasShippingInfo) {
         actionType = TradeActionType.shippingInfoRequired;
       }
