@@ -18,7 +18,7 @@ class TradeItemFilter {
     // actionType이 none이면 tradeStatusCode로 직접 판단
     if (item.actionType == TradeActionType.none) {
       if (item.tradeStatusCode == TradeStatusCode.paymentRequired && 
-          targetActionTypes.contains(TradeActionType.paymentRequired)) {
+          targetActionTypes.contains(TradeActionType.paymentWaiting)) {
         return true;
       }
       if (item.tradeStatusCode == TradeStatusCode.shippingInfoRequired && 
@@ -67,7 +67,7 @@ class TradeItemFilter {
       return item.actionType;
     }
     if (item.tradeStatusCode == TradeStatusCode.paymentRequired) {
-      return TradeActionType.paymentRequired;
+      return TradeActionType.paymentWaiting; // 판매자는 paymentWaiting
     } else if (item.tradeStatusCode == TradeStatusCode.shippingInfoRequired && 
                !item.hasShippingInfo) {
       return TradeActionType.shippingInfoRequired;

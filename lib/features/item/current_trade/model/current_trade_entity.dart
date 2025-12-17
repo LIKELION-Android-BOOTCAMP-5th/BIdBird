@@ -7,7 +7,8 @@ enum TradeItemStatus {
 }
 
 enum TradeActionType {
-  paymentRequired, // 결제 대기
+  paymentRequired, // 결제하러 가기 (구매자용)
+  paymentWaiting, // 결제 대기 (판매자용)
   shippingInfoRequired, // 배송지 입력 필요
   purchaseConfirmRequired, // 구매 확정
   none, // 액션 없음
@@ -107,9 +108,9 @@ class SaleHistoryItem implements TradeHistoryItem {
 
   /// 필요한 액션 타입
   TradeActionType get actionType {
-    // 판매자: 결제 대기 (510)
+    // 판매자: 결제 대기 (510) - 판매자는 결제를 받는 입장이므로 paymentWaiting
     if (tradeStatusCode == TradeStatusCode.paymentRequired) {
-      return TradeActionType.paymentRequired;
+      return TradeActionType.paymentWaiting;
     }
     // 판매자: 배송지 입력 필요 (520이고 배송 정보 없음)
     if (tradeStatusCode == TradeStatusCode.shippingInfoRequired && !hasShippingInfo) {
@@ -132,6 +133,8 @@ class ActionHubItem {
   String get label {
     switch (actionType) {
       case TradeActionType.paymentRequired:
+        return '결제하러 가기';
+      case TradeActionType.paymentWaiting:
         return '결제 대기';
       case TradeActionType.shippingInfoRequired:
         return '배송지 입력';

@@ -253,6 +253,7 @@ class FilteredTradeListScreen extends StatelessWidget {
 
     switch (actionType) {
       case TradeActionType.paymentRequired:
+        // 구매자: 결제하러 가기 버튼 표시
         return _buildActionButtonWidget(
           context: context,
           text: '결제하러 가기',
@@ -265,6 +266,10 @@ class FilteredTradeListScreen extends StatelessWidget {
             );
           },
         );
+
+      case TradeActionType.paymentWaiting:
+        // 판매자: 결제 대기 상태 (버튼 없음)
+        return const SizedBox.shrink();
 
       case TradeActionType.shippingInfoRequired:
         return _buildActionButtonWidget(
