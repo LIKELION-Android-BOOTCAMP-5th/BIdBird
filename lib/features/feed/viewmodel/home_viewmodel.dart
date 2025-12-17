@@ -26,6 +26,10 @@ class HomeViewmodel extends ChangeNotifier {
   //리얼타임
   RealtimeChannel? _actionRealtime;
 
+  //로딩 플래그 개선
+  bool _isFetching = false;
+  bool _hasMore = true;
+
   void setupRealtimeSubscription() {
     _actionRealtime = SupabaseManager.shared.supabase.channel(
       'HomeActionChanel',
@@ -118,10 +122,10 @@ class HomeViewmodel extends ChangeNotifier {
 
       if (isSearching == true) return;
 
-      if (scrollController.position.atEdge &&
-          scrollController.position.pixels != 0) {
-        fetchNextItems();
-      }
+      // if (scrollController.position.atEdge &&
+      //     scrollController.position.pixels != 0) {
+      //   fetchNextItems();
+      // }
       //이걸 추가해야지 더욱 안정적이로 스크롤 닿기 전에 이미 fetch되어서 자연스러움
       if (scrollController.position.pixels >=
           scrollController.position.maxScrollExtent - 200) {
@@ -204,29 +208,39 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> fetchNextItems() async {
+    if (_isFetching || !_hasMore) return;
+
+    _isFetching = true;
+
     String orderBy = setOrderBy(type);
-    _currentPage++;
+    final nextPage = _currentPage + 1;
 
     List<ItemsEntity> newFetchPosts;
 
     if (isSearching) {
       newFetchPosts = await _homeRepository.fetchSearchResult(
         orderBy,
-        currentIndex: _currentPage,
+        currentIndex: nextPage,
         keywordType: selectedKeywordId,
         userInputSearchText: currentSearchText,
       );
     } else {
       newFetchPosts = await _homeRepository.fetchItems(
         orderBy,
-        currentIndex: _currentPage,
+        currentIndex: nextPage,
         keywordType: selectedKeywordId,
       );
     }
 
-    _Items.addAll(newFetchPosts);
+    if (newFetchPosts.isEmpty) {
+      _hasMore = false;
+    } else {
+      _currentPage = nextPage;
+      _Items.addAll(newFetchPosts);
+    }
 
     sortItemsByFinishTime();
+    _isFetching = false;
     notifyListeners();
   }
 

@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:bidbird/core/utils/identity_verification/identity_verification_helper.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
-import 'package:bidbird/core/widgets/notification_button.dart';
-import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
+import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
+import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
@@ -33,10 +33,19 @@ class _HomeScreenState extends State<HomeScreen> {
     return await ensureIdentityVerified(context);
   }
 
+  late HomeViewmodel viewModel;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    viewModel = HomeViewmodel(HomeRepository());
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => HomeViewmodel(HomeRepository()),
+    return ChangeNotifierProvider.value(
+      value: viewModel,
       child: MediaQuery(
         //휴대폰 글씨크기 무시, 글씨 고정
         data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
@@ -250,9 +259,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 Stack(
                                                   children: [
                                                     FixedRatioThumbnail(
-                                                      imageUrl: item.thumbnail_image,
+                                                      imageUrl:
+                                                          item.thumbnail_image,
                                                       aspectRatio: 1.0,
-                                                      borderRadius: BorderRadius.circular(defaultRadius),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            defaultRadius,
+                                                          ),
                                                     ),
 
                                                     // 잔여 시간 (상세 화면과 동일 스타일)
@@ -498,9 +511,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 Stack(
                                                   children: [
                                                     FixedRatioThumbnail(
-                                                      imageUrl: item.thumbnail_image,
+                                                      imageUrl:
+                                                          item.thumbnail_image,
                                                       aspectRatio: 1.0,
-                                                      borderRadius: BorderRadius.circular(defaultRadius),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            defaultRadius,
+                                                          ),
                                                     ),
 
                                                     // 잔여 시간 (상세 화면과 동일 스타일)
