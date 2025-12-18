@@ -17,8 +17,9 @@ class HomeViewmodel extends ChangeNotifier {
   List<KeywordType> _keywords = [];
   List<KeywordType> get keywords => _keywords;
   //Items 그릇 생성
-  List<ItemsEntity> _Items = [];
-  List<ItemsEntity> get Items => _Items;
+  List<ItemsEntity> _items = [];
+  List<ItemsEntity> get items => _items;
+
   bool buttonIsWorking = false;
   OrderByType type = OrderByType.newFirst;
   String selectKeyword = "전체";
@@ -29,46 +30,6 @@ class HomeViewmodel extends ChangeNotifier {
   //로딩 플래그 개선
   bool _isFetching = false;
   bool _hasMore = true;
-
-  void setupRealtimeSubscription() {
-    _actionRealtime = SupabaseManager.shared.supabase.channel(
-      'HomeActionChanel',
-    );
-
-    _actionRealtime!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'auctions',
-          callback: (payload) {
-            final newData = payload.newRecord;
-
-            final itemId = newData['item_id'];
-            final index = _Items.indexWhere((e) => e.item_id == itemId);
-            if (index == -1) return;
-
-            final item = _Items[index];
-
-            // 1) bid_count 업데이트
-            item.auctions.bid_count =
-                newData['bid_count'] ?? item.auctions.bid_count;
-
-            // 2) current_price 업데이트
-            item.auctions.current_price =
-                newData['current_price'] ?? item.auctions.current_price;
-
-            // 3) finishTime 업데이트
-            final endAt = newData['auction_end_at']?.toString();
-            if (endAt != null && endAt.isNotEmpty) {
-              item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
-            }
-
-            sortItemsByFinishTime();
-            notifyListeners();
-          },
-        )
-        .subscribe();
-  }
 
   //검색 기능 관련
   bool searchButton = false;
@@ -170,7 +131,7 @@ class HomeViewmodel extends ChangeNotifier {
   void sortItemsByFinishTime() {
     final now = DateTime.now();
 
-    _Items.sort((a, b) {
+    _items.sort((a, b) {
       final bool aActive = a.finishTime.isAfter(now); // a가 아직 종료 안됐는가?
       final bool bActive = b.finishTime.isAfter(now); // b가 아직 종료 안됐는가?
 
@@ -185,7 +146,7 @@ class HomeViewmodel extends ChangeNotifier {
 
   Future<void> fetchItems() async {
     String orderBy = setOrderBy(type);
-    _Items = await _homeRepository.fetchItems(
+    _items = await _homeRepository.fetchItems(
       orderBy,
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
@@ -197,9 +158,9 @@ class HomeViewmodel extends ChangeNotifier {
   Future<void> handleRefresh() async {
     String orderBy = setOrderBy(type);
     _currentPage = 1;
-    _Items = [];
+    _items = [];
     notifyListeners();
-    _Items = await _homeRepository.fetchItems(
+    _items = await _homeRepository.fetchItems(
       orderBy,
       currentIndex: _currentPage,
     );
@@ -236,7 +197,7 @@ class HomeViewmodel extends ChangeNotifier {
       _hasMore = false;
     } else {
       _currentPage = nextPage;
-      _Items.addAll(newFetchPosts);
+      _items.addAll(newFetchPosts);
     }
 
     sortItemsByFinishTime();
@@ -247,14 +208,14 @@ class HomeViewmodel extends ChangeNotifier {
   Future<void> selectKeywordAndFetch(String keyword, int? keywordId) async {
     selectKeyword = keyword;
     _currentPage = 1;
-    _Items = [];
+    _items = [];
     notifyListeners();
 
     String orderBy = setOrderBy(type);
 
     if (isSearching) {
       // 검색 중이면 검색 결과 + 키워드 필터로 호출
-      _Items = await _homeRepository.fetchSearchResult(
+      _items = await _homeRepository.fetchSearchResult(
         orderBy,
         currentIndex: _currentPage,
         keywordType: keywordId,
@@ -262,7 +223,7 @@ class HomeViewmodel extends ChangeNotifier {
       );
     } else {
       // 평소 모드
-      _Items = await _homeRepository.fetchItems(
+      _items = await _homeRepository.fetchItems(
         orderBy,
         currentIndex: _currentPage,
         keywordType: keywordId,
@@ -283,13 +244,13 @@ class HomeViewmodel extends ChangeNotifier {
     isSearching = userInput.isNotEmpty;
     currentSearchText = userInput;
     _currentPage = 1;
-    _Items = [];
+    _items = [];
     notifyListeners();
 
     String orderBy = setOrderBy(type);
     userInputController.text = userInput;
 
-    _Items = await _homeRepository.fetchSearchResult(
+    _items = await _homeRepository.fetchSearchResult(
       orderBy,
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
@@ -323,10 +284,50 @@ class HomeViewmodel extends ChangeNotifier {
       userInputSearchText: currentSearchText,
     );
 
-    _Items.addAll(moreItems);
+    _items.addAll(moreItems);
 
     sortItemsByFinishTime();
 
     notifyListeners();
+  }
+
+  void setupRealtimeSubscription() {
+    _actionRealtime = SupabaseManager.shared.supabase.channel(
+      'HomeActionChanel',
+    );
+
+    _actionRealtime!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'auctions',
+          callback: (payload) {
+            final newData = payload.newRecord;
+
+            final itemId = newData['item_id'];
+            final index = _items.indexWhere((e) => e.item_id == itemId);
+            if (index == -1) return;
+
+            final item = _items[index];
+
+            // 1) bid_count 업데이트
+            item.auctions.bid_count =
+                newData['bid_count'] ?? item.auctions.bid_count;
+
+            // 2) current_price 업데이트
+            item.auctions.current_price =
+                newData['current_price'] ?? item.auctions.current_price;
+
+            // 3) finishTime 업데이트
+            final endAt = newData['auction_end_at']?.toString();
+            if (endAt != null && endAt.isNotEmpty) {
+              item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
+            }
+
+            sortItemsByFinishTime();
+            notifyListeners();
+          },
+        )
+        .subscribe();
   }
 }

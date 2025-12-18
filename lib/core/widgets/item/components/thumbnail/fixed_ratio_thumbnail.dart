@@ -21,25 +21,25 @@ class FixedRatioThumbnail extends StatelessWidget {
 
   /// 이미지 URL
   final String? imageUrl;
-  
+
   /// 썸네일 비율 (기본값: 1:1)
   final double aspectRatio;
-  
+
   /// 모서리 둥글기
   final BorderRadius? borderRadius;
-  
+
   /// 고정 너비 (null이면 aspectRatio에 따라 계산)
   final double? width;
-  
+
   /// 고정 높이 (null이면 aspectRatio에 따라 계산)
   final double? height;
-  
+
   /// 세로 이미지일 때 하단 그라데이션 표시 여부
   final bool showVerticalIndicator;
-  
+
   /// 탭 콜백
   final VoidCallback? onTap;
-  
+
   /// 오버레이 위젯 (상태 배지, 정보 등)
   final Widget? overlay;
 
@@ -51,7 +51,7 @@ class FixedRatioThumbnail extends StatelessWidget {
         : imageUrl;
 
     final defaultBorderRadius = borderRadius ?? BorderRadius.circular(8);
-    
+
     Widget imageWidget = Container(
       decoration: BoxDecoration(
         color: ImageBackgroundColor,
@@ -67,15 +67,7 @@ class FixedRatioThumbnail extends StatelessWidget {
                     imageUrl: displayUrl,
                     cacheManager: ItemImageCacheManager.instance,
                     fit: BoxFit.cover, // center crop
-                    placeholder: (context, url) => Container(
-                      color: ImageBackgroundColor,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: blueColor,
-                        ),
-                      ),
-                    ),
+                    placeholder: (context, url) => Container(color: shadowHigh),
                     errorWidget: (context, url, error) => Container(
                       color: ImageBackgroundColor,
                       child: const Icon(
@@ -107,8 +99,7 @@ class FixedRatioThumbnail extends StatelessWidget {
                     ),
                   ),
                 // 커스텀 오버레이
-                if (overlay != null)
-                  Positioned.fill(child: overlay!),
+                if (overlay != null) Positioned.fill(child: overlay!),
               ],
             )
           : Container(
@@ -123,11 +114,7 @@ class FixedRatioThumbnail extends StatelessWidget {
 
     // 크기 지정
     if (width != null && height != null) {
-      imageWidget = SizedBox(
-        width: width,
-        height: height,
-        child: imageWidget,
-      );
+      imageWidget = SizedBox(width: width, height: height, child: imageWidget);
     } else if (width != null) {
       final w = width!;
       imageWidget = SizedBox(
@@ -143,21 +130,14 @@ class FixedRatioThumbnail extends StatelessWidget {
         child: imageWidget,
       );
     } else {
-      imageWidget = AspectRatio(
-        aspectRatio: aspectRatio,
-        child: imageWidget,
-      );
+      imageWidget = AspectRatio(aspectRatio: aspectRatio, child: imageWidget);
     }
 
     // 탭 핸들러
     if (onTap != null) {
-      imageWidget = GestureDetector(
-        onTap: onTap,
-        child: imageWidget,
-      );
+      imageWidget = GestureDetector(onTap: onTap, child: imageWidget);
     }
 
     return imageWidget;
   }
 }
-
