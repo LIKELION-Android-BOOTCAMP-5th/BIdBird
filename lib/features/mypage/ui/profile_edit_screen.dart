@@ -189,7 +189,7 @@ class _UnregisterLink extends StatelessWidget {
           context: context,
           builder: (dialogContext) {
             return AskPopup(
-              content: '회원탈퇴 하시겠습니까? \n탈퇴 후 복원은 불가능합니다.',
+              content: '회원탈퇴 하시겠습니까? \n탈퇴 후 복원은 불가합니다.',
               yesText: '확인',
               noText: '취소',
               yesLogic: () async {
