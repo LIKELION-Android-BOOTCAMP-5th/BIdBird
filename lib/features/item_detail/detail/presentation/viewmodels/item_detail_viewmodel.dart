@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -160,6 +161,9 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       final isTopBidderFromEdgeFunction = _repository.getLastIsTopBidder();
       if (isTopBidderFromEdgeFunction != null) {
         _isTopBidder = isTopBidderFromEdgeFunction;
+      } else {
+        // 엣지 펑션에서 값을 받지 못한 경우, auctions 테이블에서 직접 확인
+        await _checkIsTopBidderFromDatabase();
       }
 
       // 상태 코드가 변경되면 낙찰 성공 화면 표시 플래그 리셋
@@ -309,6 +313,9 @@ class ItemDetailViewModel extends ItemBaseViewModel {
           currentPrice: newPrice,
           bidPrice: newBidPrice,
         );
+        // 가격이 올라갔을 때, 입찰 성공 직후일 수 있으므로
+        // 실시간 업데이트에서 last_bid_user_id를 확인하여 isTopBidder 업데이트
+        // (onTopBidderUpdate가 별도로 호출되지만, 타이밍 이슈를 방지하기 위해)
         notifyListeners();
       },
       onBidCountUpdate: (newCount) {
@@ -319,8 +326,11 @@ class ItemDetailViewModel extends ItemBaseViewModel {
         notifyListeners();
       },
       onTopBidderUpdate: (isTopBidder) {
-        _isTopBidder = isTopBidder;
-        notifyListeners();
+        // isTopBidder가 변경되었을 때만 업데이트
+        if (_isTopBidder != isTopBidder) {
+          _isTopBidder = isTopBidder;
+          notifyListeners();
+        }
       },
       onStatusUpdate: () {
         // 순환참조 방지: 이미 새로고침 중이면 무시
@@ -357,6 +367,35 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       },
       onNotifyListeners: notifyListeners,
     );
+  }
+
+  /// 데이터베이스에서 직접 isTopBidder 확인
+  /// 엣지 펑션에서 값을 받지 못한 경우 사용
+  Future<void> _checkIsTopBidderFromDatabase() async {
+    try {
+      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        _isTopBidder = false;
+        return;
+      }
+
+      final response = await SupabaseManager.shared.supabase
+          .from('auctions')
+          .select('last_bid_user_id')
+          .eq('item_id', itemId)
+          .eq('round', 1)
+          .maybeSingle();
+
+      if (response != null && response is Map<String, dynamic>) {
+        final lastBidUserId = response['last_bid_user_id'] as String?;
+        _isTopBidder = lastBidUserId != null && lastBidUserId == currentUserId;
+      } else {
+        _isTopBidder = false;
+      }
+    } catch (e) {
+      // 에러 발생 시 기본값 false 유지
+      _isTopBidder = false;
+    }
   }
 
   @override
