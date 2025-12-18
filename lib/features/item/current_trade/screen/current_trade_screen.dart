@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/loading_indicator.dart';
 import 'package:bidbird/core/widgets/item/components/cards/trade_history_card.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
@@ -158,84 +159,101 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
         return TransparentRefreshIndicator(
           onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            itemCount: totalItemCount + 1, // +1 for "전체 보기" 링크
-            itemBuilder: (context, index) {
-              // 마지막 아이템은 "전체 보기" 링크
-              if (index == totalItemCount) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 24),
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        context.push('/mypage/trade');
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '전체 보기',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: textColor,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.chevron_right,
-                            size: 16,
-                            color: textColor,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              // 판매 아이템과 입찰 아이템을 인덱스로 구분
-              bool isSeller;
-              bool isHighlighted;
+          child: Builder(
+            builder: (context) {
+              final horizontalPadding = context.hPadding;
+              final verticalPadding = context.vPadding;
+              final spacing = context.spacingSmall;
               
-              if (index < filteredSaleItems.length) {
-                // 판매 아이템
-                final item = filteredSaleItems[index];
-                isSeller = true;
-                isHighlighted = item.itemStatus == TradeItemStatus.todo;
-                
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: TradeHistoryCard(
-                    title: item.title,
-                    thumbnailUrl: item.thumbnailUrl,
-                    status: item.status,
-                    price: item.price,
-                    itemId: item.itemId,
-                    isSeller: isSeller,
-                    isHighlighted: isHighlighted,
-                  ),
-                );
-              } else {
-                // 입찰 아이템
-                final bidIndex = index - filteredSaleItems.length;
-                final item = filteredBidItems[bidIndex];
-                isSeller = false;
-                isHighlighted = item.itemStatus == TradeItemStatus.todo;
-                
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: TradeHistoryCard(
-                    title: item.title,
-                    thumbnailUrl: item.thumbnailUrl,
-                    status: item.status,
-                    price: item.price,
-                    itemId: item.itemId,
-                    isSeller: isSeller,
-                    isHighlighted: isHighlighted,
-                  ),
-                );
+              // 모든 아이템을 하나의 리스트로 합치기
+              final allItems = <({bool isSeller, bool isHighlighted, dynamic item})>[];
+              
+              // 판매 아이템 추가
+              for (var item in filteredSaleItems) {
+                allItems.add((
+                  isSeller: true,
+                  isHighlighted: item.itemStatus == TradeItemStatus.todo,
+                  item: item,
+                ));
               }
+              
+              // 입찰 아이템 추가
+              for (var item in filteredBidItems) {
+                allItems.add((
+                  isSeller: false,
+                  isHighlighted: item.itemStatus == TradeItemStatus.todo,
+                  item: item,
+                ));
+              }
+              
+              return ListView.separated(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: verticalPadding,
+                ),
+                itemCount: allItems.length + 1, // +1 for "전체 보기" 링크
+                separatorBuilder: (_, __) => SizedBox(height: spacing),
+                itemBuilder: (context, index) {
+                  // 마지막 아이템은 "전체 보기" 링크
+                  if (index == allItems.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 24),
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            context.push('/mypage/trade');
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '전체 보기',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.chevron_right,
+                                size: 16,
+                                color: textColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final itemData = allItems[index];
+                  final item = itemData.item;
+                  
+                  if (itemData.isSeller) {
+                    final saleItem = item as SaleHistoryItem;
+                    return TradeHistoryCard(
+                      title: saleItem.title,
+                      thumbnailUrl: saleItem.thumbnailUrl,
+                      status: saleItem.status,
+                      price: saleItem.price,
+                      itemId: saleItem.itemId,
+                      isSeller: true,
+                      isHighlighted: itemData.isHighlighted,
+                    );
+                  } else {
+                    final bidItem = item as BidHistoryItem;
+                    return TradeHistoryCard(
+                      title: bidItem.title,
+                      thumbnailUrl: bidItem.thumbnailUrl,
+                      status: bidItem.status,
+                      price: bidItem.price,
+                      itemId: bidItem.itemId,
+                      isSeller: false,
+                      isHighlighted: itemData.isHighlighted,
+                    );
+                  }
+                },
+              );
             },
           ),
         );
@@ -269,9 +287,9 @@ class _ActionHubSection extends StatelessWidget {
       builder: (context, data, _) {
         return Column(
           children: [
-            const SizedBox(height: 16),
+            const SizedBox(height: 0),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: context.hPadding),
               child: ActionHub(
                 saleItems: data.saleActionHubItems,
                 bidItems: data.bidActionHubItems,
@@ -281,7 +299,7 @@ class _ActionHubSection extends StatelessWidget {
                 bidHistory: data.bidHistory,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 0),
           ],
         );
       },
