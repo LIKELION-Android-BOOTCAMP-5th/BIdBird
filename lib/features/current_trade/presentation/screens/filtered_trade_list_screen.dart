@@ -41,6 +41,13 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
   int _totalSectionsCount = 0;
   int _initialVisibleCount = 0;
   bool _isScrollListenerAttached = false;
+  // 필터링 결과 캐싱
+  List<SaleHistoryItem>? _cachedSaleItems;
+  List<BidHistoryItem>? _cachedBidItems;
+  Map<TradeActionType, List<dynamic>>? _cachedItemsByActionType;
+  int _cachedSaleHistoryLength = 0;
+  int _cachedBidHistoryLength = 0;
+  int? _cachedTotalItems;
 
   @override
   void initState() {
@@ -164,31 +171,66 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
     // 여러 액션 타입이 제공되면 그것을 사용, 아니면 단일 actionType 사용
     final targetActionTypes = widget.actionTypes ?? [widget.actionType];
     
-    // 판매 아이템 필터링
-    final saleItems = widget.isSeller == null || widget.isSeller == true
-        ? saleHistory
-            .where((item) => TradeItemFilter.shouldIncludeSaleItem(item, targetActionTypes))
-            .toList()
-        : <SaleHistoryItem>[];
+    // saleHistory 또는 bidHistory가 변경되었으면 캐시 무효화
+    if (_cachedSaleHistoryLength != saleHistory.length || 
+        _cachedBidHistoryLength != bidHistory.length) {
+      _cachedSaleItems = null;
+      _cachedBidItems = null;
+      _cachedItemsByActionType = null;
+      _cachedTotalItems = null;
+      _cachedSaleHistoryLength = saleHistory.length;
+      _cachedBidHistoryLength = bidHistory.length;
+    }
     
-    // 입찰 아이템 필터링
-    final bidItems = widget.isSeller == null || widget.isSeller == false
-        ? bidHistory
-            .where((item) => TradeItemFilter.shouldIncludeBidItem(item, targetActionTypes))
-            .toList()
-        : <BidHistoryItem>[];
+    // 판매 아이템 필터링 (캐싱)
+    final List<SaleHistoryItem> saleItems;
+    if (_cachedSaleItems != null) {
+      saleItems = _cachedSaleItems!;
+    } else {
+      saleItems = widget.isSeller == null || widget.isSeller == true
+          ? saleHistory
+              .where((item) => TradeItemFilter.shouldIncludeSaleItem(item, targetActionTypes))
+              .toList()
+          : <SaleHistoryItem>[];
+      _cachedSaleItems = saleItems;
+    }
     
-    // 액션 타입별로 아이템 그룹화
-    final itemsByActionType = TradeItemFilter.groupItemsByActionType(
-      saleItems: saleItems,
-      bidItems: bidItems,
-      targetActionTypes: targetActionTypes,
-    );
+    // 입찰 아이템 필터링 (캐싱)
+    final List<BidHistoryItem> bidItems;
+    if (_cachedBidItems != null) {
+      bidItems = _cachedBidItems!;
+    } else {
+      bidItems = widget.isSeller == null || widget.isSeller == false
+          ? bidHistory
+              .where((item) => TradeItemFilter.shouldIncludeBidItem(item, targetActionTypes))
+              .toList()
+          : <BidHistoryItem>[];
+      _cachedBidItems = bidItems;
+    }
+    
+    // 액션 타입별로 아이템 그룹화 (캐싱)
+    final Map<TradeActionType, List<dynamic>> itemsByActionType;
+    if (_cachedItemsByActionType != null) {
+      itemsByActionType = _cachedItemsByActionType!;
+    } else {
+      itemsByActionType = TradeItemFilter.groupItemsByActionType(
+        saleItems: saleItems,
+        bidItems: bidItems,
+        targetActionTypes: targetActionTypes,
+      );
+      _cachedItemsByActionType = itemsByActionType;
+    }
 
     final title = '처리 목록';
 
-    // 전체 아이템 개수 확인
-    final totalItems = itemsByActionType.values.fold<int>(0, (sum, items) => sum + items.length);
+    // 전체 아이템 개수 확인 (캐싱)
+    final int totalItems;
+    if (_cachedTotalItems != null && _cachedItemsByActionType == itemsByActionType) {
+      totalItems = _cachedTotalItems!;
+    } else {
+      totalItems = itemsByActionType.values.fold<int>(0, (sum, items) => sum + items.length);
+      _cachedTotalItems = totalItems;
+    }
 
     return Scaffold(
       appBar: AppBar(

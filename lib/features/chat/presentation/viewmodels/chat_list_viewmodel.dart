@@ -185,6 +185,33 @@ class ChatListViewmodel extends ChangeNotifier {
     return _cacheManager.getTradeStatusCode(itemId);
   }
 
+  /// chattingRoomList의 각 itemId에 대한 상태 정보를 Map으로 제공 (itemBuilder 최적화용)
+  Map<String, ({
+    bool isExpired,
+    bool isSeller,
+    bool isTopBidder,
+    bool isOpponentTopBidder,
+  })> get itemStatusMap {
+    final Map<String, ({
+      bool isExpired,
+      bool isSeller,
+      bool isTopBidder,
+      bool isOpponentTopBidder,
+    })> statusMap = {};
+    
+    for (final room in chattingRoomList) {
+      final itemId = room.itemId;
+      statusMap[itemId] = (
+        isExpired: _cacheManager.isTradeExpired(itemId),
+        isSeller: _cacheManager.isSeller(itemId),
+        isTopBidder: _cacheManager.isTopBidder(itemId),
+        isOpponentTopBidder: _cacheManager.isOpponentTopBidder(itemId),
+      );
+    }
+    
+    return statusMap;
+  }
+
   void _setupRealtimeSubscription() {
     _realtimeSubscriptionManager.setupSubscription(
       onRoomListUpdate: () {

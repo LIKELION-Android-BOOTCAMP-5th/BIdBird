@@ -25,8 +25,18 @@ class PaymentHistoryScreen extends StatelessWidget {
     
     return ChangeNotifierProvider(
       create: (_) => PaymentHistoryViewModel()..loadPayments(itemId: itemId),
-      child: Consumer<PaymentHistoryViewModel>(
-        builder: (context, viewModel, _) {
+      child: Selector<PaymentHistoryViewModel, ({
+        bool loading,
+        String? error,
+        List<PaymentHistoryItem> payments,
+      })>(
+        selector: (_, vm) => (
+          loading: vm.loading,
+          error: vm.error,
+          payments: vm.payments,
+        ),
+        builder: (context, data, _) {
+          final viewModel = context.read<PaymentHistoryViewModel>();
           return Scaffold(
             backgroundColor: BackgroundColor,
             appBar: AppBar(
@@ -43,21 +53,29 @@ class PaymentHistoryScreen extends StatelessWidget {
                 ),
               ),
             ),
-            body: _buildBody(context, viewModel),
+            body: _buildBody(context, viewModel, data),
           );
         },
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, PaymentHistoryViewModel viewModel) {
-    if (viewModel.loading) {
+  Widget _buildBody(
+    BuildContext context,
+    PaymentHistoryViewModel viewModel,
+    ({
+      bool loading,
+      String? error,
+      List<PaymentHistoryItem> payments,
+    }) data,
+  ) {
+    if (data.loading) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
 
-    if (viewModel.error != null) {
+    if (data.error != null) {
       final fontSize = context.fontSizeMedium;
       final buttonFontSize = context.fontSizeMedium;
       
@@ -86,13 +104,13 @@ class PaymentHistoryScreen extends StatelessWidget {
       );
     }
 
-    if (viewModel.payments.isEmpty) {
+    if (data.payments.isEmpty) {
       return _EmptyPaymentHistory();
     }
 
     // itemId가 지정된 경우: 상세 1건 화면
     if (itemId != null) {
-      final PaymentHistoryItem item = viewModel.payments.first;
+      final PaymentHistoryItem item = data.payments.first;
       return _PaymentDetailBody(item: item);
     }
 
@@ -109,11 +127,11 @@ class PaymentHistoryScreen extends StatelessWidget {
         verticalPadding * 1.5,
       ),
       itemBuilder: (BuildContext context, int index) {
-        final PaymentHistoryItem item = viewModel.payments[index];
+        final PaymentHistoryItem item = data.payments[index];
         return _PaymentHistoryCard(item: item);
       },
       separatorBuilder: (BuildContext context, int index) => SizedBox(height: separatorHeight),
-      itemCount: viewModel.payments.length,
+      itemCount: data.payments.length,
     );
   }
 }

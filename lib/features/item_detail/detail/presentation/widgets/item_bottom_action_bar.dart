@@ -213,15 +213,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
         statusCode: vm?.itemDetail?.statusCode,
       ),
       builder: (context, data, _) {
-        // statusCode가 변경되면 _statusCode 업데이트
+        // statusCode가 변경되면 _statusCode 업데이트 (didUpdateWidget에서 처리)
         if (data.statusCode != null && _statusCode != data.statusCode) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              setState(() {
-                _statusCode = data.statusCode;
-              });
-            }
-          });
+          _statusCode = data.statusCode;
         }
         return _buildContent(context, data.isTopBidder, data.statusCode);
       },
@@ -235,7 +229,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     
     // ViewModel의 최신 itemDetail에서 상태 정보 가져오기 (실시간 업데이트 반영)
     final currentItem = itemDetailViewModel?.itemDetail ?? widget.item;
-    final bool isTimeOver = DateTime.now().isAfter(currentItem.finishTime);
+    // DateTime.now()를 한 번만 호출하여 성능 최적화
+    final now = DateTime.now();
+    final bool isTimeOver = now.isAfter(currentItem.finishTime);
     final int? tradeStatusCode = currentItem.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
     
@@ -301,7 +297,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           else if (!isMyItem) ...[
             _buildFavoriteButton(itemDetailViewModel),
             const SizedBox(width: 12),
-            Expanded(child: _buildBidButton(isTopBidder)),
+            Expanded(child: _buildBidButton(isTopBidder, isTimeOver)),
             if (showBuyNow) ...[
               const SizedBox(width: 8),
               Expanded(child: _buildBuyNowButton()),
@@ -507,7 +503,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     );
   }
 
-  Widget _buildBidButton(bool isTopBidder) {
+  Widget _buildBidButton(bool isTopBidder, bool isTimeOver) {
     // ViewModel의 최신 itemDetail에서 상태 정보 가져오기 (실시간 업데이트 반영)
     final itemDetailViewModel = context.read<ItemDetailViewModel?>();
     final currentItem = itemDetailViewModel?.itemDetail ?? widget.item;
@@ -515,8 +511,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final int statusCode = _statusCode ?? currentItem.statusCode ?? 0;
     final int? tradeStatusCode = currentItem.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
-
-    final bool isTimeOver = DateTime.now().isAfter(currentItem.finishTime);
 
     final bool isAuctionEnded = isTimeOver ||
         statusCode == 321 ||

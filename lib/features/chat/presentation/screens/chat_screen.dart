@@ -8,6 +8,7 @@ import 'package:bidbird/core/widgets/components/default_profile_avatar.dart';
 import 'package:bidbird/core/widgets/components/loading_indicator.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
+import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -91,8 +92,24 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     // ViewModel을 한 번만 생성하여 실시간 구독이 끊기지 않도록 함
     return ChangeNotifierProvider.value(
       value: _viewModel!,
-      child: Consumer<ChatListViewmodel>(
-        builder: (context, viewModel, child) {
+      child: Selector<ChatListViewmodel, ({
+        bool isLoading,
+        List<ChattingRoomEntity> chattingRoomList,
+        bool isLoadingMore,
+        Map<String, ({
+          bool isExpired,
+          bool isSeller,
+          bool isTopBidder,
+          bool isOpponentTopBidder,
+        })> itemStatusMap,
+      })>(
+        selector: (_, vm) => (
+          isLoading: vm.isLoading,
+          chattingRoomList: vm.chattingRoomList,
+          isLoadingMore: vm.isLoadingMore,
+          itemStatusMap: vm.itemStatusMap,
+        ),
+        builder: (context, data, _) {
           return Scaffold(
             appBar: AppBar(
               title: Row(
@@ -101,20 +118,33 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
               ),
             ),
             backgroundColor: BackgroundColor,
-            body: SafeArea(child: _buildBody(context, viewModel)),
+            body: SafeArea(child: _buildBody(context, data)),
           );
         },
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, ChatListViewmodel viewModel) {
-    if (viewModel.isLoading) {
+  Widget _buildBody(BuildContext context, ({
+    bool isLoading,
+    List<ChattingRoomEntity> chattingRoomList,
+    bool isLoadingMore,
+    Map<String, ({
+      bool isExpired,
+      bool isSeller,
+      bool isTopBidder,
+      bool isOpponentTopBidder,
+    })> itemStatusMap,
+  }) data) {
+    if (data.isLoading) {
       return const CenteredLoadingIndicator();
     }
-    if (viewModel.chattingRoomList.isEmpty) {
+    if (data.chattingRoomList.isEmpty) {
       return const Center(child: Text('참여 중인 채팅방이 없습니다.'));
     }
+
+    // ViewModel 참조 (메서드 호출용)
+    final viewModel = context.read<ChatListViewmodel>();
 
     // 반응형: 큰 화면에서는 최대 너비 제한 및 중앙 정렬
     final screenWidth = MediaQuery.of(context).size.width;
@@ -132,23 +162,25 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
             horizontal: horizontalPadding,
             vertical: verticalPadding,
           ),
-          itemCount: viewModel.chattingRoomList.length + (viewModel.isLoadingMore ? 1 : 0),
+          itemCount: data.chattingRoomList.length + (data.isLoadingMore ? 1 : 0),
           separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
       itemBuilder: (context, index) {
         // 로딩 인디케이터 표시
-        if (index == viewModel.chattingRoomList.length) {
+        if (index == data.chattingRoomList.length) {
           return const Padding(
             padding: EdgeInsets.all(16.0),
             child: Center(child: CircularProgressIndicator()),
           );
         }
         
-        final chattingRoom = viewModel.chattingRoomList[index];
+        final chattingRoom = data.chattingRoomList[index];
         final itemId = chattingRoom.itemId;
-        final isExpired = viewModel.isTradeExpired(itemId);
-        final isSeller = viewModel.isSeller(itemId);
-        final isTopBidder = viewModel.isTopBidder(itemId);
-        final isOpponentTopBidder = viewModel.isOpponentTopBidder(itemId);
+        // itemStatusMap에서 상태 정보 가져오기 (메서드 호출 대신 Map 조회로 최적화)
+        final status = data.itemStatusMap[itemId];
+        final isExpired = status?.isExpired ?? false;
+        final isSeller = status?.isSeller ?? false;
+        final isTopBidder = status?.isTopBidder ?? false;
+        final isOpponentTopBidder = status?.isOpponentTopBidder ?? false;
         
         // 낙찰 물품/낙찰자는 거래 완료(550)여도 노란색 유지
         final isBidderRole = (!isSeller && isTopBidder) || (isSeller && isOpponentTopBidder);

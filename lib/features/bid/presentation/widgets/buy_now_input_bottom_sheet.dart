@@ -23,64 +23,70 @@ class BuyNowInputBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<BuyNowInputViewModel>();
+    // isSubmitting만 watch하여 불필요한 리빌드 방지
+    return Selector<BuyNowInputViewModel, bool>(
+      selector: (_, vm) => vm.isSubmitting,
+      builder: (context, isSubmitting, _) {
+        final viewModel = context.read<BuyNowInputViewModel>();
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            BuyNowHeader(onClose: () => Navigator.pop(context)),
-            const SizedBox(height: 16),
-            BuyNowPriceCard(formattedPrice: '${formatPrice(buyNowPrice)}원'),
-            const SizedBox(height: 24),
-            BuyNowPrimaryButton(
-              isSubmitting: viewModel.isSubmitting,
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final parentContext = context;
-                if (buyNowPrice < ItemPriceLimits.minPrice || buyNowPrice > ItemPriceLimits.maxPrice) {
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(ItemRegistrationErrorMessages.buyNowPriceRange(
-                        ItemPriceLimits.minPrice,
-                        ItemPriceLimits.maxPrice,
-                      )),
-                    ),
-                  );
-                  return;
-                }
-                try {
-                  final isBlocked = await viewModel.checkBidRestriction();
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BuyNowHeader(onClose: () => Navigator.pop(context)),
+                const SizedBox(height: 16),
+                BuyNowPriceCard(formattedPrice: '${formatPrice(buyNowPrice)}원'),
+                const SizedBox(height: 24),
+                BuyNowPrimaryButton(
+                  isSubmitting: isSubmitting,
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final parentContext = context;
+                    if (buyNowPrice < ItemPriceLimits.minPrice || buyNowPrice > ItemPriceLimits.maxPrice) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(ItemRegistrationErrorMessages.buyNowPriceRange(
+                            ItemPriceLimits.minPrice,
+                            ItemPriceLimits.maxPrice,
+                          )),
+                        ),
+                      );
+                      return;
+                    }
+                    try {
+                      final isBlocked = await viewModel.checkBidRestriction();
 
-                  if (isBlocked) {
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('입찰이 제한되었습니다.'),
-                      ),
-                    );
-                    return;
-                  }
-                } catch (e) {
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text('입찰 제한 확인 실패: $e'),
-                    ),
-                  );
-                  return;
-                }
+                      if (isBlocked) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('입찰이 제한되었습니다.'),
+                          ),
+                        );
+                        return;
+                      }
+                    } catch (e) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('입찰 제한 확인 실패: $e'),
+                        ),
+                      );
+                      return;
+                    }
 
-                if (!parentContext.mounted) return;
+                    if (!parentContext.mounted) return;
 
-                _showTermsDialog(parentContext, viewModel);
-              },
+                    _showTermsDialog(parentContext, viewModel);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
             ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
