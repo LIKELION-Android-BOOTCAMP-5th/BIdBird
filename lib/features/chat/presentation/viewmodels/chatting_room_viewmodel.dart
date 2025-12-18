@@ -10,16 +10,25 @@ import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_
 import 'package:bidbird/features/chat/domain/entities/item_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/trade_info_entity.dart';
-import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart' as domain;
+import 'package:bidbird/features/chat/domain/usecases/get_messages_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/get_room_id_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/get_older_messages_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/has_submitted_review_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/complete_trade_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/cancel_trade_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/submit_trade_review_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/get_room_notification_setting_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/notification_off_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/notification_on_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
 import 'package:bidbird/features/chat/presentation/managers/image_picker_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/message_send_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/read_status_manager.dart';
-import 'package:bidbird/features/chat/presentation/managers/realtime_subscription_manager.dart';
+import 'package:bidbird/features/chat/data/managers/realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/room_info_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/scroll_manager.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
-import 'package:bidbird/features/item/model/trade_status_codes.dart';
+import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -46,6 +55,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   int? previousUnreadCount; // 이전 unreadCount 값을 저장
   bool _isFetchingRoomInfo = false; // fetchRoomInfo 호출 중인지 확인하는 플래그
+  bool _isInitialMessageLoad = true; // 초기 메시지 로드 여부
 
   // Manager 클래스들
   late final ScrollManager _scrollManager;
@@ -89,32 +99,60 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     return isAuctionWon && hasLastBidder;
   }
 
-  final domain.ChatRepository _repository;
-
+  final GetMessagesUseCase _getMessagesUseCase;
+  final GetRoomIdUseCase _getRoomIdUseCase;
+  final GetOlderMessagesUseCase _getOlderMessagesUseCase;
+  final HasSubmittedReviewUseCase _hasSubmittedReviewUseCase;
+  final CompleteTradeUseCase _completeTradeUseCase;
+  final CancelTradeUseCase _cancelTradeUseCase;
+  final SubmitTradeReviewUseCase _submitTradeReviewUseCase;
+  final GetRoomNotificationSettingUseCase _getRoomNotificationSettingUseCase;
+  final NotificationOffUseCase _notificationOffUseCase;
+  final NotificationOnUseCase _notificationOnUseCase;
 
   ChattingRoomViewmodel({
     required this.itemId,
     required this.roomId,
-    domain.ChatRepository? repository,
+    GetMessagesUseCase? getMessagesUseCase,
+    GetRoomIdUseCase? getRoomIdUseCase,
+    GetOlderMessagesUseCase? getOlderMessagesUseCase,
+    HasSubmittedReviewUseCase? hasSubmittedReviewUseCase,
+    CompleteTradeUseCase? completeTradeUseCase,
+    CancelTradeUseCase? cancelTradeUseCase,
+    SubmitTradeReviewUseCase? submitTradeReviewUseCase,
+    GetRoomNotificationSettingUseCase? getRoomNotificationSettingUseCase,
+    NotificationOffUseCase? notificationOffUseCase,
+    NotificationOnUseCase? notificationOnUseCase,
     ScrollManager? scrollManager,
     RealtimeSubscriptionManager? subscriptionManager,
     ReadStatusManager? readStatusManager,
     MessageSendManager? messageSendManager,
     RoomInfoManager? roomInfoManager,
     ImagePickerManager? imagePickerManager,
-  }) : _repository = repository ?? ChatRepositoryImpl() {
+  })  : _getMessagesUseCase =
+            getMessagesUseCase ?? GetMessagesUseCase(ChatRepositoryImpl()),
+        _getRoomIdUseCase = getRoomIdUseCase ?? GetRoomIdUseCase(ChatRepositoryImpl()),
+        _getOlderMessagesUseCase =
+            getOlderMessagesUseCase ?? GetOlderMessagesUseCase(ChatRepositoryImpl()),
+        _hasSubmittedReviewUseCase =
+            hasSubmittedReviewUseCase ?? HasSubmittedReviewUseCase(ChatRepositoryImpl()),
+        _completeTradeUseCase =
+            completeTradeUseCase ?? CompleteTradeUseCase(ChatRepositoryImpl()),
+        _cancelTradeUseCase = cancelTradeUseCase ?? CancelTradeUseCase(ChatRepositoryImpl()),
+        _submitTradeReviewUseCase =
+            submitTradeReviewUseCase ?? SubmitTradeReviewUseCase(ChatRepositoryImpl()),
+        _getRoomNotificationSettingUseCase = getRoomNotificationSettingUseCase ??
+            GetRoomNotificationSettingUseCase(ChatRepositoryImpl()),
+        _notificationOffUseCase =
+            notificationOffUseCase ?? NotificationOffUseCase(ChatRepositoryImpl()),
+        _notificationOnUseCase =
+            notificationOnUseCase ?? NotificationOnUseCase(ChatRepositoryImpl()) {
     // Manager 클래스 초기화
     _scrollManager = scrollManager ?? ScrollManager(ScrollController());
     _subscriptionManager = subscriptionManager ?? RealtimeSubscriptionManager();
     _readStatusManager = readStatusManager ?? ReadStatusManager();
-    _messageSendManager = messageSendManager ??
-        MessageSendManager(
-          repository: _repository,
-        );
-    _roomInfoManager = roomInfoManager ??
-        RoomInfoManager(
-          repository: _repository,
-        );
+    _messageSendManager = messageSendManager ?? MessageSendManager();
+    _roomInfoManager = roomInfoManager ?? RoomInfoManager();
     _imagePickerManager = imagePickerManager ?? ImagePickerManager();
 
     // 더 많은 메시지 로드 리스너 설정
@@ -128,7 +166,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
 
-  Future<void> fetchRoomInfo() async {
+  Future<void> fetchRoomInfo({bool forceRefresh = false}) async {
     // 중복 호출 방지
     if (_isFetchingRoomInfo) {
       return;
@@ -139,6 +177,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       final result = await _roomInfoManager.fetchRoomInfo(
         roomId: roomId,
         itemId: itemId,
+        forceRefresh: forceRefresh,
       );
 
       final newUnreadCount = result.unreadCount;
@@ -169,7 +208,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       
       // 평가 작성 여부 확인
       if (itemId.isNotEmpty) {
-        _hasSubmittedReview = await _repository.hasSubmittedReview(itemId);
+        _hasSubmittedReview = await _hasSubmittedReviewUseCase(itemId);
       }
       
       setupRealtimeRoomInfoSubscription();
@@ -219,7 +258,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           
           // 평가 작성 여부 확인
           if (itemId.isNotEmpty) {
-            _hasSubmittedReview = await _repository.hasSubmittedReview(itemId);
+            _hasSubmittedReview = await _hasSubmittedReviewUseCase(itemId);
           }
           
           setupRealtimeRoomInfoSubscription();
@@ -236,6 +275,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   // 하단으로 스크롤하는 메서드
   void scrollToBottom({bool force = false, bool instant = false}) {
     if (messages.isEmpty) return;
+    // 더 많은 메시지를 로드 중일 때는 자동 스크롤하지 않음
+    if (isLoadingMore && !force) return;
     _scrollManager.scrollToBottom(force: force, instant: instant);
   }
 
@@ -273,24 +314,50 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     try {
       final currentRoomId = roomId;
       if (currentRoomId != null) {
-        final chattings = await _repository.getMessages(currentRoomId);
+        // 초기 로드인지 확인 (clear 전에 확인)
+        final isInitialLoad = _isInitialMessageLoad && messages.isEmpty;
+        
+        // 현재 스크롤 위치 저장 (초기 로드가 아닐 때)
+        double? savedScrollOffset;
+        if (!isInitialLoad && scrollController.hasClients) {
+          savedScrollOffset = scrollController.offset;
+        }
+        
+        // 초기 로드일 때는 항상 최신 메시지를 가져오기 위해 forceRefresh: true 전달
+        final chattings = await _getMessagesUseCase(currentRoomId, forceRefresh: isInitialLoad);
 
         messages.clear(); // 기존 메시지 초기화
         messages.addAll(chattings);
-        hasMore = chattings.length >= 50;
+        hasMore = chattings.length >= 20;
 
-        // 스크롤 위치 초기화 (항상 하단으로)
-        _scrollManager.initializeScrollPosition(
-          shouldScrollToBottom: true,
-          messagesCount: messages.length,
-        );
+        // 초기 로드일 때만 하단으로 스크롤, 이후에는 스크롤 위치 유지
+        if (isInitialLoad) {
+          _scrollManager.initializeScrollPosition(
+            shouldScrollToBottom: true,
+            messagesCount: messages.length,
+          );
+          _isInitialMessageLoad = false;
+        } else {
+          // 초기 로드가 아닐 때는 스크롤 위치 초기화하지 않고, 저장된 위치로 복원
+          _scrollManager.resetInitialLoad();
+          if (savedScrollOffset != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (scrollController.hasClients) {
+                final maxScroll = scrollController.position.maxScrollExtent;
+                final targetOffset = savedScrollOffset! > maxScroll ? maxScroll : savedScrollOffset!;
+                scrollController.jumpTo(targetOffset);
+              }
+            });
+          }
+        }
+        
         notifyListeners();
 
         setupRealtimeSubscription();
         init();
       } else {
         // roomId가 없으면 itemId로 roomId를 먼저 가져오기 시도
-        final fetchedRoomId = await _repository.getRoomId(itemId);
+        final fetchedRoomId = await _getRoomIdUseCase(itemId);
 
         if (fetchedRoomId != null) {
           roomId = fetchedRoomId;
@@ -326,8 +393,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       await fetchMessage();
       
       // fetchMessage 내부에서 이미 setupRealtimeSubscription()과 init()을 호출하지만,
-      // roomInfo는 별도로 업데이트 필요
-      await fetchRoomInfo();
+      // roomInfo는 별도로 업데이트 필요 (강제 새로고침)
+      await fetchRoomInfo(forceRefresh: true);
       
       isSending = false;
       notifyListeners();
@@ -517,7 +584,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       await chattingRoomService.leaveRoom(thisRoomId);
     } catch (e) {
       // 에러 발생 시 무시 (읽음 처리 실패해도 계속 진행)
-      print("leaveRoom 실패 : ${e}");
     }
   }
 
@@ -547,10 +613,10 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       throw Exception('매물 ID가 없습니다.');
     }
     
-    await _repository.completeTrade(itemId);
+    await _completeTradeUseCase(itemId);
     
-    // 거래 완료 후 룸 정보 새로고침
-    await fetchRoomInfo();
+    // 거래 완료 후 룸 정보 새로고침 (강제 새로고침)
+    await fetchRoomInfo(forceRefresh: true);
   }
 
   /// 거래 취소 처리
@@ -559,7 +625,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       throw Exception('매물 ID가 없습니다.');
     }
     
-    await _repository.cancelTrade(itemId, reasonCode, isSellerFault);
+    await _cancelTradeUseCase(itemId, reasonCode, isSellerFault);
     
     // 거래 취소 후 룸 정보 새로고침
     await fetchRoomInfo();
@@ -594,7 +660,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       throw Exception('상대방 정보를 찾을 수 없습니다.');
     }
 
-    await _repository.submitTradeReview(
+    await _submitTradeReviewUseCase(
       itemId: itemId,
       toUserId: toUserId,
       role: role,
@@ -610,7 +676,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   Future<void> getRoomNotificationSetting() async {
     final thisRoomId = roomId;
     if (thisRoomId == null) return;
-    notificationSetting = await _repository.getRoomNotificationSetting(thisRoomId);
+    notificationSetting = await _getRoomNotificationSettingUseCase(thisRoomId);
     notifyListeners();
   }
 
@@ -630,7 +696,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     notificationSetting?.isNotificationOn = false;
     notifyListeners();
     try {
-      await _repository.notificationOff(thisRoomId);
+      await _notificationOffUseCase(thisRoomId);
     } catch (e) {
       notificationSetting?.isNotificationOn = true;
       notifyListeners();
@@ -643,7 +709,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     notificationSetting?.isNotificationOn = true;
     notifyListeners();
     try {
-      await _repository.notificationOn(thisRoomId);
+      await _notificationOnUseCase(thisRoomId);
     } catch (e) {
       notificationSetting?.isNotificationOn = false;
       notifyListeners();
@@ -677,11 +743,12 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         }
 
         // 이전에 읽지 않은 메시지가 있었는데 지금 0이 되면 하단으로 스크롤
-        // 단, 사용자가 수동으로 스크롤 중이 아닐 때만
+        // 단, 사용자가 수동으로 스크롤 중이 아니고, 더 많은 메시지를 로드 중이 아닐 때만
         if (previousUnreadCount != null &&
             previousUnreadCount! > 0 &&
             newUnreadCount == 0 &&
-            !isUserScrolling) {
+            !isUserScrolling &&
+            !isLoadingMore) {
           scrollToBottom(force: true);
         }
         previousUnreadCount = newUnreadCount;
@@ -699,6 +766,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     _subscriptionManager.subscribeToMessages(
       currentRoomId,
       (newChattingMessage) {
+        // 이미 존재하는 메시지인지 확인 (중복 방지)
+        final existingMessageIndex = messages.indexWhere((msg) => msg.id == newChattingMessage.id);
+        if (existingMessageIndex != -1) {
+          // 이미 존재하는 메시지면 업데이트만 하고 리턴
+          messages[existingMessageIndex] = newChattingMessage;
+          notifyListeners();
+          return;
+        }
+
         // 임시 메시지가 있으면 제거하고 실제 메시지로 교체
         final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
         final isMyMessage = userId != null && newChattingMessage.senderId == userId;
@@ -707,14 +783,14 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           // 본인이 보낸 메시지인 경우, 임시 메시지와 매칭하여 교체
           _replaceOptimisticMessage(newChattingMessage);
         } else {
-          // 다른 사람이 보낸 메시지는 그냥 추가
+          // 다른 사람이 보낸 메시지는 추가
           messages.add(newChattingMessage);
         }
         
         notifyListeners();
 
-        // 본인이 보낸 메시지일 때만 하단으로 스크롤
-        if (isMyMessage) {
+        // 새 메시지가 오면 하단으로 스크롤 (더 많은 메시지를 로드 중이 아닐 때만)
+        if (!isLoadingMore) {
           scrollToBottom(force: true);
         }
       },
@@ -826,7 +902,17 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     }
 
     final currentRoomId = roomId;
-    if (currentRoomId == null) return;
+    if (currentRoomId == null) {
+      return;
+    }
+
+    // notifyListeners() 호출 전에 스크롤 위치 저장 (리빌드 전 위치)
+    double? previousScrollOffset;
+    double? previousMaxScrollExtent;
+    if (scrollController.hasClients) {
+      previousScrollOffset = scrollController.offset;
+      previousMaxScrollExtent = scrollController.position.maxScrollExtent;
+    }
 
     isLoadingMore = true;
     notifyListeners();
@@ -835,13 +921,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       final oldestMessage = messages.first;
       final beforeCreatedAtIso = oldestMessage.createdAt;
 
-      // 현재 스크롤 위치 저장
-      double? previousScrollOffset;
-      if (scrollController.hasClients) {
-        previousScrollOffset = scrollController.offset;
-      }
-
-      final olderMessages = await _repository.getOlderMessages(
+      final olderMessages = await _getOlderMessagesUseCase(
         currentRoomId,
         beforeCreatedAtIso,
         limit: 50,
@@ -851,20 +931,25 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         hasMore = false;
       } else {
         messages.insertAll(0, olderMessages);
+        
         if (olderMessages.length < 50) {
           hasMore = false;
         }
 
         // 스크롤 위치 유지 (새로 추가된 메시지 높이만큼 오프셋 조정)
-        if (previousScrollOffset != null) {
+        // previousOffset이 0.0이거나 매우 작으면 사용자가 맨 위에 있었던 것이므로 조정하지 않음
+        if (previousScrollOffset != null && 
+            previousMaxScrollExtent != null && 
+            previousScrollOffset > 10.0) {
           _scrollManager.maintainScrollPosition(
-            previousScrollOffset,
+            previousScrollOffset!,
+            previousMaxScrollExtent!,
             olderMessages.length,
           );
         }
       }
     } catch (e) {
-      // 에러 발생 시 무시 (이미 로딩 상태는 false로 설정됨)
+      // 에러 발생 시 조용히 처리
     }
 
     isLoadingMore = false;

@@ -1,5 +1,4 @@
 import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
-import 'package:bidbird/features/item/utils/media_resizer.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// 이미지 선택 결과
@@ -30,11 +29,9 @@ class ImagePickerManager {
       return null;
     }
     
-    // 리사이징 처리
-    final List<XFile> resizedImages = await MediaResizer.resizeImages(pickedImages);
-    
+    // 리사이징은 upload datasource에서 처리
     return ImagePickerResult(
-      images: resizedImages,
+      images: pickedImages,
       messageType: MessageType.image,
     );
   }
@@ -52,11 +49,9 @@ class ImagePickerManager {
       return null;
     }
     
-    // 리사이징 처리
-    final XFile? resizedImage = await MediaResizer.resizeImage(pickedImage);
-    
+    // 리사이징은 upload datasource에서 처리
     return ImagePickerResult(
-      images: [resizedImage ?? pickedImage],
+      images: [pickedImage],
       messageType: MessageType.image,
     );
   }
@@ -71,11 +66,9 @@ class ImagePickerManager {
       return null;
     }
     
-    // 리사이징 처리
-    final XFile? resizedVideo = await MediaResizer.resizeVideo(pickedVideo);
-    
+    // 리사이징은 upload datasource에서 처리
     return ImagePickerResult(
-      images: [resizedVideo ?? pickedVideo],
+      images: [pickedVideo],
       messageType: MessageType.video,
     );
   }

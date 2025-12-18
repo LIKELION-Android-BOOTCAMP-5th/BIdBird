@@ -5,31 +5,23 @@ class ChattingRoomService {
   final supabase = Supabase.instance.client;
 
   Future<void> enterRoom(String roomId) async {
-    print("ChattingRoomService enterRoom roomId : ${roomId}");
     try {
       await supabase.functions.invoke(
-        'chatting/enter',
-        method: HttpMethod.post,
-        headers: NetworkApiManager.headers,
+        'enter-chat-room',
         body: {'roomId': roomId},
       );
     } catch (e) {
-      print("enterRoom 실패 : ${e}");
+      // 에러 발생 시 조용히 처리
     }
   }
 
   Future<void> leaveRoom(String roomId) async {
-    print("ChattingRoomService leaveRoom roomId : ${roomId}");
     try {
       await supabase.functions.invoke(
-        'chatting/leave',
-        method: HttpMethod.post,
-        headers: NetworkApiManager.headers,
+        'leave-chat-room',
         body: {'roomId': roomId},
       );
-      print("ChattingRoomService leaveRoom 성공");
     } catch (e) {
-      print("leaveRoom 실패 : ${e}");
       rethrow;
     }
   }

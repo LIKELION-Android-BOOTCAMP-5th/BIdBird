@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
-import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
-import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
-import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
+import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
+import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail_datasource.dart';
+import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -368,53 +368,53 @@ class FirebaseManager {
     print('로컬알림 발송. 데이터: $payloadString');
   }
 
-  // 앱 접속중에 작동하는 로직
-  static Future<void> _showLocalNotification(RemoteMessage message) async {
-    final notification = message.notification;
-    if (notification == null) return;
+  // 앱 접속중에 작동하는 로직 (현재 사용되지 않음 - sendLocalPushFromFCM 사용 중)
+  // static Future<void> _showLocalNotification(RemoteMessage message) async {
+  //   final notification = message.notification;
+  //   if (notification == null) return;
 
-    //===========플랫폼 별로 채널 작동 로직 시작==============
-    AndroidNotificationDetails? androidDetails;
-    DarwinNotificationDetails? iosDetails;
+  //   //===========플랫폼 별로 채널 작동 로직 시작==============
+  //   AndroidNotificationDetails? androidDetails;
+  //   DarwinNotificationDetails? iosDetails;
 
-    if (Platform.isAndroid) {
-      final channelId =
-          message.data['channelId'] ??
-          _getChannelFromNotificationType(message.data['type']) ??
-          'general_channel';
+  //   if (Platform.isAndroid) {
+  //     final channelId =
+  //         message.data['channelId'] ??
+  //         _getChannelFromNotificationType(message.data['type']) ??
+  //         'general_channel';
 
-      androidDetails = AndroidNotificationDetails(
-        channelId,
-        _getChannelName(channelId),
-        channelDescription: _getChannelDescription(channelId),
-        importance: Importance.high,
-        priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
-      );
-    }
+  //     androidDetails = AndroidNotificationDetails(
+  //       channelId,
+  //       _getChannelName(channelId),
+  //       channelDescription: _getChannelDescription(channelId),
+  //       importance: Importance.high,
+  //       priority: Priority.high,
+  //       icon: '@mipmap/ic_launcher',
+  //     );
+  //   }
 
-    if (Platform.isIOS) {
-      iosDetails = const DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      );
-    }
-    //===========플랫폼 별로 채널 작동 로직 끝===============
-    //===========앱 안에서 알림 보여주기 ===================
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+  //   if (Platform.isIOS) {
+  //     iosDetails = const DarwinNotificationDetails(
+  //       presentAlert: true,
+  //       presentBadge: true,
+  //       presentSound: true,
+  //     );
+  //   }
+  //   //===========플랫폼 별로 채널 작동 로직 끝===============
+  //   //===========앱 안에서 알림 보여주기 ===================
+  //   final details = NotificationDetails(
+  //     android: androidDetails,
+  //     iOS: iosDetails,
+  //   );
 
-    await _localNotifications.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      details,
-      payload: message.data.toString(),
-    );
-  }
+  //   await _localNotifications.show(
+  //     notification.hashCode,
+  //     notification.title,
+  //     notification.body,
+  //     details,
+  //     payload: message.data.toString(),
+  //   );
+  // }
 
   // TODO : 채널 타입 설정
   static String? _getChannelFromNotificationType(String? type) {

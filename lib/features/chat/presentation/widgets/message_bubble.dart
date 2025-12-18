@@ -1,4 +1,3 @@
-import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_media_widget.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_text_bubble.dart';
@@ -12,6 +11,7 @@ class MessageBubble extends StatelessWidget {
   final bool showTime;
   final bool isRead; // 읽음 여부
   final bool isUnread; // 안읽음 여부 (마지막 내 메시지가 읽지 않았을 때)
+  final List<ChatMessageEntity>? allMessages; // 모든 메시지 리스트 (갤러리용)
 
   const MessageBubble({
     super.key,
@@ -20,6 +20,7 @@ class MessageBubble extends StatelessWidget {
     this.showTime = true,
     this.isRead = false,
     this.isUnread = false,
+    this.allMessages,
   });
 
 
@@ -44,6 +45,7 @@ class MessageBubble extends StatelessWidget {
       message: message,
       maxWidth: maxWidth,
       maxHeight: 600,
+      allMessages: allMessages,
     );
 
     // 시간 표시가 필요 없으면 미디어만 출력

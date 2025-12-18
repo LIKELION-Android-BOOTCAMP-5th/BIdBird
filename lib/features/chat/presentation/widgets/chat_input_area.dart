@@ -139,8 +139,6 @@ class _ChatInputAreaState extends State<ChatInputArea> {
                       },
                       onSubmitted: (value) {
                         if (!widget.viewModel.isSending && canSend) {
-                          // 키보드 닫기
-                          widget.focusNode.unfocus();
                           widget.viewModel.sendMessage();
                           // 입력창 리셋
                           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -161,8 +159,6 @@ class _ChatInputAreaState extends State<ChatInputArea> {
               onTap: (!canSend || widget.viewModel.isSending)
                   ? null
                   : () {
-                      // 키보드 닫기
-                      FocusScope.of(context).unfocus();
                       widget.viewModel.sendMessage();
                       // 입력창 리셋
                       WidgetsBinding.instance.addPostFrameCallback((_) {

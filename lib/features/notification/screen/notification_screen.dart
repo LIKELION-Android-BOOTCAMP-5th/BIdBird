@@ -1,7 +1,7 @@
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
-import 'package:bidbird/features/item/bid_win/model/item_bid_win_entity.dart';
-import 'package:bidbird/features/item/detail/data/datasource/item_detail_datasource.dart';
-import 'package:bidbird/features/item/detail/model/item_detail_entity.dart';
+import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
+import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail_datasource.dart';
+import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/notification/screen/widgets/notification_card.dart';
 import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
 import 'package:flutter/material.dart';

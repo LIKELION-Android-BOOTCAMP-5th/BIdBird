@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bidbird/core/utils/identity_verification/identity_verification_helper.dart';
+import 'package:bidbird/features/identity_verification/presentation/utils/identity_verification_helper.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';

@@ -1,48 +1,84 @@
+import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/chat/data/managers/chat_message_cache_manager.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// 채팅 데이터 소스
 class ChatSupabaseDatasource {
+  ChatSupabaseDatasource({SupabaseClient? supabase})
+      : _supabase = supabase ?? SupabaseManager.shared.supabase;
+
   static const String _chatRoomsTable = 'chatting_room';
-  static const String _messagesTable = 'chatting_message';
   static const String _roomUserTable = 'chatting_room_users';
 
-  final _supabase = SupabaseManager.shared.supabase;
+  final SupabaseClient _supabase;
   final _cacheManager = ChatMessageCacheManager();
 
-  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId) async {
+  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId, {bool forceRefresh = false}) async {
     // 먼저 캐시에서 불러오기
     final cachedMessages = await _cacheManager.getCachedMessages(chattingRoomId);
     
-    try {
-      final response = await SupabaseManager.shared.supabase
-          .from(_messagesTable)
-          .select('*')
-          .eq('room_id', chattingRoomId)
-          .order('created_at', ascending: false)
-          .limit(50);
-      
-      if (response.isNotEmpty) {
-        final List<dynamic> data = response;
-        final List<ChatMessageEntity> results = data.map((json) {
-          return ChatMessageEntity.fromJson(json);
-        }).toList();
-
-        // Supabase에서 최신 메시지 기준 내림차순으로 가져왔으므로
-        // UI에서는 예전 -> 최신 순으로 보이도록 뒤집어서 반환
-        final networkMessages = results.reversed.toList();
+    // 강제 새로고침이 아니고 캐시가 있으면 마지막 메시지 시간 확인
+    if (!forceRefresh && cachedMessages.isNotEmpty) {
+      final cachedLastTime = await _cacheManager.getLastMessageTime(chattingRoomId);
+      if (cachedLastTime != null) {
+        // 캐시된 마지막 메시지 시간과 현재 캐시의 마지막 메시지 시간 비교
+        final cachedLastMessage = cachedMessages.isNotEmpty 
+            ? cachedMessages.first.createdAt 
+            : null;
         
-        // 네트워크에서 가져온 메시지를 캐시에 저장
-        await _cacheManager.saveMessagesToCache(chattingRoomId, networkMessages);
-        
-        return networkMessages;
-      } else {
-        // 네트워크에서 메시지가 없으면 캐시 반환
-        if (cachedMessages.isNotEmpty) {
+        // 캐시된 시간과 일치하면 네트워크 호출 생략
+        if (cachedLastMessage == cachedLastTime) {
           return cachedMessages;
         }
+      }
+    }
+    
+    try {
+      // Edge Function 호출
+      final response = await _supabase.functions.invoke(
+        'get-messages',
+        body: {
+          'roomId': chattingRoomId,
+          'page': 1,
+          'limit': 20,
+        },
+      );
+
+      final data = response.data;
+      if (data != null) {
+        if (data is Map && data.containsKey('error')) {
+          // 에러 발생 시 캐시 반환
+          if (cachedMessages.isNotEmpty) {
+            return cachedMessages;
+          }
+          return List.empty();
+        }
+        
+        if (data is List) {
+          final List<ChatMessageEntity> results = data.map((json) {
+            return ChatMessageEntity.fromJson(json);
+          }).toList();
+
+          // 네트워크에서 가져온 메시지를 캐시에 저장
+          await _cacheManager.saveMessagesToCache(chattingRoomId, results);
+          
+          // 마지막 메시지 시간 저장 (변경 감지용)
+          if (results.isNotEmpty) {
+            await _cacheManager.saveLastMessageTime(chattingRoomId, results.first.createdAt);
+          }
+          
+          return results;
+        }
+      }
+      
+      // 네트워크에서 메시지가 없으면 캐시 반환
+      if (cachedMessages.isNotEmpty) {
+        return cachedMessages;
       }
     } catch (e) {
       // 네트워크 오류 시 캐시 반환
@@ -60,26 +96,30 @@ class ChatSupabaseDatasource {
     int limit = 50,
   }) async {
     try {
-      final response = await SupabaseManager.shared.supabase.rpc(
-        'get_chat_messages_before',
-        params: <String, dynamic>{
-          'p_room_id': roomId,
-          'p_before': beforeCreatedAtIso,
-          'p_limit': limit,
+      final response = await _supabase.functions.invoke(
+        'get-older-messages',
+        body: {
+          'roomId': roomId,
+          'beforeCreatedAt': beforeCreatedAtIso,
+          'limit': limit,
         },
       );
 
-      if (response is! List) {
-        return List.empty();
+      final data = response.data;
+      if (data != null) {
+        if (data is Map && data.containsKey('error')) {
+          return List.empty();
+        }
+        
+        if (data is List) {
+          final List<ChatMessageEntity> results = data.map((json) {
+            return ChatMessageEntity.fromJson(json);
+          }).toList();
+          return results;
+        }
       }
 
-      final data = response.cast<Map<String, dynamic>>();
-      final results = data
-          .map((json) => ChatMessageEntity.fromJson(json))
-          .toList();
-
-      // 함수에서 created_at desc 로 내려주므로, UI에서는 asc 로 보이게 뒤집기
-      return results.reversed.toList();
+      return List.empty();
     } catch (e) {
       return List.empty();
     }
@@ -193,5 +233,186 @@ class ChatSupabaseDatasource {
       return;
     }
     return;
+  }
+
+  Future<List<ChattingRoomEntity>> fetchChattingRoomList({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _supabase.functions.invoke(
+        'get-chat-list',
+        body: {
+          'page': page,
+          'limit': limit,
+        },
+      );
+
+      final data = response.data;
+      if (data == null) {
+        return List.empty();
+      }
+
+      if (data is List) {
+        final List<ChattingRoomEntity> results = data.map((json) {
+          return ChattingRoomEntity.fromJson(json);
+        }).toList();
+        return results;
+      }
+
+      return List.empty();
+    } catch (e) {
+      return List.empty();
+    }
+  }
+
+  Future<RoomInfoEntity?> fetchRoomInfo(String itemId) async {
+    try {
+      final response = await _supabase.functions.invoke(
+        'get-room-info',
+        body: {'itemId': itemId},
+      );
+      final data = response.data;
+      final result = RoomInfoEntity.fromJson(data);
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<RoomInfoEntity?> fetchRoomInfoWithRoomId(String roomId) async {
+    try {
+      final response = await _supabase.functions.invoke(
+        'get-room-info',
+        body: {'roomId': roomId},
+      );
+      final data = response.data;
+      final result = RoomInfoEntity.fromJson(data);
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<String?> firstMessage({
+    required String itemId,
+    String? message,
+    required String messageType,
+    String? imageUrl,
+  }) async {
+    if (messageType != "text" && messageType != "image") {
+      return null;
+    }
+
+    try {
+      final body = <String, dynamic>{
+        'itemId': itemId,
+        'message_type': messageType,
+      };
+      
+      if (messageType == "text" && message != null) {
+        body['message'] = message;
+      } else if (messageType == "image" && imageUrl != null) {
+        body['imageUrl'] = imageUrl;
+      }
+
+      final response = await _supabase.functions.invoke(
+        'create-chat-room',
+        body: body,
+      );
+      
+      if (response.data == null) return null;
+      final data = response.data['room_id'] as String;
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 거래 완료 API 호출
+  Future<void> completeTrade(String itemId) async {
+    try {
+      await SupabaseManager.shared.supabase.functions.invoke(
+        'completeTrade',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: {'itemId': itemId},
+      );
+    } catch (e) {
+      throw Exception('거래 완료 처리 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  /// 거래 취소 API 호출
+  Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault) async {
+    try {
+      await SupabaseManager.shared.supabase.functions.invoke(
+        'cancelTrade',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: {
+          'itemId': itemId,
+          'reasonCode': reasonCode,
+          'isSellerFault': isSellerFault,
+        },
+      );
+    } catch (e) {
+      throw Exception('거래 취소 처리 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  /// 거래 평가 작성 API 호출
+  Future<void> submitTradeReview({
+    required String itemId,
+    required String toUserId,
+    required String role,
+    required double rating,
+    required String comment,
+  }) async {
+    try {
+      final response = await SupabaseManager.shared.supabase.functions.invoke(
+        'submitTradeReview',
+        method: HttpMethod.post,
+        headers: NetworkApiManager.useThisHeaders(),
+        body: {
+          'itemId': itemId,
+          'toUserId': toUserId,
+          'role': role,
+          'rating': rating,
+          'comment': comment,
+        },
+      );
+
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        if (data['success'] != true) {
+          final errorMessage = data['error'] ?? '거래 평가 작성에 실패했습니다.';
+          throw Exception(errorMessage);
+        }
+      }
+    } catch (e) {
+      throw Exception('거래 평가 작성 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  /// 거래 평가 작성 여부 확인
+  Future<bool> hasSubmittedReview(String itemId) async {
+    try {
+      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        return false;
+      }
+
+      final response = await SupabaseManager.shared.supabase
+          .from('user_review')
+          .select('id')
+          .eq('item_id', itemId)
+          .eq('from_user_id', currentUserId)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      return false;
+    }
   }
 }
