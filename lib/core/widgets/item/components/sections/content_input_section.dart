@@ -11,8 +11,8 @@ class ContentInputSection extends StatefulWidget {
     required this.hintText,
     this.maxLength = 500,
     this.minLength,
-    this.minLines = 6,
-    this.maxLines = 8,
+    this.minLines,
+    this.maxLines,
     this.successMessage,
     this.errorMessage,
   });
@@ -32,11 +32,11 @@ class ContentInputSection extends StatefulWidget {
   /// 최소 글자 수 (null이면 검증 안 함)
   final int? minLength;
 
-  /// 최소 줄 수
-  final int minLines;
+  /// 최소 줄 수 (null이면 제한 없음)
+  final int? minLines;
 
-  /// 최대 줄 수
-  final int maxLines;
+  /// 최대 줄 수 (null이면 제한 없음)
+  final int? maxLines;
 
   /// 최소 글자 수 충족 시 표시할 메시지
   final String? successMessage;
@@ -82,29 +82,55 @@ class _ContentInputSectionState extends State<ContentInputSection> {
             ),
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: widget.controller,
-            maxLines: widget.maxLines,
-            minLines: widget.minLines,
-            maxLength: widget.maxLength,
-            cursorColor: primaryBlue,
-            style: const TextStyle(
-              color: textPrimary,
-            ),
-            decoration: InputDecoration(
-              hintText: widget.hintText,
-              hintStyle: TextStyle(
-                color: textDisabled,
-                fontSize: context.fontSizeSmall,
-              ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-              counterText: '',
-              focusedBorder: InputBorder.none,
-              enabledBorder: InputBorder.none,
-            ),
-            onChanged: (_) => setState(() {}),
-          ),
+          widget.minLines == null && widget.maxLines == null
+              ? Expanded(
+                  child: TextField(
+                    controller: widget.controller,
+                    maxLines: null,
+                    minLines: null,
+                    maxLength: widget.maxLength,
+                    cursorColor: primaryBlue,
+                    style: const TextStyle(
+                      color: textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: widget.hintText,
+                      hintStyle: TextStyle(
+                        color: textDisabled,
+                        fontSize: context.fontSizeSmall,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      counterText: '',
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                )
+              : TextField(
+                  controller: widget.controller,
+                  maxLines: widget.maxLines,
+                  minLines: widget.minLines,
+                  maxLength: widget.maxLength,
+                  cursorColor: primaryBlue,
+                  style: const TextStyle(
+                    color: textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: widget.hintText,
+                    hintStyle: TextStyle(
+                      color: textDisabled,
+                      fontSize: context.fontSizeSmall,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    counterText: '',
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: showValidation && widget.successMessage != null && isValid
