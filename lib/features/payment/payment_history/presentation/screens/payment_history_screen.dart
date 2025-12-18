@@ -70,9 +70,7 @@ class PaymentHistoryScreen extends StatelessWidget {
     }) data,
   ) {
     if (data.loading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const SizedBox.shrink();
     }
 
     if (data.error != null) {

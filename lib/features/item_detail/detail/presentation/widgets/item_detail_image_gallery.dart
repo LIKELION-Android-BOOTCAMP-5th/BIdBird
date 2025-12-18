@@ -139,11 +139,14 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
                                       imageUrl: thumbnailUrl,
                                       cacheManager: ItemImageCacheManager.instance,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => const Center(
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
+                                      placeholder: (context, url) => Container(color: shadowHigh),
                                       errorWidget: (context, url, error) => Container(
                                         color: ImageBackgroundColor,
+                                        child: const Icon(
+                                          Icons.image_outlined,
+                                          color: iconColor,
+                                          size: 32,
+                                        ),
                                       ),
                                     ),
                                   ),

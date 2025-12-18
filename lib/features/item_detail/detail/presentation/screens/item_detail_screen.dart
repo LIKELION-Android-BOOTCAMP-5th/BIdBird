@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:bidbird/features/report/presentation/screens/report_screen.dart';
-import 'package:bidbird/core/widgets/components/loading_indicator.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_bottom_action_bar.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_image_gallery.dart';
@@ -44,13 +43,6 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
     return Selector<ItemDetailViewModel, bool>(
       selector: (_, vm) => vm.isLoading,
       builder: (context, isLoading, _) {
-        if (isLoading) {
-          return const Scaffold(
-            body: SafeArea(
-              child: CenteredLoadingIndicator(),
-            ),
-          );
-        }
         return const _ItemDetailContent();
       },
     );
