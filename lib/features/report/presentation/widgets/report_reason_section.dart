@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/report_category_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/report_reason_bottom_sheet.dart';
@@ -118,117 +119,160 @@ class ReportReasonSection extends StatelessWidget {
       }
     }
 
+    final labelFontSize = context.fontSizeMedium;
+    final spacing = context.spacingMedium;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 대분류 선택
-        GestureDetector(
-          onTap: () {
-            ReportCategoryBottomSheet.show(
-              context,
-              categories: vm.categories,
-              allReportTypes: vm.allReportTypes,
-              selectedCategory: vm.selectedCategory,
-              onCategorySelected: (category) {
-                vm.selectCategory(category);
-              },
-            );
-          },
-          child: Container(
-            height: 48,
-            padding: EdgeInsets.symmetric(
-              horizontal: context.inputPadding,
-            ),
-            decoration: BoxDecoration(
-              color: cardBackground,
-              borderRadius: BorderRadius.circular(defaultRadius),
-              border: Border.all(
-                color: vm.selectedCategory != null ? primaryBlue : borderGray,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      getCategoryDisplayName() ?? '신고 사유를 선택하세요',
-                      style: TextStyle(
-                        fontSize: context.fontSizeSmall,
-                        color: vm.selectedCategory != null
-                            ? textPrimary
-                            : textDisabled,
-                      ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(bottom: context.labelBottomPadding),
+              child: Row(
+                children: [
+                  Text(
+                    '신고 사유',
+                    style: TextStyle(
+                      fontSize: labelFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
                     ),
                   ),
-                ),
-                Icon(
-                  Icons.keyboard_arrow_down,
-                  color: vm.selectedCategory != null ? primaryBlue : textDisabled,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            GestureDetector(
+              onTap: () {
+                ReportCategoryBottomSheet.show(
+                  context,
+                  categories: vm.categories,
+                  allReportTypes: vm.allReportTypes,
+                  selectedCategory: vm.selectedCategory,
+                  onCategorySelected: (category) {
+                    vm.selectCategory(category);
+                  },
+                );
+              },
+              child: Container(
+                height: 48,
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.inputPadding,
+                ),
+                decoration: BoxDecoration(
+                  color: cardBackground,
+                  borderRadius: BorderRadius.circular(defaultRadius),
+                  border: Border.all(
+                    color: vm.selectedCategory != null ? blueColor : BackgroundColor,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          getCategoryDisplayName() ?? '신고 사유를 선택하세요',
+                          style: TextStyle(
+                            fontSize: context.fontSizeSmall,
+                            color: vm.selectedCategory != null
+                                ? textColor
+                                : iconColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      color: vm.selectedCategory != null ? blueColor : iconColor,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
 
         // 소분류 선택
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: vm.selectedCategory == null
-              ? null
-              : () {
-                  ReportReasonBottomSheet.show(
-                    context,
-                    reportTypes: vm.selectedCategoryReports,
-                    selectedReportCode: vm.selectedReportCode,
-                    onReasonSelected: (reportCode) {
-                      vm.selectReportCode(reportCode);
-                    },
-                  );
-                },
-          child: Container(
-            height: 48,
-            padding: EdgeInsets.symmetric(
-              horizontal: context.inputPadding,
-            ),
-            decoration: BoxDecoration(
-              color: vm.selectedCategory == null
-                  ? const Color(0xFFF7F8FA)
-                  : cardBackground,
-              borderRadius: BorderRadius.circular(defaultRadius),
-              border: Border.all(
-                color: vm.selectedReportCode != null ? primaryBlue : borderGray,
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      getReasonDisplayName() ??
-                          (vm.selectedCategory == null
-                              ? '대분류를 먼저 선택해주세요'
-                              : '신고 사유를 선택하세요'),
-                      style: TextStyle(
-                        fontSize: context.fontSizeSmall,
-                        color: vm.selectedReportCode != null
-                            ? textPrimary
-                            : textDisabled,
-                      ),
+        SizedBox(height: spacing),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(bottom: context.labelBottomPadding),
+              child: Row(
+                children: [
+                  Text(
+                    '상세 사유',
+                    style: TextStyle(
+                      fontSize: labelFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
                     ),
                   ),
-                ),
-                if (vm.selectedCategory != null)
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: vm.selectedReportCode != null
-                        ? primaryBlue
-                        : textDisabled,
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
+            GestureDetector(
+              onTap: vm.selectedCategory == null
+                  ? null
+                  : () {
+                      ReportReasonBottomSheet.show(
+                        context,
+                        reportTypes: vm.selectedCategoryReports,
+                        selectedReportCode: vm.selectedReportCode,
+                        onReasonSelected: (reportCode) {
+                          vm.selectReportCode(reportCode);
+                        },
+                      );
+                    },
+              child: Container(
+                height: 48,
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.inputPadding,
+                ),
+                decoration: BoxDecoration(
+                  color: vm.selectedCategory == null
+                      ? BorderColor.withValues(alpha: 0.2)
+                      : cardBackground,
+                  borderRadius: BorderRadius.circular(defaultRadius),
+                  border: Border.all(
+                    color: vm.selectedReportCode != null ? blueColor : BackgroundColor,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          getReasonDisplayName() ??
+                              (vm.selectedCategory == null
+                                  ? '대분류를 먼저 선택해주세요'
+                                  : '신고 사유를 선택하세요'),
+                          style: TextStyle(
+                            fontSize: context.fontSizeSmall,
+                            color: vm.selectedReportCode != null
+                                ? textColor
+                                : iconColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (vm.selectedCategory != null)
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        color: vm.selectedReportCode != null
+                            ? blueColor
+                            : iconColor,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

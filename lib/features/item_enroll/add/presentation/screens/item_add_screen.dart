@@ -1,6 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
@@ -38,44 +39,16 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   ];
 
   InputDecoration _inputDecoration(String hint, BuildContext? context) {
-    final hintFontSize = context?.fontSizeSmall ?? 13;
-    final horizontalPadding = context?.inputPadding ?? 12;
-    final verticalPadding = context?.inputPadding ?? 12;
-    final borderWidth = context?.borderWidth ?? 1.5;
-
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: TextStyle(color: iconColor, fontSize: hintFontSize),
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: horizontalPadding,
-        vertical: verticalPadding,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: const BorderSide(color: BackgroundColor),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: const BorderSide(color: BackgroundColor),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: BorderSide(color: blueColor, width: borderWidth),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: BorderSide(color: RedColor),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(defaultRadius),
-        borderSide: BorderSide(color: RedColor, width: borderWidth),
-      ),
-      errorStyle: TextStyle(
-        color: RedColor,
-        fontSize: hintFontSize,
-      ),
-      filled: true,
-      fillColor: Colors.white,
+    if (context == null) {
+      // Fallback for null context
+      return createStandardInputDecoration(
+        this.context,
+        hint: hint,
+      );
+    }
+    return createStandardInputDecoration(
+      context,
+      hint: hint,
     );
   }
 
@@ -107,19 +80,12 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   bool _canGoToNextStep(ItemAddViewModel viewModel) {
     switch (_currentStep) {
       case 0:
-        // 카드 1: 이미지, 제목, 카테고리 필수
+        // 카드 1: 이미지, 제목 필수
         return viewModel.selectedImages.isNotEmpty &&
-            viewModel.titleController.text.trim().isNotEmpty &&
-            viewModel.selectedKeywordTypeId != null;
+            viewModel.titleController.text.trim().isNotEmpty;
       case 1:
-        // 카드 2: 시작가, 경매 기간 필수
-        final startPriceText = viewModel.startPriceController.text.trim();
-        if (startPriceText.isEmpty || viewModel.selectedDuration == null) {
-          return false;
-        }
-        final startPrice = parseFormattedPrice(startPriceText);
-        return startPrice >= ItemPriceLimits.minPrice &&
-            viewModel.selectedDuration != null;
+        // 카드 2: 항상 활성화 (버튼 클릭 시 검증)
+        return true;
       case 2:
         // 카드 3: 모든 검증 통과
         return viewModel.validate() == null;

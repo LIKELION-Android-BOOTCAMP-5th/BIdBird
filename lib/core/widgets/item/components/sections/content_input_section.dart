@@ -61,16 +61,18 @@ class _ContentInputSectionState extends State<ContentInputSection> {
     final isValid = widget.minLength == null || textLength >= widget.minLength!;
     final showValidation = widget.minLength != null;
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cardBackground,
-        borderRadius: defaultBorder,
-        border: Border.all(
-          color: borderGray,
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardBackground,
+          borderRadius: defaultBorder,
+          border: Border.all(
+            color: borderGray,
+          ),
         ),
-      ),
-      child: Column(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -155,6 +157,7 @@ class _ContentInputSectionState extends State<ContentInputSection> {
             ],
           ),
         ],
+        ),
       ),
     );
   }

@@ -23,8 +23,8 @@ class StepIndicator extends StatelessWidget {
 
   static const double _circleSize = 32;
   static const double _lineHeight = 2;
-  static const double _gap = 8;
-  static const double _lineWidth = 30.0;
+  static const double _gap = 16;
+  static const double _lineWidth = 50.0;
 
   @override
   Widget build(BuildContext context) {

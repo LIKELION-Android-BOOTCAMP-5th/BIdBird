@@ -1,12 +1,13 @@
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/core/widgets/item/components/buttons/bottom_submit_button.dart';
-import 'package:bidbird/core/widgets/item/components/sections/content_input_section.dart';
-import 'package:bidbird/core/widgets/item/components/sections/image_upload_section.dart';
+import 'package:bidbird/features/item_enroll/add/presentation/widgets/step_indicator.dart';
 import 'package:bidbird/features/report/presentation/viewmodels/report_viewmodel.dart';
-import 'package:bidbird/features/report/presentation/widgets/report_reason_section.dart';
-import 'package:bidbird/features/report/presentation/widgets/report_target_section.dart';
+import 'package:bidbird/features/report/presentation/widgets/swipe_cards/report_content_card.dart';
+import 'package:bidbird/features/report/presentation/widgets/swipe_cards/report_image_card.dart';
+import 'package:bidbird/features/report/presentation/widgets/swipe_cards/report_target_reason_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,6 +30,18 @@ class ReportScreen extends StatefulWidget {
 }
 
 class _ReportScreenState extends State<ReportScreen> {
+  final PageController _pageController = PageController();
+  final GlobalKey<ReportTargetReasonCardState> _targetReasonCardKey = GlobalKey<ReportTargetReasonCardState>();
+  final GlobalKey<ReportContentCardState> _contentCardKey = GlobalKey<ReportContentCardState>();
+  int _currentStep = 0;
+  bool _isKeyboardVisible = false;
+
+  static const List<String> _stepLabels = [
+    '신고 사유',
+    '상세 내용',
+    '사진 첨부',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +51,64 @@ class _ReportScreenState extends State<ReportScreen> {
         vm.loadReportTypes();
       }
     });
+  }
+
+  void _showImageSourceSheet(BuildContext context, ReportViewModel viewModel) {
+    ImageSourceBottomSheet.show(
+      context,
+      onGalleryTap: () async {
+        await viewModel.pickImagesFromGallery();
+      },
+      onCameraTap: () async {
+        await viewModel.pickImageFromCamera();
+      },
+    );
+  }
+
+  void _goToStep(int step) {
+    if (step >= 0 && step < 3) {
+      _pageController.animateToPage(
+        step,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  bool _canGoToNextStep(ReportViewModel viewModel) {
+    switch (_currentStep) {
+      case 0:
+        // 카드 1: 신고 사유와 상세 사유 필수
+        return viewModel.selectedCategory != null &&
+            viewModel.selectedReportCode != null;
+      case 1:
+        // 카드 2: 상세 내용 필수 (최소 1자)
+        final content = viewModel.contentController.text.trim();
+        return content.isNotEmpty && content.length >= 1;
+      case 2:
+        // 카드 3: 사진은 선택사항이므로 항상 통과
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  String _getNextButtonText() {
+    switch (_currentStep) {
+      case 0:
+      case 1:
+        return '다음';
+      case 2:
+        return '신고하기';
+      default:
+        return '다음';
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   void _showSubmitConfirmDialog(ReportViewModel vm) {
@@ -137,164 +208,313 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryBlue = Color(0xFF2F5BFF);
-    const Color backgroundGray = Color(0xFFF7F8FA);
-    const Color cardBackground = Color(0xFFFFFFFF);
-    const Color borderGray = Color(0xFFE6E8EB);
-    const Color textPrimary = Color(0xFF111111);
-    const Color textSecondary = Color(0xFF6B7280);
-    const Color errorColor = Color(0xFFE5484D);
-    
     return ChangeNotifierProvider(
       create: (_) => ReportViewModel(),
-      child: Scaffold(
-        backgroundColor: backgroundGray,
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: textPrimary),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: const Text(
-            '신고하기',
-            style: TextStyle(color: textPrimary),
-          ),
-          centerTitle: true,
-          backgroundColor: cardBackground,
-          elevation: 0,
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Container(
-              height: 1,
-              color: borderGray,
-            ),
-          ),
-        ),
-        body: Consumer<ReportViewModel>(
-          builder: (context, vm, _) {
-            if (vm.isLoading && vm.allReportTypes.isEmpty) {
-              return Center(
+      child: Consumer<ReportViewModel>(
+        builder: (context, vm, _) {
+          // 로딩 상태 처리
+          if (vm.isLoading && vm.allReportTypes.isEmpty) {
+            return Scaffold(
+              backgroundColor: BackgroundColor,
+              appBar: AppBar(
+                title: const Text('신고하기'),
+                centerTitle: true,
+                backgroundColor: Colors.white,
+              ),
+              body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(primaryBlue),
+                      valueColor: AlwaysStoppedAnimation<Color>(blueColor),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       '신고 사유를 불러오는 중...',
-                      style: TextStyle(color: textPrimary),
+                      style: TextStyle(color: textColor),
                     ),
                   ],
                 ),
-              );
-            }
+              ),
+            );
+          }
 
-            if (vm.error != null && vm.allReportTypes.isEmpty) {
-              return Center(
+          // 에러 상태 처리
+          if (vm.error != null && vm.allReportTypes.isEmpty) {
+            return Scaffold(
+              backgroundColor: BackgroundColor,
+              appBar: AppBar(
+                title: const Text('신고하기'),
+                centerTitle: true,
+                backgroundColor: Colors.white,
+              ),
+              body: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: errorColor),
+                    const Icon(Icons.error_outline, size: 48, color: RedColor),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       '신고 사유를 불러올 수 없습니다.',
-                      style: TextStyle(color: textPrimary),
+                      style: TextStyle(color: textColor),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       vm.error ?? '',
-                      style: const TextStyle(fontSize: 12, color: textSecondary),
+                      style: TextStyle(fontSize: 12, color: iconColor),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => vm.loadReportTypes(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryBlue,
+                        backgroundColor: blueColor,
                         foregroundColor: Colors.white,
                       ),
                       child: const Text('다시 시도'),
                     ),
                   ],
                 ),
-              );
-            }
+              ),
+            );
+          }
 
-            return SafeArea(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
+          final horizontalPadding = context.hPadding;
+          
+          // 키보드 감지
+          final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+          final isKeyboardVisible = keyboardHeight > 0;
+          
+          // 키보드 상태가 변경되면 업데이트
+          if (_isKeyboardVisible != isKeyboardVisible) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() {
+                  _isKeyboardVisible = isKeyboardVisible;
+                });
+              }
+            });
+          }
+
+          return Scaffold(
+            backgroundColor: BackgroundColor,
+            appBar: AppBar(
+              title: const Text('신고하기'),
+              centerTitle: true,
+              backgroundColor: Colors.white,
+            ),
+            body: Column(
+              children: [
+                // 스텝 인디케이터
+                StepIndicator(
+                  currentStep: _currentStep,
+                  totalSteps: 3,
+                  stepLabels: _stepLabels,
+                ),
+                // 카드 영역
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: _isKeyboardVisible || !_canGoToNextStep(vm)
+                        ? const NeverScrollableScrollPhysics()
+                        : const PageScrollPhysics(),
+                    onPageChanged: (index) {
+                      // 스와이프로 다음 페이지로 넘어가려고 할 때 검증
+                      if (index > _currentStep) {
+                        // 첫 번째 카드에서 두 번째 카드로 넘어가려고 할 때
+                        if (_currentStep == 0) {
+                          _targetReasonCardKey.currentState?.validateFields();
+                          if (!_canGoToNextStep(vm)) {
+                            // 검증 실패 시 즉시 이전 페이지로 돌아감
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                _pageController.jumpToPage(_currentStep);
+                              }
+                            });
+                            return;
+                          }
+                        }
+                        // 두 번째 카드에서 세 번째 카드로 넘어가려고 할 때
+                        else if (_currentStep == 1) {
+                          _contentCardKey.currentState?.validateFields();
+                          if (!_canGoToNextStep(vm)) {
+                            // 검증 실패 시 즉시 이전 페이지로 돌아감
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                _pageController.jumpToPage(_currentStep);
+                              }
+                            });
+                            return;
+                          }
+                        }
+                      }
+                      
+                      setState(() {
+                        _currentStep = index;
+                      });
+                    },
+                    children: [
+                      // 카드 1: 신고 대상 및 사유
+                      ReportTargetReasonCard(
+                        key: _targetReasonCardKey,
+                        viewModel: vm,
+                        itemId: widget.itemId,
+                        itemTitle: widget.itemTitle,
+                        targetNickname: widget.targetNickname ?? '알 수 없음',
+                      ),
+                      // 카드 2: 상세 내용
+                      ReportContentCard(
+                        key: _contentCardKey,
+                        viewModel: vm,
+                      ),
+                      // 카드 3: 사진 첨부
+                      ReportImageCard(
+                        viewModel: vm,
+                        onImageSourceTap: () => _showImageSourceSheet(context, vm),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            bottomNavigationBar: SafeArea(
+              top: false,
+              child: Container(
+                height: 72,
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: shadowLow,
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: _currentStep == 0
+                    ? SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _canGoToNextStep(vm) && !vm.isLoading
+                              ? () {
+                                  if (_currentStep < 2) {
+                                    // 다음 단계로 이동
+                                    _goToStep(_currentStep + 1);
+                                  } else {
+                                    // 최종 신고
+                                    _showSubmitConfirmDialog(vm);
+                                  }
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            backgroundColor: _canGoToNextStep(vm) && !vm.isLoading
+                                ? blueColor
+                                : BorderColor,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: BorderColor,
+                            disabledForegroundColor: iconColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(defaultRadius),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            _getNextButtonText(),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // 신고 대상 정보 카드
-                          ReportTargetSection(
-                            itemId: widget.itemId,
-                            itemTitle: widget.itemTitle,
-                            targetNickname: widget.targetNickname,
+                          // 이전 버튼
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: OutlinedButton(
+                                onPressed: () => _goToStep(_currentStep - 1),
+                                style: OutlinedButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  side: BorderSide(color: blueColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(defaultRadius),
+                                  ),
+                                ),
+                                child: Text(
+                                  '이전',
+                                  style: TextStyle(
+                                    color: blueColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 16),
-
-                          // 신고 사유 선택
-                          ReportReasonSection(viewModel: vm),
-                          const SizedBox(height: 24),
-
-                          // 상세 내용 카드
-                          ContentInputSection(
-                            label: '상세 내용',
-                            controller: vm.contentController,
-                            hintText: '발생한 상황을 간단히 설명해주세요',
-                            maxLength: 500,
-                            minLength: 1,
-                            minLines: 6,
-                            maxLines: 8,
-                            successMessage: '구체적으로 작성할수록 처리 속도가 빨라집니다',
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 사진 첨부 카드
-                          ImageUploadSection(
-                            images: vm.selectedImages,
-                            maxImageCount: 5,
-                            onAddImage: () {
-                              ImageSourceBottomSheet.show(
-                                context,
-                                onGalleryTap: () => vm.pickImagesFromGallery(),
-                                onCameraTap: () => vm.pickImageFromCamera(),
-                              );
-                            },
-                            onRemoveImage: (index) => vm.removeImageAt(index),
+                          SizedBox(width: context.spacingSmall),
+                          // 다음/신고하기 버튼
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: !vm.isLoading
+                                    ? () {
+                                        // 상세 내용 카드에서 다음 버튼을 눌렀을 때 검증
+                                        if (_currentStep == 1) {
+                                          _contentCardKey.currentState?.validateFields();
+                                          // 검증 후 다시 확인
+                                          if (!_canGoToNextStep(vm)) {
+                                            return;
+                                          }
+                                        }
+                                        
+                                        if (_currentStep < 2) {
+                                          // 다음 단계로 이동
+                                          _goToStep(_currentStep + 1);
+                                        } else {
+                                          // 최종 신고
+                                          _showSubmitConfirmDialog(vm);
+                                        }
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  backgroundColor: !vm.isLoading
+                                      ? blueColor
+                                      : BorderColor,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: BorderColor,
+                                  disabledForegroundColor: iconColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(defaultRadius),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: Text(
+                                  _getNextButtonText(),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-
-                  // 하단 고정 버튼
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      context.hPadding,
-                      0,
-                      context.hPadding,
-                      context.labelBottomPadding,
-                    ),
-                    child: BottomSubmitButton(
-                      text: '신고 제출',
-                      isEnabled: vm.canSubmit,
-                      onPressed: () => _showSubmitConfirmDialog(vm),
-                    ),
-                  ),
-                ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 }
-
-
-
