@@ -84,7 +84,7 @@ class _Item extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         context.go(
           '/mypage/service_center/report_feedback/${report.id}',
@@ -92,7 +92,7 @@ class _Item extends StatelessWidget {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: Colors.white, //앱칼라가없어서그냥이렇게씀,,
           borderRadius: defaultBorder,
@@ -105,10 +105,11 @@ class _Item extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    report.reportCodeName,
-                    style: const TextStyle(fontSize: 18),
+                    (report.itemTitle ?? ''),
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ),
+
                 _ReportCode(reportCode: report.reportCode),
               ],
             ),
@@ -149,10 +150,13 @@ class _ReportCode extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: getReportCodeColor(reportCode),
+        color: getReportCodeColor(reportCode).withValues(alpha: 0.1),
         borderRadius: defaultBorder,
       ),
-      child: Text(getReportCodeName(reportCode)),
+      child: Text(
+        getReportCodeName(reportCode),
+        style: TextStyle(color: getReportCodeColor(reportCode)),
+      ),
     );
   }
 }

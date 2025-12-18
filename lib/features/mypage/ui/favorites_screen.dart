@@ -133,7 +133,6 @@ class _Item extends StatelessWidget {
           borderRadius: defaultBorder,
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
               borderRadius: defaultBorder,

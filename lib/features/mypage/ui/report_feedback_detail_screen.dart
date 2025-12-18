@@ -61,12 +61,11 @@ class _DetailBody extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('신고 사유: ${report.reportCodeName}'),
-                    const SizedBox(height: 8),
+                    // Text('신고 사유: ${report.reportCodeName}'),
+                    // const SizedBox(height: 8),
                     // Text('신고 사용자: ${report.targetUserId}'), //일단주석처리//공개user정보테이블이생기면그때nickname으로추가
                     // const SizedBox(height: 4),
-                    if ((report.itemTitle ?? '').isNotEmpty)
-                      Text('신고 상품: ${report.itemTitle}'),
+                    Text(report.itemTitle ?? ''),
                     const SizedBox(height: 8),
                     Text(_formatFullDate(report.createdAt)),
                   ],
@@ -78,7 +77,7 @@ class _DetailBody extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
-          _InfoSection(title: '신고 내용', content: report.content),
+          _InfoSection(title: '내용', content: report.content),
           const SizedBox(height: 16),
           _InfoSection(
             title: '관리자 답변',
@@ -138,10 +137,13 @@ class _ReportCode extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: getReportCodeColor(reportCode),
+        color: getReportCodeColor(reportCode).withValues(alpha: 0.1),
         borderRadius: defaultBorder,
       ),
-      child: Text(getReportCodeName(reportCode)),
+      child: Text(
+        getReportCodeName(reportCode),
+        style: TextStyle(color: getReportCodeColor(reportCode)),
+      ),
     );
   }
 }

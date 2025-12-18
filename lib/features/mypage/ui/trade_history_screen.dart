@@ -167,13 +167,12 @@ class _StatusInfo {
 }
 
 //favorites처럼이부분도repository로빼는게맞겠음
-
-//바뀐부분있어서나중에다시정리
-//auctions테이블의auction_status_code
-//auctions테이블의trade_status_code
-//내가판매자일때는//trade_status_code(500번대)가있으면500번대우선표시
-//내가구매자일때는//trade_status_code(500번대)가있고(+내가낙찰자/즉시구매자일때)500번대우선표시//내가낙찰자가아니면전부패찰표시//내가구매자일때는last_bid_user_id와300번대와일부400번대로구분해야함//즉시구매자는일단last_bid_user_id에바로기록되고즉시구매에실패하면이전의상위입찰자가last_bid_user_id가되는방식임
-//auction_status_code만있으면300번대표시//300번323번은여기선있어야함(파는사람)
+// 즉시구매자는일단last_bid_user_id에바로기록되고즉시구매에실패하면이전의상위입찰자가last_bid_user_id가되는방식임
+//판매자는 500번대>>300번대
+//auctions에서auction_status_code(300번대)trade_status_code(500번대)
+//구매자는 500번대>>400번대
+//auction_log_code(400번대)trade_status_code(500번대)
+//auctions에서auction_status_code(300번대종료코드321/322),trade_status_code,auction_end_at,last_bid_user_id로종료/낙찰여부계산//즉시구매되었는데내가낙찰자가아니면패찰433(내가만든번호)
 _StatusInfo? _statusInfoText(int code) {
   switch (code) {
     // case 300:
