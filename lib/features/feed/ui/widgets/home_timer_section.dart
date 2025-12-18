@@ -4,8 +4,6 @@ import 'package:bidbird/core/utils/item/item_time_utils.dart'
     show formatRemainingTime;
 import 'package:flutter/material.dart';
 
-import '../../../core/utils/ui_set/colors_style.dart';
-
 class HomeTimerSection extends StatefulWidget {
   const HomeTimerSection({super.key, required this.finishTime});
 
@@ -44,9 +42,9 @@ class HomeTimerSectionState extends State<HomeTimerSection> {
     final isFinished = DateTime.now().isAfter(widget.finishTime);
 
     return Container(
-      // padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: isFinished ? Colors.black : RedColor,
+        color: isFinished ? Colors.black45 : Color(0xffef6b6b),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
