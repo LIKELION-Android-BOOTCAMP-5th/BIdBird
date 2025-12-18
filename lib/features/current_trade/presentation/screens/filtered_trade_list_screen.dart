@@ -238,28 +238,16 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
       ),
       body: SafeArea(
         child: isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const SizedBox.shrink()
             : error != null
                 ? TransparentRefreshIndicator(
                     onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('오류가 발생했습니다: $error'),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => context.read<CurrentTradeViewModel>().refresh(),
-                            child: const Text('다시 시도'),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: const SizedBox.shrink(),
                   )
                 : totalItems == 0
                     ? TransparentRefreshIndicator(
                         onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-                        child: const Center(child: Text('해당 내역이 없습니다.')),
+                        child: const SizedBox.shrink(),
                   )
                 : TransparentRefreshIndicator(
                     onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),

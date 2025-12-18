@@ -36,9 +36,7 @@ class PortonePaymentScreen extends StatelessWidget {
           
           if (data.loadingUser) {
             return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
+              body: SizedBox.shrink(),
             );
           }
 
@@ -86,9 +84,7 @@ class PortonePaymentScreen extends StatelessWidget {
           return Scaffold(
             body: PortonePayment(
               data: paymentRequest,
-              initialChild: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              initialChild: const SizedBox.shrink(),
               callback: (PaymentResponse result) async {
                 final success = await viewModel.handlePaymentResult(
                   result: result.toJson(),
