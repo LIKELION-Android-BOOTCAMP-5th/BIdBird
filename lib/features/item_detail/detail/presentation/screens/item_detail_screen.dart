@@ -72,15 +72,10 @@ class _ItemDetailContentState extends State<_ItemDetailContent> {
     return Selector<ItemDetailViewModel, ({String? error, ItemDetail? itemDetail, bool isMyItem})>(
       selector: (_, vm) => (error: vm.error, itemDetail: vm.itemDetail, isMyItem: vm.isMyItem),
       builder: (context, data, _) {
-        if (data.error != null || data.itemDetail == null) {
+        if (data.itemDetail == null) {
           return const Scaffold(
             body: SafeArea(
-              child: Center(
-                child: Text(
-                  '매물 정보를 불러올 수 없습니다.',
-                  style: TextStyle(fontSize: 14),
-                ),
-              ),
+              child: SizedBox.shrink(),
             ),
           );
         }
