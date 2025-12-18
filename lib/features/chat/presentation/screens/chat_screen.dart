@@ -86,7 +86,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     if (!_isViewModelInitialized || _viewModel == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: SizedBox.shrink());
     }
 
     // ViewModel을 한 번만 생성하여 실시간 구독이 끊기지 않도록 함
@@ -136,11 +136,8 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
       bool isOpponentTopBidder,
     })> itemStatusMap,
   }) data) {
-    if (data.isLoading) {
-      return const CenteredLoadingIndicator();
-    }
     if (data.chattingRoomList.isEmpty) {
-      return const Center(child: Text('참여 중인 채팅방이 없습니다.'));
+      return const SizedBox.shrink();
     }
 
     // ViewModel 참조 (메서드 호출용)

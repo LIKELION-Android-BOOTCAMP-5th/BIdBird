@@ -110,9 +110,6 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
     return Selector<CurrentTradeViewModel, bool>(
       selector: (_, vm) => vm.isLoading,
       builder: (context, isLoading, _) {
-        if (isLoading) {
-          return const CenteredLoadingIndicator();
-        }
         return _buildErrorOrContent();
       },
     );
@@ -166,7 +163,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
         if (totalItemCount == 0) {
           return RefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-            child: const Center(child: Text('거래 내역이 없습니다.')),
+            child: const SizedBox.shrink(),
           );
         }
 

@@ -1,4 +1,3 @@
-import 'package:bidbird/core/widgets/components/loading_indicator.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
@@ -15,16 +14,6 @@ Future<void> handlePayment({
   required int amount,
   int? tradeStatusCode,
 }) async {
-  // 로딩 인디케이터 표시
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.transparent,
-    builder: (_) => Center(
-      child: LoadingIndicator(),
-    ),
-  );
-
   final authVM = context.read<AuthViewModel>();
   final String buyerTel = authVM.user?.phone_number ?? '';
   const appScheme = 'bidbird';
@@ -43,11 +32,6 @@ Future<void> handlePayment({
       builder: (_) => PortonePaymentScreen(request: request),
     ),
   );
-  
-  // 결제 화면으로 이동 후 로딩 다이얼로그 닫기
-  if (context.mounted) {
-    Navigator.of(context, rootNavigator: true).pop();
-  }
 
   if (!context.mounted) return;
 
