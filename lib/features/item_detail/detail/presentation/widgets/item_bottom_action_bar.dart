@@ -115,10 +115,14 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   void didUpdateWidget(ItemBottomActionBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // trade_status_code가 변경되면 플래그 리셋 및 상태 업데이트
+    // statusCode가 변경되면 업데이트
+    if (oldWidget.item.statusCode != widget.item.statusCode) {
+      _statusCode = widget.item.statusCode;
+    }
+    
+    // trade_status_code가 변경되면 플래그 리셋
     if (oldWidget.item.tradeStatusCode != widget.item.tradeStatusCode) {
       _hasShownPaymentCompleteScreen = false;
-      _statusCode = widget.item.statusCode;
     }
     
     // 내 매물 + 유찰(323) 상태일 때, 한 번만 재등록 팝업 노출
@@ -202,22 +206,41 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   @override
   Widget build(BuildContext context) {
-    // isTopBidder만 Selector로 watch하여 불필요한 리빌드 방지
-    return Selector<ItemDetailViewModel?, bool>(
-      selector: (_, vm) => vm?.isTopBidder ?? false,
-      builder: (context, isTopBidder, _) {
-        return _buildContent(context, isTopBidder);
+    // isTopBidder와 itemDetail.statusCode를 함께 watch하여 실시간 업데이트 반영
+    return Selector<ItemDetailViewModel?, ({bool isTopBidder, int? statusCode})>(
+      selector: (_, vm) => (
+        isTopBidder: vm?.isTopBidder ?? false,
+        statusCode: vm?.itemDetail?.statusCode,
+      ),
+      builder: (context, data, _) {
+        // statusCode가 변경되면 _statusCode 업데이트
+        if (data.statusCode != null && _statusCode != data.statusCode) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _statusCode = data.statusCode;
+              });
+            }
+          });
+        }
+        return _buildContent(context, data.isTopBidder, data.statusCode);
       },
     );
   }
 
-  Widget _buildContent(BuildContext context, bool isTopBidder) {
+  Widget _buildContent(BuildContext context, bool isTopBidder, int? currentStatusCode) {
     final itemDetailViewModel = context.read<ItemDetailViewModel?>();
     final isMyItem = widget.isMyItem;
     final bool isBidRestricted = _isBidRestricted;
-    final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
-    final int? tradeStatusCode = widget.item.tradeStatusCode;
+    
+    // ViewModel의 최신 itemDetail에서 상태 정보 가져오기 (실시간 업데이트 반영)
+    final currentItem = itemDetailViewModel?.itemDetail ?? widget.item;
+    final bool isTimeOver = DateTime.now().isAfter(currentItem.finishTime);
+    final int? tradeStatusCode = currentItem.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
+    
+    // statusCode는 Selector에서 받은 값 또는 현재 값 사용
+    final int statusCode = _statusCode ?? currentStatusCode ?? currentItem.statusCode ?? 0;
 
     const disabledStatusesForBuyNow = {
       AuctionStatusCode.ready,
@@ -227,8 +250,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       AuctionStatusCode.failed,
     };
     final bool showBuyNow =
-        widget.item.buyNowPrice > 0 &&
-        !disabledStatusesForBuyNow.contains(_statusCode) &&
+        currentItem.buyNowPrice > 0 &&
+        !disabledStatusesForBuyNow.contains(statusCode) &&
         !isTimeOver &&
         !isTradePaid;
 
@@ -485,11 +508,15 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   }
 
   Widget _buildBidButton(bool isTopBidder) {
-    final int statusCode = _statusCode ?? 0;
-    final int? tradeStatusCode = widget.item.tradeStatusCode;
+    // ViewModel의 최신 itemDetail에서 상태 정보 가져오기 (실시간 업데이트 반영)
+    final itemDetailViewModel = context.read<ItemDetailViewModel?>();
+    final currentItem = itemDetailViewModel?.itemDetail ?? widget.item;
+    
+    final int statusCode = _statusCode ?? currentItem.statusCode ?? 0;
+    final int? tradeStatusCode = currentItem.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
 
-    final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
+    final bool isTimeOver = DateTime.now().isAfter(currentItem.finishTime);
 
     final bool isAuctionEnded = isTimeOver ||
         statusCode == 321 ||
@@ -505,6 +532,29 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
         isAuctionActive &&
         !isTopBidder &&
         !isBuyNowInProgress;
+
+    // 경매가 활성 상태이고 최고 입찰자인 경우: "최고 입찰자입니다" 표시
+    if (isAuctionActive && isTopBidder && !isBuyNowInProgress) {
+      return Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: BackgroundColor,
+          borderRadius: BorderRadius.circular(8.7),
+          border: Border.all(color: BorderColor),
+        ),
+        child: const Center(
+          child: Text(
+            '최고 입찰자입니다',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: TopBidderTextColor,
+            ),
+          ),
+        ),
+      );
+    }
 
     // 경매가 완전히 끝난 상태(유찰/즉시구매 완료 등)
     if (isAuctionEnded && statusCode != 321) {

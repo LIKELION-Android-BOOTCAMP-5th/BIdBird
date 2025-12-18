@@ -87,6 +87,16 @@ class ItemDetailRealtimeManager {
     final newRecord = payload.newRecord;
     if (newRecord.isEmpty) return;
 
+    // 최고 입찰자 변경 시 isTopBidder 업데이트 (먼저 처리하여 타이밍 이슈 방지)
+    if (newRecord.containsKey('last_bid_user_id') && onTopBidderUpdate != null) {
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (currentUserId != null) {
+        final lastBidUserId = newRecord['last_bid_user_id'] as String?;
+        final isTopBidder = lastBidUserId != null && lastBidUserId == currentUserId;
+        onTopBidderUpdate(isTopBidder);
+      }
+    }
+
     // 현재가 변경 시 부분 업데이트
     if (newRecord.containsKey('current_price') && onPriceUpdate != null) {
       final newPrice = newRecord['current_price'] as int?;
@@ -101,16 +111,6 @@ class ItemDetailRealtimeManager {
       final newCount = newRecord['bid_count'] as int?;
       if (newCount != null) {
         onBidCountUpdate(newCount);
-      }
-    }
-
-    // 최고 입찰자 변경 시 isTopBidder 업데이트
-    if (newRecord.containsKey('last_bid_user_id') && onTopBidderUpdate != null) {
-      final currentUserId = _supabase.auth.currentUser?.id;
-      if (currentUserId != null) {
-        final lastBidUserId = newRecord['last_bid_user_id'] as String?;
-        final isTopBidder = lastBidUserId != null && lastBidUserId == currentUserId;
-        onTopBidderUpdate(isTopBidder);
       }
     }
 

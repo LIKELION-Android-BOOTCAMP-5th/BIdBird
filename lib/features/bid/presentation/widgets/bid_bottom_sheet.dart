@@ -379,11 +379,13 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             Navigator.pop(dialogContext);
             if (!parentContext.mounted) return;
 
-            // 상세 화면 강제 새로고침
+            // 상세 화면 강제 새로고침 (캐시 무시)
             final detailViewModel =
                 parentContext.read<ItemDetailViewModel?>();
             if (detailViewModel != null) {
-              await detailViewModel.loadItemDetail();
+              // 입찰 성공 후 즉시 isTopBidder를 true로 설정 (실시간 업데이트로 최종 확인)
+              // 이렇게 하면 UI가 즉시 업데이트되고, 실시간 업데이트로 정확한 값이 반영됨
+              await detailViewModel.loadItemDetail(forceRefresh: true);
             }
 
             if (parentContext.mounted) {

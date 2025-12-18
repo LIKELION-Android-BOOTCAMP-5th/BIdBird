@@ -35,7 +35,14 @@ class ItemDetailDatasource {
           : DateTime.now();
 
       // 엣지 펑션에서 반환한 isTopBidder 저장
-      _lastIsTopBidder = itemData['isTopBidder'] as bool? ?? false;
+      // null인 경우와 false인 경우를 구분하기 위해 명시적으로 처리
+      final isTopBidderValue = itemData['isTopBidder'];
+      if (isTopBidderValue != null) {
+        _lastIsTopBidder = isTopBidderValue as bool?;
+      } else {
+        // 엣지 펑션에서 isTopBidder를 반환하지 않은 경우 null로 설정
+        _lastIsTopBidder = null;
+      }
 
       return ItemDetail(
         itemId: getStringFromRow(itemData, 'itemId', itemId),

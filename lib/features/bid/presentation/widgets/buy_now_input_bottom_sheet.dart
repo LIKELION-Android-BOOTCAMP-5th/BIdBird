@@ -160,11 +160,11 @@ class BuyNowInputBottomSheet extends StatelessWidget {
             Navigator.pop(dialogContext);
             if (!parentContext.mounted) return;
 
-            // 상세 화면 강제 새로고침
+            // 상세 화면 강제 새로고침 (캐시 무시)
             final detailViewModel =
                 parentContext.read<ItemDetailViewModel?>();
             if (detailViewModel != null) {
-              await detailViewModel.loadItemDetail();
+              await detailViewModel.loadItemDetail(forceRefresh: true);
             }
 
             if (parentContext.mounted) {
