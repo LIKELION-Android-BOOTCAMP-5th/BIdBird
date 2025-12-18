@@ -184,8 +184,16 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     }
   }
 
+  bool _isLoadingBidHistory = false;
+  
   /// 입찰 내역을 로드합니다. 바텀 시트가 열릴 때 호출됩니다.
   Future<void> loadBidHistory() async {
+    // 중복 호출 방지
+    if (_isLoadingBidHistory) return;
+    // 이미 로드된 데이터가 있으면 재로드하지 않음
+    if (_bidHistory.isNotEmpty) return;
+    
+    _isLoadingBidHistory = true;
     try {
       _bidHistory = await _repository.fetchBidHistory(itemId);
       notifyListeners();
@@ -193,6 +201,8 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       // 입찰 내역 로드 실패 시 빈 리스트 유지
       _bidHistory = [];
       notifyListeners();
+    } finally {
+      _isLoadingBidHistory = false;
     }
   }
 
