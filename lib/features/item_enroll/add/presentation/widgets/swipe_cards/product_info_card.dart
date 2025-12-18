@@ -28,6 +28,9 @@ class ProductInfoCard extends StatefulWidget {
 }
 
 class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMixin {
+  static const String _imageLimitText = 
+      '최소 ${ItemImageLimits.minImageCount}장 최대 ${ItemImageLimits.maxImageCount}장';
+  
   String? _imageError;
   String? _titleError;
   bool _shouldShowErrors = false;
@@ -57,13 +60,23 @@ class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMix
   }
 
   @override
+  void didUpdateWidget(ProductInfoCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 이미지가 추가되었을 때만 체크하여 에러 제거
+    if (widget.viewModel.selectedImages.length > oldWidget.viewModel.selectedImages.length) {
+      if (shouldShowErrors && _imageError != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            clearError(() => _imageError = null);
+          }
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final spacing = context.spacingMedium;
-
-    // 이미지가 업로드되면 에러 제거
-    if (shouldShowErrors && _imageError != null && widget.viewModel.selectedImages.isNotEmpty) {
-      clearError(() => _imageError = null);
-    }
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
@@ -93,7 +106,7 @@ class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMix
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                '최소 ${ItemImageLimits.minImageCount}장 최대 ${ItemImageLimits.maxImageCount}장',
+                _imageLimitText,
                 style: TextStyle(
                   fontSize: context.fontSizeSmall,
                   color: TextSecondary,
@@ -109,15 +122,33 @@ class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMix
               FormLabel(text: '제목'),
               TextField(
                 controller: widget.viewModel.titleController,
+                maxLength: ItemTextLimits.maxTitleLength,
                 decoration: widget.inputDecoration('상품 제목을 입력하세요').copyWith(
                   errorText: shouldShowErrors ? _titleError : null,
+                  counterText: '', // 기본 카운터 숨기기
                 ),
                 onChanged: (value) {
                   // 입력 시 에러가 있으면 제거
                   if (shouldShowErrors && _titleError != null && value.trim().isNotEmpty) {
                     clearError(() => _titleError = null);
                   }
+                  // 글자수 표시를 위해 상태 업데이트
+                  setState(() {});
                 },
+              ),
+              // 글자수 표시
+              Padding(
+                padding: EdgeInsets.only(top: context.spacingSmall),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${widget.viewModel.titleController.text.length}/${ItemTextLimits.maxTitleLength}',
+                    style: TextStyle(
+                      fontSize: context.fontSizeSmall,
+                      color: TextSecondary,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

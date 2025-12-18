@@ -1,7 +1,6 @@
 import 'package:bidbird/core/mixins/form_validation_mixin.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/widgets/item/components/fields/category_selector_field.dart';
@@ -102,14 +101,13 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
         ),
       );
     }
-    // 부모 위젯이 리빌드되어 physics가 업데이트되도록 함
-    widget.viewModel.notifyListeners();
     
     // 검증 콜백이 있으면 실행
     if (onValidated != null) {
       final price = parseFormattedPrice(formatted);
       onValidated(price);
     }
+    // notifyListeners 제거: item_add_screen에서 직접 체크하므로 불필요
   }
 
   @override

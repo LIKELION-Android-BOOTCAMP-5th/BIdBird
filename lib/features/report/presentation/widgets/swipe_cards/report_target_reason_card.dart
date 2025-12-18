@@ -61,16 +61,32 @@ class ReportTargetReasonCardState extends State<ReportTargetReasonCard>
   }
 
   @override
+  void didUpdateWidget(ReportTargetReasonCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 카테고리나 사유가 선택되었을 때만 체크하여 에러 제거
+    if (widget.viewModel.selectedCategory != null && 
+        oldWidget.viewModel.selectedCategory == null && 
+        _categoryError != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          clearError(() => _categoryError = null);
+        }
+      });
+    }
+    if (widget.viewModel.selectedReportCode != null && 
+        oldWidget.viewModel.selectedReportCode == null && 
+        _reasonError != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          clearError(() => _reasonError = null);
+        }
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final spacing = context.spacingMedium;
-
-    // 카테고리나 사유가 선택되면 에러 제거
-    if (widget.viewModel.selectedCategory != null && _categoryError != null) {
-      clearError(() => _categoryError = null);
-    }
-    if (widget.viewModel.selectedReportCode != null && _reasonError != null) {
-      clearError(() => _reasonError = null);
-    }
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(

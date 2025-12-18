@@ -23,6 +23,8 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
   List<SaleHistoryItem>? _cachedTodoSaleItems;
   List<SaleHistoryItem>? _cachedInProgressSaleItems;
   List<SaleHistoryItem>? _cachedCompletedSaleItems;
+  List<BidHistoryItem>? _cachedFilteredBidItems;
+  List<SaleHistoryItem>? _cachedFilteredSaleItems;
   List<ActionHubItem>? _cachedBidActionHubItems;
   List<ActionHubItem>? _cachedSaleActionHubItems;
 
@@ -72,6 +74,26 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     _cachedCompletedSaleItems ??= 
         _filterByStatus(_saleHistory, TradeItemStatus.completed);
     return _cachedCompletedSaleItems!;
+  }
+
+  /// 유찰 제외 필터링된 판매 내역 (캐싱 적용)
+  List<SaleHistoryItem> get filteredSaleItems {
+    _cachedFilteredSaleItems ??= [
+      ...todoSaleItems,
+      ...inProgressSaleItems,
+      ...completedSaleItems,
+    ].where((item) => !item.status.contains('유찰')).toList();
+    return _cachedFilteredSaleItems!;
+  }
+
+  /// 유찰 제외 필터링된 입찰 내역 (캐싱 적용)
+  List<BidHistoryItem> get filteredBidItems {
+    _cachedFilteredBidItems ??= [
+      ...todoBidItems,
+      ...inProgressBidItems,
+      ...completedBidItems,
+    ].where((item) => !item.status.contains('유찰')).toList();
+    return _cachedFilteredBidItems!;
   }
 
   /// 상태별로 아이템 필터링하는 제네릭 헬퍼 메서드
@@ -172,6 +194,8 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     _cachedTodoSaleItems = null;
     _cachedInProgressSaleItems = null;
     _cachedCompletedSaleItems = null;
+    _cachedFilteredBidItems = null;
+    _cachedFilteredSaleItems = null;
     _cachedBidActionHubItems = null;
     _cachedSaleActionHubItems = null;
   }

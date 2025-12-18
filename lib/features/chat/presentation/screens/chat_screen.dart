@@ -97,7 +97,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
             appBar: AppBar(
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [Text('채팅'), NotificationButton()],
+                children: [const Text('채팅'), NotificationButton()],
               ),
             ),
             backgroundColor: BackgroundColor,

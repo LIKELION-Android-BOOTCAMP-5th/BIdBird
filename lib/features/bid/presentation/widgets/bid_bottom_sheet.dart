@@ -31,6 +31,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   late int _bidAmount;
   late int _currentPrice;
   late int _bidUnit;
+  ItemDetailViewModel? _itemDetailViewModel;
 
   @override
   void initState() {
@@ -38,6 +39,61 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     _currentPrice = widget.currentPrice;
     _bidUnit = widget.bidUnit;
     _bidAmount = _currentPrice + _bidUnit;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ItemDetailViewModel 변경 감지를 위한 리스너 등록
+    ItemDetailViewModel? newViewModel;
+    try {
+      newViewModel = Provider.of<ItemDetailViewModel>(context, listen: false);
+    } catch (e) {
+      // Provider가 없으면 무시
+    }
+    
+    // ViewModel이 변경되었을 때만 리스너 재등록
+    if (newViewModel != _itemDetailViewModel) {
+      _itemDetailViewModel?.removeListener(_handlePriceUpdate);
+      _itemDetailViewModel = newViewModel;
+      _itemDetailViewModel?.addListener(_handlePriceUpdate);
+    }
+  }
+
+  @override
+  void dispose() {
+    _itemDetailViewModel?.removeListener(_handlePriceUpdate);
+    super.dispose();
+  }
+
+  void _handlePriceUpdate() {
+    if (!mounted || _itemDetailViewModel?.itemDetail == null) return;
+    
+    final newCurrentPrice = _itemDetailViewModel!.itemDetail!.currentPrice;
+    final newBidPrice = _itemDetailViewModel!.itemDetail!.bidPrice;
+    
+    // 현재 가격이 변경되었을 때만 업데이트
+    if (newCurrentPrice != _currentPrice || newBidPrice != _bidUnit) {
+      setState(() {
+        final oldCurrentPrice = _currentPrice;
+        _currentPrice = newCurrentPrice;
+        _bidUnit = newBidPrice;
+        
+        // 현재 가격이 올라갔을 때, 입찰 금액이 최소 입찰가보다 낮으면 조정
+        final minBid = _currentPrice + _bidUnit;
+        if (_bidAmount < minBid) {
+          _bidAmount = minBid;
+        }
+        // 현재 가격이 올라갔을 때, 기존 입찰 금액과의 차이를 유지하려면
+        // (기존 입찰 금액 - 기존 현재 가격)을 유지
+        else if (newCurrentPrice > oldCurrentPrice) {
+          final priceDiff = _bidAmount - oldCurrentPrice;
+          final newBidAmount = _currentPrice + priceDiff;
+          // 최소 입찰가보다는 높아야 함
+          _bidAmount = newBidAmount >= minBid ? newBidAmount : minBid;
+        }
+      });
+    }
   }
 
   void _increaseBid() {
@@ -76,47 +132,6 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<PriceInputViewModel>();
-    
-    // ItemDetailViewModel에서 실시간 가격 업데이트 구독
-    // Provider가 없을 수 있으므로 try-catch로 처리
-    ItemDetailViewModel? itemDetailViewModel;
-    try {
-      itemDetailViewModel = context.watch<ItemDetailViewModel>();
-    } catch (e) {
-      // Provider가 없으면 무시
-    }
-    
-    if (itemDetailViewModel?.itemDetail != null) {
-      final newCurrentPrice = itemDetailViewModel!.itemDetail!.currentPrice;
-      final newBidPrice = itemDetailViewModel.itemDetail!.bidPrice;
-      
-      // 현재 가격이 변경되었을 때만 업데이트
-      if (newCurrentPrice != _currentPrice || newBidPrice != _bidUnit) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              final oldCurrentPrice = _currentPrice;
-              _currentPrice = newCurrentPrice;
-              _bidUnit = newBidPrice;
-              
-              // 현재 가격이 올라갔을 때, 입찰 금액이 최소 입찰가보다 낮으면 조정
-              final minBid = _currentPrice + _bidUnit;
-              if (_bidAmount < minBid) {
-                _bidAmount = minBid;
-              }
-              // 현재 가격이 올라갔을 때, 기존 입찰 금액과의 차이를 유지하려면
-              // (기존 입찰 금액 - 기존 현재 가격)을 유지
-              else if (newCurrentPrice > oldCurrentPrice) {
-                final priceDiff = _bidAmount - oldCurrentPrice;
-                final newBidAmount = _currentPrice + priceDiff;
-                // 최소 입찰가보다는 높아야 함
-                _bidAmount = newBidAmount >= minBid ? newBidAmount : minBid;
-              }
-            });
-          }
-        });
-      }
-    }
 
     return SafeArea(
       child: Padding(

@@ -5,7 +5,6 @@ import '../../data/repositories/item_registration_detail_repository.dart';
 import '../../domain/usecases/fetch_terms_text_usecase.dart';
 import '../../domain/usecases/confirm_registration_usecase.dart';
 import '../../domain/usecases/delete_item_usecase.dart';
-import '../../domain/usecases/fetch_first_image_url_usecase.dart';
 import '../../domain/usecases/fetch_all_image_urls_usecase.dart';
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +16,6 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     FetchTermsTextUseCase? fetchTermsTextUseCase,
     ConfirmRegistrationUseCase? confirmRegistrationUseCase,
     DeleteItemUseCase? deleteItemUseCase,
-    FetchFirstImageUrlUseCase? fetchFirstImageUrlUseCase,
     FetchAllImageUrlsUseCase? fetchAllImageUrlsUseCase,
   })  : _item = item,
         _fetchTermsTextUseCase =
@@ -26,15 +24,12 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
             ConfirmRegistrationUseCase(ItemRegistrationDetailRepositoryImpl()),
         _deleteItemUseCase =
             deleteItemUseCase ?? DeleteItemUseCase(ItemRegistrationDetailRepositoryImpl()),
-        _fetchFirstImageUrlUseCase = fetchFirstImageUrlUseCase ??
-            FetchFirstImageUrlUseCase(ItemRegistrationDetailRepositoryImpl()),
         _fetchAllImageUrlsUseCase = fetchAllImageUrlsUseCase ??
             FetchAllImageUrlsUseCase(ItemRegistrationDetailRepositoryImpl());
 
   final FetchTermsTextUseCase _fetchTermsTextUseCase;
   final ConfirmRegistrationUseCase _confirmRegistrationUseCase;
   final DeleteItemUseCase _deleteItemUseCase;
-  final FetchFirstImageUrlUseCase _fetchFirstImageUrlUseCase;
   final FetchAllImageUrlsUseCase _fetchAllImageUrlsUseCase;
 
   final ItemRegistrationData _item;

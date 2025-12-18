@@ -114,9 +114,75 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   @override
   void didUpdateWidget(ItemBottomActionBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // trade_status_code가 변경되면 플래그 리셋
+    
+    // trade_status_code가 변경되면 플래그 리셋 및 상태 업데이트
     if (oldWidget.item.tradeStatusCode != widget.item.tradeStatusCode) {
       _hasShownPaymentCompleteScreen = false;
+      _statusCode = widget.item.statusCode;
+    }
+    
+    // 내 매물 + 유찰(323) 상태일 때, 한 번만 재등록 팝업 노출
+    if (widget.isMyItem && (_statusCode == 323) && !_hasShownRelistPopup) {
+      _hasShownRelistPopup = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog<void>(
+          context: context,
+          barrierDismissible: true,
+          builder: (dialogContext) {
+            return AskPopup(
+              content: '해당 매물이 유찰되었습니다.\n재등록 하시겠습니까?',
+              noText: '취소',
+              yesText: '재등록',
+              yesLogic: () async {
+                Navigator.of(dialogContext).pop();
+                if (!context.mounted) return;
+                context.push(
+                  '/add_item',
+                  extra: widget.item.itemId,
+                );
+              },
+            );
+          },
+        );
+      });
+    }
+    
+    // 판매자 입장: trade_status_code가 520이면 자동으로 결제 완료 화면 표시
+    final bool isTradePaid = widget.item.tradeStatusCode == 520;
+    if (widget.isMyItem && isTradePaid && !_hasShownPaymentCompleteScreen) {
+      if (_hasShippingInfo != null && !_hasShippingInfo!) {
+        _hasShownPaymentCompleteScreen = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SellerPaymentCompleteScreen(item: bidWinEntity),
+            ),
+          );
+        });
+      }
+    }
+    
+    // 구매자 입장: 낙찰(321) 상태이고 아직 결제하지 않은 경우 자동으로 낙찰 성공 화면 표시
+    final itemDetailViewModel = context.read<ItemDetailViewModel?>();
+    final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
+    final int statusCode = _statusCode ?? 0;
+    final bool hasShownBidWinScreen = itemDetailViewModel?.hasShownBidWinScreen ?? false;
+    if (!widget.isMyItem && statusCode == 321 && isTopBidder && !isTradePaid && !hasShownBidWinScreen) {
+      itemDetailViewModel?.markBidWinScreenAsShown();
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ItemBidWinScreen(item: bidWinEntity),
+          ),
+        );
+      });
     }
   }
 
@@ -136,82 +202,22 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   @override
   Widget build(BuildContext context) {
-    // 즐겨찾기 상태만 Selector로 분리하여 불필요한 리빌드 방지
-    final itemDetailViewModel = context.watch<ItemDetailViewModel?>();
-    final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
+    // isTopBidder만 Selector로 watch하여 불필요한 리빌드 방지
+    return Selector<ItemDetailViewModel?, bool>(
+      selector: (_, vm) => vm?.isTopBidder ?? false,
+      builder: (context, isTopBidder, _) {
+        return _buildContent(context, isTopBidder);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, bool isTopBidder) {
+    final itemDetailViewModel = context.read<ItemDetailViewModel?>();
     final isMyItem = widget.isMyItem;
     final bool isBidRestricted = _isBidRestricted;
     final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
     final int? tradeStatusCode = widget.item.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
-
-    // 내 매물 + 유찰(323) 상태일 때, 한 번만 재등록 팝업 노출
-    if (widget.isMyItem && (_statusCode == 323) && !_hasShownRelistPopup) {
-      _hasShownRelistPopup = true;
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        showDialog<void>(
-          context: context,
-          barrierDismissible: true,
-          builder: (dialogContext) {
-            return AskPopup(
-              content: '해당 매물이 유찰되었습니다.\n재등록 하시겠습니까?',
-              noText: '취소',
-              yesText: '재등록',
-              yesLogic: () async {
-                Navigator.of(dialogContext).pop();
-                if (!context.mounted) return;
-                // 기존 매물 등록 화면을 "수정 모드"로 열어서
-                // 현재 매물 정보를 그대로 가져와 재등록할 수 있게 함
-                context.push(
-                  '/add_item',
-                  extra: widget.item.itemId,
-                );
-              },
-            );
-          },
-        );
-      });
-    }
-
-    // 판매자 입장: trade_status_code가 520이면 자동으로 결제 완료 화면 표시
-    // 단, 송장 정보가 이미 입력되어 있으면 표시하지 않음
-    if (isMyItem && isTradePaid && !_hasShownPaymentCompleteScreen) {
-      // 송장 정보 확인이 완료되고, 송장 정보가 없을 때만 화면 표시
-      if (_hasShippingInfo != null && !_hasShippingInfo!) {
-        _hasShownPaymentCompleteScreen = true;
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SellerPaymentCompleteScreen(item: bidWinEntity),
-            ),
-          );
-        });
-      }
-    }
-
-    // 구매자 입장: 낙찰(321) 상태이고 아직 결제하지 않은 경우 자동으로 낙찰 성공 화면 표시
-    final int statusCode = _statusCode ?? 0;
-    final bool hasShownBidWinScreen = itemDetailViewModel?.hasShownBidWinScreen ?? false;
-    if (!isMyItem && statusCode == 321 && isTopBidder && !isTradePaid && !hasShownBidWinScreen) {
-      itemDetailViewModel?.markBidWinScreenAsShown();
-
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
-        final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ItemBidWinScreen(item: bidWinEntity),
-          ),
-        );
-      });
-    }
 
     const disabledStatusesForBuyNow = {
       AuctionStatusCode.ready,

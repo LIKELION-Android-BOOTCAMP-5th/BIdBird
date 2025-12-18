@@ -8,15 +8,12 @@ import 'package:bidbird/features/item_enroll/add/domain/entities/item_registrati
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_validator.dart';
 import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/core/utils/item/media_resizer.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
-import 'package:bidbird/core/upload/usecases/upload_images_usecase.dart';
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/item_add_repository.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/keyword_repository.dart';
@@ -29,6 +26,7 @@ import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/core/upload/gateways/image_upload_gateway.dart';
+import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 
 class ItemAddViewModel extends ItemBaseViewModel {
   ItemAddViewModel()
@@ -36,15 +34,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
       _getKeywordTypesUseCase =
           GetKeywordTypesUseCase(KeywordRepositoryImpl()),
       _getEditItemUseCase = GetEditItemUseCase(EditItemRepositoryImpl()),
-      _uploadImagesUseCase =
-          UploadImagesUseCase(ImageUploadGatewayImpl()),
       _uploadItemImagesWithThumbnailUseCase =
           UploadItemImagesWithThumbnailUseCase(ImageUploadGatewayImpl());
 
   final AddItemUseCase _addItemUseCase;
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
-  final UploadImagesUseCase _uploadImagesUseCase;
   final UploadItemImagesWithThumbnailUseCase _uploadItemImagesWithThumbnailUseCase;
 
   final TextEditingController titleController = TextEditingController();
