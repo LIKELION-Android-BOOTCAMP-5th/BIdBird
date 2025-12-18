@@ -135,9 +135,13 @@ class FilteredTradeListScreen extends StatelessWidget {
                     onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
                     child: Builder(
                       builder: (context) {
-                        final screenPadding = ResponsiveConstants.screenPadding(context);
+                        final horizontalPadding = context.hPadding;
+                        final verticalPadding = context.vPadding;
                         return ListView(
-                          padding: EdgeInsets.all(screenPadding),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
+                            vertical: verticalPadding,
+                          ),
                           children: [
                             // 액션 타입별로 섹션 생성
                             ...targetActionTypes.where((actionType) {
