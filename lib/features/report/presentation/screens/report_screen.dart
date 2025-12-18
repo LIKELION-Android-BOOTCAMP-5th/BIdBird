@@ -36,7 +36,6 @@ class _ReportScreenState extends State<ReportScreen> {
   final GlobalKey<ReportTargetReasonCardState> _targetReasonCardKey = GlobalKey<ReportTargetReasonCardState>();
   final GlobalKey<ReportContentCardState> _contentCardKey = GlobalKey<ReportContentCardState>();
   int _currentStep = 0;
-  bool _isKeyboardVisible = false;
 
   static const List<String> _stepLabels = [
     '신고 사유',
@@ -283,20 +282,8 @@ class _ReportScreenState extends State<ReportScreen> {
 
           final horizontalPadding = context.hPadding;
           
-          // 키보드 감지
-          final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-          final isKeyboardVisible = keyboardHeight > 0;
-          
-          // 키보드 상태가 변경되면 업데이트
-          if (_isKeyboardVisible != isKeyboardVisible) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                setState(() {
-                  _isKeyboardVisible = isKeyboardVisible;
-                });
-              }
-            });
-          }
+          // 키보드 감지 - MediaQuery를 직접 사용하여 setState 없이 처리
+          final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
           return Scaffold(
             backgroundColor: BackgroundColor,
@@ -317,7 +304,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: PageView(
                     controller: _pageController,
-                    physics: _isKeyboardVisible || !_canGoToNextStep(vm)
+                    physics: isKeyboardVisible || !_canGoToNextStep(vm)
                         ? const NeverScrollableScrollPhysics()
                         : const PageScrollPhysics(),
                     onPageChanged: (index) {

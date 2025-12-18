@@ -49,12 +49,32 @@ class ReportContentCardState extends State<ReportContentCard>
   }
 
   @override
-  Widget build(BuildContext context) {
-    // 내용이 입력되면 에러 제거
+  void initState() {
+    super.initState();
+    // 컨트롤러 변경 감지를 위한 리스너 추가
+    widget.viewModel.contentController.addListener(_handleContentChange);
+  }
+
+  @override
+  void dispose() {
+    widget.viewModel.contentController.removeListener(_handleContentChange);
+    super.dispose();
+  }
+
+  void _handleContentChange() {
     final content = widget.viewModel.contentController.text.trim();
+    // 내용이 입력되어 에러가 있으면 제거
     if (content.isNotEmpty && content.length >= 1 && _contentError != null) {
-      clearError(() => _contentError = null);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          clearError(() => _contentError = null);
+        }
+      });
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(

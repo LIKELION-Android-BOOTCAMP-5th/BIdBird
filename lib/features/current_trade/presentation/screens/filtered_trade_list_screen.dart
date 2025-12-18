@@ -38,12 +38,41 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
   final ScrollController _scrollController = ScrollController();
   int _displayedItemCount = 0;
   bool _isLoadingMore = false;
-  VoidCallback? _scrollListener;
+  int _totalSectionsCount = 0;
+  int _initialVisibleCount = 0;
+  bool _isScrollListenerAttached = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 스크롤 리스너를 한 번만 등록
+    _scrollController.addListener(_handleScroll);
+    _isScrollListenerAttached = true;
+  }
 
   @override
   void dispose() {
+    if (_isScrollListenerAttached) {
+      _scrollController.removeListener(_handleScroll);
+    }
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!mounted) return;
+    
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore && _displayedItemCount < _totalSectionsCount) {
+        setState(() {
+          _isLoadingMore = true;
+          _displayedItemCount = (_displayedItemCount + _initialVisibleCount)
+              .clamp(0, _totalSectionsCount);
+          _isLoadingMore = false;
+        });
+      }
+    }
   }
 
   @override
@@ -70,9 +99,26 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
         existingViewModel.loadData();
       }
       
-      return Consumer<CurrentTradeViewModel>(
-        builder: (context, viewModel, _) {
-          return _buildContent(context, viewModel);
+      return Selector<CurrentTradeViewModel, ({
+        List<SaleHistoryItem> saleHistory,
+        List<BidHistoryItem> bidHistory,
+        bool isLoading,
+        String? error,
+      })>(
+        selector: (_, vm) => (
+          saleHistory: vm.saleHistory,
+          bidHistory: vm.bidHistory,
+          isLoading: vm.isLoading,
+          error: vm.error,
+        ),
+        builder: (context, data, _) {
+          return _buildContent(
+            context,
+            data.saleHistory,
+            data.bidHistory,
+            data.isLoading,
+            data.error,
+          );
         },
       );
     }
@@ -83,28 +129,51 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
         fetchMyBidHistoryUseCase: FetchMyBidHistoryUseCase(CurrentTradeRepositoryImpl()),
         fetchMySaleHistoryUseCase: FetchMySaleHistoryUseCase(CurrentTradeRepositoryImpl()),
       )..loadData(),
-      child: Consumer<CurrentTradeViewModel>(
-        builder: (context, viewModel, _) {
-          return _buildContent(context, viewModel);
+      child: Selector<CurrentTradeViewModel, ({
+        List<SaleHistoryItem> saleHistory,
+        List<BidHistoryItem> bidHistory,
+        bool isLoading,
+        String? error,
+      })>(
+        selector: (_, vm) => (
+          saleHistory: vm.saleHistory,
+          bidHistory: vm.bidHistory,
+          isLoading: vm.isLoading,
+          error: vm.error,
+        ),
+        builder: (context, data, _) {
+          return _buildContent(
+            context,
+            data.saleHistory,
+            data.bidHistory,
+            data.isLoading,
+            data.error,
+          );
         },
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, CurrentTradeViewModel viewModel) {
+  Widget _buildContent(
+    BuildContext context,
+    List<SaleHistoryItem> saleHistory,
+    List<BidHistoryItem> bidHistory,
+    bool isLoading,
+    String? error,
+  ) {
     // 여러 액션 타입이 제공되면 그것을 사용, 아니면 단일 actionType 사용
     final targetActionTypes = widget.actionTypes ?? [widget.actionType];
     
     // 판매 아이템 필터링
     final saleItems = widget.isSeller == null || widget.isSeller == true
-        ? viewModel.saleHistory
+        ? saleHistory
             .where((item) => TradeItemFilter.shouldIncludeSaleItem(item, targetActionTypes))
             .toList()
         : <SaleHistoryItem>[];
     
     // 입찰 아이템 필터링
     final bidItems = widget.isSeller == null || widget.isSeller == false
-        ? viewModel.bidHistory
+        ? bidHistory
             .where((item) => TradeItemFilter.shouldIncludeBidItem(item, targetActionTypes))
             .toList()
         : <BidHistoryItem>[];
@@ -126,16 +195,16 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
         title: Text(title),
       ),
       body: SafeArea(
-        child: viewModel.isLoading
+        child: isLoading
             ? const Center(child: CircularProgressIndicator())
-            : viewModel.error != null
+            : error != null
                 ? TransparentRefreshIndicator(
                     onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('오류가 발생했습니다: ${viewModel.error}'),
+                          Text('오류가 발생했습니다: $error'),
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: () => context.read<CurrentTradeViewModel>().refresh(),
@@ -244,33 +313,16 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
                         }
                         
                         // 화면에 보이는 개수만큼만 표시 (코어 유틸리티 사용)
-                        final initialVisibleCount = VisibleItemCalculator.calculateTradeHistoryVisibleCount(context);
+                        _initialVisibleCount = VisibleItemCalculator.calculateTradeHistoryVisibleCount(context);
+                        _totalSectionsCount = allSections.length;
                         
                         // 초기 로드 시 또는 아이템이 변경되었을 때 displayedItemCount 초기화
                         if (_displayedItemCount == 0 || _displayedItemCount > allSections.length) {
-                          _displayedItemCount = initialVisibleCount.clamp(0, allSections.length);
+                          _displayedItemCount = _initialVisibleCount.clamp(0, allSections.length);
                         }
                         
                         // displayedItemCount가 allSections.length를 초과하지 않도록 제한
                         _displayedItemCount = _displayedItemCount.clamp(0, allSections.length);
-                        
-                        // 스크롤 감지: 끝에서 200px 전에 도달하면 더 많은 아이템 표시
-                        if (_scrollListener != null) {
-                          _scrollController.removeListener(_scrollListener!);
-                        }
-                        _scrollListener = () {
-                          if (_scrollController.position.pixels >=
-                              _scrollController.position.maxScrollExtent - 200) {
-                            if (!_isLoadingMore && _displayedItemCount < allSections.length && mounted) {
-                              setState(() {
-                                _isLoadingMore = true;
-                                _displayedItemCount = (_displayedItemCount + initialVisibleCount).clamp(0, allSections.length);
-                                _isLoadingMore = false;
-                              });
-                            }
-                          }
-                        };
-                        _scrollController.addListener(_scrollListener!);
                         
                         final displaySections = allSections.take(_displayedItemCount).toList();
                         final hasMore = allSections.length > _displayedItemCount;

@@ -1,8 +1,7 @@
-import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart' show parseFormattedPrice;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
@@ -31,7 +30,6 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   final GlobalKey<PriceAuctionCardState> _priceAuctionCardKey = GlobalKey<PriceAuctionCardState>();
   final GlobalKey<ProductInfoCardState> _productInfoCardKey = GlobalKey<ProductInfoCardState>();
   int _currentStep = 0;
-  bool _isKeyboardVisible = false;
 
   static const List<String> _stepLabels = [
     '상품 정보',
@@ -78,8 +76,22 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
         return viewModel.selectedImages.isNotEmpty &&
             viewModel.titleController.text.trim().isNotEmpty;
       case 1:
-        // 카드 2: 항상 활성화 (버튼 클릭 시 검증)
-        return true;
+        // 카드 2: 시작가, 경매기간, 카테고리 필수
+        final startPrice = parseFormattedPrice(viewModel.startPriceController.text);
+        final hasValidStartPrice = startPrice > 0 && startPrice >= ItemPriceLimits.minPrice;
+        final hasDuration = viewModel.selectedDuration != null;
+        final hasCategory = viewModel.selectedKeywordTypeId != null;
+        
+        // 즉시 구매가가 체크되어 있으면 그것도 유효해야 함
+        bool hasValidInstantPrice = true;
+        if (viewModel.useInstantPrice) {
+          final instantPrice = parseFormattedPrice(viewModel.instantPriceController.text);
+          hasValidInstantPrice = instantPrice > 0 && 
+              instantPrice >= ItemPriceLimits.minPrice && 
+              instantPrice > startPrice;
+        }
+        
+        return hasValidStartPrice && hasDuration && hasCategory && hasValidInstantPrice;
       case 2:
         // 카드 3: 모든 검증 통과
         return viewModel.validate() == null;
@@ -224,27 +236,12 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     super.dispose();
   }
 
-  bool _getIsKeyboardVisible(BuildContext context) {
-    return MediaQuery.of(context).viewInsets.bottom > 0;
-  }
-
   @override
   Widget build(BuildContext context) {
     final ItemAddViewModel viewModel = context.watch<ItemAddViewModel>();
     
-    // 키보드 감지 - MediaQuery를 직접 사용하여 더 간단하게 처리
-    final isKeyboardVisible = _getIsKeyboardVisible(context);
-    
-    // 키보드 상태가 변경되면 업데이트
-    if (_isKeyboardVisible != isKeyboardVisible) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _isKeyboardVisible = isKeyboardVisible;
-          });
-        }
-      });
-    }
+    // 키보드 감지 - MediaQuery를 직접 사용하여 setState 없이 처리
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return PopScope(
       canPop: false,
@@ -272,7 +269,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
             Expanded(
               child: PageView(
                 controller: _pageController,
-                physics: _isKeyboardVisible || !_canGoToNextStep(viewModel)
+                physics: isKeyboardVisible || !_canGoToNextStep(viewModel)
                     ? const NeverScrollableScrollPhysics()
                     : const PageScrollPhysics(),
                 onPageChanged: (index) => _handlePageChange(index, viewModel),

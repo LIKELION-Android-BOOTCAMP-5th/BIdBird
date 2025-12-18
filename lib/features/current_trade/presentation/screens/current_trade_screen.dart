@@ -23,7 +23,9 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   final ScrollController _scrollController = ScrollController();
   int _displayedItemCount = 0;
   bool _isLoadingMore = false;
-  VoidCallback? _scrollListener;
+  int _totalItemsCount = 0;
+  int _initialVisibleCount = 0;
+  bool _isScrollListenerAttached = false;
 
   @override
   void initState() {
@@ -38,13 +40,34 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       }
     });
     
-    // 스크롤 감지는 Selector 내부에서 설정 (allItems 길이를 참조하기 위해)
+    // 스크롤 리스너를 한 번만 등록
+    _scrollController.addListener(_handleScroll);
+    _isScrollListenerAttached = true;
   }
 
   @override
   void dispose() {
+    if (_isScrollListenerAttached) {
+      _scrollController.removeListener(_handleScroll);
+    }
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!mounted) return;
+    
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore && _displayedItemCount < _totalItemsCount) {
+        setState(() {
+          _isLoadingMore = true;
+          _displayedItemCount = (_displayedItemCount + _initialVisibleCount)
+              .clamp(0, _totalItemsCount);
+          _isLoadingMore = false;
+        });
+      }
+    }
   }
 
   @override
@@ -131,36 +154,18 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   }
 
   Widget _buildUnifiedHistoryList() {
-    // ViewModel의 캐싱된 getter를 사용하도록 Selector 구성
+    // ViewModel의 캐싱된 필터링된 리스트를 직접 사용하도록 Selector 구성
     return Selector<CurrentTradeViewModel, ({
-      List<SaleHistoryItem> todoSaleItems,
-      List<SaleHistoryItem> inProgressSaleItems,
-      List<SaleHistoryItem> completedSaleItems,
-      List<BidHistoryItem> todoBidItems,
-      List<BidHistoryItem> inProgressBidItems,
-      List<BidHistoryItem> completedBidItems,
+      List<SaleHistoryItem> filteredSaleItems,
+      List<BidHistoryItem> filteredBidItems,
     })>(
       selector: (_, vm) => (
-        todoSaleItems: vm.todoSaleItems,
-        inProgressSaleItems: vm.inProgressSaleItems,
-        completedSaleItems: vm.completedSaleItems,
-        todoBidItems: vm.todoBidItems,
-        inProgressBidItems: vm.inProgressBidItems,
-        completedBidItems: vm.completedBidItems,
+        filteredSaleItems: vm.filteredSaleItems,
+        filteredBidItems: vm.filteredBidItems,
       ),
       builder: (context, data, _) {
-        // 판매와 입찰 내역을 필터링 (유찰 제외) - 지연 계산을 위해 getter로 처리
-        final filteredSaleItems = [
-          ...data.todoSaleItems,
-          ...data.inProgressSaleItems,
-          ...data.completedSaleItems,
-        ].where((item) => !item.status.contains('유찰')).toList();
-        
-        final filteredBidItems = [
-          ...data.todoBidItems,
-          ...data.inProgressBidItems,
-          ...data.completedBidItems,
-        ].where((item) => !item.status.contains('유찰')).toList();
+        final filteredSaleItems = data.filteredSaleItems;
+        final filteredBidItems = data.filteredBidItems;
 
         final totalItemCount = filteredSaleItems.length + filteredBidItems.length;
 
@@ -201,33 +206,16 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               }
               
               // 화면에 보이는 개수만큼만 표시 (코어 유틸리티 사용)
-              final initialVisibleCount = VisibleItemCalculator.calculateTradeHistoryVisibleCount(context);
+              _initialVisibleCount = VisibleItemCalculator.calculateTradeHistoryVisibleCount(context);
+              _totalItemsCount = allItems.length;
               
               // 초기 로드 시 또는 아이템이 변경되었을 때 displayedItemCount 초기화
               if (_displayedItemCount == 0 || _displayedItemCount > allItems.length) {
-                _displayedItemCount = initialVisibleCount.clamp(0, allItems.length);
+                _displayedItemCount = _initialVisibleCount.clamp(0, allItems.length);
               }
               
               // displayedItemCount가 allItems.length를 초과하지 않도록 제한
               _displayedItemCount = _displayedItemCount.clamp(0, allItems.length);
-              
-              // 스크롤 감지: 끝에서 200px 전에 도달하면 더 많은 아이템 표시
-              if (_scrollListener != null) {
-                _scrollController.removeListener(_scrollListener!);
-              }
-              _scrollListener = () {
-                if (_scrollController.position.pixels >=
-                    _scrollController.position.maxScrollExtent - 200) {
-                  if (!_isLoadingMore && _displayedItemCount < allItems.length && mounted) {
-                    setState(() {
-                      _isLoadingMore = true;
-                      _displayedItemCount = (_displayedItemCount + initialVisibleCount).clamp(0, allItems.length);
-                      _isLoadingMore = false;
-                    });
-                  }
-                }
-              };
-              _scrollController.addListener(_scrollListener!);
               
               final displayItems = allItems.take(_displayedItemCount).toList();
               final hasMore = allItems.length > _displayedItemCount;

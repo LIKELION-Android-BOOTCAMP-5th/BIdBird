@@ -55,12 +55,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
-                    const FloatingMenu(),
+                    child!, // 불변 위젯을 child로 분리
                   ],
                 ),
               ),
             );
           },
+          child: const FloatingMenu(), // 불변 위젯을 child로 분리하여 리빌드 방지
         ),
       ),
     );
