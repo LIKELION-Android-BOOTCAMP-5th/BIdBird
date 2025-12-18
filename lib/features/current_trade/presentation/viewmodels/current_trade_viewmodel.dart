@@ -27,6 +27,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
   List<SaleHistoryItem>? _cachedFilteredSaleItems;
   List<ActionHubItem>? _cachedBidActionHubItems;
   List<ActionHubItem>? _cachedSaleActionHubItems;
+  List<({bool isSeller, bool isHighlighted, dynamic item})>? _cachedAllItems;
 
   CurrentTradeViewModel({
     FetchMyBidHistoryUseCase? fetchMyBidHistoryUseCase,
@@ -94,6 +95,27 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
       ...completedBidItems,
     ].where((item) => !item.status.contains('유찰')).toList();
     return _cachedFilteredBidItems!;
+  }
+
+  /// 통합된 거래 내역 리스트 (판매 + 입찰, 캐싱 적용)
+  List<({bool isSeller, bool isHighlighted, dynamic item})> get allItems {
+    _cachedAllItems ??= [
+      // 판매 아이템 추가
+      for (var item in filteredSaleItems)
+        (
+          isSeller: true,
+          isHighlighted: item.itemStatus == TradeItemStatus.todo,
+          item: item,
+        ),
+      // 입찰 아이템 추가
+      for (var item in filteredBidItems)
+        (
+          isSeller: false,
+          isHighlighted: item.itemStatus == TradeItemStatus.todo,
+          item: item,
+        ),
+    ];
+    return _cachedAllItems!;
   }
 
   /// 상태별로 아이템 필터링하는 제네릭 헬퍼 메서드
@@ -196,6 +218,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     _cachedCompletedSaleItems = null;
     _cachedFilteredBidItems = null;
     _cachedFilteredSaleItems = null;
+    _cachedAllItems = null;
     _cachedBidActionHubItems = null;
     _cachedSaleActionHubItems = null;
   }

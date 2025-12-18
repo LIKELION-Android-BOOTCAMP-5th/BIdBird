@@ -26,6 +26,9 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   int _totalItemsCount = 0;
   int _initialVisibleCount = 0;
   bool _isScrollListenerAttached = false;
+  // displayItems 캐싱을 위한 변수
+  List<({bool isSeller, bool isHighlighted, dynamic item})>? _cachedDisplayItems;
+  int _cachedDisplayCount = 0;
 
   @override
   void initState() {
@@ -154,20 +157,11 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   }
 
   Widget _buildUnifiedHistoryList() {
-    // ViewModel의 캐싱된 필터링된 리스트를 직접 사용하도록 Selector 구성
-    return Selector<CurrentTradeViewModel, ({
-      List<SaleHistoryItem> filteredSaleItems,
-      List<BidHistoryItem> filteredBidItems,
-    })>(
-      selector: (_, vm) => (
-        filteredSaleItems: vm.filteredSaleItems,
-        filteredBidItems: vm.filteredBidItems,
-      ),
-      builder: (context, data, _) {
-        final filteredSaleItems = data.filteredSaleItems;
-        final filteredBidItems = data.filteredBidItems;
-
-        final totalItemCount = filteredSaleItems.length + filteredBidItems.length;
+    // ViewModel의 캐싱된 통합 리스트를 직접 사용하도록 Selector 구성
+    return Selector<CurrentTradeViewModel, List<({bool isSeller, bool isHighlighted, dynamic item})>>(
+      selector: (_, vm) => vm.allItems,
+      builder: (context, allItems, _) {
+        final totalItemCount = allItems.length;
 
         if (totalItemCount == 0) {
           return RefreshIndicator(
@@ -184,30 +178,15 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               final verticalPadding = context.vPadding;
               final spacing = context.spacingSmall;
               
-              // 모든 아이템을 하나의 리스트로 합치기
-              final allItems = <({bool isSeller, bool isHighlighted, dynamic item})>[];
-              
-              // 판매 아이템 추가
-              for (var item in filteredSaleItems) {
-                allItems.add((
-                  isSeller: true,
-                  isHighlighted: item.itemStatus == TradeItemStatus.todo,
-                  item: item,
-                ));
-              }
-              
-              // 입찰 아이템 추가
-              for (var item in filteredBidItems) {
-                allItems.add((
-                  isSeller: false,
-                  isHighlighted: item.itemStatus == TradeItemStatus.todo,
-                  item: item,
-                ));
-              }
-              
               // 화면에 보이는 개수만큼만 표시 (코어 유틸리티 사용)
               _initialVisibleCount = VisibleItemCalculator.calculateTradeHistoryVisibleCount(context);
-              _totalItemsCount = allItems.length;
+              
+              // allItems가 변경되었으면 캐시 무효화
+              if (_totalItemsCount != allItems.length) {
+                _cachedDisplayItems = null;
+                _cachedDisplayCount = 0;
+                _totalItemsCount = allItems.length;
+              }
               
               // 초기 로드 시 또는 아이템이 변경되었을 때 displayedItemCount 초기화
               if (_displayedItemCount == 0 || _displayedItemCount > allItems.length) {
@@ -217,7 +196,17 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               // displayedItemCount가 allItems.length를 초과하지 않도록 제한
               _displayedItemCount = _displayedItemCount.clamp(0, allItems.length);
               
-              final displayItems = allItems.take(_displayedItemCount).toList();
+              // displayItems 캐싱: _displayedItemCount가 변경되지 않았으면 캐시 재사용
+              final List<({bool isSeller, bool isHighlighted, dynamic item})> displayItems;
+              if (_cachedDisplayItems != null && 
+                  _cachedDisplayCount == _displayedItemCount && 
+                  _cachedDisplayItems!.length == _displayedItemCount) {
+                displayItems = _cachedDisplayItems!;
+              } else {
+                displayItems = allItems.take(_displayedItemCount).toList();
+                _cachedDisplayItems = displayItems;
+                _cachedDisplayCount = _displayedItemCount;
+              }
               final hasMore = allItems.length > _displayedItemCount;
               
               return ListView.separated(

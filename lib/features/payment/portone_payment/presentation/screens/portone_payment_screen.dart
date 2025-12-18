@@ -21,9 +21,20 @@ class PortonePaymentScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => PortonePaymentViewModel()..loadDecryptedUser(),
-      child: Consumer<PortonePaymentViewModel>(
-        builder: (context, viewModel, _) {
-          if (viewModel.loadingUser) {
+      child: Selector<PortonePaymentViewModel, ({
+        bool loadingUser,
+        String? buyerName,
+        String? buyerPhone,
+      })>(
+        selector: (_, vm) => (
+          loadingUser: vm.loadingUser,
+          buyerName: vm.buyerName,
+          buyerPhone: vm.buyerPhone,
+        ),
+        builder: (context, data, _) {
+          final viewModel = context.read<PortonePaymentViewModel>();
+          
+          if (data.loadingUser) {
             return const Scaffold(
               body: Center(
                 child: CircularProgressIndicator(),
@@ -32,7 +43,7 @@ class PortonePaymentScreen extends StatelessWidget {
           }
 
           // 사용자 정보 로딩 실패 또는 부족한 경우 에러 UI 노출
-          if (viewModel.buyerName == null || viewModel.buyerPhone == null) {
+          if (data.buyerName == null || data.buyerPhone == null) {
             final fontSize = context.buttonFontSize;
             final buttonFontSize = context.fontSizeMedium;
             final spacing = context.screenPadding;
@@ -64,8 +75,8 @@ class PortonePaymentScreen extends StatelessWidget {
             );
           }
 
-          final String buyerName = viewModel.buyerName!;
-          final String buyerPhone = viewModel.buyerPhone!;
+          final String buyerName = data.buyerName!;
+          final String buyerPhone = data.buyerPhone!;
 
           final paymentRequest = _buildPaymentRequest(
             buyerName: buyerName,

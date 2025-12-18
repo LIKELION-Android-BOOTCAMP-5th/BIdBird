@@ -211,10 +211,31 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => ReportViewModel(),
-      child: Consumer<ReportViewModel>(
-        builder: (context, vm, _) {
+      child: Selector<ReportViewModel, ({
+        bool isLoading,
+        int allReportTypesLength,
+        String? error,
+        String? selectedCategory,
+        String? selectedReportCode,
+        bool canSubmit,
+        int selectedImagesLength,
+        bool isUploadingImages,
+      })>(
+        selector: (_, vm) => (
+          isLoading: vm.isLoading,
+          allReportTypesLength: vm.allReportTypes.length,
+          error: vm.error,
+          selectedCategory: vm.selectedCategory,
+          selectedReportCode: vm.selectedReportCode,
+          canSubmit: vm.canSubmit,
+          selectedImagesLength: vm.selectedImages.length,
+          isUploadingImages: vm.isUploadingImages,
+        ),
+        builder: (context, data, _) {
+          final vm = context.read<ReportViewModel>();
+          
           // 로딩 상태 처리
-          if (vm.isLoading && vm.allReportTypes.isEmpty) {
+          if (data.isLoading && data.allReportTypesLength == 0) {
             return Scaffold(
               backgroundColor: BackgroundColor,
               appBar: AppBar(
@@ -241,7 +262,7 @@ class _ReportScreenState extends State<ReportScreen> {
           }
 
           // 에러 상태 처리
-          if (vm.error != null && vm.allReportTypes.isEmpty) {
+          if (data.error != null && data.allReportTypesLength == 0) {
             return Scaffold(
               backgroundColor: BackgroundColor,
               appBar: AppBar(
@@ -261,7 +282,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      vm.error ?? '',
+                      data.error ?? '',
                       style: TextStyle(fontSize: 12, color: iconColor),
                       textAlign: TextAlign.center,
                     ),

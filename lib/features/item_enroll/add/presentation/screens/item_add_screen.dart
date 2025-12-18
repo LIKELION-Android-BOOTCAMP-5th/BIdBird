@@ -238,67 +238,85 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ItemAddViewModel viewModel = context.watch<ItemAddViewModel>();
-    
-    // 키보드 감지 - MediaQuery를 직접 사용하여 setState 없이 처리
-    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          context.go('/home');
-        }
-      },
-      child: Scaffold(
-        backgroundColor: BackgroundColor,
-        appBar: AppBar(
-          title: const Text('매물 등록'),
-          centerTitle: true,
-          backgroundColor: Colors.white,
-        ),
-        body: Column(
-          children: [
-            // 스텝 인디케이터
-            StepIndicator(
-              currentStep: _currentStep,
-              totalSteps: 3,
-              stepLabels: _stepLabels,
-            ),
-            // 카드 영역
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: isKeyboardVisible || !_canGoToNextStep(viewModel)
-                    ? const NeverScrollableScrollPhysics()
-                    : const PageScrollPhysics(),
-                onPageChanged: (index) => _handlePageChange(index, viewModel),
-                children: [
-                  // 카드 1: 상품 정보
-                  ProductInfoCard(
-                    key: _productInfoCardKey,
-                    viewModel: viewModel,
-                    onImageSourceTap: () =>
-                        _showImageSourceSheet(context, viewModel),
-                    inputDecoration: (hint) => _inputDecoration(hint),
-                  ),
-                  // 카드 2: 가격·경매
-                  PriceAuctionCard(
-                    key: _priceAuctionCardKey,
-                    viewModel: viewModel,
-                    inputDecoration: (hint) => _inputDecoration(hint),
-                  ),
-                  // 카드 3: 상세·확인
-                  DetailConfirmCard(
-                    viewModel: viewModel,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: _buildBottomNavigationBar(viewModel),
+    // 필요한 속성만 watch하여 불필요한 리빌드 방지
+    return Selector<ItemAddViewModel, ({
+      int selectedImagesLength,
+      String? selectedDuration,
+      int? selectedKeywordTypeId,
+      bool useInstantPrice,
+      bool isSubmitting,
+    })>(
+      selector: (_, vm) => (
+        selectedImagesLength: vm.selectedImages.length,
+        selectedDuration: vm.selectedDuration,
+        selectedKeywordTypeId: vm.selectedKeywordTypeId,
+        useInstantPrice: vm.useInstantPrice,
+        isSubmitting: vm.isSubmitting,
       ),
+      builder: (context, data, _) {
+        final viewModel = context.read<ItemAddViewModel>();
+        
+        // 키보드 감지 - MediaQuery를 직접 사용하여 setState 없이 처리
+        final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop) {
+              context.go('/home');
+            }
+          },
+          child: Scaffold(
+            backgroundColor: BackgroundColor,
+            appBar: AppBar(
+              title: const Text('매물 등록'),
+              centerTitle: true,
+              backgroundColor: Colors.white,
+            ),
+            body: Column(
+              children: [
+                // 스텝 인디케이터
+                StepIndicator(
+                  currentStep: _currentStep,
+                  totalSteps: 3,
+                  stepLabels: _stepLabels,
+                ),
+                // 카드 영역
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    physics: isKeyboardVisible || !_canGoToNextStep(viewModel)
+                        ? const NeverScrollableScrollPhysics()
+                        : const PageScrollPhysics(),
+                    onPageChanged: (index) => _handlePageChange(index, viewModel),
+                    children: [
+                      // 카드 1: 상품 정보
+                      ProductInfoCard(
+                        key: _productInfoCardKey,
+                        viewModel: viewModel,
+                        onImageSourceTap: () =>
+                            _showImageSourceSheet(context, viewModel),
+                        inputDecoration: (hint) => _inputDecoration(hint),
+                      ),
+                      // 카드 2: 가격·경매
+                      PriceAuctionCard(
+                        key: _priceAuctionCardKey,
+                        viewModel: viewModel,
+                        inputDecoration: (hint) => _inputDecoration(hint),
+                      ),
+                      // 카드 3: 상세·확인
+                      DetailConfirmCard(
+                        viewModel: viewModel,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            bottomNavigationBar: _buildBottomNavigationBar(viewModel),
+          ),
+        );
+      },
     );
   }
 }

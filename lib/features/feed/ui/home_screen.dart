@@ -1,3 +1,5 @@
+import 'package:bidbird/core/models/items_entity.dart';
+import 'package:bidbird/core/models/keywordType_entity.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/feed/ui/widgets/Item_grid.dart';
 import 'package:bidbird/features/feed/ui/widgets/floating_menu.dart';
@@ -34,8 +36,20 @@ class _HomeScreenState extends State<HomeScreen> {
         data: MediaQuery.of(
           context,
         ).copyWith(textScaler: TextScaler.linear(1.0)),
-        child: Consumer<HomeViewmodel>(
-          builder: (context, viewModel, child) {
+        child: Selector<HomeViewmodel, ({
+          bool searchButton,
+          List<KeywordType> keywords,
+          String selectKeyword,
+          List<ItemsEntity> items,
+        })>(
+          selector: (_, vm) => (
+            searchButton: vm.searchButton,
+            keywords: vm.keywords,
+            selectKeyword: vm.selectKeyword,
+            items: vm.items,
+          ),
+          builder: (context, data, child) {
+            final viewModel = context.read<HomeViewmodel>();
             return Scaffold(
               appBar: HomeAppBar(viewModel: viewModel),
               body: SafeArea(
