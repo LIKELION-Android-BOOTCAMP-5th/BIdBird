@@ -36,20 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
         data: MediaQuery.of(
           context,
         ).copyWith(textScaler: TextScaler.linear(1.0)),
-        child: Selector<HomeViewmodel, ({
-          bool searchButton,
-          List<KeywordType> keywords,
-          String selectKeyword,
-          List<ItemsEntity> items,
-        })>(
-          selector: (_, vm) => (
-            searchButton: vm.searchButton,
-            keywords: vm.keywords,
-            selectKeyword: vm.selectKeyword,
-            items: vm.items,
-          ),
-          builder: (context, data, child) {
-            final viewModel = context.read<HomeViewmodel>();
+        child: Consumer<HomeViewmodel>(
+          builder: (context, viewModel, child) {
             return Scaffold(
               appBar: HomeAppBar(viewModel: viewModel),
               body: SafeArea(
