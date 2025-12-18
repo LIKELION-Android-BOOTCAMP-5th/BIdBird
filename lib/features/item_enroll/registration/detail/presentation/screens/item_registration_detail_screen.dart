@@ -5,6 +5,7 @@ import 'package:bidbird/core/utils/item/item_registration_terms.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
 import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/features/item_enroll/registration/detail/presentation/viewmodels/item_registration_detail_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
@@ -212,47 +213,32 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: blueColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: viewModel.isSubmitting
-                ? null
-                : () async {
-                    await showDialog<void>(
-                      context: context,
-                      barrierDismissible: true,
-                      builder: (dialogContext) {
-                        return ConfirmCheckCancelPopup(
-                          title: ItemRegistrationTerms.popupTitle,
-                          description: ItemRegistrationTerms.termsContent,
-                          checkLabel: ItemRegistrationTerms.checkLabel,
-                          confirmText: '등록하기',
-                          cancelText: '취소',
-                          onConfirm: (checked) async {
-                            if (!checked) return;
-                            await viewModel.confirmRegistration(context);
-                          },
-                          onCancel: () {},
-                        );
-                      },
-                    );
+        child: PrimaryButton(
+          text: '등록하기',
+          onPressed: () async {
+            await showDialog<void>(
+              context: context,
+              barrierDismissible: true,
+              builder: (dialogContext) {
+                return ConfirmCheckCancelPopup(
+                  title: ItemRegistrationTerms.popupTitle,
+                  description: ItemRegistrationTerms.termsContent,
+                  checkLabel: ItemRegistrationTerms.checkLabel,
+                  confirmText: '등록하기',
+                  cancelText: '취소',
+                  onConfirm: (checked) async {
+                    if (!checked) return;
+                    await viewModel.confirmRegistration(context);
                   },
-            child: const Text(
-              '등록하기',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
+                  onCancel: () {},
+                );
+              },
+            );
+          },
+          isEnabled: !viewModel.isSubmitting,
+          height: 52,
+          fontSize: 16,
+          width: double.infinity,
         ),
       ),
     );

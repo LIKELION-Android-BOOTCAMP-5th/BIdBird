@@ -3,6 +3,8 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/secondary_button.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/widgets/step_indicator.dart';
 import 'package:bidbird/features/report/presentation/viewmodels/report_viewmodel.dart';
 import 'package:bidbird/features/report/presentation/widgets/swipe_cards/report_content_card.dart';
@@ -265,13 +267,13 @@ class _ReportScreenState extends State<ReportScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => vm.loadReportTypes(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: blueColor,
-                        foregroundColor: Colors.white,
+                    SizedBox(
+                      width: 120,
+                      child: PrimaryButton(
+                        text: '다시 시도',
+                        onPressed: () => vm.loadReportTypes(),
+                        width: 120,
                       ),
-                      child: const Text('다시 시도'),
                     ),
                   ],
                 ),
@@ -396,116 +398,56 @@ class _ReportScreenState extends State<ReportScreen> {
                   ],
                 ),
                 child: _currentStep == 0
-                    ? SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: _canGoToNextStep(vm) && !vm.isLoading
-                              ? () {
-                                  if (_currentStep < 2) {
-                                    // 다음 단계로 이동
-                                    _goToStep(_currentStep + 1);
-                                  } else {
-                                    // 최종 신고
-                                    _showSubmitConfirmDialog(vm);
-                                  }
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            backgroundColor: _canGoToNextStep(vm) && !vm.isLoading
-                                ? blueColor
-                                : BorderColor,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: BorderColor,
-                            disabledForegroundColor: iconColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(defaultRadius),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            _getNextButtonText(),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                    ? PrimaryButton(
+                        text: _getNextButtonText(),
+                        onPressed: () {
+                          if (_currentStep < 2) {
+                            // 다음 단계로 이동
+                            _goToStep(_currentStep + 1);
+                          } else {
+                            // 최종 신고
+                            _showSubmitConfirmDialog(vm);
+                          }
+                        },
+                        isEnabled: _canGoToNextStep(vm) && !vm.isLoading,
+                        width: double.infinity,
                       )
                     : Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // 이전 버튼
                           Expanded(
-                            child: SizedBox(
-                              height: 48,
-                              child: OutlinedButton(
-                                onPressed: () => _goToStep(_currentStep - 1),
-                                style: OutlinedButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  side: BorderSide(color: blueColor),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(defaultRadius),
-                                  ),
-                                ),
-                                child: Text(
-                                  '이전',
-                                  style: TextStyle(
-                                    color: blueColor,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
+                            child: SecondaryButton(
+                              text: '이전',
+                              onPressed: () => _goToStep(_currentStep - 1),
+                              width: null,
                             ),
                           ),
                           SizedBox(width: context.spacingSmall),
                           // 다음/신고하기 버튼
                           Expanded(
-                            child: SizedBox(
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: !vm.isLoading
-                                    ? () {
-                                        // 상세 내용 카드에서 다음 버튼을 눌렀을 때 검증
-                                        if (_currentStep == 1) {
-                                          _contentCardKey.currentState?.validateFields();
-                                          // 검증 후 다시 확인
-                                          if (!_canGoToNextStep(vm)) {
-                                            return;
-                                          }
-                                        }
-                                        
-                                        if (_currentStep < 2) {
-                                          // 다음 단계로 이동
-                                          _goToStep(_currentStep + 1);
-                                        } else {
-                                          // 최종 신고
-                                          _showSubmitConfirmDialog(vm);
-                                        }
-                                      }
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  backgroundColor: !vm.isLoading
-                                      ? blueColor
-                                      : BorderColor,
-                                  foregroundColor: Colors.white,
-                                  disabledBackgroundColor: BorderColor,
-                                  disabledForegroundColor: iconColor,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(defaultRadius),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: Text(
-                                  _getNextButtonText(),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
+                            child: PrimaryButton(
+                              text: _getNextButtonText(),
+                              onPressed: () {
+                                // 상세 내용 카드에서 다음 버튼을 눌렀을 때 검증
+                                if (_currentStep == 1) {
+                                  _contentCardKey.currentState?.validateFields();
+                                  // 검증 후 다시 확인
+                                  if (!_canGoToNextStep(vm)) {
+                                    return;
+                                  }
+                                }
+                                
+                                if (_currentStep < 2) {
+                                  // 다음 단계로 이동
+                                  _goToStep(_currentStep + 1);
+                                } else {
+                                  // 최종 신고
+                                  _showSubmitConfirmDialog(vm);
+                                }
+                              },
+                              isEnabled: !vm.isLoading,
+                              width: null,
                             ),
                           ),
                         ],

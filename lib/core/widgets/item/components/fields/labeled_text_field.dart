@@ -1,6 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
+import 'package:bidbird/core/widgets/item/components/fields/form_label.dart';
 import 'package:flutter/material.dart';
 
 /// 매물 등록 및 신고 화면에서 공통으로 사용하는 라벨이 있는 텍스트 필드
@@ -32,46 +32,12 @@ class LabeledTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelFontSize = context.fontSizeMedium;
-    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.only(bottom: context.labelBottomPadding),
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: labelFontSize,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
-              ),
-              if (required) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: RedColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '필수',
-                    style: TextStyle(
-                      fontSize: context.fontSizeSmall * 0.85,
-                      color: RedColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
+        FormLabel(
+          text: label,
+          required: required,
         ),
         TextField(
           controller: controller,

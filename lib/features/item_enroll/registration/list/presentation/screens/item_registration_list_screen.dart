@@ -1,4 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
 import 'package:bidbird/features/item_enroll/registration/list/presentation/viewmodels/item_registration_list_viewmodel.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/history_card.dart';
 import 'package:flutter/material.dart';
@@ -35,26 +37,17 @@ class ItemRegistrationListScreen extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, ItemRegistrationListViewModel viewModel) {
     if (viewModel.isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: 0.8,
-                child: Text(
-                  '로딩중',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: textColor,
-                    decoration: TextDecoration.none,
-                    decorationColor: Colors.transparent,
-                    decorationThickness: 0,
-                  ),
-                ),
+            const CircularProgressIndicator(),
+            SizedBox(height: context.spacingSmall),
+            Text(
+              '로딩중',
+              style: TextStyle(
+                fontSize: context.fontSizeSmall,
+                color: textColor,
               ),
             ),
           ],
@@ -64,7 +57,7 @@ class ItemRegistrationListScreen extends StatelessWidget {
 
     if (viewModel.error != null) {
       return Center(
-        child: Text(viewModel.error!, style: const TextStyle(fontSize: 14)),
+        child: ErrorText(text: viewModel.error!),
       );
     }
 

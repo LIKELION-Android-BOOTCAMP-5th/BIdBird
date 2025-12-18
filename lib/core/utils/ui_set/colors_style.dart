@@ -9,6 +9,7 @@ const Color textColor = Colors.black;
 const Color RedColor = Color(0xffFF5252);
 const Color yellowColor = Color(0xffFFA726);
 const Color BorderColor = Color(0xffBDBDBD);
+const Color LightBorderColor = Color(0xFFE6E8EB); // 연한 테두리 색상
 const Color shadowHigh = Color(0x1F000000);
 const Color shadowLow = Color(0x0A000000);
 const Color itemRegistrationCardShadowColor = shadowHigh;
@@ -33,6 +34,11 @@ const Color chatBackgroundColor = Color(0xffF7F8FA); // 채팅 화면 전체 배
 const Color chatTimeTextColor = Color(0xff9CA3AF); // 시간 텍스트 색상
 const Color chatItemSectionBackground = Color(0xffF2F3F5); // 매물 정보 섹션 배경
 const Color chatItemCardBackground = Color(0xffFFFFFF); // 매물 정보 카드 배경
+
+// 폼 및 입력 필드 색상
+const Color PrimaryBlue = Color(0xFF2F5BFF); // 주요 파란색 (커서, 포커스 등)
+const Color TextPrimary = Color(0xFF111111); // 주요 텍스트 색상
+const Color TextSecondary = Color(0xFF6B7280); // 보조 텍스트 색상
 
 // 역할 구분 색상 (구매/판매)
 // 구매 (Buyer)

@@ -1,5 +1,6 @@
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/mixins/form_validation_mixin.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
 import 'package:bidbird/features/report/presentation/viewmodels/report_viewmodel.dart';
 import 'package:bidbird/features/report/presentation/widgets/report_reason_section.dart';
 import 'package:bidbird/features/report/presentation/widgets/report_target_section.dart';
@@ -24,14 +25,22 @@ class ReportTargetReasonCard extends StatefulWidget {
   State<ReportTargetReasonCard> createState() => ReportTargetReasonCardState();
 }
 
-class ReportTargetReasonCardState extends State<ReportTargetReasonCard> {
+class ReportTargetReasonCardState extends State<ReportTargetReasonCard>
+    with FormValidationMixin {
   String? _categoryError;
   String? _reasonError;
   bool _shouldShowErrors = false;
 
+  @override
+  bool get shouldShowErrors => _shouldShowErrors;
+
+  @override
+  set shouldShowErrors(bool value) {
+    _shouldShowErrors = value;
+  }
+
   void validateFields() {
-    setState(() {
-      _shouldShowErrors = true;
+    startValidation(() {
       _categoryError = null;
       _reasonError = null;
 
@@ -45,12 +54,10 @@ class ReportTargetReasonCardState extends State<ReportTargetReasonCard> {
     });
   }
 
-  void _clearErrors() {
-    setState(() {
-      _shouldShowErrors = false;
-      _categoryError = null;
-      _reasonError = null;
-    });
+  @override
+  void clearAllErrors() {
+    _categoryError = null;
+    _reasonError = null;
   }
 
   @override
@@ -59,22 +66,10 @@ class ReportTargetReasonCardState extends State<ReportTargetReasonCard> {
 
     // 카테고리나 사유가 선택되면 에러 제거
     if (widget.viewModel.selectedCategory != null && _categoryError != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _categoryError = null;
-          });
-        }
-      });
+      clearError(() => _categoryError = null);
     }
     if (widget.viewModel.selectedReportCode != null && _reasonError != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _reasonError = null;
-          });
-        }
-      });
+      clearError(() => _reasonError = null);
     }
 
     return SingleChildScrollView(
@@ -96,27 +91,9 @@ class ReportTargetReasonCardState extends State<ReportTargetReasonCard> {
           // 신고 사유 선택
           ReportReasonSection(viewModel: widget.viewModel),
           if (_shouldShowErrors && _categoryError != null)
-            Padding(
-              padding: EdgeInsets.only(top: context.spacingSmall),
-              child: Text(
-                _categoryError!,
-                style: TextStyle(
-                  fontSize: context.fontSizeSmall,
-                  color: RedColor,
-                ),
-              ),
-            ),
+            ErrorText(text: _categoryError!),
           if (_shouldShowErrors && _reasonError != null)
-            Padding(
-              padding: EdgeInsets.only(top: context.spacingSmall),
-              child: Text(
-                _reasonError!,
-                style: TextStyle(
-                  fontSize: context.fontSizeSmall,
-                  color: RedColor,
-                ),
-              ),
-            ),
+            ErrorText(text: _reasonError!),
         ],
       ),
     );

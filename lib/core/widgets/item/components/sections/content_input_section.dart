@@ -1,5 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
+import 'package:bidbird/core/widgets/item/components/fields/form_label.dart';
 import 'package:flutter/material.dart';
 
 /// 신고하기와 매물 등록에서 공통으로 사용
@@ -49,14 +52,42 @@ class ContentInputSection extends StatefulWidget {
 }
 
 class _ContentInputSectionState extends State<ContentInputSection> {
+  static const double _cardPadding = 14.0;
+  static const double _labelBottomSpacing = 12.0;
+  static const double _counterTopSpacing = 8.0;
+
+  Widget _buildTextField() {
+    final isExpandable = widget.minLines == null && widget.maxLines == null;
+    
+    final textField = TextField(
+      controller: widget.controller,
+      maxLines: isExpandable ? null : widget.maxLines,
+      minLines: isExpandable ? null : widget.minLines,
+      maxLength: widget.maxLength,
+      cursorColor: PrimaryBlue,
+      style: const TextStyle(
+        color: TextPrimary,
+      ),
+      decoration: InputDecoration(
+        hintText: widget.hintText,
+        hintStyle: TextStyle(
+          color: chatTimeTextColor,
+          fontSize: context.fontSizeSmall,
+        ),
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.zero,
+        counterText: '',
+        focusedBorder: InputBorder.none,
+        enabledBorder: InputBorder.none,
+      ),
+      onChanged: (_) => setState(() {}),
+    );
+
+    return isExpandable ? Expanded(child: textField) : textField;
+  }
+
   @override
   Widget build(BuildContext context) {
-    const Color primaryBlue = Color(0xFF2F5BFF);
-    const Color cardBackground = Color(0xFFFFFFFF);
-    const Color borderGray = Color(0xFFE6E8EB);
-    const Color textPrimary = Color(0xFF111111);
-    const Color textSecondary = Color(0xFF6B7280);
-    const Color textDisabled = Color(0xFF9CA3AF);
     final textLength = widget.controller.text.length;
     final isValid = widget.minLength == null || textLength >= widget.minLength!;
     final showValidation = widget.minLength != null;
@@ -64,99 +95,49 @@ class _ContentInputSectionState extends State<ContentInputSection> {
     return SizedBox(
       width: double.infinity,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(_cardPadding),
         decoration: BoxDecoration(
-          color: cardBackground,
+          color: Colors.white,
           borderRadius: defaultBorder,
           border: Border.all(
-            color: borderGray,
+            color: LightBorderColor,
           ),
         ),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.label,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          widget.minLines == null && widget.maxLines == null
-              ? Expanded(
-                  child: TextField(
-                    controller: widget.controller,
-                    maxLines: null,
-                    minLines: null,
-                    maxLength: widget.maxLength,
-                    cursorColor: primaryBlue,
-                    style: const TextStyle(
-                      color: textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: widget.hintText,
-                      hintStyle: TextStyle(
-                        color: textDisabled,
-                        fontSize: context.fontSizeSmall,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      counterText: '',
-                      focusedBorder: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                )
-              : TextField(
-                  controller: widget.controller,
-                  maxLines: widget.maxLines,
-                  minLines: widget.minLines,
-                  maxLength: widget.maxLength,
-                  cursorColor: primaryBlue,
-                  style: const TextStyle(
-                    color: textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: widget.hintText,
-                    hintStyle: TextStyle(
-                      color: textDisabled,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            FormLabel(text: widget.label),
+            SizedBox(height: _labelBottomSpacing),
+            _buildTextField(),
+            SizedBox(height: _counterTopSpacing),
+            Row(
+              mainAxisAlignment: showValidation && widget.successMessage != null && isValid
+                  ? MainAxisAlignment.spaceBetween
+                  : MainAxisAlignment.end,
+              children: [
+                if (showValidation && widget.successMessage != null && isValid)
+                  Text(
+                    widget.successMessage!,
+                    style: TextStyle(
                       fontSize: context.fontSizeSmall,
+                      color: TextSecondary,
                     ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    counterText: '',
-                    focusedBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: showValidation && widget.successMessage != null && isValid
-                ? MainAxisAlignment.spaceBetween
-                : MainAxisAlignment.end,
-            children: [
-              if (showValidation && widget.successMessage != null && isValid)
                 Text(
-                  widget.successMessage!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: textSecondary,
+                  '$textLength/${widget.maxLength}',
+                  style: TextStyle(
+                    fontSize: context.fontSizeSmall,
+                    color: chatTimeTextColor,
                   ),
                 ),
-              Text(
-                '$textLength/${widget.maxLength}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: textDisabled,
-                ),
+              ],
+            ),
+            if (widget.errorMessage != null)
+              ErrorText(
+                text: widget.errorMessage!,
+                topPadding: _counterTopSpacing,
               ),
-            ],
-          ),
-        ],
+          ],
         ),
       ),
     );
