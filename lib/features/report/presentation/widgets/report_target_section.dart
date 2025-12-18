@@ -1,4 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:flutter/material.dart';
 
 class ReportTargetSection extends StatelessWidget {
@@ -20,45 +22,49 @@ class ReportTargetSection extends StatelessWidget {
     const Color textPrimary = Color(0xFF111111);
     const Color textSecondary = Color(0xFF6B7280);
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cardBackground,
-        borderRadius: defaultBorder,
-        border: Border.all(
-          color: borderGray,
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: context.inputPadding,
+          vertical: context.inputPadding,
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '신고 대상',
-            style: TextStyle(
-              fontSize: 12,
-              color: textSecondary,
-            ),
+        decoration: BoxDecoration(
+          color: cardBackground,
+          borderRadius: BorderRadius.circular(defaultRadius),
+          border: Border.all(
+            color: borderGray,
           ),
-          const SizedBox(height: 8),
-          if (itemId != null) ...[
-            Text(
-              itemTitle ?? '알 수 없음',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: textPrimary,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (itemId != null && itemTitle != null) ...[
+              Text(
+                '신고 글: ${itemTitle!}',
+                style: TextStyle(
+                  fontSize: context.fontSizeSmall,
+                  color: textPrimary,
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
+              SizedBox(height: context.spacingSmall * 0.5),
+            ],
+            Text(
+              '신고 대상: ${targetNickname ?? '알 수 없음'}',
+              style: TextStyle(
+                fontSize: context.fontSizeSmall,
+                color: textPrimary,
+                fontWeight: FontWeight.w400,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
           ],
-          Text(
-            targetNickname ?? '알 수 없음',
-            style: const TextStyle(
-              fontSize: 13,
-              color: textPrimary,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
