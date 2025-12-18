@@ -18,6 +18,9 @@ class ChatListCacheManager {
   
   // itemId -> auctionStatusCode 매핑 캐시 (경매 상태 코드 저장)
   final Map<String, int> _auctionStatusCodeCache = {};
+  
+  // itemId -> tradeStatusCode 매핑 캐시 (거래 상태 코드 저장)
+  final Map<String, int?> _tradeStatusCodeCache = {};
 
   /// 모든 채팅방의 itemId에 대한 seller_id를 한 번에 가져와서 캐시에 저장
   Future<void> loadSellerIds(List<ChattingRoomEntity> chattingRoomList) async {
@@ -70,7 +73,7 @@ class ChatListCacheManager {
 
       final response = await _supabase
           .from('auctions')
-          .select('item_id, last_bid_user_id, auction_status_code')
+          .select('item_id, last_bid_user_id, auction_status_code, trade_status_code')
           .inFilter('item_id', uncachedItemIds)
           .eq('round', 1);
 
@@ -78,6 +81,7 @@ class ChatListCacheManager {
         final itemId = row['item_id'] as String?;
         final lastBidUserId = row['last_bid_user_id'] as String?;
         final auctionStatusCode = row['auction_status_code'] as int?;
+        final tradeStatusCode = row['trade_status_code'] as int?;
         if (itemId != null) {
           // last_bid_user_id 저장
           _lastBidUserIdCache[itemId] = lastBidUserId;
@@ -85,6 +89,8 @@ class ChatListCacheManager {
           if (auctionStatusCode != null) {
             _auctionStatusCodeCache[itemId] = auctionStatusCode;
           }
+          // trade_status_code 저장
+          _tradeStatusCodeCache[itemId] = tradeStatusCode;
           // 내가 낙찰자인지 확인 (경매 종료 및 낙찰된 경우에만)
           // auction_status_code가 321(bidWon)이고, 내가 최고 입찰자인 경우에만 낙찰자
           final isAuctionWon = auctionStatusCode == AuctionStatusCode.bidWon;
@@ -135,12 +141,40 @@ class ChatListCacheManager {
     return lastBidUserId != currentUserId;
   }
 
+  /// 특정 itemId의 거래 상태 코드 가져오기
+  int? getTradeStatusCode(String itemId) {
+    return _tradeStatusCodeCache[itemId];
+  }
+
+  /// 특정 itemId에 대해 거래가 만료되었는지 확인
+  /// 만료: 유찰(323), 거래 취소(540)
+  /// 거래 완료(550)는 만료가 아님
+  bool isTradeExpired(String itemId) {
+    final auctionStatusCode = _auctionStatusCodeCache[itemId];
+    final tradeStatusCode = _tradeStatusCodeCache[itemId];
+    
+    // 유찰 (323)
+    if (auctionStatusCode == AuctionStatusCode.failed) {
+      return true;
+    }
+    
+    // 거래 취소 (540)
+    if (tradeStatusCode == 540) {
+      return true;
+    }
+    
+    // 거래 완료 (550)는 만료가 아님
+    
+    return false;
+  }
+
   /// 캐시 초기화
   void clear() {
     _sellerIdCache.clear();
     _topBidderCache.clear();
     _lastBidUserIdCache.clear();
     _auctionStatusCodeCache.clear();
+    _tradeStatusCodeCache.clear();
   }
 }
 

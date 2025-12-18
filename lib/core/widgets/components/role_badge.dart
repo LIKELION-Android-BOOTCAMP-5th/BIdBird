@@ -8,6 +8,7 @@ class RoleBadge extends StatelessWidget {
     required this.isSeller,
     this.isTopBidder = false,
     this.isOpponentTopBidder = false,
+    this.isExpired = false,
     this.fontSize,
     this.padding,
   });
@@ -21,6 +22,9 @@ class RoleBadge extends StatelessWidget {
   /// true면 상대방이 낙찰자 (내가 판매자이고 상대방이 낙찰자) → "낙찰자" 표시
   final bool isOpponentTopBidder;
   
+  /// true면 거래가 만료됨 → 회색으로 표시
+  final bool isExpired;
+  
   /// 폰트 크기 (기본값: 11)
   final double? fontSize;
   
@@ -29,6 +33,25 @@ class RoleBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 만료된 거래는 "만료"로 표시
+    if (isExpired) {
+      return Container(
+        padding: padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.1), // 회색 배경
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          '만료',
+          style: TextStyle(
+            color: iconColor, // 회색 텍스트
+            fontSize: fontSize ?? 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+    
     // 내가 구매자이고 낙찰자인 경우: "낙찰 물품" (노란색)
     if (!isSeller && isTopBidder) {
       return Container(

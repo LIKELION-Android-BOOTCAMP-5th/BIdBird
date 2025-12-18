@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/widgets/components/loading_indicator.dart';
 import 'package:bidbird/core/widgets/item/components/cards/trade_history_card.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
@@ -69,7 +70,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
       selector: (_, vm) => vm.isLoading,
       builder: (context, isLoading, _) {
         if (isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const CenteredLoadingIndicator();
         }
         return _buildErrorOrContent();
       },
