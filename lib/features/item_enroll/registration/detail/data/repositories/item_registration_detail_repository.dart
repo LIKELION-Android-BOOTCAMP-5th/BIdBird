@@ -26,6 +26,11 @@ class ItemRegistrationDetailRepositoryImpl implements ItemRegistrationDetailRepo
   Future<String?> fetchFirstImageUrl(String itemId) {
     return _datasource.fetchFirstImageUrl(itemId);
   }
+
+  @override
+  Future<List<String>> fetchAllImageUrls(String itemId) {
+    return _datasource.fetchAllImageUrls(itemId);
+  }
 }
 
 
