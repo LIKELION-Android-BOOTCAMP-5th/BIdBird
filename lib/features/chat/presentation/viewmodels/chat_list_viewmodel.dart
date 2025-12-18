@@ -101,6 +101,16 @@ class ChatListViewmodel extends ChangeNotifier {
     return _cacheManager.isOpponentTopBidder(itemId);
   }
 
+  /// 특정 itemId에 대해 거래가 만료되었는지 확인
+  bool isTradeExpired(String itemId) {
+    return _cacheManager.isTradeExpired(itemId);
+  }
+
+  /// 특정 itemId의 거래 상태 코드 가져오기
+  int? getTradeStatusCode(String itemId) {
+    return _cacheManager.getTradeStatusCode(itemId);
+  }
+
   void _setupRealtimeSubscription() {
     _realtimeSubscriptionManager.setupSubscription(
       onRoomListUpdate: () => reloadList(forceRefresh: true),

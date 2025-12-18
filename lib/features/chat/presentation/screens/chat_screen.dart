@@ -3,6 +3,7 @@ import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/widgets/components/loading_indicator.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
@@ -77,7 +78,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
 
   Widget _buildBody(BuildContext context, ChatListViewmodel viewModel) {
     if (viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const CenteredLoadingIndicator();
     }
     if (viewModel.chattingRoomList.isEmpty) {
       return const Center(child: Text('참여 중인 채팅방이 없습니다.'));
@@ -102,6 +103,18 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
           separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
       itemBuilder: (context, index) {
         final chattingRoom = viewModel.chattingRoomList[index];
+        final itemId = chattingRoom.itemId;
+        final isExpired = viewModel.isTradeExpired(itemId);
+        final isSeller = viewModel.isSeller(itemId);
+        final isTopBidder = viewModel.isTopBidder(itemId);
+        final isOpponentTopBidder = viewModel.isOpponentTopBidder(itemId);
+        
+        // 낙찰 물품/낙찰자는 거래 완료(550)여도 노란색 유지
+        final isBidderRole = (!isSeller && isTopBidder) || (isSeller && isOpponentTopBidder);
+        
+        // 만료된 거래만 회색으로 표시 (낙찰 물품/낙찰자 거래 완료는 제외)
+        final shouldShowGray = isExpired;
+        
         return GestureDetector(
           onTap: () {
             viewModel.markRoomAsReadLocally(chattingRoom.id);
@@ -137,14 +150,12 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                   // 좌측 역할 인디케이터 스트립
                   Builder(
                     builder: (context) {
-                      final itemId = chattingRoom.itemId;
-                      final isSeller = viewModel.isSeller(itemId);
-                      final isTopBidder = viewModel.isTopBidder(itemId);
-                      final isOpponentTopBidder = viewModel.isOpponentTopBidder(itemId);
-                      
-                      // 낙찰자/낙찰인 경우 노란색
+                      // 만료된 거래는 회색으로 표시 (단, 낙찰 물품/낙찰자 거래 완료는 제외)
                       final Color roleColor;
-                      if ((!isSeller && isTopBidder) || (isSeller && isOpponentTopBidder)) {
+                      if (shouldShowGray) {
+                        roleColor = iconColor;
+                      } else if (isBidderRole) {
+                        // 낙찰자/낙찰인 경우 노란색
                         roleColor = yellowColor;
                       } else {
                         roleColor = isSeller ? roleSalePrimary : rolePurchasePrimary;
@@ -198,19 +209,11 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                                         children: [
                                           Padding(
                                             padding: const EdgeInsets.only(right: 6),
-                                            child: Builder(
-                                              builder: (context) {
-                                                final itemId = chattingRoom.itemId;
-                                                final isSeller = viewModel.isSeller(itemId);
-                                                final isTopBidder = viewModel.isTopBidder(itemId);
-                                                final isOpponentTopBidder = viewModel.isOpponentTopBidder(itemId);
-                                                
-                                                return RoleBadge(
-                                                  isSeller: isSeller,
-                                                  isTopBidder: isTopBidder,
-                                                  isOpponentTopBidder: isOpponentTopBidder,
-                                                );
-                                              },
+                                            child: RoleBadge(
+                                              isSeller: isSeller,
+                                              isTopBidder: isTopBidder,
+                                              isOpponentTopBidder: isOpponentTopBidder,
+                                              isExpired: shouldShowGray,
                                             ),
                                           ),
                                           Expanded(
@@ -230,7 +233,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                                     Text(
                                       chattingRoom.lastMessageSendAt.toTimesAgo(),
                                       style: TextStyle(
-                                        color: iconColor,
+                                        color: shouldShowGray ? iconColor.withValues(alpha: 0.6) : iconColor,
                                         fontSize: context.fontSizeSmall,
                                         fontWeight: FontWeight.w600,
                                       ),
