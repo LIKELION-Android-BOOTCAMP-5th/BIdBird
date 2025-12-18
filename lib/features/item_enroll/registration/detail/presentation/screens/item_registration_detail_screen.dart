@@ -4,6 +4,7 @@ import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_terms.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
+import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/features/item_enroll/registration/detail/presentation/viewmodels/item_registration_detail_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
@@ -90,11 +91,8 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
   }
 
   Widget _buildImageSection(BuildContext context, ItemRegistrationDetailViewModel viewModel) {
-    final imageUrl = viewModel.imageUrl ?? item.thumbnailUrl;
-    final bool isVideo = imageUrl != null && isVideoFile(imageUrl);
-    final displayUrl = isVideo 
-        ? getVideoThumbnailUrl(imageUrl) 
-        : imageUrl;
+    final imageUrls = viewModel.imageUrls;
+    final hasImages = imageUrls.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -104,68 +102,16 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
       clipBehavior: Clip.hardEdge,
       child: AspectRatio(
         aspectRatio: 1,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: displayUrl != null && displayUrl.isNotEmpty
-                  ? GestureDetector(
-                      onTap: isVideo
-                          ? () {
-                              // 전체 화면 비디오 플레이어로 재생
-                              FullScreenVideoViewer.show(context, imageUrl);
-                            }
-                          : null,
-                      child: Stack(
-                        children: [
-                          Center(
-                            child: CachedNetworkImage(
-                              imageUrl: displayUrl,
-                              cacheManager: ItemImageCacheManager.instance,
-                              fit: BoxFit.contain,
-                              placeholder: (context, url) => const Center(
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                              errorWidget: (context, url, error) => const Center(
-                                child: Text(
-                                  '이미지 없음',
-                                  style: TextStyle(color: Colors.black, fontSize: 16),
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (isVideo)
-                            Positioned.fill(
-                              child: Container(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.play_circle_filled,
-                                    color: Colors.white,
-                                    size: 64,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    )
-                  : const Center(
-                      child: Text(
-                        '이미지 없음',
-                        style: TextStyle(color: Colors.black, fontSize: 16),
-                      ),
-                    ),
-            ),
-            const Positioned(
-              right: 8,
-              bottom: 8,
-              child: Text(
-                '1/1',
-                style: TextStyle(color: Colors.black, fontSize: 12),
+        child: hasImages
+            ? _ImageGallery(
+                imageUrls: imageUrls,
+              )
+            : const Center(
+                child: Text(
+                  '이미지 없음',
+                  style: TextStyle(color: Colors.black, fontSize: 16),
+                ),
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -309,6 +255,128 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ImageGallery extends StatefulWidget {
+  const _ImageGallery({required this.imageUrls});
+
+  final List<String> imageUrls;
+
+  @override
+  State<_ImageGallery> createState() => _ImageGalleryState();
+}
+
+class _ImageGalleryState extends State<_ImageGallery> {
+  late PageController _pageController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _currentPage = index;
+            });
+          },
+          itemCount: widget.imageUrls.length,
+          itemBuilder: (context, index) {
+            final imageUrl = widget.imageUrls[index];
+            final bool isVideo = isVideoFile(imageUrl);
+            final displayUrl = isVideo ? getVideoThumbnailUrl(imageUrl) : imageUrl;
+
+            return GestureDetector(
+              onTap: () {
+                if (isVideo) {
+                  FullScreenVideoViewer.show(context, imageUrl);
+                } else {
+                  final imageOnlyUrls = widget.imageUrls
+                      .where((url) => !isVideoFile(url))
+                      .toList();
+                  final imageIndex = imageOnlyUrls.indexOf(imageUrl);
+                  
+                  if (imageIndex >= 0) {
+                    FullScreenImageGalleryViewer.show(
+                      context,
+                      imageOnlyUrls,
+                      initialIndex: imageIndex,
+                    );
+                  }
+                }
+              },
+              child: Stack(
+                children: [
+                  Center(
+                    child: CachedNetworkImage(
+                      imageUrl: displayUrl,
+                      cacheManager: ItemImageCacheManager.instance,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => const Center(
+                        child: Text(
+                          '이미지 없음',
+                          style: TextStyle(color: Colors.black, fontSize: 16),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (isVideo)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        child: const Center(
+                          child: Icon(
+                            Icons.play_circle_filled,
+                            color: Colors.white,
+                            size: 64,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+        if (widget.imageUrls.length > 1)
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '${_currentPage + 1}/${widget.imageUrls.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

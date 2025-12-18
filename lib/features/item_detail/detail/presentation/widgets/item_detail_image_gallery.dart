@@ -177,12 +177,22 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
                 left: 16,
                 child: _RemainingTimeOverlay(finishTime: widget.item.finishTime),
               ),
-              // 입찰 카운트 오버레이 - 우하단 (타이머와 동일한 스타일)
+              // 입찰 카운트 오버레이 - 우하단 (왼쪽)
               Positioned(
                 bottom: 40,
-                right: 16,
+                right: 48,
                 child: _BidCountOverlay(bidCount: widget.item.biddingCount),
               ),
+              // 이미지 개수 표시 오버레이 - 우하단 (오른쪽)
+              if (hasImages && images.isNotEmpty)
+                Positioned(
+                  bottom: 40,
+                  right: 16,
+                  child: _ImageCountOverlay(
+                    currentIndex: _currentPage,
+                    totalCount: images.length,
+                  ),
+                ),
             ],
           ),
         ),
@@ -309,6 +319,35 @@ class _RemainingTimeOverlayState extends State<_RemainingTimeOverlay> with Widge
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ImageCountOverlay extends StatelessWidget {
+  const _ImageCountOverlay({
+    required this.currentIndex,
+    required this.totalCount,
+  });
+
+  final int currentIndex;
+  final int totalCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '${currentIndex + 1}/$totalCount',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

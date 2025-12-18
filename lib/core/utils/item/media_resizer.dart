@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:video_compress/video_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:image/image.dart' as img;
 
 /// 미디어 리사이징 유틸리티
 /// 이미지와 동영상을 리사이징하는 컴포넌트
@@ -207,7 +208,7 @@ class MediaResizer {
     return path.join(tempDir.path, fileName);
   }
 
-  /// 이미지 썸네일 생성
+  /// 이미지 썸네일 생성 (정사각형으로 crop하여 생성)
   static Future<XFile?> createImageThumbnail(
     XFile imageFile, {
     int? width,
@@ -224,26 +225,50 @@ class MediaResizer {
         return null;
       }
 
-      // 썸네일 생성 (flutter_image_compress 사용)
-      final targetPath = await _getTempFilePath('thumbnail_${DateTime.now().millisecondsSinceEpoch}.jpg');
-      
       final targetWidth = width ?? thumbnailWidth;
       final targetHeight = height ?? thumbnailHeight;
       
-      final result = await FlutterImageCompress.compressAndGetFile(
-        imageFile.path,
-        targetPath,
-        quality: quality ?? thumbnailQuality,
-        minWidth: targetWidth,
-        minHeight: targetHeight,
-        keepExif: false,
-      );
-
-      if (result == null) {
+      // 이미지를 로드하여 정사각형으로 crop
+      final imageBytes = await file.readAsBytes();
+      final originalImage = img.decodeImage(imageBytes);
+      
+      if (originalImage == null) {
         return null;
       }
+      
+      // 정사각형으로 crop (중앙 기준)
+      final size = originalImage.width < originalImage.height 
+          ? originalImage.width 
+          : originalImage.height;
+      final offsetX = (originalImage.width - size) ~/ 2;
+      final offsetY = (originalImage.height - size) ~/ 2;
+      
+      // 정사각형으로 crop
+      final croppedImage = img.copyCrop(
+        originalImage,
+        x: offsetX,
+        y: offsetY,
+        width: size,
+        height: size,
+      );
+      
+      // 타겟 크기로 리사이즈
+      final resizedImage = img.copyResize(
+        croppedImage,
+        width: targetWidth,
+        height: targetHeight,
+        interpolation: img.Interpolation.linear,
+      );
+      
+      // JPEG로 인코딩
+      final jpegBytes = img.encodeJpg(resizedImage, quality: quality ?? thumbnailQuality);
+      
+      // 임시 파일로 저장
+      final targetPath = await _getTempFilePath('thumbnail_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final targetFile = File(targetPath);
+      await targetFile.writeAsBytes(jpegBytes);
 
-      return XFile(result.path);
+      return XFile(targetPath);
     } catch (e) {
       return null;
     }

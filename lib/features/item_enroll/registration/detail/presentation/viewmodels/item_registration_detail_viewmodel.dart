@@ -6,6 +6,7 @@ import '../../domain/usecases/fetch_terms_text_usecase.dart';
 import '../../domain/usecases/confirm_registration_usecase.dart';
 import '../../domain/usecases/delete_item_usecase.dart';
 import '../../domain/usecases/fetch_first_image_url_usecase.dart';
+import '../../domain/usecases/fetch_all_image_urls_usecase.dart';
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +18,7 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     ConfirmRegistrationUseCase? confirmRegistrationUseCase,
     DeleteItemUseCase? deleteItemUseCase,
     FetchFirstImageUrlUseCase? fetchFirstImageUrlUseCase,
+    FetchAllImageUrlsUseCase? fetchAllImageUrlsUseCase,
   })  : _item = item,
         _fetchTermsTextUseCase =
             fetchTermsTextUseCase ?? FetchTermsTextUseCase(ItemRegistrationDetailRepositoryImpl()),
@@ -25,12 +27,15 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
         _deleteItemUseCase =
             deleteItemUseCase ?? DeleteItemUseCase(ItemRegistrationDetailRepositoryImpl()),
         _fetchFirstImageUrlUseCase = fetchFirstImageUrlUseCase ??
-            FetchFirstImageUrlUseCase(ItemRegistrationDetailRepositoryImpl());
+            FetchFirstImageUrlUseCase(ItemRegistrationDetailRepositoryImpl()),
+        _fetchAllImageUrlsUseCase = fetchAllImageUrlsUseCase ??
+            FetchAllImageUrlsUseCase(ItemRegistrationDetailRepositoryImpl());
 
   final FetchTermsTextUseCase _fetchTermsTextUseCase;
   final ConfirmRegistrationUseCase _confirmRegistrationUseCase;
   final DeleteItemUseCase _deleteItemUseCase;
   final FetchFirstImageUrlUseCase _fetchFirstImageUrlUseCase;
+  final FetchAllImageUrlsUseCase _fetchAllImageUrlsUseCase;
 
   final ItemRegistrationData _item;
   ItemRegistrationData get item => _item;
@@ -43,6 +48,8 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
 
   String? _imageUrl;
   String? get imageUrl => _imageUrl;
+  List<String> _imageUrls = [];
+  List<String> get imageUrls => _imageUrls;
   bool _isLoadingImage = false;
   bool get isLoadingImage => _isLoadingImage;
 
@@ -57,22 +64,35 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
   }
 
   Future<void> loadImage() async {
-    // thumbnailUrl이 있으면 사용, 없으면 item_images에서 가져오기
-    if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
-      _imageUrl = _item.thumbnailUrl;
-      notifyListeners();
-      return;
-    }
-
     _isLoadingImage = true;
     notifyListeners();
 
     try {
-      final imageUrl = await _fetchFirstImageUrlUseCase(_item.id);
-      _imageUrl = imageUrl ?? _item.thumbnailUrl;
+      // 모든 이미지 URL 가져오기
+      final imageUrls = await _fetchAllImageUrlsUseCase(_item.id);
+      
+      if (imageUrls.isNotEmpty) {
+        _imageUrls = imageUrls;
+        _imageUrl = imageUrls.first;
+      } else {
+        // 이미지가 없으면 thumbnailUrl 사용
+        if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
+          _imageUrl = _item.thumbnailUrl;
+          _imageUrls = [_item.thumbnailUrl!];
+        } else {
+          _imageUrl = null;
+          _imageUrls = [];
+        }
+      }
     } catch (e) {
-      // 이미지 로드 실패 시 기존 thumbnailUrl 사용
-      _imageUrl = _item.thumbnailUrl;
+      // 이미지 로드 실패 시 thumbnailUrl 사용
+      if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
+        _imageUrl = _item.thumbnailUrl;
+        _imageUrls = [_item.thumbnailUrl!];
+      } else {
+        _imageUrl = null;
+        _imageUrls = [];
+      }
     } finally {
       _isLoadingImage = false;
       notifyListeners();

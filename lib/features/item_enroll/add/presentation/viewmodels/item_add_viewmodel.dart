@@ -24,8 +24,11 @@ import 'package:bidbird/features/item_enroll/add/data/repositories/edit_item_rep
 import 'package:bidbird/features/item_enroll/add/domain/usecases/add_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_edit_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_keyword_types_usecase.dart';
+import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
+import 'package:bidbird/core/upload/gateways/image_upload_gateway.dart';
 
 class ItemAddViewModel extends ItemBaseViewModel {
   ItemAddViewModel()
@@ -34,12 +37,15 @@ class ItemAddViewModel extends ItemBaseViewModel {
           GetKeywordTypesUseCase(KeywordRepositoryImpl()),
       _getEditItemUseCase = GetEditItemUseCase(EditItemRepositoryImpl()),
       _uploadImagesUseCase =
-          UploadImagesUseCase(ImageUploadGatewayImpl());
+          UploadImagesUseCase(ImageUploadGatewayImpl()),
+      _uploadItemImagesWithThumbnailUseCase =
+          UploadItemImagesWithThumbnailUseCase(ImageUploadGatewayImpl());
 
   final AddItemUseCase _addItemUseCase;
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
   final UploadImagesUseCase _uploadImagesUseCase;
+  final UploadItemImagesWithThumbnailUseCase _uploadItemImagesWithThumbnailUseCase;
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController startPriceController = TextEditingController();
@@ -466,52 +472,26 @@ class ItemAddViewModel extends ItemBaseViewModel {
     );
   }
 
-  Future<_ImageUploadResult?> _uploadItemImagesWithThumbnail(
+  Future<ItemImageUploadResult?> _uploadItemImagesWithThumbnail(
     BuildContext context,
     ScaffoldMessengerState scaffoldMessenger,
   ) async {
-    // 이미지 업로드
-    final List<String> imageUrls = await _uploadImagesUseCase(selectedImages);
+    try {
+      // 유즈케이스를 사용하여 이미지 및 썸네일 업로드
+      final result = await _uploadItemImagesWithThumbnailUseCase(
+        images: selectedImages,
+        primaryImageIndex: primaryImageIndex,
+      );
 
-    if (imageUrls.isEmpty) {
+      return result;
+    } catch (e) {
       if (context.mounted) {
         scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
+          SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
         );
       }
       return null;
     }
-
-    // 썸네일 생성 및 업로드
-    String? thumbnailUrl;
-    if (selectedImages.isNotEmpty && primaryImageIndex >= 0 && primaryImageIndex < selectedImages.length) {
-      try {
-        final primaryImage = selectedImages[primaryImageIndex];
-        final thumbnailFile = await MediaResizer.createThumbnail(primaryImage);
-        
-        if (thumbnailFile != null) {
-          final urls = await _uploadImagesUseCase([thumbnailFile]);
-          thumbnailUrl = urls.isNotEmpty ? urls.first : null;
-        }
-      } catch (e) {
-        // 썸네일 생성 실패 시 조용히 처리 (이미지 URL 사용)
-        print('썸네일 생성 실패: $e');
-      }
-    }
-
-    // 썸네일이 없으면 primaryImageIndex의 이미지 URL 사용
-    if (thumbnailUrl == null && imageUrls.isNotEmpty) {
-      int index = 0;
-      if (primaryImageIndex >= 0 && primaryImageIndex < imageUrls.length) {
-        index = primaryImageIndex;
-      }
-      thumbnailUrl = imageUrls[index];
-    }
-
-    return _ImageUploadResult(
-      imageUrls: imageUrls,
-      thumbnailUrl: thumbnailUrl,
-    );
   }
 
   Future<void> _saveItem(
@@ -583,13 +563,3 @@ class ItemAddViewModel extends ItemBaseViewModel {
   }
 }
 
-/// 이미지 업로드 결과
-class _ImageUploadResult {
-  final List<String> imageUrls;
-  final String? thumbnailUrl;
-
-  _ImageUploadResult({
-    required this.imageUrls,
-    this.thumbnailUrl,
-  });
-}

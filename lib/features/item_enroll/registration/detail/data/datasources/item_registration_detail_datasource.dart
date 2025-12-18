@@ -70,6 +70,28 @@ class ItemRegistrationDetailDatasource {
     }
   }
 
+  Future<List<String>> fetchAllImageUrls(String itemId) async {
+    try {
+      final List<dynamic> imageRows = await _supabase
+          .from('item_images')
+          .select('image_url')
+          .eq('item_id', itemId)
+          .order('sort_order', ascending: true);
+
+      final List<String> imageUrls = imageRows
+          .whereType<Map<String, dynamic>>()
+          .map((row) => getNullableStringFromRow(row, 'image_url'))
+          .whereType<String>()
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      return imageUrls;
+    } catch (e) {
+      // 이미지 조회 실패 시 빈 리스트 반환
+      return [];
+    }
+  }
+
   Future<void> deleteItem(String itemId) async {
     try {
       await ItemSecurityUtils.requireAuthAndVerifyOwnership(
