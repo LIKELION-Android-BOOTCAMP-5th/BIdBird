@@ -6,7 +6,8 @@ import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/core/widgets/item/components/buttons/bottom_submit_button.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/secondary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -38,14 +39,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     '상세·확인',
   ];
 
-  InputDecoration _inputDecoration(String hint, BuildContext? context) {
-    if (context == null) {
-      // Fallback for null context
-      return createStandardInputDecoration(
-        this.context,
-        hint: hint,
-      );
-    }
+  InputDecoration _inputDecoration(String hint) {
     return createStandardInputDecoration(
       context,
       hint: hint,
@@ -95,15 +89,133 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   }
 
   String _getNextButtonText() {
-    switch (_currentStep) {
-      case 0:
-      case 1:
-        return '다음';
-      case 2:
-        return '등록하기';
-      default:
-        return '다음';
+    return _currentStep == 2 ? '등록하기' : '다음';
+  }
+
+  void _handlePageChange(int index, ItemAddViewModel viewModel) {
+    // 이전 페이지로 돌아가는 경우는 검증하지 않음
+    if (index <= _currentStep) {
+      setState(() {
+        _currentStep = index;
+      });
+      return;
     }
+
+    // 다음 페이지로 넘어가려고 할 때 검증
+    bool validationPassed = false;
+
+    if (_currentStep == 0) {
+      _productInfoCardKey.currentState?.validateFields();
+      validationPassed = _canGoToNextStep(viewModel);
+    } else if (_currentStep == 1) {
+      _priceAuctionCardKey.currentState?.validatePrices();
+      validationPassed = _canGoToNextStep(viewModel);
+    }
+
+    if (!validationPassed) {
+      // 검증 실패 시 즉시 이전 페이지로 돌아감
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _pageController.jumpToPage(_currentStep);
+        }
+      });
+      return;
+    }
+
+    setState(() {
+      _currentStep = index;
+    });
+  }
+
+  void _handleNextButtonPress(ItemAddViewModel viewModel) {
+    // 가격·경매 카드에서 다음 버튼을 눌렀을 때 검증
+    if (_currentStep == 1) {
+      _priceAuctionCardKey.currentState?.validatePrices();
+      if (!_canGoToNextStep(viewModel)) {
+        return;
+      }
+    }
+
+    if (_currentStep < 2) {
+      // 다음 단계로 이동
+      _goToStep(_currentStep + 1);
+    } else {
+      // 최종 등록
+      _showSubmitDialog(viewModel);
+    }
+  }
+
+  void _showSubmitDialog(ItemAddViewModel viewModel) {
+    showDialog(
+      context: context,
+      builder: (_) => AskPopup(
+        content: '저장하시겠습니까?',
+        noText: '취소',
+        yesLogic: () async {
+          Navigator.of(context).pop();
+          await viewModel.submit(context);
+        },
+      ),
+    );
+  }
+
+  Widget _buildSingleButtonBar(ItemAddViewModel viewModel) {
+    return PrimaryButton(
+      text: _getNextButtonText(),
+      onPressed: () => _goToStep(_currentStep + 1),
+      isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+      width: double.infinity,
+    );
+  }
+
+  Widget _buildDualButtonBar(ItemAddViewModel viewModel) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SecondaryButton(
+            text: '이전',
+            onPressed: () => _goToStep(_currentStep - 1),
+            width: null,
+          ),
+        ),
+        SizedBox(width: context.spacingSmall),
+        Expanded(
+          child: PrimaryButton(
+            text: _getNextButtonText(),
+            onPressed: () => _handleNextButtonPress(viewModel),
+            isEnabled: !viewModel.isSubmitting,
+            width: null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomNavigationBar(ItemAddViewModel viewModel) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: 72,
+        padding: EdgeInsets.symmetric(
+          horizontal: context.hPadding,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: shadowLow,
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: _currentStep == 0
+            ? _buildSingleButtonBar(viewModel)
+            : _buildDualButtonBar(viewModel),
+      ),
+    );
   }
 
   @override
@@ -112,15 +224,16 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     super.dispose();
   }
 
+  bool _getIsKeyboardVisible(BuildContext context) {
+    return MediaQuery.of(context).viewInsets.bottom > 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final ItemAddViewModel viewModel = context.watch<ItemAddViewModel>();
-    final horizontalPadding = context.hPadding;
-    final bottomPadding = context.bottomPadding;
     
-    // 키보드 감지
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final isKeyboardVisible = keyboardHeight > 0;
+    // 키보드 감지 - MediaQuery를 직접 사용하여 더 간단하게 처리
+    final isKeyboardVisible = _getIsKeyboardVisible(context);
     
     // 키보드 상태가 변경되면 업데이트
     if (_isKeyboardVisible != isKeyboardVisible) {
@@ -162,41 +275,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                 physics: _isKeyboardVisible || !_canGoToNextStep(viewModel)
                     ? const NeverScrollableScrollPhysics()
                     : const PageScrollPhysics(),
-                onPageChanged: (index) {
-                  // 스와이프로 다음 페이지로 넘어가려고 할 때 검증
-                  if (index > _currentStep) {
-                    // 첫 번째 카드에서 두 번째 카드로 넘어가려고 할 때
-                    if (_currentStep == 0) {
-                      _productInfoCardKey.currentState?.validateFields();
-                      if (!_canGoToNextStep(viewModel)) {
-                        // 검증 실패 시 즉시 이전 페이지로 돌아감
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            _pageController.jumpToPage(_currentStep);
-                          }
-                        });
-                        return;
-                      }
-                    }
-                    // 두 번째 카드에서 세 번째 카드로 넘어가려고 할 때
-                    else if (_currentStep == 1) {
-                      _priceAuctionCardKey.currentState?.validatePrices();
-                      if (!_canGoToNextStep(viewModel)) {
-                        // 검증 실패 시 즉시 이전 페이지로 돌아감
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            _pageController.jumpToPage(_currentStep);
-                          }
-                        });
-                        return;
-                      }
-                    }
-                  }
-                  
-                  setState(() {
-                    _currentStep = index;
-                  });
-                },
+                onPageChanged: (index) => _handlePageChange(index, viewModel),
                 children: [
                   // 카드 1: 상품 정보
                   ProductInfoCard(
@@ -204,13 +283,13 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                     viewModel: viewModel,
                     onImageSourceTap: () =>
                         _showImageSourceSheet(context, viewModel),
-                    inputDecoration: (hint) => _inputDecoration(hint, context),
+                    inputDecoration: (hint) => _inputDecoration(hint),
                   ),
                   // 카드 2: 가격·경매
                   PriceAuctionCard(
                     key: _priceAuctionCardKey,
                     viewModel: viewModel,
-                    inputDecoration: (hint) => _inputDecoration(hint, context),
+                    inputDecoration: (hint) => _inputDecoration(hint),
                   ),
                   // 카드 3: 상세·확인
                   DetailConfirmCard(
@@ -221,163 +300,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
             ),
           ],
         ),
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: Container(
-            height: 72,
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: shadowLow,
-                  blurRadius: 8,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: _currentStep == 0
-                ? SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: (_canGoToNextStep(viewModel) &&
-                              !viewModel.isSubmitting)
-                          ? () {
-                              if (_currentStep < 2) {
-                                // 다음 단계로 이동
-                                _goToStep(_currentStep + 1);
-                              } else {
-                                // 최종 등록
-                                showDialog(
-                                  context: context,
-                                  builder: (_) => AskPopup(
-                                    content: '저장하시겠습니까?',
-                                    noText: '취소',
-                                    yesLogic: () async {
-                                      Navigator.of(context).pop();
-                                      await viewModel.submit(context);
-                                    },
-                                  ),
-                                );
-                              }
-                            }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        backgroundColor: (_canGoToNextStep(viewModel) &&
-                                !viewModel.isSubmitting)
-                            ? blueColor
-                            : BorderColor,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: BorderColor,
-                        disabledForegroundColor: iconColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(defaultRadius),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        _getNextButtonText(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 이전 버튼
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: () => _goToStep(_currentStep - 1),
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              side: BorderSide(color: blueColor),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(defaultRadius),
-                              ),
-                            ),
-                            child: Text(
-                              '이전',
-                              style: TextStyle(
-                                color: blueColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: context.spacingSmall),
-                      // 다음/등록 버튼
-                      Expanded(
-                        child: SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: !viewModel.isSubmitting
-                                ? () {
-                                    // 가격·경매 카드에서 다음 버튼을 눌렀을 때 검증
-                                    if (_currentStep == 1) {
-                                      _priceAuctionCardKey.currentState?.validatePrices();
-                                      // 검증 후 다시 확인
-                                      if (!_canGoToNextStep(viewModel)) {
-                                        return;
-                                      }
-                                    }
-                                    
-                                    if (_currentStep < 2) {
-                                      // 다음 단계로 이동
-                                      _goToStep(_currentStep + 1);
-                                    } else {
-                                      // 최종 등록
-                                      showDialog(
-                                        context: context,
-                                        builder: (_) => AskPopup(
-                                          content: '저장하시겠습니까?',
-                                          noText: '취소',
-                                          yesLogic: () async {
-                                            Navigator.of(context).pop();
-                                            await viewModel.submit(context);
-                                          },
-                                        ),
-                                      );
-                                    }
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              backgroundColor: !viewModel.isSubmitting
-                                  ? blueColor
-                                  : BorderColor,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: BorderColor,
-                              disabledForegroundColor: iconColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(defaultRadius),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              _getNextButtonText(),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
+        bottomNavigationBar: _buildBottomNavigationBar(viewModel),
       ),
     );
   }

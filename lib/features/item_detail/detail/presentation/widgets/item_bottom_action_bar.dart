@@ -1,5 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
+import 'package:bidbird/core/widgets/item/components/buttons/secondary_button.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
 import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
@@ -611,7 +613,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     if (statusCode == 321 && isTopBidder && !isTradePaid) {
       final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
 
-      return ElevatedButton(
+      return PrimaryButton(
+        text: '결제하러 가기',
         onPressed: () async {
           final authVM = context.read<AuthViewModel>();
           final String buyerTel = authVM.user?.phone_number ?? '';
@@ -659,20 +662,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             );
           }
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: blueColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.7),
-          ),
-        ),
-        child: const Text(
-          '결제하러 가기',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
+        width: double.infinity,
       );
     }
 
@@ -681,7 +671,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // - 그 외 사용자는 안내 문구만 노출
     if (isBuyNowInProgress && !isBuyNowCompleted) {
       if (isTopBidder) {
-        return ElevatedButton(
+        return PrimaryButton(
+          text: '결제하러 가기',
           onPressed: () async {
             const buyerTel = '01012345678';
             const appScheme = 'bidbird';
@@ -730,20 +721,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               );
             }
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: blueColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.7),
-            ),
-          ),
-          child: const Text(
-            '결제하러 가기',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
+          width: double.infinity,
         );
       }
 
@@ -792,7 +770,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     }
 
     if (showBidButton) {
-      return OutlinedButton(
+      return SecondaryButton(
+        text: '입찰하기',
         onPressed: () async {
           final passed = await _ensureIdentityVerified();
           if (!passed) return;
@@ -820,20 +799,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             },
           );
         },
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: blueColor),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.7),
-          ),
-        ),
-        child: Text(
-          '입찰하기',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: blueColor,
-          ),
-        ),
+        width: double.infinity,
       );
     }
 
@@ -890,7 +856,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   }
 
   Widget _buildBuyNowButton() {
-    return ElevatedButton(
+    return PrimaryButton(
+      text: '즉시 구매하기',
       onPressed: () async {
         final passed = await _ensureIdentityVerified();
         if (!passed) return;
@@ -916,18 +883,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           },
         );
       },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: blueColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.7)),
-      ),
-      child: const Text(
-        '즉시 구매하기',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
+      width: double.infinity,
     );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/mixins/form_validation_mixin.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/sections/content_input_section.dart';
 import 'package:bidbird/features/report/presentation/viewmodels/report_viewmodel.dart';
@@ -17,13 +17,21 @@ class ReportContentCard extends StatefulWidget {
   State<ReportContentCard> createState() => ReportContentCardState();
 }
 
-class ReportContentCardState extends State<ReportContentCard> {
+class ReportContentCardState extends State<ReportContentCard>
+    with FormValidationMixin {
   String? _contentError;
   bool _shouldShowErrors = false;
 
+  @override
+  bool get shouldShowErrors => _shouldShowErrors;
+
+  @override
+  set shouldShowErrors(bool value) {
+    _shouldShowErrors = value;
+  }
+
   void validateFields() {
-    setState(() {
-      _shouldShowErrors = true;
+    startValidation(() {
       _contentError = null;
 
       final content = widget.viewModel.contentController.text.trim();
@@ -35,11 +43,9 @@ class ReportContentCardState extends State<ReportContentCard> {
     });
   }
 
-  void _clearErrors() {
-    setState(() {
-      _shouldShowErrors = false;
-      _contentError = null;
-    });
+  @override
+  void clearAllErrors() {
+    _contentError = null;
   }
 
   @override
@@ -47,13 +53,7 @@ class ReportContentCardState extends State<ReportContentCard> {
     // 내용이 입력되면 에러 제거
     final content = widget.viewModel.contentController.text.trim();
     if (content.isNotEmpty && content.length >= 1 && _contentError != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _contentError = null;
-          });
-        }
-      });
+      clearError(() => _contentError = null);
     }
 
     return SingleChildScrollView(
@@ -64,7 +64,6 @@ class ReportContentCardState extends State<ReportContentCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 상세 내용 카드
           ContentInputSection(
             label: '상세 내용',
             controller: widget.viewModel.contentController,
@@ -76,17 +75,6 @@ class ReportContentCardState extends State<ReportContentCard> {
             successMessage: '구체적으로 작성할수록 처리 속도가 빨라집니다',
             errorMessage: _shouldShowErrors ? _contentError : null,
           ),
-          if (_shouldShowErrors && _contentError != null)
-            Padding(
-              padding: EdgeInsets.only(top: context.spacingSmall),
-              child: Text(
-                _contentError!,
-                style: TextStyle(
-                  fontSize: context.fontSizeSmall,
-                  color: RedColor,
-                ),
-              ),
-            ),
         ],
       ),
     );
