@@ -18,21 +18,6 @@ class ItemDescriptionSection extends StatefulWidget {
 }
 
 class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
-  bool _hasLoadedBidHistory = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // 입찰 기록이 비어있으면 로드
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final vm = context.read<ItemDetailViewModel>();
-      if (vm.bidHistory.isEmpty && !_hasLoadedBidHistory) {
-        _hasLoadedBidHistory = true;
-        vm.loadBidHistory();
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ItemDetailViewModel>();
