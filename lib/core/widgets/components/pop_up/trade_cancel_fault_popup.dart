@@ -1,6 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:flutter/material.dart';
 
 /// 거래 취소 귀책 사유 선택 팝업

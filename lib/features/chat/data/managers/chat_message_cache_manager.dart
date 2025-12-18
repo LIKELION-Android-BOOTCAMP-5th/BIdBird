@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// SharedPreferences를 사용한 메시지 캐싱 로직을 관리하는 클래스
 class ChatMessageCacheManager {
   static const String _cachePrefix = 'chat_messages_cache_';
+  static const String _lastMessageTimePrefix = 'chat_messages_last_time_';
 
   /// 캐시에서 메시지 불러오기
   Future<List<ChatMessageEntity>> getCachedMessages(String chattingRoomId) async {
@@ -23,6 +24,28 @@ class ChatMessageCacheManager {
       // 캐시 불러오기 실패 시 빈 리스트 반환
     }
     return [];
+  }
+
+  /// 마지막 메시지 시간 가져오기
+  Future<String?> getLastMessageTime(String chattingRoomId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final timeKey = '$_lastMessageTimePrefix$chattingRoomId';
+      return prefs.getString(timeKey);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 마지막 메시지 시간 저장
+  Future<void> saveLastMessageTime(String chattingRoomId, String lastMessageTime) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final timeKey = '$_lastMessageTimePrefix$chattingRoomId';
+      await prefs.setString(timeKey, lastMessageTime);
+    } catch (e) {
+      // 저장 실패 시 무시
+    }
   }
 
   /// 메시지를 캐시에 저장
@@ -65,6 +88,4 @@ class ChatMessageCacheManager {
     }
   }
 }
-
-
 

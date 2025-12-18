@@ -1,4 +1,4 @@
-import 'package:bidbird/features/report/model/report_type_entity.dart';
+import 'package:bidbird/features/report/domain/entities/report_type_entity.dart';
 import 'package:flutter/material.dart';
 
 class ReportCategoryBottomSheet extends StatelessWidget {

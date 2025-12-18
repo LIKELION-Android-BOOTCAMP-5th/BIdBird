@@ -6,8 +6,11 @@ import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
 
 /// 채팅 리포지토리 인터페이스
 abstract class ChatRepository {
-  Future<List<ChattingRoomEntity>> fetchChattingRoomList();
-  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId);
+  Future<List<ChattingRoomEntity>> fetchChattingRoomList({
+    int page = 1,
+    int limit = 20,
+  });
+  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId, {bool forceRefresh = false});
   Future<List<ChatMessageEntity>> getOlderMessages(
     String chattingRoomId,
     String beforeCreatedAtIso, {

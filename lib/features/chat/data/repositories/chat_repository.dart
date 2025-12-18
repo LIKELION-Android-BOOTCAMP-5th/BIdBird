@@ -1,4 +1,3 @@
-import 'package:bidbird/features/chat/data/datasources/chat_network_api_datasource.dart';
 import 'package:bidbird/features/chat/data/datasources/chat_supabase_datasource.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
@@ -8,17 +7,21 @@ import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart';
 import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
 
 class ChatRepositoryImpl implements ChatRepository {
-  final ChatNetworkApiDatasource _networkApiChatDatasource =
-      ChatNetworkApiDatasource();
   final ChatSupabaseDatasource _chatDatasource = ChatSupabaseDatasource();
   @override
-  Future<List<ChattingRoomEntity>> fetchChattingRoomList() async {
-    return await _networkApiChatDatasource.fetchChattingRoomList();
+  Future<List<ChattingRoomEntity>> fetchChattingRoomList({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    return await _chatDatasource.fetchChattingRoomList(
+      page: page,
+      limit: limit,
+    );
   }
 
   @override
-  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId) async {
-    return await _chatDatasource.getMessages(chattingRoomId);
+  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId, {bool forceRefresh = false}) async {
+    return await _chatDatasource.getMessages(chattingRoomId, forceRefresh: forceRefresh);
   }
 
   @override
@@ -58,19 +61,19 @@ class ChatRepositoryImpl implements ChatRepository {
   }) async {
     switch (messageType) {
       case MessageType.text:
-        return await _networkApiChatDatasource.firstMessage(
+        return await _chatDatasource.firstMessage(
           itemId: itemId,
           message: message,
           messageType: "text",
         );
       case MessageType.image:
-        return await _networkApiChatDatasource.firstMessage(
+        return await _chatDatasource.firstMessage(
           itemId: itemId,
           messageType: "image",
           imageUrl: imageUrl,
         );
       case MessageType.video:
-        return await _networkApiChatDatasource.firstMessage(
+        return await _chatDatasource.firstMessage(
           itemId: itemId,
           messageType: "image",
           imageUrl: imageUrl,
@@ -80,12 +83,12 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<RoomInfoEntity?> fetchRoomInfo(String itemId) async {
-    return _networkApiChatDatasource.fetchRoomInfo(itemId);
+    return _chatDatasource.fetchRoomInfo(itemId);
   }
 
   @override
   Future<RoomInfoEntity?> fetchRoomInfoWithRoomId(String roomId) async {
-    return _networkApiChatDatasource.fetchRoomInfoWithRoomId(roomId);
+    return _chatDatasource.fetchRoomInfoWithRoomId(roomId);
   }
 
   @override
@@ -107,12 +110,12 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<void> completeTrade(String itemId) async {
-    await _networkApiChatDatasource.completeTrade(itemId);
+    await _chatDatasource.completeTrade(itemId);
   }
 
   @override
   Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault) async {
-    await _networkApiChatDatasource.cancelTrade(itemId, reasonCode, isSellerFault);
+    await _chatDatasource.cancelTrade(itemId, reasonCode, isSellerFault);
   }
 
   @override
@@ -123,7 +126,7 @@ class ChatRepositoryImpl implements ChatRepository {
     required double rating,
     required String comment,
   }) async {
-    await _networkApiChatDatasource.submitTradeReview(
+    await _chatDatasource.submitTradeReview(
       itemId: itemId,
       toUserId: toUserId,
       role: role,
@@ -134,6 +137,6 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<bool> hasSubmittedReview(String itemId) async {
-    return await _networkApiChatDatasource.hasSubmittedReview(itemId);
+    return await _chatDatasource.hasSubmittedReview(itemId);
   }
 }

@@ -1,7 +1,13 @@
-import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
-import 'package:bidbird/features/chat/domain/repositories/chat_repository.dart';
+import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
+import 'package:bidbird/features/chat/domain/usecases/send_image_message_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/send_text_message_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/first_message_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
+import 'package:bidbird/core/upload/usecases/upload_images_usecase.dart';
+import 'package:bidbird/core/upload/usecases/upload_videos_usecase.dart';
+import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
+import 'package:bidbird/core/upload/repositories/video_upload_repository.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// 메시지 전송 결과
@@ -40,11 +46,28 @@ class MessageSendResult {
 /// 메시지 전송 관리자
 /// ChattingRoomViewmodel의 sendMessage() 로직을 분리한 클래스
 class MessageSendManager {
-  final ChatRepository _repository;
+  final SendImageMessageUseCase _sendImageMessageUseCase;
+  final SendTextMessageUseCase _sendTextMessageUseCase;
+  final FirstMessageUseCase _firstMessageUseCase;
+  final UploadImagesUseCase _uploadImagesUseCase;
+  final UploadVideosUseCase _uploadVideosUseCase;
 
   MessageSendManager({
-    required ChatRepository repository,
-  }) : _repository = repository;
+    SendImageMessageUseCase? sendImageMessageUseCase,
+    SendTextMessageUseCase? sendTextMessageUseCase,
+    FirstMessageUseCase? firstMessageUseCase,
+    UploadImagesUseCase? uploadImagesUseCase,
+    UploadVideosUseCase? uploadVideosUseCase,
+  })  : _sendImageMessageUseCase =
+            sendImageMessageUseCase ?? SendImageMessageUseCase(ChatRepositoryImpl()),
+        _sendTextMessageUseCase =
+            sendTextMessageUseCase ?? SendTextMessageUseCase(ChatRepositoryImpl()),
+        _firstMessageUseCase =
+            firstMessageUseCase ?? FirstMessageUseCase(ChatRepositoryImpl()),
+        _uploadImagesUseCase =
+            uploadImagesUseCase ?? UploadImagesUseCase(ImageUploadGatewayImpl()),
+        _uploadVideosUseCase =
+            uploadVideosUseCase ?? UploadVideosUseCase(VideoUploadGatewayImpl());
 
   /// 메시지 전송 실행
   /// [roomId] 현재 채팅방 ID (null이면 첫 메시지)
@@ -160,7 +183,7 @@ class MessageSendManager {
         }
 
         try {
-          await _repository.sendImageMessage(result.roomId!, mediaUrl);
+          await _sendImageMessageUseCase(result.roomId!, mediaUrl);
         } catch (e) {
           onError("이미지 ${i + 2}/${images.length} 전송 실패: $e");
           // 에러가 나도 나머지 이미지는 계속 전송 시도
@@ -184,7 +207,7 @@ class MessageSendManager {
     // 텍스트가 있으면 먼저 텍스트 메시지 전송
     if (messageText.trim().isNotEmpty) {
       try {
-        await _repository.sendTextMessage(roomId, messageText);
+        await _sendTextMessageUseCase(roomId, messageText);
       } catch (e) {
         return MessageSendResult.failure("메시지 전송 실패: $e");
       }
@@ -202,8 +225,8 @@ class MessageSendManager {
         continue;
       }
 
-      try {
-        await _repository.sendImageMessage(roomId, mediaUrl);
+        try {
+          await _sendImageMessageUseCase(roomId, mediaUrl);
       } catch (e) {
         onError(
           "이미지 ${i + 1}/${images.length} 전송 실패: $e",
@@ -225,9 +248,11 @@ class MessageSendManager {
       }
       
       if (isVideoFile(file.path)) {
-        return await CloudinaryManager.shared.uploadVideoToCloudinary(file);
+        final urls = await _uploadVideosUseCase([file]);
+        return urls.isNotEmpty ? urls.first : null;
       } else {
-        return await CloudinaryManager.shared.uploadImageToCloudinary(file);
+        final urls = await _uploadImagesUseCase([file]);
+        return urls.isNotEmpty ? urls.first : null;
       }
     } catch (e) {
       return null;
@@ -244,7 +269,7 @@ class MessageSendManager {
     if (roomId == null) {
       // 첫 메시지 전송
       try {
-        final roomId = await _repository.firstMessage(
+        final roomId = await _firstMessageUseCase(
           itemId: itemId,
           message: messageText,
           messageType: MessageType.text,
@@ -262,7 +287,7 @@ class MessageSendManager {
     } else {
       // 기존 채팅방에서 메시지 전송
       try {
-        await _repository.sendTextMessage(roomId, messageText);
+        await _sendTextMessageUseCase(roomId, messageText);
         return MessageSendResult.success();
       } catch (e) {
         return MessageSendResult.failure("메시지 전송 실패: $e");
@@ -284,7 +309,7 @@ class MessageSendManager {
       }
 
       // 첫 메시지 전송
-      final roomId = await _repository.firstMessage(
+      final roomId = await _firstMessageUseCase(
         itemId: itemId,
         messageType: messageType,
         imageUrl: mediaUrl,

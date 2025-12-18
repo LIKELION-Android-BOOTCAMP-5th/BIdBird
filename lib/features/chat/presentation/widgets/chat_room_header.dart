@@ -3,7 +3,7 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
-import 'package:bidbird/features/report/screen/report_screen.dart';
+import 'package:bidbird/features/report/presentation/screens/report_screen.dart';
 import 'package:flutter/material.dart';
 
 /// 채팅방 헤더 위젯

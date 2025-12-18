@@ -1,5 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/widgets/components/default_profile_avatar.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_read_status_helper.dart';
@@ -34,7 +35,7 @@ class ChatMessageList extends StatelessWidget {
           controller: viewModel.scrollController,
           itemCount: viewModel.messages.length,
           reverse: false,
-          cacheExtent: 0,
+          cacheExtent: 500, // 화면 밖 메시지도 렌더링하여 스크롤 위치 유지에 도움
           padding: const EdgeInsets.only(bottom: 16),
           physics: viewModel.listViewPhysics ?? const ClampingScrollPhysics(),
           itemBuilder: (context, index) {
@@ -60,12 +61,26 @@ class ChatMessageList extends StatelessWidget {
     }
 
     // 같은 사람이 연속해서 보낸 메시지 중 첫 번째인지 여부 (아바타 표시용)
+    // 날짜가 바뀌어도 프로필 이미지를 다시 표시
     final bool isFirstFromSameSender;
     if (index == 0) {
       isFirstFromSameSender = true;
     } else {
       final prevMessage = viewModel.messages[index - 1];
-      isFirstFromSameSender = prevMessage.senderId != message.senderId;
+      final bool isDifferentSender = prevMessage.senderId != message.senderId;
+      
+      // 날짜가 바뀌었는지 확인
+      bool isDifferentDate = false;
+      try {
+        final currentDate = DateTime.parse(message.createdAt).toLocal();
+        final prevDate = DateTime.parse(prevMessage.createdAt).toLocal();
+        isDifferentDate = !_isSameDay(currentDate, prevDate);
+      } catch (_) {
+        isDifferentDate = false;
+      }
+      
+      // 발신자가 다르거나 날짜가 바뀌면 프로필 이미지 표시
+      isFirstFromSameSender = isDifferentSender || isDifferentDate;
     }
 
     // 날짜 구분 표시 여부 계산
@@ -161,6 +176,7 @@ class ChatMessageList extends StatelessWidget {
           showTime: isLastFromSameSender,
           isRead: isRead,
           isUnread: isUnread,
+          allMessages: viewModel.messages,
         ),
       );
     } else {
@@ -171,19 +187,15 @@ class ChatMessageList extends StatelessWidget {
       Widget avatarWidget;
       if (isFirstFromSameSender) {
         final String? profileImageUrl = opponent?.profileImage;
-        avatarWidget = CircleAvatar(
-          radius: avatarSize / 2,
-          backgroundColor: const Color(0xFFE5E7EB), // BorderColor
-          backgroundImage: profileImageUrl != null && profileImageUrl.isNotEmpty
-              ? NetworkImage(profileImageUrl)
-              : null,
-          child: profileImageUrl != null && profileImageUrl.isNotEmpty
-              ? null
-              : const Icon(
-                  Icons.person,
-                  color: Color(0xFFF5F6F8), // BackgroundColor
-                ),
-        );
+        avatarWidget = profileImageUrl != null && profileImageUrl.isNotEmpty
+            ? CircleAvatar(
+                radius: avatarSize / 2,
+                backgroundColor: const Color(0xFFE5E7EB), // BorderColor
+                backgroundImage: NetworkImage(profileImageUrl),
+              )
+            : DefaultProfileAvatar(
+                size: avatarSize,
+              );
       } else {
         avatarWidget = SizedBox(
           width: avatarSize,
@@ -206,6 +218,7 @@ class ChatMessageList extends StatelessWidget {
               child: MessageBubble(
                 message: message,
                 isCurrentUser: false,
+                allMessages: viewModel.messages,
                 showTime: isLastFromSameSender,
                 isRead: isRead,
               ),

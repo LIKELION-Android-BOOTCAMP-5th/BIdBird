@@ -1,8 +1,8 @@
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
+import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
-import 'package:bidbird/features/chat/presentation/widgets/full_screen_image_viewer.dart';
-import 'package:bidbird/features/chat/presentation/widgets/full_screen_video_viewer.dart';
+import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -11,12 +11,14 @@ class MessageMediaWidget extends StatelessWidget {
   final ChatMessageEntity message;
   final double maxWidth;
   final double maxHeight;
+  final List<ChatMessageEntity>? allMessages; // 모든 메시지 리스트 (갤러리용)
 
   const MessageMediaWidget({
     super.key,
     required this.message,
     required this.maxWidth,
     this.maxHeight = 600,
+    this.allMessages,
   });
 
   @override
@@ -31,8 +33,8 @@ class MessageMediaWidget extends StatelessWidget {
     // 동영상 URL인지 확인
     final bool isVideo = originalUrl != null && isVideoFile(originalUrl);
 
-    if (isVideo) {
-      return _buildVideoWidget(context, originalUrl!, imageUrlForMessage);
+    if (isVideo && originalUrl != null) {
+      return _buildVideoWidget(context, originalUrl, imageUrlForMessage);
     } else {
       return _buildImageWidget(context, imageUrlForMessage);
     }
@@ -120,7 +122,27 @@ class MessageMediaWidget extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           final originalImageUrl = message.imageUrl ?? imageUrl;
-          FullScreenImageViewer.show(context, originalImageUrl);
+          
+          // 모든 메시지가 제공된 경우 갤러리 뷰어 사용
+          if (allMessages != null) {
+            final imageUrls = _extractImageUrls(allMessages!);
+            if (imageUrls.isNotEmpty) {
+              final initialIndex = imageUrls.indexOf(originalImageUrl);
+              FullScreenImageGalleryViewer.show(
+                context,
+                imageUrls,
+                initialIndex: initialIndex >= 0 ? initialIndex : 0,
+              );
+              return;
+            }
+          }
+          
+          // 단일 이미지 뷰어 사용 (fallback)
+          FullScreenImageGalleryViewer.show(
+            context,
+            [originalImageUrl],
+            initialIndex: 0,
+          );
         },
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -154,6 +176,21 @@ class MessageMediaWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// 메시지 리스트에서 이미지 URL 추출 (비디오 제외)
+  List<String> _extractImageUrls(List<ChatMessageEntity> messages) {
+    final imageUrls = <String>[];
+    for (final msg in messages) {
+      if (msg.messageType == 'image' && msg.imageUrl != null) {
+        final url = msg.imageUrl!;
+        // 비디오가 아닌 경우만 추가
+        if (!isVideoFile(url)) {
+          imageUrls.add(url);
+        }
+      }
+    }
+    return imageUrls;
   }
 }
 

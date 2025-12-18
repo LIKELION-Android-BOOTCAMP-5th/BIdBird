@@ -285,18 +285,54 @@ class ScrollManager {
   /// 스크롤 위치 유지 (더 많은 메시지 로드 시)
   /// 
   /// [previousOffset] 이전 스크롤 오프셋
+  /// [previousMaxScrollExtent] 이전 maxScrollExtent
   /// [newMessagesCount] 새로 추가된 메시지 개수
-  void maintainScrollPosition(double previousOffset, int newMessagesCount) {
-    if (scrollController.hasClients) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (scrollController.hasClients) {
-          // 새로 추가된 메시지의 예상 높이 계산 (평균 메시지 높이 * 추가된 메시지 수)
-          final estimatedNewHeight = newMessagesCount * 80.0;
-          final newOffset = previousOffset + estimatedNewHeight;
-          scrollController.jumpTo(newOffset);
+  void maintainScrollPosition(
+    double previousOffset,
+    double previousMaxScrollExtent,
+    int newMessagesCount,
+  ) {
+    // 여러 프레임에 걸쳐 시도 (레이아웃이 완료될 때까지)
+    int attempts = 0;
+    void tryMaintainPosition() {
+      attempts++;
+      if (!scrollController.hasClients) {
+        if (attempts < 5) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => tryMaintainPosition());
         }
-      });
+        return;
+      }
+      
+      final currentMaxScrollExtent = scrollController.position.maxScrollExtent;
+      final currentOffset = scrollController.position.pixels;
+      
+      // maxScrollExtent가 아직 업데이트되지 않았으면 다음 프레임에서 다시 시도
+      if (currentMaxScrollExtent <= previousMaxScrollExtent && attempts < 5) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => tryMaintainPosition());
+        return;
+      }
+      
+      // 실제 추가된 높이 계산 (새로운 maxScrollExtent - 이전 maxScrollExtent)
+      final actualNewHeight = currentMaxScrollExtent - previousMaxScrollExtent;
+      
+      if (actualNewHeight <= 0) {
+        return;
+      }
+      
+      // 새로운 오프셋 = 이전 오프셋 + 실제 추가된 높이
+      final newOffset = previousOffset + actualNewHeight;
+      
+      // maxScrollExtent를 넘지 않도록 제한
+      final finalOffset = newOffset > currentMaxScrollExtent ? currentMaxScrollExtent : newOffset;
+      
+      // 현재 위치와 계산된 위치가 다르면 조정
+      if ((currentOffset - finalOffset).abs() > 1) {
+        scrollController.jumpTo(finalOffset);
+      }
     }
+    
+    // 첫 번째 시도
+    WidgetsBinding.instance.addPostFrameCallback((_) => tryMaintainPosition());
   }
 
   /// 초기화 상태 리셋
@@ -311,4 +347,3 @@ class ScrollManager {
     scrollController.dispose();
   }
 }
-

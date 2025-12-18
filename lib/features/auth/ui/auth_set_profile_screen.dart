@@ -178,7 +178,7 @@ class _ProfileForm extends StatelessWidget {
 }
 
 class _Keywords extends StatelessWidget {
-  const _Keywords({super.key, required this.vm});
+  const _Keywords({required this.vm});
 
   final AuthSetProfileViewmodel vm;
 

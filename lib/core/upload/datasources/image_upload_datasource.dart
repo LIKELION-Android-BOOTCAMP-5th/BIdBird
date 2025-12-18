@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/cloudinary_manager.dart';
+import 'package:bidbird/core/utils/item/media_resizer.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ImageUploadDataSource {
@@ -7,8 +8,11 @@ class ImageUploadDataSource {
       return [];
     }
     
+    // 리사이징 처리
+    final resizedFiles = await MediaResizer.resizeImages(files);
+    
     // 모든 이미지를 병렬로 업로드
-    final futures = files.map((file) => 
+    final futures = resizedFiles.map((file) => 
       CloudinaryManager.shared.uploadImageToCloudinary(file)
     ).toList();
     

@@ -3,6 +3,8 @@ import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/utils/ui_set/visible_item_calculator.dart';
+import 'package:bidbird/core/widgets/components/default_profile_avatar.dart';
 import 'package:bidbird/core/widgets/components/loading_indicator.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
@@ -21,6 +23,8 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> with RouteAware {
   ChatListViewmodel? _viewModel;
   bool _isViewModelInitialized = false;
+  final ScrollController _scrollController = ScrollController();
+  bool _isListenerAttached = false;
 
   @override
   void didChangeDependencies() {
@@ -28,14 +32,37 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     routeObserver.subscribe(this, ModalRoute.of(context)!);
 
     if (!_isViewModelInitialized) {
-      _viewModel = ChatListViewmodel();
+      // 화면 크기에 맞는 개수 계산 (코어 유틸리티 사용)
+      final loadCount = VisibleItemCalculator.calculateChatListVisibleCount(context);
+      
+      _viewModel = ChatListViewmodel(initialLoadCount: loadCount);
       _isViewModelInitialized = true;
+    }
+
+    // 스크롤 리스너 추가 (한 번만)
+    if (!_isListenerAttached && _viewModel != null) {
+      _scrollController.addListener(_scrollListener);
+      _isListenerAttached = true;
+    }
+  }
+
+  void _scrollListener() {
+    if (_viewModel == null) return;
+    
+    // 스크롤이 하단 근처(200px 이내)에 도달하면 더 많은 데이터 로드
+    if (_scrollController.position.pixels >= 
+        _scrollController.position.maxScrollExtent - 200) {
+      _viewModel!.loadMoreChattingRooms();
     }
   }
 
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    if (_isListenerAttached) {
+      _scrollController.removeListener(_scrollListener);
+    }
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -45,7 +72,12 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
   void didPopNext() {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted && _viewModel != null) {
-        _viewModel!.reloadList(forceRefresh: true);
+        // 화면 크기에 맞는 개수만 다시 로드 (코어 유틸리티 사용)
+        final context = this.context;
+        if (context.mounted) {
+          final loadCount = VisibleItemCalculator.calculateChatListVisibleCount(context);
+          _viewModel!.reloadList(forceRefresh: true, visibleItemCount: loadCount);
+        }
       }
     });
   }
@@ -95,13 +127,22 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: ListView.separated(
+          controller: _scrollController,
           padding: EdgeInsets.symmetric(
             horizontal: horizontalPadding,
             vertical: verticalPadding,
           ),
-          itemCount: viewModel.chattingRoomList.length,
+          itemCount: viewModel.chattingRoomList.length + (viewModel.isLoadingMore ? 1 : 0),
           separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
       itemBuilder: (context, index) {
+        // 로딩 인디케이터 표시
+        if (index == viewModel.chattingRoomList.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
         final chattingRoom = viewModel.chattingRoomList[index];
         final itemId = chattingRoom.itemId;
         final isExpired = viewModel.isTradeExpired(itemId);
@@ -180,20 +221,17 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                       child: Row(
                         spacing: context.spacingSmall,
                         children: [
-                          CircleAvatar(
-                            radius: context.isLargeScreen() ? 28 : 24,
-                            backgroundColor: BorderColor,
-                            backgroundImage:
-                                chattingRoom.profileImage != null &&
-                                    chattingRoom.profileImage!.isNotEmpty
-                                ? NetworkImage(chattingRoom.profileImage!)
-                                : null,
-                            child:
-                                chattingRoom.profileImage != null &&
-                                    chattingRoom.profileImage!.isNotEmpty
-                                ? null
-                                : const Icon(Icons.person, color: BackgroundColor),
-                          ),
+                          chattingRoom.profileImage != null &&
+                                  chattingRoom.profileImage!.isNotEmpty
+                              ? CircleAvatar(
+                                  radius: context.isLargeScreen() ? 28 : 24,
+                                  backgroundColor: BorderColor,
+                                  backgroundImage:
+                                      NetworkImage(chattingRoom.profileImage!),
+                                )
+                              : DefaultProfileAvatar(
+                                  radius: context.isLargeScreen() ? 28 : 24,
+                                ),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,7 +271,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                                     Text(
                                       chattingRoom.lastMessageSendAt.toTimesAgo(),
                                       style: TextStyle(
-                                        color: shouldShowGray ? iconColor.withValues(alpha: 0.6) : iconColor,
+                                        color: iconColor,
                                         fontSize: context.fontSizeSmall,
                                         fontWeight: FontWeight.w600,
                                       ),

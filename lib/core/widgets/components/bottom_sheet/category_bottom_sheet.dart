@@ -1,4 +1,4 @@
-import 'package:bidbird/features/item/add/model/keyword_type_entity.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:flutter/material.dart';
 
 class CategoryBottomSheet extends StatelessWidget {
