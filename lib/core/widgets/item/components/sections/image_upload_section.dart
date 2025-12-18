@@ -165,7 +165,10 @@ class ImageUploadSection extends StatelessWidget {
                       ),
                       // 대표 이미지 라벨
                       if (isPrimary)
-                        Positioned.fill(
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          top: (context.imageSize - 24) / 2,
                           child: Center(
                             child: Container(
                               padding: EdgeInsets.symmetric(

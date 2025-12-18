@@ -43,21 +43,31 @@ class ItemBidStepConstants {
 /// 경매 기간 관련 상수
 class ItemAuctionDurationConstants {
   /// 경매 기간 옵션 (시간 단위)
-  static const int duration4Hours = 4;
-  static const int duration12Hours = 12;
-  static const int duration24Hours = 24;
+  static const int duration1Hour = 1;   // 1시간
+  static const int duration4Hours = 4;  // 4시간
+  static const int duration8Hours = 8;  // 8시간
+  static const int duration12Hours = 12; // 12시간
+  static const int duration1Day = 24;  // 1일 = 24시간
+  static const int duration2Days = 48; // 2일 = 48시간
+  static const int duration3Days = 72; // 3일 = 72시간
+  static const int duration7Days = 168; // 7일 = 168시간
   
-  /// 기본 경매 기간 (4시간)
-  static const int defaultDuration = duration4Hours;
+  /// 기본 경매 기간 (1일)
+  static const int defaultDuration = duration1Day;
   
   /// 경매 기간 옵션 리스트 (문자열)
   static const List<String> durationOptions = [
+    '1시간',
     '4시간',
+    '8시간',
     '12시간',
-    '24시간',
+    '1일',
+    '2일',
+    '3일',
+    '7일',
   ];
   
   /// 기본 경매 기간 옵션 (문자열)
-  static const String defaultDurationOption = '4시간';
+  static const String defaultDurationOption = '1일';
 }
 
