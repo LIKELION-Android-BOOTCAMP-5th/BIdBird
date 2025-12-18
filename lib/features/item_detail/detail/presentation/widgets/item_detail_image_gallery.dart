@@ -180,7 +180,7 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
               // 입찰 카운트 오버레이 - 우하단 (왼쪽)
               Positioned(
                 bottom: 40,
-                right: 60,
+                right: 70,
                 child: _BidCountOverlay(bidCount: widget.item.biddingCount),
               ),
               // 이미지 개수 표시 오버레이 - 우하단 (오른쪽)
