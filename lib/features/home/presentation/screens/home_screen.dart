@@ -1,5 +1,5 @@
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
-import 'package:bidbird/features/feed/data/repository/home_repository.dart';
+import 'package:bidbird/features/home/data/repository/home_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../../../core/managers/network_api_manager.dart';
-import '../../../feed/domain/entities/keywordType_entity.dart';
+import '../../../home/domain/entities/keywordType_entity.dart';
 
 class AuthSetProfileNetworkApiDatasource {
   static final AuthSetProfileNetworkApiDatasource _shared =

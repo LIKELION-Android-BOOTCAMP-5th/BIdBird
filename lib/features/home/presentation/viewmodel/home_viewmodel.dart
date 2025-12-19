@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/feed/domain/entities/items_entity.dart';
-import 'package:bidbird/features/feed/domain/entities/keywordType_entity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/repositories/home_repository.dart';
+import '../../domain/entities/items_entity.dart';
+import '../../domain/entities/keywordType_entity.dart';
 
 //최신순, 오래된순, 좋아요순 처리할 때 쓸 것
 enum OrderByType { newFirst, oldFirst, likesFirst }

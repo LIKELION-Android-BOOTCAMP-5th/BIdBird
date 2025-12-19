@@ -1,10 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/managers/supabase_manager.dart';
-import '../../../../core/models/keywordType_entity.dart';
 import '../../domain/entities/auth_set_profile_entity.dart';
 import '../../domain/repositories/auth_set_profile_repository.dart' as domain;
 import '../datasources/auth_set_profile_network_api_datasource.dart';
+import '../../../home/domain/entities/keywordType_entity.dart';
 
 /// Auth Set Profile 리포지토리 구현체
 class AuthSetProfileRepositoryImpl implements domain.AuthSetProfileRepository {

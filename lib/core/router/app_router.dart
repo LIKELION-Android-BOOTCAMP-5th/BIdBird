@@ -9,7 +9,7 @@ import 'package:bidbird/features/auth/presentation/viewmodels/tos_viewmodel.dart
 import 'package:bidbird/features/chat/presentation/screens/chat_screen.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/screens/trade_status_screen.dart';
-import 'package:bidbird/features/feed/ui/home_screen.dart';
+import 'package:bidbird/features/home/presentation/screens/home_screen.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/screens/item_add_screen.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
