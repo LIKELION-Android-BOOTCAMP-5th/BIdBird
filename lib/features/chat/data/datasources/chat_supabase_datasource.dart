@@ -10,7 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// 채팅 데이터 소스
 class ChatSupabaseDatasource {
   ChatSupabaseDatasource({SupabaseClient? supabase})
-      : _supabase = supabase ?? SupabaseManager.shared.supabase;
+    : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   static const String _chatRoomsTable = 'chatting_room';
   static const String _roomUserTable = 'chatting_room_users';
@@ -18,35 +18,38 @@ class ChatSupabaseDatasource {
   final SupabaseClient _supabase;
   final _cacheManager = ChatMessageCacheManager();
 
-  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId, {bool forceRefresh = false}) async {
+  Future<List<ChatMessageEntity>> getMessages(
+    String chattingRoomId, {
+    bool forceRefresh = false,
+  }) async {
     // 먼저 캐시에서 불러오기
-    final cachedMessages = await _cacheManager.getCachedMessages(chattingRoomId);
-    
+    final cachedMessages = await _cacheManager.getCachedMessages(
+      chattingRoomId,
+    );
+
     // 강제 새로고침이 아니고 캐시가 있으면 마지막 메시지 시간 확인
     if (!forceRefresh && cachedMessages.isNotEmpty) {
-      final cachedLastTime = await _cacheManager.getLastMessageTime(chattingRoomId);
+      final cachedLastTime = await _cacheManager.getLastMessageTime(
+        chattingRoomId,
+      );
       if (cachedLastTime != null) {
         // 캐시된 마지막 메시지 시간과 현재 캐시의 마지막 메시지 시간 비교
-        final cachedLastMessage = cachedMessages.isNotEmpty 
-            ? cachedMessages.first.createdAt 
+        final cachedLastMessage = cachedMessages.isNotEmpty
+            ? cachedMessages.first.createdAt
             : null;
-        
+
         // 캐시된 시간과 일치하면 네트워크 호출 생략
         if (cachedLastMessage == cachedLastTime) {
           return cachedMessages;
         }
       }
     }
-    
+
     try {
       // Edge Function 호출
       final response = await _supabase.functions.invoke(
         'get-messages',
-        body: {
-          'roomId': chattingRoomId,
-          'page': 1,
-          'limit': 20,
-        },
+        body: {'roomId': chattingRoomId, 'page': 1, 'limit': 20},
       );
 
       final data = response.data;
@@ -58,7 +61,7 @@ class ChatSupabaseDatasource {
           }
           return List.empty();
         }
-        
+
         if (data is List) {
           final List<ChatMessageEntity> results = data.map((json) {
             return ChatMessageEntity.fromJson(json);
@@ -66,16 +69,19 @@ class ChatSupabaseDatasource {
 
           // 네트워크에서 가져온 메시지를 캐시에 저장
           await _cacheManager.saveMessagesToCache(chattingRoomId, results);
-          
+
           // 마지막 메시지 시간 저장 (변경 감지용)
           if (results.isNotEmpty) {
-            await _cacheManager.saveLastMessageTime(chattingRoomId, results.first.createdAt);
+            await _cacheManager.saveLastMessageTime(
+              chattingRoomId,
+              results.first.createdAt,
+            );
           }
-          
+
           return results;
         }
       }
-      
+
       // 네트워크에서 메시지가 없으면 캐시 반환
       if (cachedMessages.isNotEmpty) {
         return cachedMessages;
@@ -110,7 +116,7 @@ class ChatSupabaseDatasource {
         if (data is Map && data.containsKey('error')) {
           return List.empty();
         }
-        
+
         if (data is List) {
           final List<ChatMessageEntity> results = data.map((json) {
             return ChatMessageEntity.fromJson(json);
@@ -242,10 +248,7 @@ class ChatSupabaseDatasource {
     try {
       final response = await _supabase.functions.invoke(
         'get-chat-list',
-        body: {
-          'page': page,
-          'limit': limit,
-        },
+        body: {'page': page, 'limit': limit},
       );
 
       final data = response.data;
@@ -263,6 +266,21 @@ class ChatSupabaseDatasource {
       return List.empty();
     } catch (e) {
       return List.empty();
+    }
+  }
+
+  Future<ChattingRoomEntity?> fetchNewChattingRoom(String roomId) async {
+    try {
+      final response = await _supabase.functions.invoke(
+        'get-new-chat-room',
+        body: {'room_id': roomId},
+      );
+      final data = response.data;
+      if (data == null) return null;
+      final result = ChattingRoomEntity.fromJson(data);
+      return result;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -309,7 +327,7 @@ class ChatSupabaseDatasource {
         'itemId': itemId,
         'message_type': messageType,
       };
-      
+
       if (messageType == "text" && message != null) {
         body['message'] = message;
       } else if (messageType == "image" && imageUrl != null) {
@@ -320,7 +338,7 @@ class ChatSupabaseDatasource {
         'create-chat-room',
         body: body,
       );
-      
+
       if (response.data == null) return null;
       final data = response.data['room_id'] as String;
       return data;
@@ -344,7 +362,11 @@ class ChatSupabaseDatasource {
   }
 
   /// 거래 취소 API 호출
-  Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault) async {
+  Future<void> cancelTrade(
+    String itemId,
+    String reasonCode,
+    bool isSellerFault,
+  ) async {
     try {
       await SupabaseManager.shared.supabase.functions.invoke(
         'cancelTrade',
@@ -398,7 +420,8 @@ class ChatSupabaseDatasource {
   /// 거래 평가 작성 여부 확인
   Future<bool> hasSubmittedReview(String itemId) async {
     try {
-      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      final currentUserId =
+          SupabaseManager.shared.supabase.auth.currentUser?.id;
       if (currentUserId == null) {
         return false;
       }

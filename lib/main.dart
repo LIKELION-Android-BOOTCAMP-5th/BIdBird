@@ -6,6 +6,8 @@ import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
+import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'package:bidbird/features/mypage/data/profile_repository.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
@@ -89,6 +91,11 @@ void main() async {
             return NotificationViewmodel(context);
           },
         ),
+        ChangeNotifierProvider(
+          create: (context) {
+            return ChatListViewmodel();
+          },
+        ),
       ],
       child: const MyApp(),
     ),
@@ -138,6 +145,7 @@ class MyApp extends StatelessWidget {
     final AuthViewModel authVM = context.read<AuthViewModel>();
     final NotificationViewmodel notifyVM = context
         .read<NotificationViewmodel>();
+    final ChatListViewmodel chatListVM = context.read<ChatListViewmodel>();
     // 1. authVM - 데이터 상태를 바꾼다
     // 2. 고 라우터 refreshListenable 에 authVM 이 연동되어 있다.
     // 3. authVM 의 데이터 변수가 바뀌면

@@ -4,8 +4,8 @@ class ChattingRoomEntity {
   final String userId;
   final String? profileImage;
   final String? userNickname;
-  final String lastMessage;
-  final String lastMessageSendAt;
+  String lastMessage;
+  String lastMessageSendAt;
   final String itemTitle;
   int? count;
   ChattingRoomEntity({

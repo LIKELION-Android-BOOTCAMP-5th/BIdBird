@@ -20,8 +20,19 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId, {bool forceRefresh = false}) async {
-    return await _chatDatasource.getMessages(chattingRoomId, forceRefresh: forceRefresh);
+  Future<ChattingRoomEntity?> fetchNewChattingRoom(String roomId) async {
+    return await _chatDatasource.fetchNewChattingRoom(roomId);
+  }
+
+  @override
+  Future<List<ChatMessageEntity>> getMessages(
+    String chattingRoomId, {
+    bool forceRefresh = false,
+  }) async {
+    return await _chatDatasource.getMessages(
+      chattingRoomId,
+      forceRefresh: forceRefresh,
+    );
   }
 
   @override
@@ -114,7 +125,11 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault) async {
+  Future<void> cancelTrade(
+    String itemId,
+    String reasonCode,
+    bool isSellerFault,
+  ) async {
     await _chatDatasource.cancelTrade(itemId, reasonCode, isSellerFault);
   }
 
