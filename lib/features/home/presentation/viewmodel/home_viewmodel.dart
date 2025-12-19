@@ -4,9 +4,9 @@ import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../domain/repositories/home_repository.dart';
 import '../../domain/entities/items_entity.dart';
 import '../../domain/entities/keywordType_entity.dart';
+import '../../domain/repositories/home_repository.dart';
 
 //최신순, 오래된순, 좋아요순 처리할 때 쓸 것
 enum OrderByType { newFirst, oldFirst, likesFirst }
@@ -57,6 +57,9 @@ class HomeViewmodel extends ChangeNotifier {
   //실시간 검색
   Timer? _searchDebounce;
 
+  //ios fetch문제 잡기
+  bool _isDisposed = false;
+
   ///시작할 때 작동
   HomeViewmodel(this._homeRepository) {
     getKeywordList();
@@ -67,6 +70,7 @@ class HomeViewmodel extends ChangeNotifier {
 
       _debounce = Timer(const Duration(milliseconds: 300), () {
         final double offset = scrollController.offset;
+        if (_isDisposed) return;
 
         if (offset < 50) {
           if (buttonIsWorking) {
@@ -93,15 +97,17 @@ class HomeViewmodel extends ChangeNotifier {
         fetchNextItems();
       }
     });
+    if (_isDisposed) return;
     fetchItems();
-
     //리얼 타임
     setupRealtimeSubscription();
   }
 
   //[메모리 누수] scrollController, Timer 정지
+
   @override
   void dispose() {
+    _isDisposed = true;
     scrollController.dispose();
     _debounce?.cancel();
     _searchDebounce?.cancel();
@@ -110,7 +116,7 @@ class HomeViewmodel extends ChangeNotifier {
     if (_actionRealtime != null) {
       SupabaseManager.shared.supabase.removeChannel(_actionRealtime!);
     }
-    // TODO: implement dispose
+
     super.dispose();
   }
 
@@ -152,6 +158,7 @@ class HomeViewmodel extends ChangeNotifier {
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
     );
+    if (_isDisposed) return;
     sortItemsByFinishTime();
     notifyListeners();
   }
@@ -268,6 +275,7 @@ class HomeViewmodel extends ChangeNotifier {
     if (_searchDebounce?.isActive ?? false) _searchDebounce!.cancel();
 
     _searchDebounce = Timer(const Duration(milliseconds: 100), () {
+      if (_isDisposed) return;
       isSearching = text.isNotEmpty;
       search(text);
     });
@@ -324,11 +332,17 @@ class HomeViewmodel extends ChangeNotifier {
             if (endAt != null && endAt.isNotEmpty) {
               item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
             }
-
+            if (_isDisposed) return;
             sortItemsByFinishTime();
             notifyListeners();
           },
         )
         .subscribe();
+  }
+
+  @override
+  void notifyListeners() {
+    if (_isDisposed) return;
+    super.notifyListeners();
   }
 }
