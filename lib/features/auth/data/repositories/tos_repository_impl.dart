@@ -1,13 +1,16 @@
-import 'package:bidbird/features/auth/model/tos_model.dart';
-
 import '../../../../core/managers/supabase_manager.dart';
-import '../data_sources/tos_datasource.dart';
+import '../../domain/entities/tos_entity.dart';
+import '../../domain/repositories/tos_repository.dart' as domain;
+import '../datasources/tos_datasource.dart';
 
-class ToSRepository {
-  Future<List<ToSModel>> getToSinfo() async {
+/// ToS 리포지토리 구현체
+class ToSRepositoryImpl implements domain.ToSRepository {
+  @override
+  Future<List<ToSEntity>> getToSinfo() async {
     return await ToSDatasource.shared.getToSinfo();
   }
 
+  @override
   Future<void> tosAgreed() async {
     final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
 
@@ -18,3 +21,5 @@ class ToSRepository {
     await ToSDatasource.shared.updateTosAgreed(currentUserId);
   }
 }
+
+

@@ -3,7 +3,7 @@ import 'package:bidbird/core/widgets/components/info_box.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_input_popup.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/trade_status_item_card.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/item_trade/shipping/data/repositories/shipping_info_repository.dart';
 import 'package:bidbird/features/item_trade/trade_status/domain/entities/trade_status_entity.dart';

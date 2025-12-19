@@ -1,14 +1,17 @@
-import 'package:bidbird/features/auth/data/data_sources/auth_set_profile_network_api_datasource.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/managers/supabase_manager.dart';
 import '../../../../core/models/keywordType_entity.dart';
-import '../../model/auth_set_profile_model.dart';
+import '../../domain/entities/auth_set_profile_entity.dart';
+import '../../domain/repositories/auth_set_profile_repository.dart' as domain;
+import '../datasources/auth_set_profile_network_api_datasource.dart';
 
-class AuthSetProfileRepository {
+/// Auth Set Profile 리포지토리 구현체
+class AuthSetProfileRepositoryImpl implements domain.AuthSetProfileRepository {
   final _client = SupabaseManager.shared.supabase;
 
-  Future<AuthSetProfileModel?> fetchProfile() async {
+  @override
+  Future<AuthSetProfileEntity?> fetchProfile() async {
     final user = _client.auth.currentUser;
 
     if (user == null) {
@@ -28,12 +31,13 @@ class AuthSetProfileRepository {
         //return null; //프로필없을때발생
       }
 
-      return AuthSetProfileModel.fromMap(response);
+      return AuthSetProfileEntity.fromMap(response);
     } catch (e) {
       throw Exception('Failed fetchProfile: $e'); //나중에팝업으로쓸것
     }
   }
 
+  @override
   Future<void> updateProfile({
     String? nickName,
     String? profileImageUrl,
@@ -64,6 +68,7 @@ class AuthSetProfileRepository {
     }
   }
 
+  @override
   Future<void> deleteAccount() async {
     final user = _client.auth.currentUser;
 
@@ -134,7 +139,7 @@ class AuthSetProfileRepository {
     }
   }
 
-  // 반드시 추가해야 함
+  @override
   Future<List<int>> fetchUserKeywordIds() async {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('Not logged in');
@@ -147,10 +152,12 @@ class AuthSetProfileRepository {
     return response.map<int>((e) => e['keyword_code'] as int).toList();
   }
 
+  @override
   Future<List<KeywordType>> getKeywordType() async {
     return await AuthSetProfileNetworkApiDatasource.shared.getKeywordType();
   }
 
+  @override
   Future<void> updateUserKeywords(List<int> keywordIds) async {
     final user = _client.auth.currentUser;
     if (user == null) throw Exception('Not logged in');
@@ -168,3 +175,4 @@ class AuthSetProfileRepository {
     }
   }
 }
+

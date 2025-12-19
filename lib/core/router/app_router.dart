@@ -1,11 +1,11 @@
 import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/item/components/others/double_back_exit_handler.dart';
-import 'package:bidbird/features/auth/data/repository/tos_repository.dart';
-import 'package:bidbird/features/auth/ui/auth_set_profile_screen.dart';
-import 'package:bidbird/features/auth/ui/login_screen.dart';
-import 'package:bidbird/features/auth/ui/tos_screen.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
-import 'package:bidbird/features/auth/viewmodel/tos_viewmodel.dart';
+import 'package:bidbird/features/auth/data/repositories/tos_repository_impl.dart';
+import 'package:bidbird/features/auth/presentation/screens/auth_set_profile_screen.dart';
+import 'package:bidbird/features/auth/presentation/screens/login_screen.dart';
+import 'package:bidbird/features/auth/presentation/screens/tos_screen.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/tos_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/screens/chat_screen.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/screens/trade_status_screen.dart';
@@ -81,8 +81,8 @@ GoRouter createAppRouter(BuildContext context) {
       }
 
       // 3. 로그인 완료 + 유저 정보 있음
-      final user = authVM.user!;
-      if (user.nick_name == null) {
+      final user = authVM.user;
+      if (user != null && user.nick_name == null) {
         return location.startsWith('/login/ToS') ? null : '/login/ToS';
       }
 
@@ -112,7 +112,7 @@ GoRouter createAppRouter(BuildContext context) {
             pageBuilder: (context, state) {
               return NoTransitionPage(
                 child: ChangeNotifierProvider(
-                  create: (_) => ToSViewmodel(ToSRepository()),
+                  create: (_) => ToSViewmodel(),
                   child: const ToSScreen(),
                 ),
               );

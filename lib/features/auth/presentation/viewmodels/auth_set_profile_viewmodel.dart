@@ -1,12 +1,21 @@
 import 'package:bidbird/core/managers/cloudinary_manager.dart';
 import 'package:bidbird/core/models/keywordType_entity.dart';
-import 'package:bidbird/features/auth/data/repository/auth_set_profile_repository.dart';
-import 'package:bidbird/features/auth/model/auth_set_profile_model.dart';
+import 'package:bidbird/features/auth/data/repositories/auth_set_profile_repository_impl.dart';
+import 'package:bidbird/features/auth/domain/entities/auth_set_profile_entity.dart';
+import 'package:bidbird/features/auth/domain/usecases/fetch_profile_usecase.dart';
+import 'package:bidbird/features/auth/domain/usecases/fetch_user_keyword_ids_usecase.dart';
+import 'package:bidbird/features/auth/domain/usecases/update_profile_usecase.dart';
+import 'package:bidbird/features/auth/domain/usecases/update_user_keywords_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AuthSetProfileViewmodel extends ChangeNotifier {
-  final AuthSetProfileRepository _repository;
+  final _repository = AuthSetProfileRepositoryImpl();
+  
+  final FetchProfileUseCase _fetchProfileUseCase;
+  final UpdateProfileUseCase _updateProfileUseCase;
+  final FetchUserKeywordIdsUseCase _fetchUserKeywordIdsUseCase;
+  final UpdateUserKeywordsUseCase _updateUserKeywordsUseCase;
 
   final TextEditingController nickNameTextfield;
   // final TextEditingController phoneTextfield;
@@ -17,7 +26,7 @@ class AuthSetProfileViewmodel extends ChangeNotifier {
   bool _isUploadingImage = false;
   bool _isSaving = false;
 
-  AuthSetProfileModel? profile;
+  AuthSetProfileEntity? profile;
   List<int> _keywordIds = [];
   List<int> get keywordIds => _keywordIds;
   bool isLoading = false;
@@ -31,14 +40,17 @@ class AuthSetProfileViewmodel extends ChangeNotifier {
   final Set<int> _selectedKeywordIds = {};
   Set<int> get selectedKeywordIds => _selectedKeywordIds;
 
-  AuthSetProfileViewmodel(
-    this._repository, {
-    AuthSetProfileModel? initialProfile,
+  AuthSetProfileViewmodel({
+    AuthSetProfileEntity? initialProfile,
     List<int>? initialKeywordIds,
-  }) : nickNameTextfield = TextEditingController(
-         text: initialProfile?.nickName,
-       ),
-       _profileImageUrl = initialProfile?.profileImageUrl {
+  })  : _fetchProfileUseCase = FetchProfileUseCase(AuthSetProfileRepositoryImpl()),
+        _updateProfileUseCase = UpdateProfileUseCase(AuthSetProfileRepositoryImpl()),
+        _fetchUserKeywordIdsUseCase = FetchUserKeywordIdsUseCase(AuthSetProfileRepositoryImpl()),
+        _updateUserKeywordsUseCase = UpdateUserKeywordsUseCase(AuthSetProfileRepositoryImpl()),
+        nickNameTextfield = TextEditingController(
+          text: initialProfile?.nickName,
+        ),
+        _profileImageUrl = initialProfile?.profileImageUrl {
     loadProfile();
     getKeywordList();
 
@@ -105,12 +117,12 @@ class AuthSetProfileViewmodel extends ChangeNotifier {
 
       final String nickName = trimmedNickName;
 
-      await _repository.updateProfile(
+      await _updateProfileUseCase.call(
         nickName: nickName,
         profileImageUrl: _profileImageUrl,
       );
 
-      await _repository.updateUserKeywords(_selectedKeywordIds.toList());
+      await _updateUserKeywordsUseCase.call(_selectedKeywordIds.toList());
     } catch (e) {
       errorMessage = e.toString();
     } finally {
@@ -118,17 +130,6 @@ class AuthSetProfileViewmodel extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  // Future<void> unregisterUser() async {
-  //   errorMessage = null;
-  //   notifyListeners();
-  //   try {
-  //     await _repository.unregisterUser();
-  //   } catch (e) {
-  //     errorMessage = e.toString();
-  //     notifyListeners();
-  //   }
-  // }
 
   //키워드 관련
   Future<void> getKeywordList({List<int>? initialKeywordIds}) async {
@@ -150,8 +151,8 @@ class AuthSetProfileViewmodel extends ChangeNotifier {
     notifyListeners(); //로딩인디케이터표시를위함
 
     try {
-      profile = await _repository.fetchProfile();
-      _keywordIds = await _repository.fetchUserKeywordIds();
+      profile = await _fetchProfileUseCase.call();
+      _keywordIds = await _fetchUserKeywordIdsUseCase.call();
     } catch (e) {
       errorMessage = e.toString(); //e는String임
     } finally {
@@ -177,3 +178,4 @@ class AuthSetProfileViewmodel extends ChangeNotifier {
     super.dispose();
   } //컨트롤러등은메모리정리해야함//언마운트될때ChangeNotifierProvider가자동으로호출해줌
 }
+

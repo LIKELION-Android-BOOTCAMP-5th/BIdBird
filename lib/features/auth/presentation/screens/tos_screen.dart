@@ -1,6 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/features/auth/viewmodel/tos_viewmodel.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/tos_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -70,3 +70,5 @@ class ToSScreen extends StatelessWidget {
     );
   }
 }
+
+

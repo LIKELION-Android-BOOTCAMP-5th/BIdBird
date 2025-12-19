@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/models/user_entity.dart';
+import 'package:bidbird/core/models/user_entity.dart';
 
 //사용자 상태 관리
 enum AuthStatus {
@@ -25,6 +25,25 @@ class AuthViewModel extends ChangeNotifier {
   UserEntity? get user => _user;
   late StreamSubscription<AuthState> _subscription;
 
+  Future<void> _loadUserAndSetupFCM(String userId) async {
+    try {
+      final fetchedUser = await SupabaseManager.shared
+          .fetchUser(userId)
+          .timeout(const Duration(seconds: 2));
+      _user = fetchedUser;
+    } catch (e) {
+      debugPrint('[AuthVM] fetchUser failed (background): $e');
+    }
+
+    try {
+      await FirebaseManager.setupFCMTokenAtLogin();
+    } catch (e) {
+      debugPrint('[AuthVM] setupFCMTokenAtLogin failed (background): $e');
+    }
+
+    notifyListeners();
+  }
+
   AuthViewModel() {
     // Supabase 인증 상태 구독
     _subscription = SupabaseManager.shared.supabase.auth.onAuthStateChange
@@ -35,9 +54,10 @@ class AuthViewModel extends ChangeNotifier {
             _user = null;
             _status = AuthStatus.unauthenticated;
           } else {
-            _user = await SupabaseManager.shared.fetchUser(session.user.id);
             _status = AuthStatus.authenticated;
-            await FirebaseManager.setupFCMTokenAtLogin();
+            notifyListeners();
+            unawaited(_loadUserAndSetupFCM(session.user.id));
+            return;
           }
 
           notifyListeners();
@@ -151,17 +171,9 @@ class AuthViewModel extends ChangeNotifier {
       return;
     }
 
-    try {
-      _user = await SupabaseManager.shared.fetchUser(session.user.id);
-      await FirebaseManager.setupFCMTokenAtLogin();
-      _status = AuthStatus.authenticated;
-    } catch (e) {
-      debugPrint('[AuthVM] initialize failed: $e');
-      _user = null;
-      _status = AuthStatus.unauthenticated;
-    }
-
+    _status = AuthStatus.authenticated;
     notifyListeners();
+    unawaited(_loadUserAndSetupFCM(session.user.id));
   }
 
   @override
@@ -170,3 +182,4 @@ class AuthViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
+

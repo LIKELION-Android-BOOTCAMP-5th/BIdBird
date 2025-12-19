@@ -5,6 +5,7 @@ import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'package:bidbird/features/mypage/data/profile_repository.dart';
@@ -44,22 +45,6 @@ void main() async {
     anonKey: SupabaseConfig.anonKey,
   );
 
-  // Portone 설정 초기화 (Supabase 환경 변수에서 로드)
-  try {
-    await PortoneConfig.initialize().timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        throw TimeoutException('PortoneConfig initialization timeout');
-      },
-    );
-  } catch (e) {
-    debugPrint('[PortoneConfig] Initialization failed: $e');
-    debugPrint(
-      '[PortoneConfig] App will continue but payment features may not work',
-    );
-    // 앱은 계속 실행되지만 결제 기능은 사용할 수 없음
-  }
-
   // Cloudinary 초기화
   CloudinaryContext.cloudinary = Cloudinary.fromCloudName(
     cloudName: 'dn12so6sm',
@@ -67,12 +52,6 @@ void main() async {
 
   // Firebase 초기화
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // FCM 권한 요청
-  await FirebaseManager.shared.fcm.requestPermission(provisional: true);
-
-  // 한국어 날짜 포맷 초기화
-  await initializeDateFormatting('ko', null);
 
   // ⭐️ 2. APNS 토큰 지연 처리 (Timer 사용) ⭐️
   // Firebase Messaging 초기화 및 토큰 가져오기 로직을 Timer로 감싸 2초 후 실행
@@ -121,6 +100,40 @@ void main() async {
       child: const MyApp(),
     ),
   );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(
+      Future(() async {
+        try {
+          await PortoneConfig.initialize().timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException('PortoneConfig initialization timeout');
+            },
+          );
+        } catch (e) {
+          debugPrint('[PortoneConfig] Initialization failed: $e');
+          debugPrint(
+            '[PortoneConfig] App will continue but payment features may not work',
+          );
+        }
+
+        try {
+          await FirebaseManager.shared.fcm.requestPermission(
+            provisional: true,
+          );
+        } catch (e) {
+          debugPrint('FCM permission request failed: $e');
+        }
+
+        try {
+          await initializeDateFormatting('ko', null);
+        } catch (e) {
+          debugPrint('Date formatting initialization failed: $e');
+        }
+      }),
+    );
+  });
 }
 
 class MyApp extends StatelessWidget {

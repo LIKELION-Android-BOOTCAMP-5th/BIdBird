@@ -1,21 +1,20 @@
-class AuthSetProfileModel {
+class AuthSetProfileEntity {
   final String id;
   final String? nickName;
   final String? profileImageUrl;
   final List<int>? keywordCodes;
 
-  AuthSetProfileModel({
+  AuthSetProfileEntity({
     required this.id,
     this.nickName,
-    // this.phoneNumber,
     this.profileImageUrl,
     this.keywordCodes,
   });
 
-  factory AuthSetProfileModel.fromMap(Map<String, dynamic> map) {
+  factory AuthSetProfileEntity.fromMap(Map<String, dynamic> map) {
     final rawKeywordCodes = map['keyword_code'];
 
-    return AuthSetProfileModel(
+    return AuthSetProfileEntity(
       id: map['id'] as String,
       nickName: map['nick_name'] as String?,
       profileImageUrl: map['profile_image'] as String?,
@@ -25,3 +24,5 @@ class AuthSetProfileModel {
     );
   }
 }
+
+

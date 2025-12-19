@@ -7,7 +7,7 @@ import '../../../../core/utils/extension/money_extension.dart';
 import '../../../../core/utils/ui_set/border_radius_style.dart';
 import '../../../../core/utils/ui_set/shadow_style.dart';
 import '../../../../core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
-import '../../../auth/viewmodel/auth_view_model.dart';
+import '../../../auth/presentation/viewmodels/auth_view_model.dart';
 import 'home_timer_section.dart';
 
 class ItemCard extends StatelessWidget {
