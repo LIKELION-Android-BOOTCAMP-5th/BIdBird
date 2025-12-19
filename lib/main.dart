@@ -4,7 +4,8 @@ import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
-import 'package:bidbird/features/mypage/data/profile_repository.dart';
+import 'package:bidbird/features/mypage/data/repositories/profile_repository_impl.dart';
+import 'package:bidbird/features/mypage/domain/usecases/get_profile.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
 import 'package:bidbird/features/splash/ui/splash_screen.dart';
@@ -37,7 +38,10 @@ void main() async {
         ),
         // 확정된 프로필 데이터
         ChangeNotifierProvider(
-          create: (_) => ProfileViewModel(ProfileRepository()),
+          create: (_) {
+            final repo = ProfileRepositoryImpl();
+            return ProfileViewModel(GetProfile(repo));
+          },
         ),
         // 프로필정보가 필요한 곳에서 다음과 같이 사용하세요
         // final profileVm = context.watch<ProfileViewModel>();
@@ -59,6 +63,38 @@ void main() async {
       child: const MyApp(),
     ),
   );
+  
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(
+      Future(() async {
+        try {
+          await PortoneConfig.initialize().timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException('PortoneConfig initialization timeout');
+            },
+          );
+        } catch (e) {
+          debugPrint('[PortoneConfig] Initialization failed: $e');
+          debugPrint(
+            '[PortoneConfig] App will continue but payment features may not work',
+          );
+        }
+
+        try {
+          await FirebaseManager.shared.fcm.requestPermission(provisional: true);
+        } catch (e) {
+          debugPrint('FCM permission request failed: $e');
+        }
+
+        try {
+          await initializeDateFormatting('ko', null);
+        } catch (e) {
+          debugPrint('Date formatting initialization failed: $e');
+        }
+      }),
+    );
+  });
 }
 
 class MyApp extends StatefulWidget {

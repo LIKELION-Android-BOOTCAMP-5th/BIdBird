@@ -1,27 +1,22 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/mypage/model/trade_history_model.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../domain/entities/trade_history_entity.dart';
+import '../../domain/repositories/trade_history_repository.dart';
+import '../datasources/trade_history_remote_data_source.dart';
+import '../models/trade_history_dto.dart';
 
-class TradeHistoryPage {
-  TradeHistoryPage({required this.items, required this.hasMore});
+class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
+  TradeHistoryRepositoryImpl({TradeHistoryRemoteDataSource? remoteDataSource})
+    : _remoteDataSource = remoteDataSource ?? TradeHistoryRemoteDataSource();
 
-  final List<TradeHistoryItem> items;
-  final bool hasMore;
-}
+  final TradeHistoryRemoteDataSource _remoteDataSource;
 
-class TradeHistoryRepository {
-  TradeHistoryRepository({SupabaseClient? client})
-    : _client = client ?? SupabaseManager.shared.supabase;
-
-  final SupabaseClient _client;
-
-  Future<TradeHistoryPage> fetchHistory({
+  @override
+  Future<TradeHistoryPageEntity> fetchHistory({
     required TradeRole role,
     int? statusCode,
     required int page,
     required int pageSize,
   }) async {
-    final List<TradeHistoryItem> allItems = role == TradeRole.seller
+    final List<TradeHistoryDto> allItems = role == TradeRole.seller
         ? await _fetchSellerHistory()
         : await _fetchBuyerHistory();
 
@@ -31,32 +26,30 @@ class TradeHistoryRepository {
 
     final start = (page - 1) * pageSize;
     if (start >= filtered.length) {
-      return TradeHistoryPage(items: const [], hasMore: false);
+      return const TradeHistoryPageEntity(items: [], hasMore: false);
     }
 
     final pageItems = filtered.skip(start).take(pageSize).toList();
     final hasMore = start + pageSize < filtered.length;
-    return TradeHistoryPage(items: pageItems, hasMore: hasMore);
+    return TradeHistoryPageEntity(
+      items: pageItems.map((dto) => dto.toEntity()).toList(),
+      hasMore: hasMore,
+    );
   }
 
-  Future<List<TradeHistoryItem>> _fetchSellerHistory() async {
-    final user = _client.auth.currentUser;
-    if (user == null) {
+  Future<List<TradeHistoryDto>> _fetchSellerHistory() async {
+    final userId = _remoteDataSource.currentUserId;
+    if (userId == null) {
       throw Exception('로그인 정보가 없습니다.');
     }
 
-    final List<dynamic> rows = await _client
-        .from('items_detail')
-        .select('item_id, title, thumbnail_image, buy_now_price, created_at')
-        .eq('seller_id', user.id)
-        .order('created_at', ascending: false);
+    final rows = await _remoteDataSource.fetchSellerItems(userId);
 
     if (rows.isEmpty) return [];
 
     final List<String> itemIds = [];
     final Map<String, Map<String, dynamic>> tradesById = {};
     for (final row in rows) {
-      if (row is! Map<String, dynamic>) continue;
       final itemId = row['item_id']?.toString();
       if (itemId == null) continue;
       itemIds.add(itemId);
@@ -65,13 +58,9 @@ class TradeHistoryRepository {
 
     final Map<String, Map<String, dynamic>> auctionsByItemId = {};
     if (itemIds.isNotEmpty) {
-      final auctionRows = await _client
-          .from('auctions')
-          .select(
-            'item_id, auction_end_at, current_price, last_bid_user_id, auction_status_code, trade_status_code',
-          )
-          .inFilter('item_id', itemIds)
-          .eq('round', 1);
+      final auctionRows = await _remoteDataSource.fetchAuctionsByItemIds(
+        itemIds,
+      );
 
       for (final row in auctionRows) {
         final itemId = row['item_id']?.toString();
@@ -81,7 +70,7 @@ class TradeHistoryRepository {
       }
     }
 
-    final List<TradeHistoryItem> results = itemIds.map((itemId) {
+    final List<TradeHistoryDto> results = itemIds.map((itemId) {
       final item = tradesById[itemId] ?? <String, dynamic>{};
       final auction = auctionsByItemId[itemId] ?? <String, dynamic>{};
       final price = (auction['current_price'] as num?)?.toInt() ?? 0;
@@ -92,7 +81,7 @@ class TradeHistoryRepository {
         auction['auction_end_at']?.toString() ?? '',
       );
 
-      return TradeHistoryItem(
+      return TradeHistoryDto(
         itemId: itemId,
         role: TradeRole.seller,
         title: item['title']?.toString() ?? '',
@@ -114,25 +103,17 @@ class TradeHistoryRepository {
     return results;
   }
 
-  Future<List<TradeHistoryItem>> _fetchBuyerHistory() async {
-    final user = _client.auth.currentUser;
-    if (user == null) {
+  Future<List<TradeHistoryDto>> _fetchBuyerHistory() async {
+    final userId = _remoteDataSource.currentUserId;
+    if (userId == null) {
       throw Exception('로그인 정보가 없습니다.');
     }
 
-    final rawLogRows = await _client
-        .from('auctions_status_log')
-        .select(
-          'bid_status_id, user_id, bid_price, auction_log_code, created_at',
-        )
-        .eq('user_id', user.id)
-        .order('created_at', ascending: false);
+    final rawLogRows = await _remoteDataSource.fetchBuyerLogs(userId);
 
     final Map<String, Map<String, dynamic>> latestLogByAuctionId = {};
 
-    for (final dynamic row in rawLogRows) {
-      if (row is! Map<String, dynamic>) continue;
-
+    for (final row in rawLogRows) {
       final String? auctionId = row['bid_status_id']?.toString();
       if (auctionId == null || auctionId.isEmpty) continue;
 
@@ -157,11 +138,7 @@ class TradeHistoryRepository {
     final List<Map<String, dynamic>> logRows = latestLogByAuctionId.values
         .toList();
 
-    final tradeRows = await _client
-        .from('trade_status')
-        .select('item_id, price, trade_status_code, created_at')
-        .eq('buyer_id', user.id)
-        .order('created_at', ascending: false);
+    final tradeRows = await _remoteDataSource.fetchTradeStatus(userId);
 
     if (logRows.isEmpty && tradeRows.isEmpty) return [];
 
@@ -177,12 +154,9 @@ class TradeHistoryRepository {
     final Map<String, DateTime?> auctionEndByItem = {};
     final Set<String> itemIds = {};
     if (auctionIds.isNotEmpty) {
-      final auctionsRows = await _client
-          .from('auctions')
-          .select(
-            'auction_id, item_id, current_price, auction_status_code, trade_status_code, auction_end_at, last_bid_user_id',
-          )
-          .inFilter('auction_id', auctionIds.toList());
+      final auctionsRows = await _remoteDataSource.fetchAuctionsByIds(
+        auctionIds.toList(),
+      );
 
       for (final row in auctionsRows) {
         final id = row['auction_id']?.toString();
@@ -203,10 +177,9 @@ class TradeHistoryRepository {
         .where((itemId) => !auctionEndByItem.containsKey(itemId))
         .toList();
     if (missingItemEndIds.isNotEmpty) {
-      final extraRows = await _client
-          .from('auctions')
-          .select('auction_id, item_id, auction_end_at, last_bid_user_id')
-          .inFilter('item_id', missingItemEndIds);
+      final extraRows = await _remoteDataSource.fetchAuctionEndsByItemIds(
+        missingItemEndIds,
+      );
 
       for (final row in extraRows) {
         final itemId = row['item_id']?.toString();
@@ -231,10 +204,9 @@ class TradeHistoryRepository {
 
     final Map<String, Map<String, dynamic>> itemsById = {};
     if (itemIds.isNotEmpty) {
-      final itemRows = await _client
-          .from('items_detail')
-          .select('item_id, title, thumbnail_image, buy_now_price')
-          .inFilter('item_id', itemIds.toList());
+      final itemRows = await _remoteDataSource.fetchItemsByIds(
+        itemIds.toList(),
+      );
 
       for (final row in itemRows) {
         final id = row['item_id']?.toString();
@@ -244,7 +216,6 @@ class TradeHistoryRepository {
       }
     }
 
-    //500번대우선없으면400번대사용
     final Map<String, Map<String, dynamic>> latestTradeByItem = {};
     for (final row in tradeRows) {
       final itemId = row['item_id']?.toString();
@@ -279,7 +250,7 @@ class TradeHistoryRepository {
     itemKeys.addAll(latestTradeByItem.keys);
     itemKeys.addAll(latestLogByItem.keys);
 
-    final List<TradeHistoryItem> results = [];
+    final List<TradeHistoryDto> results = [];
     final nowUtc = DateTime.now().toUtc();
 
     for (final itemId in itemKeys) {
@@ -290,7 +261,7 @@ class TradeHistoryRepository {
       if (tradeRow != null) {
         final tradeCode = tradeRow['trade_status_code'] as int?;
         results.add(
-          TradeHistoryItem(
+          TradeHistoryDto(
             itemId: itemId,
             role: TradeRole.buyer,
             title: item['title']?.toString() ?? '',
@@ -323,11 +294,11 @@ class TradeHistoryRepository {
         final isEndedByCode =
             auctionStatus != null && endedStatusCodes.contains(auctionStatus);
         final isEnded = isEndedByTime || isEndedByCode;
-        final isWinner = lastBidUserId != null && lastBidUserId == user.id;
+        final isWinner = lastBidUserId != null && lastBidUserId == userId;
         final statusCode = (!isWinner && isEnded) ? 433 : (logCode ?? 0);
 
         results.add(
-          TradeHistoryItem(
+          TradeHistoryDto(
             itemId: itemId,
             role: TradeRole.buyer,
             title: item['title']?.toString() ?? '',

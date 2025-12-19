@@ -1,11 +1,13 @@
-import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
-import 'package:bidbird/features/mypage/model/trade_history_model.dart';
 import 'package:flutter/material.dart';
 
-class TradeHistoryViewModel extends ChangeNotifier {
-  TradeHistoryViewModel({required this.repository});
+import '../domain/entities/trade_history_entity.dart';
+import '../domain/usecases/get_trade_history.dart';
 
-  final TradeHistoryRepository repository;
+class TradeHistoryViewModel extends ChangeNotifier {
+  TradeHistoryViewModel({required GetTradeHistory getTradeHistory})
+    : _getTradeHistory = getTradeHistory;
+
+  final GetTradeHistory _getTradeHistory;
 
   TradeRole role = TradeRole.seller;
   int? statusFilter;
@@ -14,7 +16,7 @@ class TradeHistoryViewModel extends ChangeNotifier {
   bool isLoading = false;
   bool hasMore = true;
   String? errorMessage;
-  final List<TradeHistoryItem> items = [];
+  final List<TradeHistoryEntity> items = [];
 
   //page말고더정확한다른방식알아보기
   Future<void> loadPage({bool reset = false}) async {
@@ -33,7 +35,7 @@ class TradeHistoryViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await repository.fetchHistory(
+      final result = await _getTradeHistory(
         role: role,
         statusCode: statusFilter,
         page: page,

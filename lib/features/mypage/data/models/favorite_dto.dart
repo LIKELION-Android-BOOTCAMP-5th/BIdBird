@@ -1,5 +1,7 @@
-class FavoritesItem {
-  FavoritesItem({
+import '../../domain/entities/favorite_entity.dart';
+
+class FavoriteDto {
+  FavoriteDto({
     required this.favoriteId,
     required this.itemId,
     required this.title,
@@ -19,8 +21,8 @@ class FavoritesItem {
   final int statusCode;
   final bool isFavorite;
 
-  FavoritesItem copyWith({bool? isFavorite}) {
-    return FavoritesItem(
+  FavoriteEntity toEntity() {
+    return FavoriteEntity(
       favoriteId: favoriteId,
       itemId: itemId,
       title: title,
@@ -28,7 +30,7 @@ class FavoritesItem {
       currentPrice: currentPrice,
       buyNowPrice: buyNowPrice,
       statusCode: statusCode,
-      isFavorite: isFavorite ?? this.isFavorite,
+      isFavorite: isFavorite,
     );
   }
 }
