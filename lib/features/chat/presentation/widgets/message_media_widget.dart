@@ -69,16 +69,6 @@ class MessageMediaWidget extends StatelessWidget {
                   width: maxWidth,
                   height: 200,
                   color: Colors.black87,
-                  child: const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  ),
                 ),
                 errorWidget: (context, url, error) => Container(
                   width: maxWidth,
@@ -154,13 +144,6 @@ class MessageMediaWidget extends StatelessWidget {
               width: maxWidth,
               height: 200,
               color: Colors.grey[200],
-              child: const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
             ),
             errorWidget: (context, url, error) => Container(
               width: maxWidth,

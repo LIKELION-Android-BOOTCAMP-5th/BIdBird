@@ -47,7 +47,7 @@ class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
                 child: Text(
                   viewModel.roomInfo != null
                       ? viewModel.roomInfo?.opponent.nickName ?? "사용자"
-                      : "로딩중",
+                      : "",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

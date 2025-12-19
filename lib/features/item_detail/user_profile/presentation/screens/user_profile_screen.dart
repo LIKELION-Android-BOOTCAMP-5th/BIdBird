@@ -24,7 +24,7 @@ class UserProfileScreen extends StatelessWidget {
           backgroundColor: BackgroundColor,
           body: SafeArea(
             child: profile == null
-                ? const Center(child: CircularProgressIndicator())
+                ? const SizedBox.shrink()
                 : Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
