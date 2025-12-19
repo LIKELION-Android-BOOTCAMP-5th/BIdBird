@@ -1,11 +1,11 @@
 import 'package:bidbird/core/managers/cloudinary_manager.dart';
-import 'package:bidbird/core/models/keywordType_entity.dart';
 import 'package:bidbird/features/auth/data/repositories/auth_set_profile_repository_impl.dart';
 import 'package:bidbird/features/auth/domain/entities/auth_set_profile_entity.dart';
 import 'package:bidbird/features/auth/domain/usecases/fetch_profile_usecase.dart';
 import 'package:bidbird/features/auth/domain/usecases/fetch_user_keyword_ids_usecase.dart';
 import 'package:bidbird/features/auth/domain/usecases/update_profile_usecase.dart';
 import 'package:bidbird/features/auth/domain/usecases/update_user_keywords_usecase.dart';
+import 'package:bidbird/features/home/domain/entities/keywordType_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 

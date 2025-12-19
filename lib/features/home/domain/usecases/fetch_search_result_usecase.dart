@@ -1,5 +1,5 @@
-import 'package:bidbird/features/feed/domain/entities/items_entity.dart';
-import 'package:bidbird/features/feed/domain/repositories/home_repository.dart';
+import 'package:bidbird/features/home/domain/entities/items_entity.dart';
+import 'package:bidbird/features/home/domain/repositories/home_repository.dart';
 
 class FetchSearchResultUseCase {
   FetchSearchResultUseCase(this._repository);

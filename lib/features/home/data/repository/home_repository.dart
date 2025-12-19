@@ -1,6 +1,6 @@
-import 'package:bidbird/features/feed/domain/entities/items_entity.dart';
-import 'package:bidbird/features/feed/domain/entities/keywordType_entity.dart';
-import 'package:bidbird/features/feed/domain/repositories/home_repository.dart'
+import 'package:bidbird/features/home/domain/entities/items_entity.dart';
+import 'package:bidbird/features/home/domain/entities/keywordType_entity.dart';
+import 'package:bidbird/features/home/domain/repositories/home_repository.dart'
     as domain;
 
 import '../data_sources/home_network_api_datasource.dart';

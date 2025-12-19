@@ -1,5 +1,5 @@
-import '../../../../core/models/keywordType_entity.dart';
 import '../entities/auth_set_profile_entity.dart';
+import '../../../home/domain/entities/keywordType_entity.dart';
 
 /// Auth Set Profile 도메인 리포지토리 인터페이스
 abstract class AuthSetProfileRepository {

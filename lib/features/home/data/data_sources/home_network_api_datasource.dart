@@ -1,7 +1,8 @@
 import 'package:bidbird/core/managers/network_api_manager.dart';
-import 'package:bidbird/features/feed/domain/entities/items_entity.dart';
-import 'package:bidbird/features/feed/domain/entities/keywordType_entity.dart';
 import 'package:dio/dio.dart';
+
+import '../../domain/entities/items_entity.dart';
+import '../../domain/entities/keywordType_entity.dart';
 
 class HomeNetworkApiManager {
   static final HomeNetworkApiManager _shared = HomeNetworkApiManager();
