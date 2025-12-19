@@ -317,95 +317,119 @@ class _TradeStatusScreenContent extends StatelessWidget {
     TradeStep currentStep,
   ) {
     if (currentStep == TradeStep.payment) {
+      // TODO: 사업자 인증 후 아래 주석 해제
+      // return SizedBox(
+      //   width: double.infinity,
+      //   child: ElevatedButton(
+      //     onPressed: () async {
+      //       final tradeStatus = viewModel.tradeStatus;
+      //       if (tradeStatus?.itemInfo == null ||
+      //           tradeStatus?.auctionInfo == null) {
+      //         return;
+      //       }
+      //
+      //       final authVM = context.read<AuthViewModel>();
+      //       final String buyerTel = authVM.user?.phone_number ?? '';
+      //       const appScheme = 'bidbird';
+      //
+      //       final request = ItemPaymentRequest(
+      //         itemId: viewModel.itemId,
+      //         itemTitle: tradeStatus!.itemInfo!.title,
+      //         amount: tradeStatus.auctionInfo!.currentPrice,
+      //         buyerTel: buyerTel,
+      //         appScheme: appScheme,
+      //       );
+      //
+      //       final result = await Navigator.push<bool>(
+      //         context,
+      //         MaterialPageRoute(
+      //           builder: (_) => PortonePaymentScreen(request: request),
+      //         ),
+      //       );
+      //
+      //       if (!context.mounted) return;
+      //
+      //       if (result == true) {
+      //         // 결제 성공 시 결제 완료 화면으로 이동
+      //         final thumbnailImage = tradeStatus.itemInfo!.thumbnailImage;
+      //         final bidWinEntity = ItemBidWinEntity(
+      //           itemId: viewModel.itemId,
+      //           title: tradeStatus.itemInfo!.title,
+      //           images: (thumbnailImage != null && thumbnailImage.isNotEmpty)
+      //               ? [thumbnailImage]
+      //               : [],
+      //           winPrice: tradeStatus.auctionInfo!.currentPrice,
+      //           tradeStatusCode: tradeStatus.tradeInfo?.tradeStatusCode,
+      //         );
+      //
+      //         Navigator.push(
+      //           context,
+      //           MaterialPageRoute(
+      //             builder: (_) => PaymentCompleteScreen(item: bidWinEntity),
+      //           ),
+      //         );
+      //       } else if (result == false) {
+      //         // 결제 실패 시 에러 다이얼로그 표시
+      //         showDialog<void>(
+      //           context: context,
+      //           barrierDismissible: true,
+      //           builder: (dialogContext) {
+      //             return AskPopup(
+      //               content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
+      //               noText: '닫기',
+      //               yesText: '확인',
+      //               yesLogic: () async {
+      //                 Navigator.of(dialogContext).pop();
+      //               },
+      //             );
+      //           },
+      //         );
+      //       }
+      //     },
+      //     style: ElevatedButton.styleFrom(
+      //       backgroundColor: blueColor,
+      //       foregroundColor: Colors.white,
+      //       padding: const EdgeInsets.symmetric(vertical: 14),
+      //       shape: RoundedRectangleBorder(
+      //         borderRadius: BorderRadius.circular(8),
+      //       ),
+      //     ),
+      //     child: Row(
+      //       mainAxisAlignment: MainAxisAlignment.center,
+      //       children: const [
+      //         Text(
+      //           '결제하기',
+      //           style: TextStyle(
+      //             fontSize: 16,
+      //             fontWeight: FontWeight.w600,
+      //           ),
+      //         ),
+      //         SizedBox(width: 8),
+      //         Icon(Icons.arrow_forward, size: 20),
+      //       ],
+      //     ),
+      //   ),
+      // );
+      
+      // 임시: 결제 기능 비활성화 안내
       return SizedBox(
         width: double.infinity,
-        child: ElevatedButton(
-          onPressed: () async {
-            final tradeStatus = viewModel.tradeStatus;
-            if (tradeStatus?.itemInfo == null ||
-                tradeStatus?.auctionInfo == null) {
-              return;
-            }
-
-            final authVM = context.read<AuthViewModel>();
-            final String buyerTel = authVM.user?.phone_number ?? '';
-            const appScheme = 'bidbird';
-
-            final request = ItemPaymentRequest(
-              itemId: viewModel.itemId,
-              itemTitle: tradeStatus!.itemInfo!.title,
-              amount: tradeStatus.auctionInfo!.currentPrice,
-              buyerTel: buyerTel,
-              appScheme: appScheme,
-            );
-
-            final result = await Navigator.push<bool>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PortonePaymentScreen(request: request),
-              ),
-            );
-
-            if (!context.mounted) return;
-
-            if (result == true) {
-              // 결제 성공 시 결제 완료 화면으로 이동
-              final thumbnailImage = tradeStatus.itemInfo!.thumbnailImage;
-              final bidWinEntity = ItemBidWinEntity(
-                itemId: viewModel.itemId,
-                title: tradeStatus.itemInfo!.title,
-                images: (thumbnailImage != null && thumbnailImage.isNotEmpty)
-                    ? [thumbnailImage]
-                    : [],
-                winPrice: tradeStatus.auctionInfo!.currentPrice,
-                tradeStatusCode: tradeStatus.tradeInfo?.tradeStatusCode,
-              );
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PaymentCompleteScreen(item: bidWinEntity),
-                ),
-              );
-            } else if (result == false) {
-              // 결제 실패 시 에러 다이얼로그 표시
-              showDialog<void>(
-                context: context,
-                barrierDismissible: true,
-                builder: (dialogContext) {
-                  return AskPopup(
-                    content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
-                    noText: '닫기',
-                    yesText: '확인',
-                    yesLogic: () async {
-                      Navigator.of(dialogContext).pop();
-                    },
-                  );
-                },
-              );
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: blueColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE0E0E0)),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Text(
-                '결제하기',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+          child: const Center(
+            child: Text(
+              '결제 기능 준비중입니다',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF9E9E9E),
               ),
-              SizedBox(width: 8),
-              Icon(Icons.arrow_forward, size: 20),
-            ],
+            ),
           ),
         ),
       );
