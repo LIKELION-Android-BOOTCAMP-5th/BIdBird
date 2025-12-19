@@ -223,17 +223,12 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
                 int? selectedKeywordTypeId,
                 bool isLoadingKeywords,
               })>(
-                selector: (_, vm) {
-                  final result = (
-                    keywordTypes: vm.keywordTypes,
-                    selectedKeywordTypeId: vm.selectedKeywordTypeId,
-                    isLoadingKeywords: vm.isLoadingKeywords,
-                  );
-                  debugPrint('[PriceAuctionCard] Selector 호출됨 - selectedKeywordTypeId: ${result.selectedKeywordTypeId}, keywordTypes.length: ${result.keywordTypes.length}');
-                  return result;
-                },
+                selector: (_, vm) => (
+                  keywordTypes: vm.keywordTypes,
+                  selectedKeywordTypeId: vm.selectedKeywordTypeId,
+                  isLoadingKeywords: vm.isLoadingKeywords,
+                ),
                 builder: (context, data, _) {
-                  debugPrint('[PriceAuctionCard] Selector builder 호출됨 - selectedKeywordTypeId: ${data.selectedKeywordTypeId}');
                   return CategorySelectorField(
                     categories: data.keywordTypes,
                     selectedCategoryId: data.selectedKeywordTypeId,
