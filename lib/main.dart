@@ -1,9 +1,6 @@
 import 'dart:async';
 
-import 'package:bidbird/core/config/portone_config.dart';
-import 'package:bidbird/core/managers/firebase_manager.dart';
-import 'package:bidbird/core/managers/firebase_options.dart';
-import 'package:bidbird/core/managers/network_api_manager.dart';
+import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
@@ -11,62 +8,25 @@ import 'package:bidbird/features/mypage/data/repositories/profile_repository_imp
 import 'package:bidbird/features/mypage/domain/usecases/get_profile.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
-import 'package:cloudinary_flutter/cloudinary_context.dart';
-import 'package:cloudinary_url_gen/cloudinary.dart';
+import 'package:bidbird/features/splash/ui/splash_screen.dart';
 import 'package:event_bus/event_bus.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:intl/date_symbol_data_local.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:bidbird/features/home/data/repository/home_repository.dart';
 
 EventBus eventBus = EventBus();
 
-class SupabaseConfig {
-  static final String url = dotenv.env['SUPABASE_URL'] ?? '';
-  static final String anonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-}
-
 void main() async {
   // 1. 초기화는 한 번만!
   WidgetsFlutterBinding.ensureInitialized();
 
-  //2. env 로드
-  await dotenv.load(fileName: ".env");
-  //3. 검증해서 키 없으면 바로 터지게
-  NetworkApiManager.shared.checkEnv();
-
-  // Supabase 초기화
-  await Supabase.initialize(
-    url: SupabaseConfig.url,
-    anonKey: SupabaseConfig.anonKey,
+  unawaited(
+    AppInitializer.ensureInitialized().then((_) {
+      AppInitializer.startPostInitTasks();
+    }),
   );
-
-  // Cloudinary 초기화
-  CloudinaryContext.cloudinary = Cloudinary.fromCloudName(
-    cloudName: 'dn12so6sm',
-  );
-
-  // Firebase 초기화
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // ⭐️ 2. APNS 토큰 지연 처리 (Timer 사용) ⭐️
-  // Firebase Messaging 초기화 및 토큰 가져오기 로직을 Timer로 감싸 2초 후 실행
-  Timer(const Duration(seconds: 2), () async {
-    try {
-      // APNS 토큰 대기 후 FCM 토큰 가져오기
-      final fcmToken = await FirebaseManager.shared.getFcmToken();
-      print("fcm 토큰 : $fcmToken");
-
-      // 초기 메시지 및 기타 FCM 초기화 작업
-      await FirebaseManager.initialize();
-    } catch (e) {
-      debugPrint('푸시 알림 서비스 초기화 실패: $e');
-    }
-  });
 
   runApp(
     MultiProvider(
@@ -103,7 +63,7 @@ void main() async {
       child: const MyApp(),
     ),
   );
-
+  
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(
       Future(() async {
@@ -137,16 +97,26 @@ void main() async {
   });
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final String title;
   const MyApp({super.key, this.title = "타이틀"});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  GoRouter? _router;
+  late final Future<void> _initFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFuture = AppInitializer.ensureInitialized();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final AuthViewModel authVM = context.read<AuthViewModel>();
-    final NotificationViewmodel notifyVM = context
-        .read<NotificationViewmodel>();
-    final ChatListViewmodel chatListVM = context.read<ChatListViewmodel>();
     // 1. authVM - 데이터 상태를 바꾼다
     // 2. 고 라우터 refreshListenable 에 authVM 이 연동되어 있다.
     // 3. authVM 의 데이터 변수가 바뀌면
@@ -157,25 +127,55 @@ class MyApp extends StatelessWidget {
 
     // final repo = context.read<MemoRepository>();
 
-    final _router = createAppRouter(context);
+    final theme = ThemeData(
+      splashFactory: NoSplash.splashFactory, // 스플래쉬(리플효과) 제거
+      highlightColor: Colors.transparent, // 하이라이트 효과 제거
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
 
-    return MaterialApp.router(
-      title: title,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        splashFactory: NoSplash.splashFactory, // 스플래쉬(리플효과) 제거
-        highlightColor: Colors.transparent, // 하이라이트 효과 제거
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-
-        scaffoldBackgroundColor: Color(0xFFF5F5F5),
-        appBarTheme: AppBarTheme(
-          backgroundColor: Color(0xFFF5F5F5),
-          //아래 두 줄 스크롤 시 appBar 색 바뀌는 현상 해결
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-        ),
+      scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFFF5F5F5),
+        //아래 두 줄 스크롤 시 appBar 색 바뀌는 현상 해결
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
       ),
-      routerConfig: _router,
+    );
+
+    return FutureBuilder<void>(
+      future: _initFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return MaterialApp(
+            title: widget.title,
+            debugShowCheckedModeBanner: false,
+            color: const Color(0xFFF5F5F5),
+            theme: theme,
+            builder: (context, child) {
+              return ColoredBox(
+                color: const Color(0xFFF5F5F5),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
+            home: const SplashScreen(),
+          );
+        }
+
+        _router ??= createAppRouter(context);
+
+        return MaterialApp.router(
+          title: widget.title,
+          debugShowCheckedModeBanner: false,
+          color: const Color(0xFFF5F5F5),
+          theme: theme,
+          builder: (context, child) {
+            return ColoredBox(
+              color: const Color(0xFFF5F5F5),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+          routerConfig: _router!,
+        );
+      },
     );
   }
 }
