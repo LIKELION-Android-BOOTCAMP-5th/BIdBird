@@ -56,7 +56,7 @@ class ItemDetailSummarySection extends StatelessWidget {
                   ),
                 ),
               ),
-              // 판매자 연락 버튼 - 동그라미 아이콘
+              // 판매자 연락 버튼 - 텍스트가 들어가는 박스
               if (!isMyItem && !isAuctionExpired)
                 Material(
                   color: Colors.transparent,
@@ -71,16 +71,29 @@ class ItemDetailSummarySection extends StatelessWidget {
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: const Color(0xFF3182F6).withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(
-                        Icons.chat_bubble_outline,
-                        size: 20,
-                        color: Color(0xFF3182F6), // Primary Blue
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            '판매자 연락',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF3182F6), // Primary Blue
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.message,
+                            size: 16,
+                            color: Color(0xFF3182F6), // Primary Blue
+                          ),
+                        ],
                       ),
                     ),
                   ),
