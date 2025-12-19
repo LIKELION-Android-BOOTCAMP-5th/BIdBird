@@ -58,10 +58,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
   Future<bool> _ensureIdentityVerified() async {
     if (!mounted) return false;
-    return await ensureIdentityVerified(
-      context,
-      message: '입찰 및 즉시 구매를 위해서는 본인 인증이 필요합니다.\n지금 본인 인증을 진행하시겠습니까?',
-    );
+    // TODO: 사업자 인증 후 아래 주석 해제
+    // return await ensureIdentityVerified(
+    //   context,
+    //   message: '입찰 및 즉시 구매를 위해서는 본인 인증이 필요합니다.\n지금 본인 인증을 진행하시겠습니까?',
+    // );
+    return true; // 임시: 인증 없이 통과
   }
 
   @override

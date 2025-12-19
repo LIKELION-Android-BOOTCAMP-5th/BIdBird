@@ -16,8 +16,9 @@ class _FloatingMenuState extends State<FloatingMenu> {
   bool _open = false;
 
   Future<void> _verifiedPush(String route) async {
-    final verified = await ensureIdentityVerified(context);
-    if (!verified) return;
+    // TODO: 사업자 인증 후 아래 주석 해제
+    // final verified = await ensureIdentityVerified(context);
+    // if (!verified) return;
     context.push(route);
   }
 
