@@ -44,13 +44,6 @@
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
-		<key>UISupportedInterfaceOrientations~ipad</key>
-		<array>
-			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationPortraitUpsideDown</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
-		</array>
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
@@ -72,5 +65,9 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+        <key>UIDeviceFamily</key>
+        <array>
+            <integer>1</integer>  <!-- 1 = iPhone만 -->
+        </array>
 	</dict>
 </plist>
