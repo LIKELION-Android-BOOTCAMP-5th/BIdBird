@@ -82,20 +82,22 @@ class BottomNavBar extends StatelessWidget {
               Selector<ChatListViewmodel, int>(
                 selector: (_, vm) => vm.totalUnreadCount,
                 builder: (_, count, __) {
-                  return count > 0
-                      ? Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: blueColor, // 파란색 (원하면 변경)
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        )
-                      : const SizedBox.shrink();
+                  return Badge(
+                    isLabelVisible: count > 0, // 0보다 클 때만 표시
+                    backgroundColor: Colors.red,
+                    smallSize: 8, // 작은 점 형태의 배지 크기
+                    // offset을 통해 위치를 미세하게 조정할 수 있습니다 (가로, 세로)
+                    label: null,
+                    alignment: const AlignmentDirectional(
+                      1.2,
+                      -1.2,
+                    ), // 좌표 기반 위치 조정
+                    child: Image.asset(
+                      'assets/icons/chat_icon.png', // 아이콘이 active일 때와 아닐 때 분기 처리 필요
+                      width: iconSize.width,
+                      height: iconSize.height,
+                    ),
+                  );
                 },
               ),
             ],
@@ -111,20 +113,22 @@ class BottomNavBar extends StatelessWidget {
               Selector<ChatListViewmodel, int>(
                 selector: (_, vm) => vm.totalUnreadCount,
                 builder: (_, count, __) {
-                  return count > 0
-                      ? Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: blueColor, // 파란색 (원하면 변경)
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        )
-                      : const SizedBox.shrink();
+                  return Badge(
+                    isLabelVisible: count > 0, // 0보다 클 때만 표시
+                    backgroundColor: Colors.red,
+                    smallSize: 8, // 작은 점 형태의 배지 크기
+                    // offset을 통해 위치를 미세하게 조정할 수 있습니다 (가로, 세로)
+                    label: null,
+                    alignment: const AlignmentDirectional(
+                      1.2,
+                      -1.2,
+                    ), // 좌표 기반 위치 조정
+                    child: Image.asset(
+                      'assets/icons/chat_icon.png', // 아이콘이 active일 때와 아닐 때 분기 처리 필요
+                      width: iconSize.width,
+                      height: iconSize.height,
+                    ),
+                  );
                 },
               ),
             ],
