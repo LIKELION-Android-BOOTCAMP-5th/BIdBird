@@ -4,17 +4,16 @@ import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
+import 'package:bidbird/features/home/data/repository/home_repository.dart';
 import 'package:bidbird/features/mypage/data/repositories/profile_repository_impl.dart';
 import 'package:bidbird/features/mypage/domain/usecases/get_profile.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
-import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
+import 'package:bidbird/features/notification/presentation/viewmodel/notification_viewmodel.dart';
 import 'package:bidbird/features/splash/ui/splash_screen.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
-import 'package:bidbird/features/home/data/repository/home_repository.dart';
 
 EventBus eventBus = EventBus();
 

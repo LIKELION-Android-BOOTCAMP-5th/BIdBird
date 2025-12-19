@@ -1,30 +1,29 @@
 import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/item/components/others/double_back_exit_handler.dart';
-import 'package:bidbird/features/auth/data/repositories/tos_repository_impl.dart';
 import 'package:bidbird/features/auth/presentation/screens/auth_set_profile_screen.dart';
 import 'package:bidbird/features/auth/presentation/screens/login_screen.dart';
 import 'package:bidbird/features/auth/presentation/screens/tos_screen.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/tos_viewmodel.dart';
-import 'package:bidbird/features/chat/presentation/screens/chat_screen.dart';
-import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/item_trade/trade_status/presentation/screens/trade_status_screen.dart';
-import 'package:bidbird/features/home/presentation/screens/home_screen.dart';
-import 'package:bidbird/features/item_enroll/add/presentation/screens/item_add_screen.dart';
-import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/presentation/screens/item_bid_win_screen.dart';
+import 'package:bidbird/features/chat/presentation/screens/chat_screen.dart';
+import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
 import 'package:bidbird/features/current_trade/presentation/screens/current_trade_screen.dart';
 import 'package:bidbird/features/current_trade/presentation/screens/filtered_trade_list_screen.dart';
 import 'package:bidbird/features/current_trade/presentation/viewmodels/current_trade_viewmodel.dart';
+import 'package:bidbird/features/home/presentation/screens/home_screen.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/screens/item_detail_screen.dart';
+import 'package:bidbird/features/item_detail/user_history/presentation/screens/user_profile_history_screen.dart';
+import 'package:bidbird/features/item_detail/user_profile/presentation/screens/user_profile_screen.dart';
+import 'package:bidbird/features/item_enroll/add/presentation/screens/item_add_screen.dart';
+import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/registration/detail/presentation/screens/item_registration_detail_screen.dart';
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
 import 'package:bidbird/features/item_enroll/registration/list/presentation/screens/item_registration_list_screen.dart';
 import 'package:bidbird/features/item_enroll/relist/presentation/screens/item_relist_screen.dart';
-import 'package:bidbird/features/item_detail/user_profile/presentation/screens/user_profile_screen.dart';
-import 'package:bidbird/features/item_detail/user_history/presentation/screens/user_profile_history_screen.dart';
+import 'package:bidbird/features/item_trade/trade_status/presentation/screens/trade_status_screen.dart';
 import 'package:bidbird/features/mypage/data/repositories/blacklist_repository_impl.dart';
 import 'package:bidbird/features/mypage/data/repositories/favorites_repository_impl.dart';
 import 'package:bidbird/features/mypage/data/repositories/report_feedback_repository_impl.dart';
@@ -51,7 +50,7 @@ import 'package:bidbird/features/mypage/viewmodel/blacklist_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/favorites_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/report_feedback_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
-import 'package:bidbird/features/notification/screen/notification_screen.dart';
+import 'package:bidbird/features/notification/presentation/screen/notification_screen.dart';
 import 'package:bidbird/features/payment/payment_history/presentation/screens/payment_history_screen.dart';
 import 'package:bidbird/features/splash/ui/splash_screen.dart';
 import 'package:flutter/material.dart';
@@ -304,20 +303,20 @@ GoRouter createAppRouter(BuildContext context) {
                     },
                   ),
                   GoRoute(
-                path: '/report_feedback',
-                pageBuilder: (context, state) {
-                  return NoTransitionPage(
-                    child: ChangeNotifierProvider(
-                      create: (_) {
-                        final repo = ReportFeedbackRepositoryImpl();
-                        return ReportFeedbackViewModel(
-                          getReportFeedback: GetReportFeedback(repo),
-                        )..loadReports();
-                      },
-                      child: const ReportFeedbackScreen(),
-                    ),
-                  );
-                },
+                    path: '/report_feedback',
+                    pageBuilder: (context, state) {
+                      return NoTransitionPage(
+                        child: ChangeNotifierProvider(
+                          create: (_) {
+                            final repo = ReportFeedbackRepositoryImpl();
+                            return ReportFeedbackViewModel(
+                              getReportFeedback: GetReportFeedback(repo),
+                            )..loadReports();
+                          },
+                          child: const ReportFeedbackScreen(),
+                        ),
+                      );
+                    },
                     routes: [
                       GoRoute(
                         path: '/:feedbackId',
@@ -382,11 +381,8 @@ GoRouter createAppRouter(BuildContext context) {
           GoRoute(
             path: 'trade-status',
             pageBuilder: (context, state) {
-              final String itemId =
-                  state.uri.queryParameters["itemId"] ?? "";
-              return NoTransitionPage(
-                child: TradeStatusScreen(itemId: itemId),
-              );
+              final String itemId = state.uri.queryParameters["itemId"] ?? "";
+              return NoTransitionPage(child: TradeStatusScreen(itemId: itemId));
             },
           ),
         ],

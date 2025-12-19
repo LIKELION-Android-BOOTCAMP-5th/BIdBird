@@ -8,14 +8,31 @@ import 'dart:async';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
+import 'package:bidbird/features/notification/data/managers/notification_list_realtime_subscription_manager.dart';
 import 'package:bidbird/features/notification/data/repositories/notification_repository.dart';
-import 'package:bidbird/features/notification/model/notification_entity.dart';
+import 'package:bidbird/features/notification/domain/entities/notification_entity.dart';
+import 'package:bidbird/features/notification/domain/usecases/check_all_notification_usecase.dart';
+import 'package:bidbird/features/notification/domain/usecases/check_notification_usecase.dart';
+import 'package:bidbird/features/notification/domain/usecases/delete_all_notification_usecase.dart';
+import 'package:bidbird/features/notification/domain/usecases/delete_notification_usecase.dart';
+import 'package:bidbird/features/notification/domain/usecases/fetch_notification_usecase.dart';
 import 'package:bidbird/main.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationViewmodel extends ChangeNotifier {
-  NotificationRepository _repository = NotificationRepository();
+  // Manager 클래스들
+  late final NotificationListRealtimeSubscriptionManager
+  _notificationListRealtimeSubscriptionManager =
+      NotificationListRealtimeSubscriptionManager();
+
+  ///useCases
+  final FetchNotificationUseCase _fetchNotificationUseCase;
+  final CheckAllNotificationUseCase _checkAllNotificationUseCase;
+  final CheckNotificationUseCase _checkNotificationUseCase;
+  final DeleteAllNotificationUseCase _deleteAllNotificationUseCase;
+  final DeleteNotificationUseCase _deleteNotificationUseCase;
+
   RealtimeChannel? _notifyChannel;
   StreamSubscription? _loginSubscription;
   List<NotificationEntity> notifyList = [];
@@ -38,7 +55,28 @@ class NotificationViewmodel extends ChangeNotifier {
   // final TextEditingController textEditingController = TextEditingController();
 
   // 뷰모델 생성자, context를 통해 리포지토리를 받아올 수 있음.
-  NotificationViewmodel(BuildContext context) {
+  NotificationViewmodel(
+    BuildContext context, {
+    FetchNotificationUseCase? fetchNotificationUseCase,
+    CheckAllNotificationUseCase? checkAllNotificationUseCase,
+    CheckNotificationUseCase? checkNotificationUseCase,
+    DeleteAllNotificationUseCase? deleteAllNotificationUseCase,
+    DeleteNotificationUseCase? deleteNotificationUseCase,
+  }) : _fetchNotificationUseCase =
+           fetchNotificationUseCase ??
+           FetchNotificationUseCase(NotificationRepositoryImpl()),
+       _checkAllNotificationUseCase =
+           checkAllNotificationUseCase ??
+           CheckAllNotificationUseCase(NotificationRepositoryImpl()),
+       _checkNotificationUseCase =
+           checkNotificationUseCase ??
+           CheckNotificationUseCase(NotificationRepositoryImpl()),
+       _deleteAllNotificationUseCase =
+           deleteAllNotificationUseCase ??
+           DeleteAllNotificationUseCase(NotificationRepositoryImpl()),
+       _deleteNotificationUseCase =
+           deleteNotificationUseCase ??
+           DeleteNotificationUseCase(NotificationRepositoryImpl()) {
     fetchNotify();
     setupRealtimeSubscription();
     _loginSubscription = eventBus.on<LoginEventBus>().listen((event) {
@@ -51,6 +89,12 @@ class NotificationViewmodel extends ChangeNotifier {
         setupRealtimeSubscription();
       }
     });
+  }
+
+  void updateNotification(NotificationEntity notify) {
+    notifyList.add(notify);
+    sortNotifyList();
+    notifyListeners();
   }
 
   void sortNotifyList() {
@@ -73,7 +117,7 @@ class NotificationViewmodel extends ChangeNotifier {
       return;
     }
     try {
-      notifyList = await _repository.fetchNotify(currentUserId);
+      notifyList = await _fetchNotificationUseCase();
     } catch (e) {
       print("알림 불러오기 실패했습니다 : $e");
     }
@@ -86,7 +130,7 @@ class NotificationViewmodel extends ChangeNotifier {
     if (notifyList[index].is_checked == true) return;
     notifyList[index].is_checked = true;
     try {
-      await _repository.checkNotification(id);
+      await _checkNotificationUseCase(id);
     } catch (e) {
       notifyList[index].is_checked = false;
       print("알림 확인 업데이트 실패했습니다 : $e");
@@ -96,7 +140,7 @@ class NotificationViewmodel extends ChangeNotifier {
 
   Future<void> checkAllNotification() async {
     try {
-      await _repository.checkAllNotification();
+      await _checkAllNotificationUseCase();
     } catch (e) {
       print("알림 확인 업데이트 실패했습니다 : $e");
     }
@@ -106,7 +150,7 @@ class NotificationViewmodel extends ChangeNotifier {
 
   Future<void> deleteNotification(String id) async {
     try {
-      await _repository.deleteNotification(id);
+      await _deleteNotificationUseCase(id);
     } catch (e) {
       print("알림 삭제에 실패했습니다 : $e");
     }
@@ -115,7 +159,7 @@ class NotificationViewmodel extends ChangeNotifier {
 
   Future<void> deleteAllNotification() async {
     try {
-      await _repository.deleteAllNotification();
+      await _deleteAllNotificationUseCase();
     } catch (e) {
       print("알림 전체 삭제에 실패했습니다 : $e");
     }
@@ -129,44 +173,19 @@ class NotificationViewmodel extends ChangeNotifier {
   }
 
   void setupRealtimeSubscription() {
-    final currentId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-    if (currentId == null) return;
-    if (_notifyChannel != null) return;
-    _notifyChannel = SupabaseManager.shared.supabase.channel('notification');
-    _notifyChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'alarm',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'user_id',
-            value: currentId,
-          ),
-          callback: (payload) {
-            final newNotify = payload.newRecord;
-            final NotificationEntity newNotification =
-                NotificationEntity.fromJson(newNotify);
-            notifyList.add(newNotification);
-            sortNotifyList();
-            notifyListeners();
-          },
-        )
-        .subscribe();
-
-    print("알림 채널이 연결 되었습니다");
+    _notificationListRealtimeSubscriptionManager.setupRealtimeSubscription(
+      updateNotification: updateNotification,
+    );
   }
 
   void cancelRealtimeSubscription() {
-    if (_notifyChannel != null)
-      SupabaseManager.shared.supabase.removeChannel(_notifyChannel!);
+    _notificationListRealtimeSubscriptionManager.closeSubscription();
     print("로그아웃으로 알림 채널이 닫혔습니다");
   }
 
   @override
   void dispose() {
-    if (_notifyChannel != null)
-      SupabaseManager.shared.supabase.removeChannel(_notifyChannel!);
+    _notificationListRealtimeSubscriptionManager.closeSubscription();
     print("알림 채널이 닫혔습니다");
     super.dispose();
   }
