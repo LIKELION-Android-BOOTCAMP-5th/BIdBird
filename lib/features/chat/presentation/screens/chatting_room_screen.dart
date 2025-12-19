@@ -190,7 +190,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                           !(viewModel.tradeInfo?.tradeStatusCode == 550 && viewModel.hasSubmittedReview);
 
                       return TradeContextCard(
-                        itemTitle: viewModel.itemInfo?.title ?? "로딩중",
+                        itemTitle: viewModel.itemInfo?.title ?? "",
                         itemThumbnail: viewModel.itemInfo?.thumbnailImage,
                         itemPrice: viewModel.auctionInfo?.currentPrice ?? 0,
                         isSeller: isSeller,

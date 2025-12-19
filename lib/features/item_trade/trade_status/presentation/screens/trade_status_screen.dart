@@ -50,7 +50,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
       backgroundColor: BackgroundColor,
       body: SafeArea(
         child: viewModel.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const SizedBox.shrink()
             : viewModel.error != null
                 ? Center(
                     child: Column(
