@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../data/blacklist_repository.dart';
-import '../model/blacklist_user_model.dart';
+import '../domain/entities/blacklisted_user_entity.dart';
+import '../domain/usecases/block_user.dart';
+import '../domain/usecases/get_blacklist.dart';
+import '../domain/usecases/unblock_user.dart';
 
 class BlacklistViewModel extends ChangeNotifier {
-  BlacklistViewModel({required this.repository});
+  BlacklistViewModel({
+    required GetBlacklist getBlacklist,
+    required BlockUser blockUser,
+    required UnblockUser unblockUser,
+  })  : _getBlacklist = getBlacklist,
+        _blockUser = blockUser,
+        _unblockUser = unblockUser;
 
-  final BlacklistRepository repository;
+  final GetBlacklist _getBlacklist;
+  final BlockUser _blockUser;
+  final UnblockUser _unblockUser;
 
-  List<BlacklistedUser> users = [];
+  List<BlacklistedUserEntity> users = [];
   bool isLoading = false;
   String? errorMessage;
   final Set<String> _processingIds = {};
@@ -21,7 +31,7 @@ class BlacklistViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      users = await repository.fetchBlacklist();
+      users = await _getBlacklist();
     } catch (e) {
       errorMessage = e.toString();
     } finally {
@@ -34,7 +44,7 @@ class BlacklistViewModel extends ChangeNotifier {
   bool isProcessing(String targetUserId) =>
       _processingIds.contains(targetUserId);
 
-  Future<void> toggleBlock(BlacklistedUser user) async {
+  Future<void> toggleBlock(BlacklistedUserEntity user) async {
     final targetId = user.targetUserId;
     if (_processingIds.contains(targetId)) return;
 
@@ -43,7 +53,7 @@ class BlacklistViewModel extends ChangeNotifier {
 
     try {
       if (user.isBlocked) {
-        await repository.unblockUser(targetId);
+        await _unblockUser(targetId);
         _updateUser(
           user.copyWith(
             isBlocked: false,
@@ -52,7 +62,7 @@ class BlacklistViewModel extends ChangeNotifier {
           ),
         );
       } else {
-        final String? registerUserId = await repository.blockUser(targetId);
+        final String? registerUserId = await _blockUser(targetId);
         _updateUser(
           user.copyWith(
             isBlocked: true,
@@ -69,7 +79,7 @@ class BlacklistViewModel extends ChangeNotifier {
     }
   }
 
-  void _updateUser(BlacklistedUser updated) {
+  void _updateUser(BlacklistedUserEntity updated) {
     final index = users.indexWhere(
       (element) => element.targetUserId == updated.targetUserId,
     );

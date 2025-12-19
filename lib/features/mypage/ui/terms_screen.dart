@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'package:bidbird/features/mypage/data/terms_repository.dart';
+import 'package:bidbird/features/mypage/data/repositories/terms_repository_impl.dart';
+import 'package:bidbird/features/mypage/domain/usecases/get_terms_content.dart';
 import 'package:bidbird/features/mypage/viewmodel/terms_viewmodel.dart';
 
 class TermsScreen extends StatelessWidget {
@@ -17,7 +18,9 @@ class TermsScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ChangeNotifierProvider<TermsViewModel>(
-      create: (_) => TermsViewModel(TermsRepository()),
+      create: (_) => TermsViewModel(
+        GetTermsContent(TermsRepositoryImpl()),
+      ),
       child: Builder(
         builder: (context) {
           final vm = context.watch<TermsViewModel>();

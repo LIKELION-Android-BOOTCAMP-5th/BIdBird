@@ -1,7 +1,7 @@
 enum TradeRole { seller, buyer }
 
-class TradeHistoryItem {
-  TradeHistoryItem({
+class TradeHistoryEntity {
+  const TradeHistoryEntity({
     required this.itemId,
     required this.title,
     required this.currentPrice,
@@ -22,4 +22,14 @@ class TradeHistoryItem {
   final int? buyNowPrice;
   final DateTime? createdAt;
   final DateTime? endAt;
+}
+
+class TradeHistoryPageEntity {
+  const TradeHistoryPageEntity({
+    required this.items,
+    required this.hasMore,
+  });
+
+  final List<TradeHistoryEntity> items;
+  final bool hasMore;
 }

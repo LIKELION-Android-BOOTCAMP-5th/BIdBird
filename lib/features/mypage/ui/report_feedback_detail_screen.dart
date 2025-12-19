@@ -5,10 +5,11 @@ import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
+import 'package:bidbird/features/mypage/domain/entities/report_feedback_entity.dart';
+import 'package:bidbird/features/mypage/ui/report_feedback_ui_helper.dart';
 
 class ReportFeedbackDetailScreen extends StatelessWidget {
-  final ReportFeedbackModel? report;
+  final ReportFeedbackEntity? report;
   final String feedbackId;
 
   const ReportFeedbackDetailScreen({
@@ -42,7 +43,7 @@ class ReportFeedbackDetailScreen extends StatelessWidget {
 }
 
 class _DetailBody extends StatelessWidget {
-  final ReportFeedbackModel report;
+  final ReportFeedbackEntity report;
 
   const _DetailBody({required this.report});
 
@@ -137,12 +138,15 @@ class _ReportCode extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: getReportCodeColor(reportCode).withValues(alpha: 0.1),
+        color: ReportFeedbackUiHelper.getReportCodeColor(reportCode)
+            .withValues(alpha: 0.1),
         borderRadius: defaultBorder,
       ),
       child: Text(
-        getReportCodeName(reportCode),
-        style: TextStyle(color: getReportCodeColor(reportCode)),
+        ReportFeedbackUiHelper.getReportCodeName(reportCode),
+        style: TextStyle(
+          color: ReportFeedbackUiHelper.getReportCodeColor(reportCode),
+        ),
       ),
     );
   }

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/managers/cloudinary_manager.dart';
-import '../data/profile_repository.dart';
-import '../model/profile_model.dart';
+import '../domain/entities/profile_entity.dart';
+import '../domain/usecases/delete_account.dart';
+import '../domain/usecases/update_profile.dart';
 
 class ProfileEditViewModel extends ChangeNotifier {
-  final ProfileRepository _repository;
+  final UpdateProfile _updateProfile;
+  final DeleteAccount _deleteAccount;
 
   final TextEditingController nickNameTextfield;
   // final TextEditingController phoneTextfield;
@@ -22,7 +24,11 @@ class ProfileEditViewModel extends ChangeNotifier {
   late String _initialNickName;
   String? _initialProfileImageUrl;
 
-  ProfileEditViewModel(this._repository, {Profile? initialProfile})
+  ProfileEditViewModel(
+    this._updateProfile,
+    this._deleteAccount, {
+    ProfileEntity? initialProfile,
+  })
     : nickNameTextfield = TextEditingController(
         text: initialProfile?.nickName ?? '',
       ),
@@ -90,7 +96,7 @@ class ProfileEditViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _repository.updateProfile(deleteProfileImage: true);
+      await _updateProfile(deleteProfileImage: true);
       _profileImageUrl = null;
     } catch (e) {
       errorMessage = e.toString();
@@ -138,7 +144,7 @@ class ProfileEditViewModel extends ChangeNotifier {
 
       final String nickName = trimmedNickName;
 
-      await _repository.updateProfile(
+      await _updateProfile(
         nickName: nickName,
         profileImageUrl: _profileImageUrl,
       );
@@ -156,7 +162,7 @@ class ProfileEditViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
     try {
-      await _repository.deleteAccount();
+      await _deleteAccount();
     } catch (e) {
       errorMessage = e.toString();
       //Dart의 기본 Exception 클래스는 toString()을 "Exception: $message" 형태로 만들도록 구현돼 있음

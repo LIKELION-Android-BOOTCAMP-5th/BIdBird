@@ -2,7 +2,7 @@ import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
-import 'package:bidbird/features/mypage/model/blacklist_user_model.dart';
+import 'package:bidbird/features/mypage/domain/entities/blacklisted_user_entity.dart';
 import 'package:bidbird/features/mypage/viewmodel/blacklist_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -87,7 +87,7 @@ class _Item extends StatelessWidget {
     required this.isProcessing,
   });
 
-  final BlacklistedUser user;
+  final BlacklistedUserEntity user;
   final VoidCallback onPressed;
   final bool isProcessing;
 
