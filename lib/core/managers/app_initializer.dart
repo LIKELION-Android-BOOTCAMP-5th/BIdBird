@@ -21,7 +21,7 @@ class AppInitializer {
   }
 
   static Future<void> _initialize() async {
-    await dotenv.load(fileName: '..env');
+    await dotenv.load(fileName: '.env');
     NetworkApiManager.shared.checkEnv();
 
     CloudinaryObject.fromCloudName(cloudName: 'dn12so6sm');
