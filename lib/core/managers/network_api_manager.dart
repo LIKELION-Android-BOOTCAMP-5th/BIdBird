@@ -11,8 +11,18 @@ class NetworkApiManager {
   NetworkApiManager() {}
 
   //위에것은 걍 정의하는 것임
-  static final String supabaseUrl = dotenv.env['SUPABASE_API_URL'] ?? '';
+  static final String supabaseUrl =
+      (dotenv.env['SUPABASE_API_URL']?.isNotEmpty ?? false)
+          ? (dotenv.env['SUPABASE_API_URL'] ?? '')
+          : _deriveRestBase(dotenv.env['SUPABASE_URL']);
   static final String apiKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+
+  static String _deriveRestBase(String? supabaseUrl) {
+    final base = (supabaseUrl ?? '').trim();
+    if (base.isEmpty) return '';
+    final normalized = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    return '$normalized/rest/v1';
+  }
 
   static final Map<String, String> headers = {
     'apikey': apiKey,
@@ -47,7 +57,10 @@ class NetworkApiManager {
 
   //체크해서 url이나 apiKey가 없으면 바로 터지게 하는 로직
   void checkEnv() {
-    assert(NetworkApiManager.supabaseUrl.isNotEmpty, 'SUPABASE_URL is missing');
+    assert(
+      NetworkApiManager.supabaseUrl.isNotEmpty,
+      'SUPABASE_API_URL (or SUPABASE_URL) is missing',
+    );
 
     assert(NetworkApiManager.apiKey.isNotEmpty, 'SUPABASE_ANON_KEY is missing');
   }

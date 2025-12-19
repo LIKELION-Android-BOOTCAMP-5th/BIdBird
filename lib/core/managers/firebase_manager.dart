@@ -8,6 +8,7 @@ import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,10 +21,16 @@ class FirebaseManager {
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
+  static String? _webVapidKey() {
+    final vapidKey = dotenv.env['FIREBASE_WEB_VAPID_KEY'];
+    if (!kIsWeb) return null;
+    if (vapidKey == null || vapidKey.isEmpty) return null;
+    return vapidKey;
+  }
+
   Future<String?> getFcmToken() async {
     final fcmToken = await FirebaseMessaging.instance.getToken(
-      vapidKey:
-          "BBMVGr2Cf0iITb26AyO-7tzN7HmpHjJQpoYIX-DSvlHvL9b40mV9zkPtiFi1fzs7upnZO-4CErbhLI4bRO6TfAA",
+      vapidKey: _webVapidKey(),
     );
     return fcmToken;
   }
@@ -229,8 +236,7 @@ class FirebaseManager {
   static Future<void> _setupFCMToken() async {
     try {
       String? token = await _fcm.getToken(
-        vapidKey:
-            "BBMVGr2Cf0iITb26AyO-7tzN7HmpHjJQpoYIX-DSvlHvL9b40mV9zkPtiFi1fzs7upnZO-4CErbhLI4bRO6TfAA",
+        vapidKey: _webVapidKey(),
       );
       if (token != null) {
         // fcm 토큰 supabase에 저장하기
@@ -249,8 +255,7 @@ class FirebaseManager {
   static Future<void> setupFCMTokenAtLogin() async {
     try {
       String? token = await _fcm.getToken(
-        vapidKey:
-            "BBMVGr2Cf0iITb26AyO-7tzN7HmpHjJQpoYIX-DSvlHvL9b40mV9zkPtiFi1fzs7upnZO-4CErbhLI4bRO6TfAA",
+        vapidKey: _webVapidKey(),
       );
       if (token != null) {
         // fcm 토큰 supabase에 저장하기
@@ -550,8 +555,7 @@ class FirebaseManager {
   static Future<String?> getToken() async {
     try {
       return await _fcm.getToken(
-        vapidKey:
-            "BBMVGr2Cf0iITb26AyO-7tzN7HmpHjJQpoYIX-DSvlHvL9b40mV9zkPtiFi1fzs7upnZO-4CErbhLI4bRO6TfAA",
+        vapidKey: _webVapidKey(),
       );
     } catch (e) {
       debugPrint('FCM 토큰 가져오기 실패: $e');

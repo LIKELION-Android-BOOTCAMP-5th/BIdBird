@@ -373,7 +373,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
                                                     vertical: 4,
                                                   ),
                                                   decoration: BoxDecoration(
-                                                    color: blueColor,
+                                                    color: Colors.red,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           15,

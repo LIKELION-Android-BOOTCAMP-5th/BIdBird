@@ -3,18 +3,23 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
+  static String _require(String key) {
+    final value = dotenv.env[key];
+    if (value == null || value.isEmpty) {
+      throw StateError('Missing required env: $key');
+    }
+    return value;
+  }
+
+  static String? _optional(String key) {
+    final value = dotenv.env[key];
+    if (value == null || value.isEmpty) return null;
+    return value;
+  }
+
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
@@ -46,30 +51,30 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyCOFndxRVB9neZWd112bCOBTHvhnHpIObY',
-    appId: '1:784088242608:web:a8e67b54c56a0fd0c6de75',
-    messagingSenderId: '784088242608',
-    projectId: 'bidbird-5164d',
-    authDomain: 'bidbird-5164d.firebaseapp.com',
-    storageBucket: 'bidbird-5164d.firebasestorage.app',
-    measurementId: 'G-8BEHKWMX0Q',
-  );
+  static FirebaseOptions get web => FirebaseOptions(
+        apiKey: _require('FIREBASE_WEB_API_KEY'),
+        appId: _require('FIREBASE_WEB_APP_ID'),
+        messagingSenderId: _require('FIREBASE_MESSAGING_SENDER_ID'),
+        projectId: _require('FIREBASE_PROJECT_ID'),
+        authDomain: _require('FIREBASE_WEB_AUTH_DOMAIN'),
+        storageBucket: _require('FIREBASE_STORAGE_BUCKET'),
+        measurementId: _optional('FIREBASE_WEB_MEASUREMENT_ID'),
+      );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDts4NYB4_XEncwNF79CZKPI9yGzHiteMw',
-    appId: '1:784088242608:android:bb7443aabe3aad13c6de75',
-    messagingSenderId: '784088242608',
-    projectId: 'bidbird-5164d',
-    storageBucket: 'bidbird-5164d.firebasestorage.app',
-  );
+  static FirebaseOptions get android => FirebaseOptions(
+        apiKey: _require('FIREBASE_ANDROID_API_KEY'),
+        appId: _require('FIREBASE_ANDROID_APP_ID'),
+        messagingSenderId: _require('FIREBASE_MESSAGING_SENDER_ID'),
+        projectId: _require('FIREBASE_PROJECT_ID'),
+        storageBucket: _require('FIREBASE_STORAGE_BUCKET'),
+      );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBSYapH_Krufq0mdW5SfBGAXAjIT1tvI5o',
-    appId: '1:784088242608:ios:681c31c88488c8d9c6de75',
-    messagingSenderId: '784088242608',
-    projectId: 'bidbird-5164d',
-    storageBucket: 'bidbird-5164d.firebasestorage.app',
-    iosBundleId: 'com.example.bidbird',
-  );
+  static FirebaseOptions get ios => FirebaseOptions(
+        apiKey: _require('FIREBASE_IOS_API_KEY'),
+        appId: _require('FIREBASE_IOS_APP_ID'),
+        messagingSenderId: _require('FIREBASE_MESSAGING_SENDER_ID'),
+        projectId: _require('FIREBASE_PROJECT_ID'),
+        storageBucket: _require('FIREBASE_STORAGE_BUCKET'),
+        iosBundleId: _require('FIREBASE_IOS_BUNDLE_ID'),
+      );
 }
