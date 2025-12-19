@@ -42,8 +42,11 @@ class CategoryBottomSheet extends StatelessWidget {
                   label: category.title,
                   isSelected: isSelected,
                   onTap: () {
-                    Navigator.of(context).pop();
+                    debugPrint('[CategoryBottomSheet] 카테고리 선택됨: ${category.title} (id: ${category.id})');
                     onCategorySelected(category.id);
+                    debugPrint('[CategoryBottomSheet] onCategorySelected 콜백 호출 완료');
+                    Navigator.of(context).pop();
+                    debugPrint('[CategoryBottomSheet] 바텀시트 닫힘');
                   },
                 );
               },
@@ -100,84 +103,37 @@ class _CategoryItem extends StatefulWidget {
   State<_CategoryItem> createState() => _CategoryItemState();
 }
 
-class _CategoryItemState extends State<_CategoryItem>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Color?> _colorAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 100),
-      vsync: this,
-    );
-    _colorAnimation = ColorTween(
-      begin: widget.isSelected 
-          ? const Color(0xFFF3F4F6) 
-          : const Color(0xFFFAFAFB),
-      end: const Color(0xFFF3F4F6),
-    ).animate(_controller);
-  }
-
-  @override
-  void didUpdateWidget(_CategoryItem oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isSelected != oldWidget.isSelected) {
-      _colorAnimation = ColorTween(
-        begin: widget.isSelected 
-            ? const Color(0xFFF3F4F6) 
-            : const Color(0xFFFAFAFB),
-        end: const Color(0xFFF3F4F6),
-      ).animate(_controller);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class _CategoryItemState extends State<_CategoryItem> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) {
-        _controller.forward();
-      },
-      onTapUp: (_) {
-        _controller.reverse();
+    return InkWell(
+      onTap: () {
+        debugPrint('[CategoryItem] onTap 호출됨: ${widget.label}');
         widget.onTap();
+        debugPrint('[CategoryItem] widget.onTap() 호출 완료');
       },
-      onTapCancel: () {
-        _controller.reverse();
-      },
-      child: AnimatedBuilder(
-        animation: _colorAnimation,
-        builder: (context, child) {
-          return Container(
-            height: 56,
-            padding: const EdgeInsets.only(left: 20),
-            color: widget.isSelected 
-                ? const Color(0xFFF3F4F6) 
-                : _colorAnimation.value,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF111827),
-                      letterSpacing: -0.15,
-                    ),
-                  ),
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.only(left: 20),
+        color: widget.isSelected 
+            ? const Color(0xFFF3F4F6) 
+            : const Color(0xFFFAFAFB),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                widget.label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF111827),
+                  letterSpacing: -0.15,
                 ),
-              ],
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }

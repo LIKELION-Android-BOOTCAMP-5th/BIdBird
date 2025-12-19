@@ -164,10 +164,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
       itemBuilder: (context, index) {
         // 로딩 인디케이터 표시
         if (index == data.chattingRoomList.length) {
-          return const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const SizedBox.shrink();
         }
         
         final chattingRoom = data.chattingRoomList[index];

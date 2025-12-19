@@ -9,8 +9,10 @@ import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
 import 'package:bidbird/core/widgets/item/components/fields/form_label.dart';
 import 'package:bidbird/core/widgets/item/components/fields/form_label_with_checkbox.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// 카드 2: 가격·경매
 class PriceAuctionCard extends StatefulWidget {
@@ -216,17 +218,35 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               FormLabel(text: '카테고리'),
-              CategorySelectorField(
-                categories: widget.viewModel.keywordTypes,
-                selectedCategoryId: widget.viewModel.selectedKeywordTypeId,
-                onCategorySelected: (id) {
-                  widget.viewModel.setSelectedKeywordTypeId(id);
+              Selector<ItemAddViewModel, ({
+                List<KeywordTypeEntity> keywordTypes,
+                int? selectedKeywordTypeId,
+                bool isLoadingKeywords,
+              })>(
+                selector: (_, vm) {
+                  final result = (
+                    keywordTypes: vm.keywordTypes,
+                    selectedKeywordTypeId: vm.selectedKeywordTypeId,
+                    isLoadingKeywords: vm.isLoadingKeywords,
+                  );
+                  debugPrint('[PriceAuctionCard] Selector 호출됨 - selectedKeywordTypeId: ${result.selectedKeywordTypeId}, keywordTypes.length: ${result.keywordTypes.length}');
+                  return result;
                 },
-                isLoading: widget.viewModel.isLoadingKeywords,
-                hasError: shouldShowErrors && _categoryError != null,
-                onErrorCleared: shouldShowErrors && _categoryError != null
-                    ? () => clearError(() => _categoryError = null)
-                    : null,
+                builder: (context, data, _) {
+                  debugPrint('[PriceAuctionCard] Selector builder 호출됨 - selectedKeywordTypeId: ${data.selectedKeywordTypeId}');
+                  return CategorySelectorField(
+                    categories: data.keywordTypes,
+                    selectedCategoryId: data.selectedKeywordTypeId,
+                    onCategorySelected: (id) {
+                      widget.viewModel.setSelectedKeywordTypeId(id);
+                    },
+                    isLoading: data.isLoadingKeywords,
+                    hasError: shouldShowErrors && _categoryError != null,
+                    onErrorCleared: shouldShowErrors && _categoryError != null
+                        ? () => clearError(() => _categoryError = null)
+                        : null,
+                  );
+                },
               ),
               if (shouldShowErrors && _categoryError != null)
                 ErrorText(text: _categoryError!),

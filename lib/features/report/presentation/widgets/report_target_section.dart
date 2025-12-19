@@ -21,51 +21,124 @@ class ReportTargetSection extends StatelessWidget {
     const Color borderGray = Color(0xFFE6E8EB);
     const Color textPrimary = Color(0xFF111111);
     const Color textSecondary = Color(0xFF6B7280);
+    const Color textDisabled = Color(0xFF9CA3AF);
+    const Color backgroundGray = Color(0xFFF3F4F6);
 
-    return SizedBox(
-      width: double.infinity,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: context.inputPadding,
-          vertical: context.inputPadding,
-        ),
-        decoration: BoxDecoration(
-          color: cardBackground,
-          borderRadius: BorderRadius.circular(defaultRadius),
-          border: Border.all(
-            color: borderGray,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    final labelFontSize = context.fontSizeMedium;
+    final spacing = context.spacingMedium;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 신고 대상 섹션
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (itemId != null && itemTitle != null) ...[
-              Text(
-                '신고 글: ${itemTitle!}',
-                style: TextStyle(
-                  fontSize: context.fontSizeSmall,
-                  color: textPrimary,
-                  fontWeight: FontWeight.w400,
+            Padding(
+              padding: EdgeInsets.only(bottom: context.labelBottomPadding),
+              child: Row(
+                children: [
+                  Text(
+                    '신고 대상',
+                    style: TextStyle(
+                      fontSize: labelFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              height: 48,
+              padding: EdgeInsets.symmetric(
+                horizontal: context.inputPadding,
+              ),
+              decoration: BoxDecoration(
+                color: backgroundGray,
+                borderRadius: BorderRadius.circular(defaultRadius),
+                border: Border.all(
+                  color: borderGray,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: context.spacingSmall * 0.5),
-            ],
-            Text(
-              '신고 대상: ${targetNickname ?? '알 수 없음'}',
-              style: TextStyle(
-                fontSize: context.fontSizeSmall,
-                color: textPrimary,
-                fontWeight: FontWeight.w400,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        targetNickname ?? '알 수 없음',
+                        style: TextStyle(
+                          fontSize: context.fontSizeSmall,
+                          color: textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
-      ),
+
+        // 신고 글 섹션
+        if (itemId != null && itemTitle != null) ...[
+          SizedBox(height: spacing),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(bottom: context.labelBottomPadding),
+                child: Row(
+                  children: [
+                    Text(
+                      '신고 글',
+                      style: TextStyle(
+                        fontSize: labelFontSize,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                height: 48,
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.inputPadding,
+                ),
+                decoration: BoxDecoration(
+                  color: backgroundGray,
+                  borderRadius: BorderRadius.circular(defaultRadius),
+                  border: Border.all(
+                    color: borderGray,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          itemTitle!,
+                          style: TextStyle(
+                            fontSize: context.fontSizeSmall,
+                            color: textPrimary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
