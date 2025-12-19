@@ -20,7 +20,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'features/feed/data/repository/home_repository.dart';
+import 'package:bidbird/features/home/data/repository/home_repository.dart';
 
 EventBus eventBus = EventBus();
 
