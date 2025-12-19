@@ -26,7 +26,7 @@ import 'package:bidbird/features/item_trade/shipping/domain/repositories/shippin
 import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
 import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
 

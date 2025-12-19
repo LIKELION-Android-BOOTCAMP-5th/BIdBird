@@ -5,7 +5,7 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';

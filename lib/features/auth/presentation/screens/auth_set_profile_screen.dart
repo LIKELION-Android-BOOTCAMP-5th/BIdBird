@@ -1,16 +1,15 @@
 import 'dart:io';
 
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/auth/data/repository/auth_set_profile_repository.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_set_profile_viewmodel.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/utils/ui_set/border_radius_style.dart';
-import '../../../core/utils/ui_set/colors_style.dart';
-import '../../../core/utils/ui_set/fonts_style.dart';
-import '../viewmodel/auth_set_profile_viewmodel.dart';
+import '../../../../core/utils/ui_set/border_radius_style.dart';
+import '../../../../core/utils/ui_set/colors_style.dart';
+import '../../../../core/utils/ui_set/fonts_style.dart';
 
 class AuthSetProfileScreen extends StatelessWidget {
   const AuthSetProfileScreen({super.key});
@@ -18,7 +17,7 @@ class AuthSetProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AuthSetProfileViewmodel>(
-      create: (_) => AuthSetProfileViewmodel(AuthSetProfileRepository()),
+      create: (_) => AuthSetProfileViewmodel(),
       child: Builder(
         builder: (context) {
           final vm = context.watch<AuthSetProfileViewmodel>();
@@ -286,3 +285,5 @@ class _SaveButton extends StatelessWidget {
     );
   }
 }
+
+

@@ -1,5 +1,5 @@
 import 'package:bidbird/core/managers/network_api_manager.dart';
-import 'package:bidbird/features/auth/model/tos_model.dart';
+import 'package:bidbird/features/auth/domain/entities/tos_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,7 +11,7 @@ class ToSDatasource {
   final supabase = Supabase.instance.client;
 
   // ToS 목록 조회
-  Future<List<ToSModel>> getToSinfo() async {
+  Future<List<ToSEntity>> getToSinfo() async {
     final response = await dio.get(
       '${NetworkApiManager.supabaseUrl}/tos?select=*',
       options: Options(headers: NetworkApiManager.useThisHeaders()),
@@ -20,7 +20,7 @@ class ToSDatasource {
     final List<dynamic> data = response.data as List<dynamic>;
 
     return data
-        .map((json) => ToSModel.fromJson(json as Map<String, dynamic>))
+        .map((json) => ToSEntity.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
@@ -32,3 +32,5 @@ class ToSDatasource {
         .eq('id', currentUserId);
   }
 }
+
+

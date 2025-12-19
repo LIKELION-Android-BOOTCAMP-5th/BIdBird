@@ -1,7 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/features/auth/viewmodel/auth_view_model.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
 import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
