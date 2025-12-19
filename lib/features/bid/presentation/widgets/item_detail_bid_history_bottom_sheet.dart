@@ -28,9 +28,7 @@ enum _BidHistoryState {
 class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBottomSheet> {
   _BidHistoryState _state = _BidHistoryState.initial;
   List<BidHistoryItem> _bidHistory = [];
-  bool _isLoadingMore = false;
-  bool _hasMore = true;
-  static const int _pageSize = 20;
+  final bool _isLoadingMore = false;
 
   @override
   void initState() {
@@ -76,7 +74,6 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
           _state = filteredBids.isEmpty
               ? _BidHistoryState.empty
               : _BidHistoryState.loaded;
-          _hasMore = filteredBids.length >= _pageSize;
         });
       }
     } catch (e) {
@@ -85,20 +82,6 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
           _state = _BidHistoryState.error;
         });
       }
-    }
-  }
-
-
-  String _getBidTypeText(int? code) {
-    switch (code) {
-      case 431:
-        return '자동';
-      case 410:
-      case 411:
-      case 430:
-        return '일반';
-      default:
-        return '일반';
     }
   }
 

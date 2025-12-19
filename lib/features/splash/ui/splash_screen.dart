@@ -1,4 +1,5 @@
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
+import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,7 +16,9 @@ class _SplashScreenState extends State<SplashScreen> {
     // TODO: implement initState
     super.initState();
 
-    Future.microtask(() {
+    Future.microtask(() async {
+      await AppInitializer.ensureInitialized();
+      if (!mounted) return;
       context.read<AuthViewModel>().initialize();
     });
   }

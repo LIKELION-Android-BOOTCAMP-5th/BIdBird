@@ -19,89 +19,134 @@ class PortonePaymentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => PortonePaymentViewModel()..loadDecryptedUser(),
-      child: Selector<PortonePaymentViewModel, ({
-        bool loadingUser,
-        String? buyerName,
-        String? buyerPhone,
-      })>(
-        selector: (_, vm) => (
-          loadingUser: vm.loadingUser,
-          buyerName: vm.buyerName,
-          buyerPhone: vm.buyerPhone,
-        ),
-        builder: (context, data, _) {
-          final viewModel = context.read<PortonePaymentViewModel>();
-          
-          if (data.loadingUser) {
-            return const Scaffold(
-              body: SizedBox.shrink(),
-            );
-          }
+    final initFuture = PortoneConfig.isInitialized
+        ? Future<void>.value()
+        : PortoneConfig.initialize();
 
-          // 사용자 정보 로딩 실패 또는 부족한 경우 에러 UI 노출
-          if (data.buyerName == null || data.buyerPhone == null) {
-            final fontSize = context.buttonFontSize;
-            final buttonFontSize = context.fontSizeMedium;
-            final spacing = context.screenPadding;
-            
-            return Scaffold(
-              body: Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: context.hPadding),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        PaymentErrorMessages.loadUserInfoFailed,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: fontSize),
+    return FutureBuilder<void>(
+      future: initFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: SizedBox.shrink(),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: context.hPadding),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      PaymentErrorMessages.loadUserInfoFailed,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: context.buttonFontSize),
+                    ),
+                    SizedBox(height: context.screenPadding),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(false);
+                      },
+                      child: Text(
+                        PaymentErrorMessages.retry,
+                        style: TextStyle(fontSize: context.fontSizeMedium),
                       ),
-                      SizedBox(height: spacing),
-                      ElevatedButton(
-                        onPressed: () => viewModel.loadDecryptedUser(),
-                        child: Text(
-                          PaymentErrorMessages.retry,
-                          style: TextStyle(fontSize: buttonFontSize),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          }
-
-          final String buyerName = data.buyerName!;
-          final String buyerPhone = data.buyerPhone!;
-
-          final paymentRequest = _buildPaymentRequest(
-            buyerName: buyerName,
-            buyerPhone: buyerPhone,
-          );
-
-          return Scaffold(
-            body: PortonePayment(
-              data: paymentRequest,
-              initialChild: const SizedBox.shrink(),
-              callback: (PaymentResponse result) async {
-                final success = await viewModel.handlePaymentResult(
-                  result: result.toJson(),
-                  request: request,
-                );
-
-                if (!context.mounted) return;
-                Navigator.of(context).pop(success);
-              },
-              onError: (Object? error) {
-                if (!context.mounted) return;
-                Navigator.of(context).pop(false);
-              },
             ),
           );
-        },
-      ),
+        }
+
+        return ChangeNotifierProvider(
+          create: (_) => PortonePaymentViewModel()..loadDecryptedUser(),
+          child: Selector<PortonePaymentViewModel, ({
+            bool loadingUser,
+            String? buyerName,
+            String? buyerPhone,
+          })>(
+            selector: (_, vm) => (
+              loadingUser: vm.loadingUser,
+              buyerName: vm.buyerName,
+              buyerPhone: vm.buyerPhone,
+            ),
+            builder: (context, data, _) {
+              final viewModel = context.read<PortonePaymentViewModel>();
+
+              if (data.loadingUser) {
+                return const Scaffold(
+                  body: SizedBox.shrink(),
+                );
+              }
+
+              if (data.buyerName == null || data.buyerPhone == null) {
+                final fontSize = context.buttonFontSize;
+                final buttonFontSize = context.fontSizeMedium;
+                final spacing = context.screenPadding;
+
+                return Scaffold(
+                  body: Center(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: context.hPadding),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            PaymentErrorMessages.loadUserInfoFailed,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: fontSize),
+                          ),
+                          SizedBox(height: spacing),
+                          ElevatedButton(
+                            onPressed: () => viewModel.loadDecryptedUser(),
+                            child: Text(
+                              PaymentErrorMessages.retry,
+                              style: TextStyle(fontSize: buttonFontSize),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              final String buyerName = data.buyerName!;
+              final String buyerPhone = data.buyerPhone!;
+
+              final paymentRequest = _buildPaymentRequest(
+                buyerName: buyerName,
+                buyerPhone: buyerPhone,
+              );
+
+              return Scaffold(
+                body: PortonePayment(
+                  data: paymentRequest,
+                  initialChild: const SizedBox.shrink(),
+                  callback: (PaymentResponse result) async {
+                    final success = await viewModel.handlePaymentResult(
+                      result: result.toJson(),
+                      request: request,
+                    );
+
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop(success);
+                  },
+                  onError: (Object? error) {
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop(false);
+                  },
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
