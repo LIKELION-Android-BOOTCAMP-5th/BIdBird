@@ -63,38 +63,6 @@ void main() async {
       child: const MyApp(),
     ),
   );
-  
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    unawaited(
-      Future(() async {
-        try {
-          await PortoneConfig.initialize().timeout(
-            const Duration(seconds: 10),
-            onTimeout: () {
-              throw TimeoutException('PortoneConfig initialization timeout');
-            },
-          );
-        } catch (e) {
-          debugPrint('[PortoneConfig] Initialization failed: $e');
-          debugPrint(
-            '[PortoneConfig] App will continue but payment features may not work',
-          );
-        }
-
-        try {
-          await FirebaseManager.shared.fcm.requestPermission(provisional: true);
-        } catch (e) {
-          debugPrint('FCM permission request failed: $e');
-        }
-
-        try {
-          await initializeDateFormatting('ko', null);
-        } catch (e) {
-          debugPrint('Date formatting initialization failed: $e');
-        }
-      }),
-    );
-  });
 }
 
 class MyApp extends StatefulWidget {
