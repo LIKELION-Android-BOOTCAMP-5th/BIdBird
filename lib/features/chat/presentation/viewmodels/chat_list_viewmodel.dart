@@ -1,21 +1,26 @@
 import 'dart:async';
 
-import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/features/chat/data/managers/chat_list_cache_manager.dart';
+import 'package:bidbird/features/chat/data/managers/chat_list_realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_chatting_room_list_usecase.dart';
-import 'package:bidbird/features/chat/data/managers/chat_list_cache_manager.dart';
-import 'package:bidbird/features/chat/data/managers/chat_list_realtime_subscription_manager.dart';
+import 'package:bidbird/features/chat/domain/usecases/fetch_new_chatting_room_usecase.dart';
 import 'package:flutter/material.dart';
 
 class ChatListViewmodel extends ChangeNotifier {
   final FetchChattingRoomListUseCase _fetchChattingRoomListUseCase;
-  
+  final FetchNewChattingRoomUseCase _fetchNewChattingRoomUseCase;
+
   // Manager 클래스들
   late final ChatListRealtimeSubscriptionManager _realtimeSubscriptionManager;
   late final ChatListCacheManager _cacheManager;
-  
+
   List<ChattingRoomEntity> chattingRoomList = [];
+  int get totalUnreadCount {
+    return chattingRoomList.fold(0, (sum, room) => sum + (room.count ?? 0));
+  }
+
   bool isLoading = false;
   bool isLoadingMore = false;
   bool hasMore = true;
@@ -27,19 +32,36 @@ class ChatListViewmodel extends ChangeNotifier {
   static ChatListViewmodel? get instance => _instance;
 
   ChatListViewmodel({
+    FetchNewChattingRoomUseCase? fetchNewChattingRoomUseCase,
     FetchChattingRoomListUseCase? fetchChattingRoomListUseCase,
     int? initialLoadCount,
-  })  : _fetchChattingRoomListUseCase =
-            fetchChattingRoomListUseCase ?? FetchChattingRoomListUseCase(ChatRepositoryImpl()) {
+  }) : _fetchNewChattingRoomUseCase =
+           fetchNewChattingRoomUseCase ??
+           FetchNewChattingRoomUseCase(ChatRepositoryImpl()),
+       _fetchChattingRoomListUseCase =
+           fetchChattingRoomListUseCase ??
+           FetchChattingRoomListUseCase(ChatRepositoryImpl()) {
     _realtimeSubscriptionManager = ChatListRealtimeSubscriptionManager();
     _cacheManager = ChatListCacheManager();
-    
+
     _instance = this;
-    
+
     // 초기 로드는 화면 크기에 맞게 전달받은 개수만 로드
     _pageSize = initialLoadCount ?? 20;
     fetchChattingRoomList(visibleItemCount: _pageSize);
     _setupRealtimeSubscription();
+  }
+
+  void setPageSize(int initialLoadCount) {
+    _pageSize = initialLoadCount;
+  }
+
+  /// 새 채팅방 조회
+  Future<void> _fetchNewChattingRoom(String roodId) async {
+    final newChattingRoom = await _fetchNewChattingRoomUseCase(roodId);
+    if (newChattingRoom == null) return;
+    chattingRoomList.insert(0, newChattingRoom);
+    notifyListeners();
   }
 
   /// 채팅방 목록 조회 (초기 로드 시 사용)
@@ -102,7 +124,7 @@ class ChatListViewmodel extends ChangeNotifier {
       } else {
         chattingRoomList.addAll(newList);
         _sortRoomListByLastMessage();
-        
+
         await Future.wait([
           _cacheManager.loadSellerIds(newList),
           _cacheManager.loadTopBidders(newList),
@@ -132,18 +154,18 @@ class ChatListViewmodel extends ChangeNotifier {
       isLoading = true;
       notifyListeners();
     }
-    
+
     try {
       final newList = await _fetchChattingRoomListUseCase(
         page: page,
         limit: limit,
       );
-      
+
       chattingRoomList = newList;
       hasMore = newList.length >= limit;
-      
+
       _sortRoomListByLastMessage();
-      
+
       await Future.wait([
         _cacheManager.loadSellerIds(chattingRoomList),
         _cacheManager.loadTopBidders(chattingRoomList),
@@ -186,19 +208,27 @@ class ChatListViewmodel extends ChangeNotifier {
   }
 
   /// chattingRoomList의 각 itemId에 대한 상태 정보를 Map으로 제공 (itemBuilder 최적화용)
-  Map<String, ({
-    bool isExpired,
-    bool isSeller,
-    bool isTopBidder,
-    bool isOpponentTopBidder,
-  })> get itemStatusMap {
-    final Map<String, ({
+  Map<
+    String,
+    ({
       bool isExpired,
       bool isSeller,
       bool isTopBidder,
       bool isOpponentTopBidder,
-    })> statusMap = {};
-    
+    })
+  >
+  get itemStatusMap {
+    final Map<
+      String,
+      ({
+        bool isExpired,
+        bool isSeller,
+        bool isTopBidder,
+        bool isOpponentTopBidder,
+      })
+    >
+    statusMap = {};
+
     for (final room in chattingRoomList) {
       final itemId = room.itemId;
       statusMap[itemId] = (
@@ -208,7 +238,7 @@ class ChatListViewmodel extends ChangeNotifier {
         isOpponentTopBidder: _cacheManager.isOpponentTopBidder(itemId),
       );
     }
-    
+
     return statusMap;
   }
 
@@ -223,6 +253,7 @@ class ChatListViewmodel extends ChangeNotifier {
       onNewMessage: _handleNewMessage,
       onRoomAdded: _handleRoomAdded,
       onRoomUpdated: _handleRoomUpdated,
+      onNewChatRoom: _fetchNewChattingRoom,
     );
   }
 
@@ -240,22 +271,22 @@ class ChatListViewmodel extends ChangeNotifier {
   void _handleRoomAdded(Map<String, dynamic> roomData) {
     try {
       final newRoom = ChattingRoomEntity.fromJson(roomData);
-      
+
       // 이미 존재하는 방이면 무시
       if (chattingRoomList.any((room) => room.id == newRoom.id)) {
         return;
       }
-      
+
       // 새 방을 목록에 추가하고 정렬
       chattingRoomList.insert(0, newRoom);
       _sortRoomListByLastMessage();
-      
+
       // 캐시 업데이트 (비동기, 에러 무시)
       Future.wait([
         _cacheManager.loadSellerIds([newRoom]),
         _cacheManager.loadTopBidders([newRoom]),
       ], eagerError: false).catchError((_) {});
-      
+
       notifyListeners();
     } catch (e) {
       // 파싱 실패 시 전체 리로드
@@ -268,8 +299,10 @@ class ChatListViewmodel extends ChangeNotifier {
   void _handleRoomUpdated(Map<String, dynamic> roomData) {
     try {
       final updatedRoom = ChattingRoomEntity.fromJson(roomData);
-      final index = chattingRoomList.indexWhere((room) => room.id == updatedRoom.id);
-      
+      final index = chattingRoomList.indexWhere(
+        (room) => room.id == updatedRoom.id,
+      );
+
       if (index != -1) {
         // 기존 방 정보 업데이트
         chattingRoomList[index] = updatedRoom;
@@ -306,13 +339,26 @@ class ChatListViewmodel extends ChangeNotifier {
   bool checkUpdate(Map<String, dynamic> data) {
     final roomId = data["room_id"] as String?;
     if (roomId == null) return false;
-    
+
     final index = chattingRoomList.indexWhere((e) => e.id == roomId);
     if (index == -1) return false;
-    
+
     final newUnreadCount = data['unread_count'] as int? ?? 0;
-    if (chattingRoomList[index].count != newUnreadCount) {
-      chattingRoomList[index].count = newUnreadCount;
+    final String? newLastMessage = data['last_message'] as String?;
+
+    final String? newLastMessageSendAt =
+        data['last_message_send_at'] as String?;
+    if (chattingRoomList[index].lastMessage != newLastMessage) {
+      if (newLastMessage != null)
+        chattingRoomList[index].lastMessage = newLastMessage;
+      if (newLastMessageSendAt != null)
+        chattingRoomList[index].lastMessageSendAt =
+            data['last_message_send_at'] as String ?? "";
+      if (chattingRoomList[index].count != newUnreadCount) {
+        chattingRoomList[index].count = newUnreadCount;
+      }
+      final room = chattingRoomList.removeAt(index);
+      chattingRoomList.insert(0, room);
       notifyListeners();
       return true;
     }
@@ -339,7 +385,9 @@ class ChatListViewmodel extends ChangeNotifier {
   /// 방 진입 시 로컬에서 즉시 unreadCount를 0으로 변경
   void markRoomAsReadLocally(String roomId) {
     final index = chattingRoomList.indexWhere((room) => room.id == roomId);
-    if (index != -1 && chattingRoomList[index].count != null && chattingRoomList[index].count! > 0) {
+    if (index != -1 &&
+        chattingRoomList[index].count != null &&
+        chattingRoomList[index].count! > 0) {
       chattingRoomList[index].count = 0;
       notifyListeners();
     }

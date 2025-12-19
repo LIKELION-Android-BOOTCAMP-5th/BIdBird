@@ -1,6 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
+import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../utils/ui_set/colors_style.dart';
 
@@ -70,15 +72,62 @@ class BottomNavBar extends StatelessWidget {
           label: '현재 거래',
         ),
         BottomNavigationBarItem(
-          icon: Image.asset(
-            'assets/icons/chat_icon.png',
-            width: iconSize.width,
-            height: iconSize.height,
+          icon: Stack(
+            children: [
+              Image.asset(
+                'assets/icons/chat_icon.png',
+                width: iconSize.width,
+                height: iconSize.height,
+              ),
+              Selector<ChatListViewmodel, int>(
+                selector: (_, vm) => vm.totalUnreadCount,
+                builder: (_, count, __) {
+                  return count > 0
+                      ? Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: blueColor, // 파란색 (원하면 변경)
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
-          activeIcon: Image.asset(
-            'assets/icons/chat_select_icon.png',
-            width: iconSize.width,
-            height: iconSize.height,
+
+          activeIcon: Stack(
+            children: [
+              Image.asset(
+                'assets/icons/chat_select_icon.png',
+                width: iconSize.width,
+                height: iconSize.height,
+              ),
+              Selector<ChatListViewmodel, int>(
+                selector: (_, vm) => vm.totalUnreadCount,
+                builder: (_, count, __) {
+                  return count > 0
+                      ? Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: blueColor, // 파란색 (원하면 변경)
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
           label: '채팅',
         ),

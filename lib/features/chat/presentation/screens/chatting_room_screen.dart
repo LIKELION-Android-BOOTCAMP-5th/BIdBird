@@ -5,13 +5,13 @@ import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom
 import 'package:bidbird/core/widgets/components/pop_up/check_confirm_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/trade_cancel_fault_popup.dart';
 import 'package:bidbird/core/widgets/components/pop_up/trade_review_popup.dart';
-import 'package:bidbird/features/chat/presentation/widgets/trade_cancel_reason_bottom_sheet.dart';
-import 'package:bidbird/features/chat/presentation/widgets/trade_context_card.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/chat/presentation/widgets/chat_input_area.dart';
 import 'package:bidbird/features/chat/presentation/widgets/chat_message_list.dart';
 import 'package:bidbird/features/chat/presentation/widgets/chat_room_header.dart';
 import 'package:bidbird/features/chat/presentation/widgets/image_attachment_bar.dart';
+import 'package:bidbird/features/chat/presentation/widgets/trade_cancel_reason_bottom_sheet.dart';
+import 'package:bidbird/features/chat/presentation/widgets/trade_context_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -29,7 +29,7 @@ class ChattingRoomScreen extends StatefulWidget {
 class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     with RouteAware, WidgetsBindingObserver {
   final FocusNode _inputFocusNode = FocusNode();
-  
+
   void _showImageSourceSheet(
     BuildContext context,
     ChattingRoomViewmodel viewModel,
@@ -92,6 +92,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
   // 뒤로가기(pop)했을 때
   @override
   void didPop() {
+    print("채팅방 퇴장");
     if (viewModel.roomId != null) {
       // dispose에서도 disposeViewModel이 호출되지만, 명시적으로 호출하여 낙관적 읽음 처리 보장
       // disposeViewModel에서 낙관적으로 읽음 처리하고, 서버 통신은 백그라운드로 처리
@@ -132,7 +133,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
           final screenWidth = MediaQuery.of(context).size.width;
           final isLargeScreen = screenWidth >= 800;
           final maxWidth = isLargeScreen ? 800.0 : double.infinity;
-          
+
           return SafeArea(
             child: Scaffold(
               backgroundColor: chatBackgroundColor,
@@ -144,109 +145,131 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                     children: [
                       // 거래 컨텍스트 카드
                       Builder(
-                    builder: (context) {
-                      // 현재 사용자가 판매자인지 구매자인지 확인
-                      final currentUserId = SupabaseManager
-                          .shared
-                          .supabase
-                          .auth
-                          .currentUser
-                          ?.id;
-                      final isSeller = currentUserId != null &&
-                          viewModel.itemInfo != null &&
-                          viewModel.itemInfo!.sellerId == currentUserId;
+                        builder: (context) {
+                          // 현재 사용자가 판매자인지 구매자인지 확인
+                          final currentUserId = SupabaseManager
+                              .shared
+                              .supabase
+                              .auth
+                              .currentUser
+                              ?.id;
+                          final isSeller =
+                              currentUserId != null &&
+                              viewModel.itemInfo != null &&
+                              viewModel.itemInfo!.sellerId == currentUserId;
 
-                      // 거래 상태 텍스트 결정
-                      String tradeStatusText = '거래 중';
-                      if (viewModel.tradeInfo != null) {
-                        switch (viewModel.tradeInfo!.tradeStatusCode) {
-                          case 510:
-                            tradeStatusText = '결제 대기';
-                            break;
-                          case 520:
+                          // 거래 상태 텍스트 결정
+                          String tradeStatusText = '거래 중';
+                          if (viewModel.tradeInfo != null) {
+                            switch (viewModel.tradeInfo!.tradeStatusCode) {
+                              case 510:
+                                tradeStatusText = '결제 대기';
+                                break;
+                              case 520:
+                                tradeStatusText = '거래 중';
+                                break;
+                              case 550:
+                                tradeStatusText = '거래 완료';
+                                break;
+                              default:
+                                tradeStatusText = '거래 중';
+                            }
+                          } else if (viewModel.itemInfo != null) {
+                            // tradeInfo가 없으면 auctionInfo 기반으로 판단
                             tradeStatusText = '거래 중';
-                            break;
-                          case 550:
-                            tradeStatusText = '거래 완료';
-                            break;
-                          default:
-                            tradeStatusText = '거래 중';
-                        }
-                      } else if (viewModel.itemInfo != null) {
-                        // tradeInfo가 없으면 auctionInfo 기반으로 판단
-                        tradeStatusText = '거래 중';
-                      }
-
-                      // 거래 취소는 구매자(낙찰자)만 가능, 거래 완료/취소 상태에서는 불가
-                      final canShowTradeCancel = viewModel.tradeInfo != null &&
-                          viewModel.tradeInfo!.tradeStatusCode != 550 &&
-                          viewModel.tradeInfo!.tradeStatusCode != 540 && // 이미 취소된 거래는 불가
-                          viewModel.isTopBidder; // 구매자(낙찰자)만 가능
-
-                      // 거래 현황 보기 / 거래 평가 버튼 표시 조건: 낙찰자 또는 판매자만, 그리고 tradeInfo가 있어야 함
-                      // 거래 완료 상태(550)일 때는 평가를 작성하지 않았을 때만 표시
-                      final canShowTradeStatus = viewModel.tradeInfo != null &&
-                          (viewModel.isTopBidder || isSeller) &&
-                          !(viewModel.tradeInfo?.tradeStatusCode == 550 && viewModel.hasSubmittedReview);
-
-                      return TradeContextCard(
-                        itemTitle: viewModel.itemInfo?.title ?? "",
-                        itemThumbnail: viewModel.itemInfo?.thumbnailImage,
-                        itemPrice: viewModel.auctionInfo?.currentPrice ?? 0,
-                        isSeller: isSeller,
-                        tradeStatus: tradeStatusText,
-                        tradeStatusCode: viewModel.tradeInfo?.tradeStatusCode,
-                        hasShippingInfo: viewModel.hasShippingInfo,
-                        onItemTap: () {
-                          if (viewModel.itemId.isNotEmpty) {
-                            context.push('/item/${viewModel.itemId}');
                           }
-                        },
-                        onTradeStatusTap: canShowTradeStatus
-                            ? () {
-                                // 거래 완료 상태(550)일 때는 거래 평가 팝업 표시, 그 외에는 거래 현황 화면으로 이동
-                                if (viewModel.itemId.isNotEmpty) {
-                                  if (viewModel.tradeInfo?.tradeStatusCode == 550) {
-                                    // 거래 평가 팝업 표시
-                                    _showTradeReviewPopup(context, viewModel);
-                                  } else {
-                                    // 거래 현황 화면으로 이동
-                                    context.push('/chat/room/trade-status?itemId=${viewModel.itemId}');
+
+                          // 거래 취소는 구매자(낙찰자)만 가능, 거래 완료/취소 상태에서는 불가
+                          final canShowTradeCancel =
+                              viewModel.tradeInfo != null &&
+                              viewModel.tradeInfo!.tradeStatusCode != 550 &&
+                              viewModel.tradeInfo!.tradeStatusCode !=
+                                  540 && // 이미 취소된 거래는 불가
+                              viewModel.isTopBidder; // 구매자(낙찰자)만 가능
+
+                          // 거래 현황 보기 / 거래 평가 버튼 표시 조건: 낙찰자 또는 판매자만, 그리고 tradeInfo가 있어야 함
+                          // 거래 완료 상태(550)일 때는 평가를 작성하지 않았을 때만 표시
+                          final canShowTradeStatus =
+                              viewModel.tradeInfo != null &&
+                              (viewModel.isTopBidder || isSeller) &&
+                              !(viewModel.tradeInfo?.tradeStatusCode == 550 &&
+                                  viewModel.hasSubmittedReview);
+
+                          return TradeContextCard(
+                            itemTitle: viewModel.itemInfo?.title ?? "",
+                            itemThumbnail: viewModel.itemInfo?.thumbnailImage,
+                            itemPrice: viewModel.auctionInfo?.currentPrice ?? 0,
+                            isSeller: isSeller,
+                            tradeStatus: tradeStatusText,
+                            tradeStatusCode:
+                                viewModel.tradeInfo?.tradeStatusCode,
+                            hasShippingInfo: viewModel.hasShippingInfo,
+                            onItemTap: () {
+                              if (viewModel.itemId.isNotEmpty) {
+                                context.push('/item/${viewModel.itemId}');
+                              }
+                            },
+                            onTradeStatusTap: canShowTradeStatus
+                                ? () {
+                                    // 거래 완료 상태(550)일 때는 거래 평가 팝업 표시, 그 외에는 거래 현황 화면으로 이동
+                                    if (viewModel.itemId.isNotEmpty) {
+                                      if (viewModel
+                                              .tradeInfo
+                                              ?.tradeStatusCode ==
+                                          550) {
+                                        // 거래 평가 팝업 표시
+                                        _showTradeReviewPopup(
+                                          context,
+                                          viewModel,
+                                        );
+                                      } else {
+                                        // 거래 현황 화면으로 이동
+                                        context.push(
+                                          '/chat/room/trade-status?itemId=${viewModel.itemId}',
+                                        );
+                                      }
+                                    }
                                   }
-                                }
-                              }
-                            : null,
-                        onTradeComplete: viewModel.tradeInfo != null &&
-                                viewModel.tradeInfo!.tradeStatusCode != 550 &&
-                                viewModel.hasShippingInfo &&
-                                viewModel.isTopBidder // 구매자(낙찰자)만 가능
-                            ? () {
-                                // 거래 완료 액션
-                                _showTradeCompleteDialog(context, viewModel);
-                              }
-                            : null,
-                        onTradeCancel: canShowTradeCancel && viewModel.hasShippingInfo
-                            ? () {
-                                // 거래 취소 액션 (사유 선택 포함)
-                                _showTradeCancelWithReason(context, viewModel);
-                              }
-                            : null,
-                      );
-                    },
-                  ),
-                  Expanded(
-                    child: ChatMessageList(viewModel: viewModel),
-                  ),
-                  // 이미지 첨부 바
-                  ImageAttachmentBar(viewModel: viewModel),
-                  // 입력창 영역
-                  ChatInputArea(
-                    viewModel: viewModel,
-                    focusNode: _inputFocusNode,
-                    onImageSourceSheet: () {
-                      _showImageSourceSheet(context, viewModel);
-                    },
-                  ),
+                                : null,
+                            onTradeComplete:
+                                viewModel.tradeInfo != null &&
+                                    viewModel.tradeInfo!.tradeStatusCode !=
+                                        550 &&
+                                    viewModel.hasShippingInfo &&
+                                    viewModel
+                                        .isTopBidder // 구매자(낙찰자)만 가능
+                                ? () {
+                                    // 거래 완료 액션
+                                    _showTradeCompleteDialog(
+                                      context,
+                                      viewModel,
+                                    );
+                                  }
+                                : null,
+                            onTradeCancel:
+                                canShowTradeCancel && viewModel.hasShippingInfo
+                                ? () {
+                                    // 거래 취소 액션 (사유 선택 포함)
+                                    _showTradeCancelWithReason(
+                                      context,
+                                      viewModel,
+                                    );
+                                  }
+                                : null,
+                          );
+                        },
+                      ),
+                      Expanded(child: ChatMessageList(viewModel: viewModel)),
+                      // 이미지 첨부 바
+                      ImageAttachmentBar(viewModel: viewModel),
+                      // 입력창 영역
+                      ChatInputArea(
+                        viewModel: viewModel,
+                        focusNode: _inputFocusNode,
+                        onImageSourceSheet: () {
+                          _showImageSourceSheet(context, viewModel);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -283,9 +306,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
         try {
           // 거래 완료 API 호출
           await viewModel.completeTrade();
-          
+
           if (!context.mounted) return;
-          
+
           // 성공 메시지
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -293,12 +316,12 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
               backgroundColor: Colors.green,
             ),
           );
-          
+
           // 뷰모델 새로고침하여 UI 업데이트
           await viewModel.fetchRoomInfo();
         } catch (e) {
           if (!context.mounted) return;
-          
+
           // 에러 메시지
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -334,7 +357,12 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
               cancelText: '돌아가기',
               onConfirm: () {
                 // 4단계: 최종 확인 및 처리
-                _processTradeCancel(context, viewModel, reasonCode, isSellerFault);
+                _processTradeCancel(
+                  context,
+                  viewModel,
+                  reasonCode,
+                  isSellerFault,
+                );
               },
             );
           },
@@ -362,9 +390,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     try {
       // 거래 취소 API 호출
       await viewModel.cancelTrade(reasonCode, isSellerFault);
-      
+
       if (!context.mounted) return;
-      
+
       // 성공 메시지
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -372,12 +400,12 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
           backgroundColor: Colors.green,
         ),
       );
-      
+
       // 뷰모델 새로고침하여 UI 업데이트
       await viewModel.fetchRoomInfo();
     } catch (e) {
       if (!context.mounted) return;
-      
+
       // 에러 메시지
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -408,9 +436,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
         try {
           // 거래 평가 API 호출
           await viewModel.submitTradeReview(rating, review);
-          
+
           if (!context.mounted) return;
-          
+
           // 성공 메시지
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -420,7 +448,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
           );
         } catch (e) {
           if (!context.mounted) return;
-          
+
           // 에러 메시지
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
