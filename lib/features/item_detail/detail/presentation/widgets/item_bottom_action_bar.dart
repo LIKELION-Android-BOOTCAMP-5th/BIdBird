@@ -29,6 +29,9 @@ import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
 import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
+import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_input_popup.dart';
+import 'package:bidbird/features/item_trade/payment_info/data/datasources/offline_payment_datasource.dart';
+import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_view_popup.dart';
 
 class ItemBottomActionBar extends StatefulWidget {
   const ItemBottomActionBar({
@@ -305,8 +308,127 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               Expanded(child: _buildBuyNowButton()),
             ],
           ] else ...[
+            // 판매자 입장: 낙찰(321) 상태이거나 경매 종료 후 아직 결제 전이면 결제 정보 입력 버튼 표시
+            if ((statusCode == 321 || isTimeOver) && !isTradePaid) ...[
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChattingRoomScreen(
+                          itemId: widget.item.itemId,
+                        ),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: blueColor),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.7),
+                    ),
+                  ),
+                  child: const Text(
+                    '구매자 연락하기',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: blueColor,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    // 이미 결제 정보가 있는지 확인
+                    final datasource = OfflinePaymentDatasource();
+                    final existingPaymentInfo = await datasource.getPaymentInfo(widget.item.itemId);
+                    
+                    if (existingPaymentInfo != null) {
+                      if (!context.mounted) return;
+                      final paymentType = existingPaymentInfo['payment_type'] as String?;
+                      final message = paymentType == 'direct_trade' 
+                          ? '이미 직거래로 설정되었습니다.'
+                          : '이미 계좌 정보가 입력되었습니다.';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(message)),
+                      );
+                      return;
+                    }
+                    
+                    if (!context.mounted) return;
+                    
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (dialogContext) {
+                        return PaymentInfoInputPopup(
+                          onConfirm: ({
+                            required String bankName,
+                            required String accountNumber,
+                            required String accountHolder,
+                            required bool isDirectTrade,
+                          }) async {
+                            try {
+                              final datasource = OfflinePaymentDatasource();
+                              await datasource.completePayment(
+                                itemId: widget.item.itemId,
+                                isDirectTrade: isDirectTrade,
+                                bankName: bankName,
+                                accountNumber: accountNumber,
+                                accountHolder: accountHolder,
+                              );
+                              
+                              if (dialogContext.mounted) {
+                                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      isDirectTrade 
+                                          ? '직거래가 선택되었습니다. 구매자에게 알림이 전송됩니다.'
+                                          : '계좌 정보가 구매자에게 전송되었습니다.',
+                                    ),
+                                  ),
+                                );
+                              }
+                              
+                              // 화면 새로고침
+                              if (context.mounted) {
+                                final viewModel = context.read<ItemDetailViewModel?>();
+                                viewModel?.loadItemDetail(forceRefresh: true);
+                              }
+                            } catch (e) {
+                              if (dialogContext.mounted) {
+                                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                  SnackBar(content: Text('오류: ${e.toString()}')),
+                                );
+                              }
+                            }
+                          },
+                        );
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: blueColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.7),
+                    ),
+                  ),
+                  child: const Text(
+                    '결제 정보 입력',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ]
             // 판매자 입장: trade_status_code가 520이면 구매자 연락하기, 배송 정보 입력하기 버튼 표시
-            if (isTradePaid) ...[
+            else if (isTradePaid) ...[
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
@@ -663,58 +785,106 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 경매 낙찰(321) 상태에서, 내가 낙찰자이고 아직 결제가 완료되지 않은 경우에만 결제 버튼 노출
     // 현재 화면의 ViewModel 에서 isTopBidder 가 true 인 상태를 낙찰자로 간주
     if (statusCode == 321 && isTopBidder && !isTradePaid) {
-      final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-
-      return PrimaryButton(
-        text: '결제하러 가기',
-        onPressed: () async {
-          final authVM = context.read<AuthViewModel>();
-          final String buyerTel = authVM.user?.phone_number ?? '';
-          const appScheme = 'bidbird';
-
-          final request = ItemPaymentRequest(
-            itemId: widget.item.itemId,
-            itemTitle: widget.item.itemTitle,
-            amount: widget.item.currentPrice,
-            buyerTel: buyerTel,
-            appScheme: appScheme,
-          );
-
-          final result = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PortonePaymentScreen(request: request),
-            ),
-          );
-
-          if (!mounted) return;
-
-          if (result == true) {
-            // 결제 성공 시 결제 완료 화면으로 이동
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PaymentCompleteScreen(item: bidWinEntity),
+      // TODO: 사업자 인증 후 아래 주석 해제
+      // final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
+      //
+      // return PrimaryButton(
+      //   text: '결제하러 가기',
+      //   onPressed: () async {
+      //     final authVM = context.read<AuthViewModel>();
+      //     final String buyerTel = authVM.user?.phone_number ?? '';
+      //     const appScheme = 'bidbird';
+      //
+      //     final request = ItemPaymentRequest(
+      //       itemId: widget.item.itemId,
+      //       itemTitle: widget.item.itemTitle,
+      //       amount: widget.item.currentPrice,
+      //       buyerTel: buyerTel,
+      //       appScheme: appScheme,
+      //     );
+      //
+      //     final result = await Navigator.push<bool>(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (_) => PortonePaymentScreen(request: request),
+      //       ),
+      //     );
+      //
+      //     if (!mounted) return;
+      //
+      //     if (result == true) {
+      //       // 결제 성공 시 결제 완료 화면으로 이동
+      //       Navigator.push(
+      //         context,
+      //         MaterialPageRoute(
+      //           builder: (_) => PaymentCompleteScreen(item: bidWinEntity),
+      //         ),
+      //       );
+      //     } else if (result == false) {
+      //       showDialog<void>(
+      //         context: context,
+      //         barrierDismissible: true,
+      //         builder: (dialogContext) {
+      //           return AskPopup(
+      //             content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
+      //             noText: '닫기',
+      //             yesText: '확인',
+      //             yesLogic: () async {
+      //               Navigator.of(dialogContext).pop();
+      //             },
+      //           );
+      //         },
+      //       );
+      //     }
+      //   },
+      //   width: double.infinity,
+      // );
+      
+      // 임시: 결제 정보 확인 버튼 (결제 정보가 있으면 팝업 표시)
+      return GestureDetector(
+        onTap: () async {
+          final datasource = OfflinePaymentDatasource();
+          final paymentInfo = await datasource.getPaymentInfo(widget.item.itemId);
+          
+          if (!context.mounted) return;
+          
+          if (paymentInfo != null) {
+            // 결제 정보가 있으면 팝업 표시
+            showDialog(
+              context: context,
+              builder: (dialogContext) => PaymentInfoViewPopup(
+                paymentType: paymentInfo['payment_type'] as String? ?? '',
+                bankName: paymentInfo['bank_name'] as String?,
+                accountNumber: paymentInfo['account_number'] as String?,
+                accountHolder: paymentInfo['account_holder'] as String?,
               ),
             );
-          } else if (result == false) {
-            showDialog<void>(
-              context: context,
-              barrierDismissible: true,
-              builder: (dialogContext) {
-                return AskPopup(
-                  content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
-                  noText: '닫기',
-                  yesText: '확인',
-                  yesLogic: () async {
-                    Navigator.of(dialogContext).pop();
-                  },
-                );
-              },
+          } else {
+            // 결제 정보가 없으면 안내 메시지
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('판매자가 아직 결제 정보를 입력하지 않았습니다.')),
             );
           }
         },
-        width: double.infinity,
+        child: Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: BackgroundColor,
+            borderRadius: BorderRadius.circular(8.7),
+            border: Border.all(color: BorderColor),
+          ),
+          child: const Center(
+            child: Text(
+              '결제 정보 확인하기',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: TopBidderTextColor,
+              ),
+            ),
+          ),
+        ),
       );
     }
 
@@ -723,57 +893,79 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // - 그 외 사용자는 안내 문구만 노출
     if (isBuyNowInProgress && !isBuyNowCompleted) {
       if (isTopBidder) {
-        return PrimaryButton(
-          text: '결제하러 가기',
-          onPressed: () async {
-            const buyerTel = '01012345678';
-            const appScheme = 'bidbird';
-
-            final request = ItemPaymentRequest(
-              itemId: widget.item.itemId,
-              itemTitle: widget.item.itemTitle,
-              amount: widget.item.buyNowPrice,
-              buyerTel: buyerTel,
-              appScheme: appScheme,
-            );
-
-            final result = await Navigator.push<bool>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PortonePaymentScreen(request: request),
+        // TODO: 사업자 인증 후 아래 주석 해제
+        // return PrimaryButton(
+        //   text: '결제하러 가기',
+        //   onPressed: () async {
+        //     const buyerTel = '01012345678';
+        //     const appScheme = 'bidbird';
+        //
+        //     final request = ItemPaymentRequest(
+        //       itemId: widget.item.itemId,
+        //       itemTitle: widget.item.itemTitle,
+        //       amount: widget.item.buyNowPrice,
+        //       buyerTel: buyerTel,
+        //       appScheme: appScheme,
+        //     );
+        //
+        //     final result = await Navigator.push<bool>(
+        //       context,
+        //       MaterialPageRoute(
+        //         builder: (_) => PortonePaymentScreen(request: request),
+        //       ),
+        //     );
+        //
+        //     if (!mounted) return;
+        //
+        //     if (result == true) {
+        //       // 즉시 구매 결제 성공 시에도 결제 완료 화면으로 이동
+        //       final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
+        //
+        //       Navigator.push(
+        //         context,
+        //         MaterialPageRoute(
+        //           builder: (_) => PaymentCompleteScreen(item: bidWinEntity),
+        //         ),
+        //       );
+        //     } else if (result == false) {
+        //       showDialog<void>(
+        //         context: context,
+        //         barrierDismissible: true,
+        //         builder: (dialogContext) {
+        //           return AskPopup(
+        //             content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
+        //             noText: '닫기',
+        //             yesText: '확인',
+        //             yesLogic: () async {
+        //               Navigator.of(dialogContext).pop();
+        //             },
+        //           );
+        //         },
+        //       );
+        //     }
+        //   },
+        //   width: double.infinity,
+        // );
+        
+        // 임시: 판매자 결제정보 입력 대기 안내
+        return Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: BackgroundColor,
+            borderRadius: BorderRadius.circular(8.7),
+            border: Border.all(color: BorderColor),
+          ),
+          child: const Center(
+            child: Text(
+              '판매자가 결제정보 입력 중입니다',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: TopBidderTextColor,
               ),
-            );
-
-            if (!mounted) return;
-
-            if (result == true) {
-              // 즉시 구매 결제 성공 시에도 결제 완료 화면으로 이동
-              final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PaymentCompleteScreen(item: bidWinEntity),
-                ),
-              );
-            } else if (result == false) {
-              showDialog<void>(
-                context: context,
-                barrierDismissible: true,
-                builder: (dialogContext) {
-                  return AskPopup(
-                    content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
-                    noText: '닫기',
-                    yesText: '확인',
-                    yesLogic: () async {
-                      Navigator.of(dialogContext).pop();
-                    },
-                  );
-                },
-              );
-            }
-          },
-          width: double.infinity,
+            ),
+          ),
         );
       }
 

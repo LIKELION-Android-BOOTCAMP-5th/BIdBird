@@ -72,71 +72,95 @@ class ItemBidWinScreen extends StatelessWidget {
                 return Column(
                   children: [
                     if (!isTradePaid) ...[
+                      // TODO: 사업자 인증 후 아래 주석 해제
+                      // SizedBox(
+                      //   width: double.infinity,
+                      //   height: buttonHeight,
+                      //   child: ElevatedButton(
+                      //     onPressed: () async {
+                      //       const appScheme = 'bidbird';
+                      //
+                      //       final request = ItemPaymentRequest(
+                      //         itemId: item.itemId,
+                      //         itemTitle: item.title,
+                      //         amount: item.winPrice,
+                      //         buyerTel: buyerTel,
+                      //         appScheme: appScheme,
+                      //       );
+                      //
+                      //       final result = await Navigator.push<bool>(
+                      //         context,
+                      //         MaterialPageRoute(
+                      //           builder: (_) => PortonePaymentScreen(
+                      //             request: request,
+                      //           ),
+                      //         ),
+                      //       );
+                      //
+                      //       if (!context.mounted) return;
+                      //
+                      //       if (result == true) {
+                      //         if (!context.mounted) return;
+                      //         Navigator.push(
+                      //           context,
+                      //           MaterialPageRoute(
+                      //             builder: (_) => PaymentCompleteScreen(item: item),
+                      //           ),
+                      //         );
+                      //       } else if (result == false) {
+                      //         if (!context.mounted) return;
+                      //
+                      //         showDialog<void>(
+                      //           context: context,
+                      //           barrierDismissible: true,
+                      //           builder: (dialogContext) {
+                      //             return AskPopup(
+                      //               content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
+                      //               noText: '닫기',
+                      //               yesText: '확인',
+                      //               yesLogic: () async {
+                      //                 Navigator.of(dialogContext).pop();
+                      //               },
+                      //             );
+                      //           },
+                      //         );
+                      //       }
+                      //     },
+                      //     style: ElevatedButton.styleFrom(
+                      //       backgroundColor: blueColor,
+                      //       shape: RoundedRectangleBorder(
+                      //         borderRadius: defaultBorder,
+                      //       ),
+                      //     ),
+                      //     child: Text(
+                      //       '결제하기',
+                      //       style: TextStyle(
+                      //         fontSize: buttonFontSize,
+                      //         fontWeight: FontWeight.w700,
+                      //         color: Colors.white,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      
+                      // 임시: 판매자 결제정보 입력 대기 안내
                       SizedBox(
                         width: double.infinity,
                         height: buttonHeight,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            const appScheme = 'bidbird';
-
-                            final request = ItemPaymentRequest(
-                              itemId: item.itemId,
-                              itemTitle: item.title,
-                              amount: item.winPrice,
-                              buyerTel: buyerTel,
-                              appScheme: appScheme,
-                            );
-
-                            final result = await Navigator.push<bool>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => PortonePaymentScreen(
-                                  request: request,
-                                ),
-                              ),
-                            );
-
-                            if (!context.mounted) return;
-
-                            if (result == true) {
-                              if (!context.mounted) return;
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PaymentCompleteScreen(item: item),
-                                ),
-                              );
-                            } else if (result == false) {
-                              if (!context.mounted) return;
-
-                              showDialog<void>(
-                                context: context,
-                                barrierDismissible: true,
-                                builder: (dialogContext) {
-                                  return AskPopup(
-                                    content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
-                                    noText: '닫기',
-                                    yesText: '확인',
-                                    yesLogic: () async {
-                                      Navigator.of(dialogContext).pop();
-                                    },
-                                  );
-                                },
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: blueColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: defaultBorder,
-                            ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: defaultBorder,
+                            border: Border.all(color: const Color(0xFFE0E0E0)),
                           ),
-                          child: Text(
-                            '결제하기',
-                            style: TextStyle(
-                              fontSize: buttonFontSize,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                          child: Center(
+                            child: Text(
+                              '판매자가 결제정보 입력 중입니다',
+                              style: TextStyle(
+                                fontSize: buttonFontSize,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF9E9E9E),
+                              ),
                             ),
                           ),
                         ),

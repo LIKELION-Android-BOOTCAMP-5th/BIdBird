@@ -5,6 +5,8 @@ import 'package:bidbird/core/utils/ui_set/visible_item_calculator.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_input_popup.dart';
 import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_view_popup.dart';
+import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_input_popup.dart';
+import 'package:bidbird/features/item_trade/payment_info/data/datasources/offline_payment_datasource.dart';
 import 'package:bidbird/features/current_trade/presentation/widgets/trade_history_card.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/item_trade/shipping/data/repositories/shipping_info_repository.dart';
@@ -402,23 +404,35 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
 
     switch (actionType) {
       case TradeActionType.paymentRequired:
+        // TODO: 사업자 인증 후 아래 주석 해제
         // 구매자: 결제하러 가기 버튼 표시
-        return _buildActionButtonWidget(
-          context: context,
-          text: '결제하러 가기',
-          onPressed: () async {
-            await handlePayment(
-              context: context,
-              itemId: itemId,
-              itemTitle: title,
-              amount: price,
-            );
-          },
-        );
+        // return _buildActionButtonWidget(
+        //   context: context,
+        //   text: '결제하러 가기',
+        //   onPressed: () async {
+        //     await handlePayment(
+        //       context: context,
+        //       itemId: itemId,
+        //       itemTitle: title,
+        //       amount: price,
+        //     );
+        //   },
+        // );
+        
+        // 임시: 결제 기능 비활성화 - 버튼 숨김
+        // return _buildDisabledButtonWidget(
+        //   context: context,
+        //   text: '결제 기능 준비중입니다',
+        // );
+        return const SizedBox.shrink();
 
       case TradeActionType.paymentWaiting:
-        // 판매자: 결제 대기 상태 (버튼 없음)
-        return const SizedBox.shrink();
+        // 판매자: 결제 대기 상태 - 결제 정보 입력 버튼 표시
+        return _buildActionButtonWidget(
+          context: context,
+          text: '결제 정보 입력하기',
+          onPressed: () => _handlePaymentInfoInput(context, itemId),
+        );
 
       case TradeActionType.shippingInfoRequired:
         return _buildActionButtonWidget(
@@ -428,15 +442,17 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
         );
 
       case TradeActionType.purchaseConfirmRequired:
-        return _buildActionButtonWidget(
-          context: context,
-          text: '구매 확정하기',
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('구매 확정 기능은 준비 중입니다.')),
-            );
-          },
-        );
+        // TODO: 사업자 인증 후 아래 주석 해제
+        // return _buildActionButtonWidget(
+        //   context: context,
+        //   text: '구매 확정하기',
+        //   onPressed: () {
+        //     ScaffoldMessenger.of(context).showSnackBar(
+        //       const SnackBar(content: Text('구매 확정 기능은 준비 중입니다.')),
+        //     );
+        //   },
+        // );
+        return const SizedBox.shrink();
 
       case TradeActionType.none:
         return const SizedBox.shrink();
@@ -472,6 +488,44 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
                   fontSize: buttonFontSize,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // TODO: 사업자 인증 후 이 메서드 삭제
+  Widget _buildDisabledButtonWidget({
+    required BuildContext context,
+    required String text,
+  }) {
+    return Builder(
+      builder: (context) {
+        final buttonPadding = ResponsiveConstants.screenPadding(context);
+        final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
+        final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(buttonPadding, 0, buttonPadding, buttonPadding),
+          child: SizedBox(
+            width: double.infinity,
+            height: buttonHeight,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(8.7),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: Center(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: buttonFontSize,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF9E9E9E),
+                  ),
                 ),
               ),
             ),
@@ -574,5 +628,84 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
       );
     }
   }
-}
 
+  Future<void> _handlePaymentInfoInput(BuildContext context, String itemId) async {
+    if (!context.mounted) return;
+    
+    // 이미 결제 정보가 있는지 확인
+    final datasource = OfflinePaymentDatasource();
+    final existingPaymentInfo = await datasource.getPaymentInfo(itemId);
+    
+    if (existingPaymentInfo != null) {
+      if (!context.mounted) return;
+      // 이미 결제 정보가 있으면 안내 메시지 표시
+      final paymentType = existingPaymentInfo['payment_type'] as String?;
+      final message = paymentType == 'direct_trade' 
+          ? '이미 직거래로 설정되었습니다.'
+          : '이미 계좌 정보가 입력되었습니다.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      return;
+    }
+    
+    if (!context.mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return PaymentInfoInputPopup(
+          onConfirm: ({
+            required String bankName,
+            required String accountNumber,
+            required String accountHolder,
+            required bool isDirectTrade,
+          }) async {
+            try {
+              final datasource = OfflinePaymentDatasource();
+              await datasource.completePayment(
+                itemId: itemId,
+                isDirectTrade: isDirectTrade,
+                bankName: bankName,
+                accountNumber: accountNumber,
+                accountHolder: accountHolder,
+              );
+              
+              if (dialogContext.mounted) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isDirectTrade 
+                          ? '직거래가 선택되었습니다. 구매자에게 알림이 전송됩니다.'
+                          : '계좌 정보가 구매자에게 전송되었습니다.',
+                    ),
+                  ),
+                );
+              }
+              
+              // 리스트 새로고침
+              if (context.mounted) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (context.mounted) {
+                    try {
+                      context.read<CurrentTradeViewModel>().refresh();
+                    } catch (e) {
+                      // ViewModel이 dispose된 경우 무시
+                    }
+                  }
+                });
+              }
+            } catch (e) {
+              if (dialogContext.mounted) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(content: Text('오류: ${e.toString()}')),
+                );
+              }
+            }
+          },
+        );
+      },
+    );
+  }
+}
