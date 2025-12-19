@@ -425,7 +425,10 @@ GoRouter createAppRouter(BuildContext context) {
                 if (editingItemId != null) {
                   vm.startEdit(editingItemId);
                 } else {
-                  vm.init();
+                  // init()은 비동기이므로 postFrameCallback에서 호출
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    vm.init();
+                  });
                 }
                 return vm;
               },

@@ -328,8 +328,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
   }
 
   void setSelectedKeywordTypeId(int? id) {
+    debugPrint('[ItemAddViewModel] setSelectedKeywordTypeId 호출됨: id=$id');
+    debugPrint('[ItemAddViewModel] 이전 selectedKeywordTypeId: $selectedKeywordTypeId');
     selectedKeywordTypeId = id;
+    debugPrint('[ItemAddViewModel] 새로운 selectedKeywordTypeId: $selectedKeywordTypeId');
     notifyListeners();
+    debugPrint('[ItemAddViewModel] notifyListeners() 호출 완료');
   }
 
   void setSelectedDuration(String value) {

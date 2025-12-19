@@ -37,17 +37,34 @@ class CategorySelectorField extends StatelessWidget {
   final VoidCallback? onErrorCleared;
 
   String _getSelectedCategoryTitle() {
+    debugPrint('[CategorySelectorField] _getSelectedCategoryTitle 호출 - selectedCategoryId: $selectedCategoryId, categories.length: ${categories.length}');
     if (selectedCategoryId == null) {
+      debugPrint('[CategorySelectorField] selectedCategoryId가 null - "카테고리 선택" 반환');
       return '카테고리 선택';
     }
     try {
-      return categories
-          .firstWhere(
-            (e) => e.id == selectedCategoryId,
-            orElse: () => categories.first,
-          )
-          .title;
+      if (categories.isEmpty) {
+        debugPrint('[CategorySelectorField] categories가 비어있음 - "카테고리 선택" 반환');
+        return '카테고리 선택';
+      }
+      
+      KeywordTypeEntity? foundCategory;
+      for (final category in categories) {
+        if (category is KeywordTypeEntity && category.id == selectedCategoryId) {
+          foundCategory = category;
+          break;
+        }
+      }
+      
+      if (foundCategory == null) {
+        debugPrint('[CategorySelectorField] 카테고리를 찾을 수 없음 (id: $selectedCategoryId) - "카테고리 선택" 반환');
+        return '카테고리 선택';
+      }
+      
+      debugPrint('[CategorySelectorField] 선택된 카테고리: ${foundCategory.title}');
+      return foundCategory.title;
     } catch (e) {
+      debugPrint('[CategorySelectorField] 에러 발생: $e - "카테고리 선택" 반환');
       return '카테고리 선택';
     }
   }
@@ -78,15 +95,28 @@ class CategorySelectorField extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
+        debugPrint('[CategorySelectorField] 필드 탭됨');
+        debugPrint('[CategorySelectorField] categories.length: ${categories.length}');
+        debugPrint('[CategorySelectorField] selectedCategoryId: $selectedCategoryId');
+        debugPrint('[CategorySelectorField] isLoading: $isLoading');
+        if (categories.isEmpty) {
+          debugPrint('[CategorySelectorField] categories가 비어있음 - 바텀시트 열지 않음');
+          return;
+        }
+        debugPrint('[CategorySelectorField] 바텀시트 열기 시작');
         CategoryBottomSheet.show(
           context,
           categories: categories.cast<KeywordTypeEntity>(),
           selectedCategoryId: selectedCategoryId,
           onCategorySelected: (id) {
+            debugPrint('[CategorySelectorField] onCategorySelected 콜백 받음: id=$id');
             onCategorySelected(id);
+            debugPrint('[CategorySelectorField] onCategorySelected(id) 호출 완료');
             onErrorCleared?.call();
+            debugPrint('[CategorySelectorField] onErrorCleared 호출 완료');
           },
         );
+        debugPrint('[CategorySelectorField] CategoryBottomSheet.show 호출 완료');
       },
       child: Container(
         height: 48,

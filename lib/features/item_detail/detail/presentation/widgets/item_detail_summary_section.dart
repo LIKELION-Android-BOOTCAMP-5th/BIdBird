@@ -3,6 +3,7 @@ import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.
 import 'package:flutter/material.dart';
 
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 
 class ItemDetailSummarySection extends StatelessWidget {
   const ItemDetailSummarySection({
@@ -16,6 +17,14 @@ class ItemDetailSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 경매 만료 여부 확인
+    final bool isTimeOver = DateTime.now().isAfter(item.finishTime);
+    final bool isAuctionEnded = isTimeOver ||
+        item.statusCode == AuctionStatusCode.bidWon ||
+        item.statusCode == AuctionStatusCode.instantBuyCompleted ||
+        item.statusCode == AuctionStatusCode.failed;
+    final bool isAuctionExpired = isAuctionEnded;
+
     // Section Container - padding 24
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -48,7 +57,7 @@ class ItemDetailSummarySection extends StatelessWidget {
                 ),
               ),
               // 판매자 연락 버튼 - 동그라미 아이콘
-              if (!isMyItem)
+              if (!isMyItem && !isAuctionExpired)
                 Material(
                   color: Colors.transparent,
                   child: InkWell(

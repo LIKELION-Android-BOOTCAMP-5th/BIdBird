@@ -105,6 +105,7 @@ class _ContentInputSectionState extends State<ContentInputSection> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
           children: [
             FormLabel(text: widget.label),
             SizedBox(height: _labelBottomSpacing),

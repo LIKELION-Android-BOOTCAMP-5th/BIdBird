@@ -75,25 +75,26 @@ class ReportContentCardState extends State<ReportContentCard>
 
   @override
   Widget build(BuildContext context) {
-
-    return SingleChildScrollView(
+    return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: context.hPadding,
         vertical: context.vPadding,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ContentInputSection(
-            label: '상세 내용',
-            controller: widget.viewModel.contentController,
-            hintText: '발생한 상황을 간단히 설명해주세요',
-            maxLength: 500,
-            minLength: 1,
-            minLines: 6,
-            maxLines: 8,
-            successMessage: '구체적으로 작성할수록 처리 속도가 빨라집니다',
-            errorMessage: _shouldShowErrors ? _contentError : null,
+          Expanded(
+            child: ContentInputSection(
+              label: '상세 내용',
+              controller: widget.viewModel.contentController,
+              hintText: '발생한 상황을 간단히 설명해주세요',
+              maxLength: 500,
+              minLength: 1,
+              minLines: null,
+              maxLines: null,
+              successMessage: '구체적으로 작성할수록 처리 속도가 빨라집니다',
+              errorMessage: _shouldShowErrors ? _contentError : null,
+            ),
           ),
         ],
       ),
