@@ -155,6 +155,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     _roomInfoManager = roomInfoManager ?? RoomInfoManager();
     _imagePickerManager = imagePickerManager ?? ImagePickerManager();
 
+    print('[LEAK] ChattingRoomViewmodel created hash=$hashCode itemId=$itemId roomId=$roomId');
+
     // 더 많은 메시지 로드 리스너 설정
     _scrollManager.setupLoadMoreListener(() {
       loadMoreMessages();
@@ -839,6 +841,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   @override
   void dispose() {
+    print('[LEAK] ChattingRoomViewmodel dispose hash=$hashCode itemId=$itemId roomId=$roomId');
     // 채팅방을 나갈 때 읽음 처리를 위해 disposeViewModel 호출
     if (roomId != null && isActive) {
       // disposeViewModel은 비동기이므로 await 없이 호출
@@ -847,6 +850,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       });
     }
 
+    messageController.dispose();
     _roomInfoManager.dispose();
     _subscriptionManager.dispose();
     _scrollManager.dispose();
