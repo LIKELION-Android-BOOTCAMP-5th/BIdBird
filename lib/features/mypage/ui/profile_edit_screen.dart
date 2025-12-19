@@ -10,7 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import 'package:bidbird/features/mypage/data/profile_repository.dart';
+import 'package:bidbird/features/mypage/data/repositories/profile_repository_impl.dart';
+import 'package:bidbird/features/mypage/domain/usecases/delete_account.dart';
+import 'package:bidbird/features/mypage/domain/usecases/update_profile.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_edit_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 
@@ -26,8 +28,14 @@ class ProfileEditScreen extends StatelessWidget {
     final profile = context.read<ProfileViewModel>().profile;
 
     return ChangeNotifierProvider<ProfileEditViewModel>(
-      create: (_) =>
-          ProfileEditViewModel(ProfileRepository(), initialProfile: profile),
+      create: (_) {
+        final repo = ProfileRepositoryImpl();
+        return ProfileEditViewModel(
+          UpdateProfile(repo),
+          DeleteAccount(repo),
+          initialProfile: profile,
+        );
+      },
       child: Builder(
         builder: (context) {
           final vm = context.watch<ProfileEditViewModel>();

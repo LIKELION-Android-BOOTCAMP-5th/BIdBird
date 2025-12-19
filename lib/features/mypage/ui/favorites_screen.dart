@@ -3,7 +3,7 @@ import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
-import 'package:bidbird/features/mypage/model/favorites_model.dart';
+import 'package:bidbird/features/mypage/domain/entities/favorite_entity.dart';
 import 'package:bidbird/features/mypage/viewmodel/favorites_viewmodel.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -111,7 +111,7 @@ class _Item extends StatelessWidget {
     required this.isProcessing,
   });
 
-  final FavoritesItem item;
+  final FavoriteEntity item;
   final VoidCallback onPressed;
   final bool isProcessing;
 

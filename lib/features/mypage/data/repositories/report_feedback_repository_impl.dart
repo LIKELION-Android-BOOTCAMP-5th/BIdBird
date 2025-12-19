@@ -1,68 +1,36 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../domain/entities/report_feedback_entity.dart';
+import '../../domain/repositories/report_feedback_repository.dart';
+import '../datasources/report_feedback_remote_data_source.dart';
+import '../models/report_feedback_dto.dart';
 
-import '../model/report_feedback_model.dart';
+class ReportFeedbackRepositoryImpl implements ReportFeedbackRepository {
+  ReportFeedbackRepositoryImpl({ReportFeedbackRemoteDataSource? remoteDataSource})
+    : _remoteDataSource = remoteDataSource ?? ReportFeedbackRemoteDataSource();
 
-class ReportFeedbackRepository {
-  ReportFeedbackRepository({SupabaseClient? client})
-    : _client = client ?? SupabaseManager.shared.supabase;
+  final ReportFeedbackRemoteDataSource _remoteDataSource;
 
-  final SupabaseClient _client;
-
-  Future<List<ReportFeedbackModel>> fetchReports() async {
-    final user = _client.auth.currentUser;
-    if (user == null) {
+  @override
+  Future<List<ReportFeedbackEntity>> fetchReports() async {
+    final userId = _remoteDataSource.currentUserId;
+    if (userId == null) {
       throw Exception('로그인 정보가 없습니다.');
     }
 
-    final List<dynamic> rows = await _client
-        .from('report')
-        .select('''
-          id,
-          target_user_id,
-          target_ci,
-          report_code,
-          item_id,
-          report_content,
-          report_status,
-          created_at,
-          report_feedback,
-          feedbacked_at,
-          items_detail(title)
-        ''')
-        .eq('user_id', user.id)
-        .order('created_at', ascending: false);
+    final rows = await _remoteDataSource.fetchReports(userId);
 
-    final List<ReportFeedbackModel> reports = [];
-    for (final dynamic row in rows) {
-      if (row is Map<String, dynamic>) {
-        reports.add(await _mapReport(row));
-      }
+    final List<ReportFeedbackDto> reports = [];
+    for (final row in rows) {
+      reports.add(_mapReport(row));
     }
 
-    return reports;
+    return reports.map((dto) => dto.toEntity()).toList();
   }
 
-  //개별아이템에대한당겨서새로고침기능을추가하는경우필요함
-  // Future<ReportFeedbackModel?> fetchReportById(String id) async {
-  //   if (id.isEmpty) return null;
-
-  //   final Map<String, dynamic>? row = await _client
-  //       .from('reports')
-  //       .select()
-  //       .eq('id', id)
-  //       .maybeSingle();
-
-  //   if (row == null) return null;
-  //   return _mapReport(row);
-  // }
-
-  Future<ReportFeedbackModel> _mapReport(Map<String, dynamic> row) async {
+  ReportFeedbackDto _mapReport(Map<String, dynamic> row) {
     final String id = row['id']?.toString() ?? '';
     final String targetUserId = row['target_user_id']?.toString() ?? '';
     final String? targetCi = row['target_ci']?.toString();
     final String reportCode = row['report_code']?.toString() ?? '';
-    final String reportCodeName = getReportCodeName(row['report_code']);
     final String? itemId = row['item_id']?.toString();
     final String? itemTitle = _extractItemTitle(row['items_detail']);
     final String content = row['report_content']?.toString() ?? '';
@@ -71,12 +39,11 @@ class ReportFeedbackRepository {
     final String? feedback = row['report_feedback']?.toString();
     final DateTime? feedbackedAt = _parseNullableDateTime(row['feedbacked_at']);
 
-    return ReportFeedbackModel(
+    return ReportFeedbackDto(
       id: id,
       targetUserId: targetUserId,
       targetCi: targetCi,
       reportCode: reportCode,
-      reportCodeName: reportCodeName,
       itemId: itemId,
       itemTitle: itemTitle,
       content: content,
@@ -104,11 +71,7 @@ class ReportFeedbackRepository {
     return null;
   }
 
-  //이부분수정하기
   DateTime _parseDateTime(dynamic value) {
-    // if (value is int) {
-    //   return DateTime.fromMillisecondsSinceEpoch(value);
-    // }
     if (value is String) {
       final parsed = DateTime.tryParse(value);
       if (parsed != null) return parsed.toLocal();
@@ -116,12 +79,8 @@ class ReportFeedbackRepository {
     return DateTime.now();
   }
 
-  //이부분수정하기
   DateTime? _parseNullableDateTime(dynamic value) {
     if (value == null) return null;
-    // if (value is int) {
-    //   return DateTime.fromMillisecondsSinceEpoch(value);
-    // }
     if (value is String) {
       final parsed = DateTime.tryParse(value);
       return parsed?.toLocal();

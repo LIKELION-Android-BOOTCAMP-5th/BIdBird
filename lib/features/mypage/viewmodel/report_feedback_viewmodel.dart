@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../data/report_feedback_repository.dart';
-import '../model/report_feedback_model.dart';
+import '../domain/entities/report_feedback_entity.dart';
+import '../domain/usecases/get_report_feedback.dart';
 
 class ReportFeedbackViewModel extends ChangeNotifier {
-  ReportFeedbackViewModel({ReportFeedbackRepository? repository})
-    : _repository = repository ?? ReportFeedbackRepository(); //안넣으면기본리포지토리적용
+  ReportFeedbackViewModel({required GetReportFeedback getReportFeedback})
+    : _getReportFeedback = getReportFeedback; //안넣으면기본리포지토리적용
 
-  final ReportFeedbackRepository _repository;
+  final GetReportFeedback _getReportFeedback;
 
-  List<ReportFeedbackModel> _reports = [];
+  List<ReportFeedbackEntity> _reports = [];
   bool _isLoading = false;
   String? _errorMessage;
 
   //뷰모델보호//다른뷰모델도적용하기
-  List<ReportFeedbackModel> get reports => _reports;
+  List<ReportFeedbackEntity> get reports => _reports;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -26,7 +26,7 @@ class ReportFeedbackViewModel extends ChangeNotifier {
     notifyListeners(); //화면
 
     try {
-      _reports = await _repository.fetchReports();
+      _reports = await _getReportFeedback();
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -36,7 +36,7 @@ class ReportFeedbackViewModel extends ChangeNotifier {
   }
 
   //개별아이템에대한당겨서새로고침기능을추가하는경우필요함
-  // Future<ReportFeedbackModel?> fetchReport(String id) async {
+  // Future<ReportFeedbackEntity?> fetchReport(String id) async {
   //   try {
   //     return await _repository.fetchReportById(id);
   //   } catch (_) {

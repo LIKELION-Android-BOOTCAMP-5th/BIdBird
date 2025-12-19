@@ -7,7 +7,8 @@ import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
-import 'package:bidbird/features/mypage/data/profile_repository.dart';
+import 'package:bidbird/features/mypage/data/repositories/profile_repository_impl.dart';
+import 'package:bidbird/features/mypage/domain/usecases/get_profile.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
 import 'package:cloudinary_flutter/cloudinary_context.dart';
@@ -77,7 +78,10 @@ void main() async {
         ),
         // 확정된 프로필 데이터
         ChangeNotifierProvider(
-          create: (_) => ProfileViewModel(ProfileRepository()),
+          create: (_) {
+            final repo = ProfileRepositoryImpl();
+            return ProfileViewModel(GetProfile(repo));
+          },
         ),
         // 프로필정보가 필요한 곳에서 다음과 같이 사용하세요
         // final profileVm = context.watch<ProfileViewModel>();
@@ -118,9 +122,7 @@ void main() async {
         }
 
         try {
-          await FirebaseManager.shared.fcm.requestPermission(
-            provisional: true,
-          );
+          await FirebaseManager.shared.fcm.requestPermission(provisional: true);
         } catch (e) {
           debugPrint('FCM permission request failed: $e');
         }

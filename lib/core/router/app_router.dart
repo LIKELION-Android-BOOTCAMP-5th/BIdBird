@@ -25,11 +25,19 @@ import 'package:bidbird/features/item_enroll/registration/list/presentation/scre
 import 'package:bidbird/features/item_enroll/relist/presentation/screens/item_relist_screen.dart';
 import 'package:bidbird/features/item_detail/user_profile/presentation/screens/user_profile_screen.dart';
 import 'package:bidbird/features/item_detail/user_history/presentation/screens/user_profile_history_screen.dart';
-import 'package:bidbird/features/mypage/data/blacklist_repository.dart';
-import 'package:bidbird/features/mypage/data/favorites_repository.dart';
-import 'package:bidbird/features/mypage/data/report_feedback_repository.dart';
-import 'package:bidbird/features/mypage/data/trade_history_repository.dart';
-import 'package:bidbird/features/mypage/model/report_feedback_model.dart';
+import 'package:bidbird/features/mypage/data/repositories/blacklist_repository_impl.dart';
+import 'package:bidbird/features/mypage/data/repositories/favorites_repository_impl.dart';
+import 'package:bidbird/features/mypage/data/repositories/report_feedback_repository_impl.dart';
+import 'package:bidbird/features/mypage/data/repositories/trade_history_repository_impl.dart';
+import 'package:bidbird/features/mypage/domain/entities/report_feedback_entity.dart';
+import 'package:bidbird/features/mypage/domain/usecases/add_favorite.dart';
+import 'package:bidbird/features/mypage/domain/usecases/block_user.dart';
+import 'package:bidbird/features/mypage/domain/usecases/get_blacklist.dart';
+import 'package:bidbird/features/mypage/domain/usecases/get_favorites.dart';
+import 'package:bidbird/features/mypage/domain/usecases/get_report_feedback.dart';
+import 'package:bidbird/features/mypage/domain/usecases/get_trade_history.dart';
+import 'package:bidbird/features/mypage/domain/usecases/remove_favorite.dart';
+import 'package:bidbird/features/mypage/domain/usecases/unblock_user.dart';
 import 'package:bidbird/features/mypage/ui/blacklist_screen.dart';
 import 'package:bidbird/features/mypage/ui/cs_screen.dart';
 import 'package:bidbird/features/mypage/ui/favorites_screen.dart';
@@ -254,9 +262,14 @@ GoRouter createAppRouter(BuildContext context) {
                 pageBuilder: (context, state) {
                   return NoTransitionPage(
                     child: ChangeNotifierProvider(
-                      create: (_) =>
-                          FavoritesViewModel(repository: FavoritesRepository())
-                            ..loadFavorites(),
+                      create: (_) {
+                        final repo = FavoritesRepositoryImpl();
+                        return FavoritesViewModel(
+                          getFavorites: GetFavorites(repo),
+                          addFavorite: AddFavorite(repo),
+                          removeFavorite: RemoveFavorite(repo),
+                        )..loadFavorites();
+                      },
                       child: const FavoritesScreen(),
                     ),
                   );
@@ -267,9 +280,12 @@ GoRouter createAppRouter(BuildContext context) {
                 pageBuilder: (context, state) {
                   return NoTransitionPage(
                     child: ChangeNotifierProvider(
-                      create: (_) => TradeHistoryViewModel(
-                        repository: TradeHistoryRepository(),
-                      )..loadPage(reset: true),
+                      create: (_) {
+                        final repo = TradeHistoryRepositoryImpl();
+                        return TradeHistoryViewModel(
+                          getTradeHistory: GetTradeHistory(repo),
+                        )..loadPage(reset: true);
+                      },
                       child: const TradeHistoryScreen(),
                     ),
                   );
@@ -288,17 +304,20 @@ GoRouter createAppRouter(BuildContext context) {
                     },
                   ),
                   GoRoute(
-                    path: '/report_feedback',
-                    pageBuilder: (context, state) {
-                      return NoTransitionPage(
-                        child: ChangeNotifierProvider(
-                          create: (_) => ReportFeedbackViewModel(
-                            repository: ReportFeedbackRepository(),
-                          )..loadReports(),
-                          child: const ReportFeedbackScreen(),
-                        ),
-                      );
-                    },
+                path: '/report_feedback',
+                pageBuilder: (context, state) {
+                  return NoTransitionPage(
+                    child: ChangeNotifierProvider(
+                      create: (_) {
+                        final repo = ReportFeedbackRepositoryImpl();
+                        return ReportFeedbackViewModel(
+                          getReportFeedback: GetReportFeedback(repo),
+                        )..loadReports();
+                      },
+                      child: const ReportFeedbackScreen(),
+                    ),
+                  );
+                },
                     routes: [
                       GoRoute(
                         path: '/:feedbackId',
@@ -307,7 +326,7 @@ GoRouter createAppRouter(BuildContext context) {
                               state.pathParameters["feedbackId"] ?? "";
                           final report =
                               state.extra
-                                  as ReportFeedbackModel?; //state.extra(Object?타입)쓸떄사용해야하는문법
+                                  as ReportFeedbackEntity?; //state.extra(Object?타입)쓸떄사용해야하는문법
                           return NoTransitionPage(
                             child: ReportFeedbackDetailScreen(
                               feedbackId: feedbackId,
@@ -325,9 +344,14 @@ GoRouter createAppRouter(BuildContext context) {
                 pageBuilder: (context, state) {
                   return NoTransitionPage(
                     child: ChangeNotifierProvider(
-                      create: (_) =>
-                          BlacklistViewModel(repository: BlacklistRepository())
-                            ..loadBlacklist(),
+                      create: (_) {
+                        final repo = BlacklistRepositoryImpl();
+                        return BlacklistViewModel(
+                          getBlacklist: GetBlacklist(repo),
+                          blockUser: BlockUser(repo),
+                          unblockUser: UnblockUser(repo),
+                        )..loadBlacklist();
+                      },
                       child: const BlacklistScreen(),
                     ),
                   );

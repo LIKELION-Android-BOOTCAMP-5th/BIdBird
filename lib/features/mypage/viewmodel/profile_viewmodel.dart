@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../data/profile_repository.dart';
-import '../model/profile_model.dart';
+import '../domain/entities/profile_entity.dart';
+import '../domain/usecases/get_profile.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  final ProfileRepository _repository;
+  final GetProfile _getProfile;
 
-  Profile? profile;
+  ProfileEntity? profile;
   bool isLoading = false;
 
   String? errorMessage; //나중에팝업으로쓸것
 
-  ProfileViewModel(this._repository) {
+  ProfileViewModel(this._getProfile) {
     loadProfile(); //생성자에서 쵸기로딩 // main에서 ..loadProfile()하지 않아도 됨
   }
 
@@ -23,7 +23,7 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners(); //로딩인디케이터표시를위함
 
     try {
-      profile = await _repository.fetchProfile();
+      profile = await _getProfile();
     } catch (e) {
       errorMessage = e.toString(); //e는String임
     } finally {

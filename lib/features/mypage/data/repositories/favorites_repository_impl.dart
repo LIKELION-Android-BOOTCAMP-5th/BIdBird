@@ -1,31 +1,23 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/mypage/model/favorites_model.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../domain/entities/favorite_entity.dart';
+import '../../domain/repositories/favorites_repository.dart';
+import '../datasources/favorites_remote_data_source.dart';
+import '../models/favorite_dto.dart';
 
-class FavoritesRepository {
-  FavoritesRepository({SupabaseClient? client})
-    : _client = client ?? SupabaseManager.shared.supabase;
+class FavoritesRepositoryImpl implements FavoritesRepository {
+  FavoritesRepositoryImpl({FavoritesRemoteDataSource? remoteDataSource})
+    : _remoteDataSource = remoteDataSource ?? FavoritesRemoteDataSource();
 
-  final SupabaseClient _client;
+  final FavoritesRemoteDataSource _remoteDataSource;
 
-  Future<List<FavoritesItem>> fetchFavorites() async {
-    final user = _client.auth.currentUser;
-    if (user == null) {
-      throw Exception('로그인 정보가 없습니다.');
-    }
-
-    final List<dynamic> rows = await _client
-        .from('favorites')
-        .select('id, item_id, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', ascending: false);
+  @override
+  Future<List<FavoriteEntity>> fetchFavorites() async {
+    final rows = await _remoteDataSource.fetchFavoritesRows();
 
     if (rows.isEmpty) return [];
 
     final List<String> itemIds = [];
     final Map<String, Map<String, dynamic>> favoritesById = {};
-    for (final dynamic row in rows) {
-      if (row is! Map<String, dynamic>) continue;
+    for (final Map<String, dynamic> row in rows) {
       final itemId = row['item_id']?.toString();
       if (itemId == null || itemId.isEmpty) continue;
       itemIds.add(itemId);
@@ -34,11 +26,8 @@ class FavoritesRepository {
 
     if (itemIds.isEmpty) return [];
 
-    final Map<String, Map<String, dynamic>> itemsById = await _fetchItemsDetail(
-      itemIds,
-    );
-    final Map<String, Map<String, dynamic>> auctionsByItemId =
-        await _fetchAuctions(itemIds);
+    final itemsById = await _fetchItemsDetail(itemIds);
+    final auctionsByItemId = await _fetchAuctions(itemIds);
 
     return itemIds
         .map(
@@ -49,17 +38,15 @@ class FavoritesRepository {
             auctionRow: auctionsByItemId[itemId],
           ),
         )
-        .whereType<FavoritesItem>() //null제거
+        .whereType<FavoriteDto>()
+        .map((dto) => dto.toEntity())
         .toList();
   }
 
   Future<Map<String, Map<String, dynamic>>> _fetchItemsDetail(
     List<String> itemIds,
   ) async {
-    final List<dynamic> rows = await _client
-        .from('items_detail')
-        .select('item_id, title, thumbnail_image, buy_now_price')
-        .inFilter('item_id', itemIds);
+    final rows = await _remoteDataSource.fetchItemsDetail(itemIds);
 
     final Map<String, Map<String, dynamic>> map = {};
     for (final dynamic row in rows) {
@@ -75,13 +62,7 @@ class FavoritesRepository {
   Future<Map<String, Map<String, dynamic>>> _fetchAuctions(
     List<String> itemIds,
   ) async {
-    final List<dynamic> rows = await _client
-        .from('auctions')
-        .select(
-          'item_id, current_price, auction_status_code',
-        ) //, trade_status_code',)
-        .inFilter('item_id', itemIds)
-        .eq('round', 1);
+    final rows = await _remoteDataSource.fetchAuctions(itemIds);
 
     final Map<String, Map<String, dynamic>> map = {};
     for (final dynamic row in rows) {
@@ -94,32 +75,7 @@ class FavoritesRepository {
     return map;
   }
 
-  Future<void> removeFavorite(String itemId) async {
-    final user = _client.auth.currentUser;
-    if (user == null) {
-      throw Exception('로그인 정보가 없습니다.');
-    }
-
-    await _client
-        .from('favorites')
-        .delete()
-        .eq('item_id', itemId)
-        .eq('user_id', user.id);
-  }
-
-  Future<void> addFavorite(String itemId) async {
-    final user = _client.auth.currentUser;
-    if (user == null) {
-      throw Exception('로그인 정보가 없습니다.');
-    }
-
-    await _client.from('favorites').insert(<String, dynamic>{
-      'item_id': itemId,
-      'user_id': user.id,
-    });
-  }
-
-  FavoritesItem? _mapFavorites({
+  FavoriteDto? _mapFavorites({
     required String itemId,
     Map<String, dynamic>? favoriteRow,
     Map<String, dynamic>? itemRow,
@@ -134,10 +90,9 @@ class FavoritesRepository {
         (auctionRow?['current_price'] as num?)?.toInt() ?? 0;
     final int? buyNowPrice = (itemRow?['buy_now_price'] as num?)?.toInt();
     final int statusCode =
-        //(auctionRow?['trade_status_code'] as int?) ??
         (auctionRow?['auction_status_code'] as int?) ?? 0;
 
-    return FavoritesItem(
+    return FavoriteDto(
       favoriteId: favoriteId,
       itemId: itemId,
       title: title,
@@ -147,5 +102,15 @@ class FavoritesRepository {
       statusCode: statusCode,
       isFavorite: true,
     );
+  }
+
+  @override
+  Future<void> removeFavorite(String itemId) {
+    return _remoteDataSource.removeFavorite(itemId);
+  }
+
+  @override
+  Future<void> addFavorite(String itemId) {
+    return _remoteDataSource.addFavorite(itemId);
   }
 }

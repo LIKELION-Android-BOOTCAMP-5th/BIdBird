@@ -1,5 +1,7 @@
-class BlacklistedUser {
-  const BlacklistedUser({
+import '../../domain/entities/blacklisted_user_entity.dart';
+
+class BlacklistedUserDto {
+  const BlacklistedUserDto({
     required this.targetUserId,
     required this.nickName,
     required this.profileImageUrl,
@@ -15,18 +17,14 @@ class BlacklistedUser {
   final DateTime? createdAt;
   final bool isBlocked;
 
-  BlacklistedUser copyWith({
-    bool? isBlocked,
-    String? registerUserId,
-    DateTime? createdAt,
-  }) {
-    return BlacklistedUser(
+  BlacklistedUserEntity toEntity() {
+    return BlacklistedUserEntity(
       targetUserId: targetUserId,
       nickName: nickName,
       profileImageUrl: profileImageUrl,
-      registerUserId: registerUserId ?? this.registerUserId,
-      createdAt: createdAt ?? this.createdAt,
-      isBlocked: isBlocked ?? this.isBlocked,
+      registerUserId: registerUserId,
+      createdAt: createdAt,
+      isBlocked: isBlocked,
     );
   }
 }

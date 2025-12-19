@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 
-import '../data/favorites_repository.dart';
-import '../model/favorites_model.dart';
+import '../domain/entities/favorite_entity.dart';
+import '../domain/usecases/add_favorite.dart';
+import '../domain/usecases/get_favorites.dart';
+import '../domain/usecases/remove_favorite.dart';
 
 class FavoritesViewModel extends ChangeNotifier {
-  FavoritesViewModel({required this.repository});
+  FavoritesViewModel({
+    required GetFavorites getFavorites,
+    required AddFavorite addFavorite,
+    required RemoveFavorite removeFavorite,
+  })  : _getFavorites = getFavorites,
+        _addFavorite = addFavorite,
+        _removeFavorite = removeFavorite;
 
-  final FavoritesRepository repository;
+  final GetFavorites _getFavorites;
+  final AddFavorite _addFavorite;
+  final RemoveFavorite _removeFavorite;
 
-  List<FavoritesItem> items = [];
+  List<FavoriteEntity> items = [];
   bool isLoading = false;
   String? errorMessage;
   final Set<String> _processingIds = {};
@@ -21,7 +31,7 @@ class FavoritesViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      items = await repository.fetchFavorites();
+      items = await _getFavorites();
     } catch (e) {
       errorMessage = e.toString();
     } finally {
@@ -33,7 +43,7 @@ class FavoritesViewModel extends ChangeNotifier {
   //중복방지
   bool isProcessing(String itemId) => _processingIds.contains(itemId);
 
-  Future<void> toggleFavorite(FavoritesItem item) async {
+  Future<void> toggleFavorite(FavoriteEntity item) async {
     if (_processingIds.contains(item.itemId)) return;
 
     _processingIds.add(item.itemId);
@@ -41,10 +51,10 @@ class FavoritesViewModel extends ChangeNotifier {
 
     try {
       if (item.isFavorite) {
-        await repository.removeFavorite(item.itemId);
+        await _removeFavorite(item.itemId);
         _updateItem(item.copyWith(isFavorite: false));
       } else {
-        await repository.addFavorite(item.itemId);
+        await _addFavorite(item.itemId);
         _updateItem(item.copyWith(isFavorite: true));
       }
     } catch (e) {
@@ -55,7 +65,7 @@ class FavoritesViewModel extends ChangeNotifier {
     }
   }
 
-  void _updateItem(FavoritesItem updated) {
+  void _updateItem(FavoriteEntity updated) {
     final index = items.indexWhere((e) => e.itemId == updated.itemId);
     if (index >= 0) {
       items[index] = updated;
