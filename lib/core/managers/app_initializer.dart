@@ -5,7 +5,6 @@ import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:cloudinary_flutter/cloudinary_object.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -22,7 +21,7 @@ class AppInitializer {
   }
 
   static Future<void> _initialize() async {
-    await dotenv.load(fileName: '.env');
+    await dotenv.load(fileName: '..env');
     NetworkApiManager.shared.checkEnv();
 
     CloudinaryObject.fromCloudName(cloudName: 'dn12so6sm');
