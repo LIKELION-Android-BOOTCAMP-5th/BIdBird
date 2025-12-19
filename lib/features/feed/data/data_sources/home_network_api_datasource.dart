@@ -1,6 +1,6 @@
 import 'package:bidbird/core/managers/network_api_manager.dart';
-import 'package:bidbird/core/models/items_entity.dart';
-import 'package:bidbird/core/models/keywordType_entity.dart';
+import 'package:bidbird/features/feed/domain/entities/items_entity.dart';
+import 'package:bidbird/features/feed/domain/entities/keywordType_entity.dart';
 import 'package:dio/dio.dart';
 
 class HomeNetworkApiManager {

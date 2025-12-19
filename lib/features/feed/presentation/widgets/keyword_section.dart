@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../viewmodel/home_viewmodel.dart';
+import '../viewmodel/home_viewmodel.dart';
 
 class KeywordWidget extends StatelessWidget {
   final HomeViewmodel viewModel;

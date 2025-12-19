@@ -1,7 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
-import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:flutter/material.dart';
+
+import '../viewmodel/home_viewmodel.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final HomeViewmodel viewModel; // ⭐ 필드로 선언

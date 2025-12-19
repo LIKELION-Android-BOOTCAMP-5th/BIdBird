@@ -1,15 +1,13 @@
-import 'package:bidbird/core/models/items_entity.dart';
-import 'package:bidbird/core/models/keywordType_entity.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
-import 'package:bidbird/features/feed/ui/widgets/Item_grid.dart';
-import 'package:bidbird/features/feed/ui/widgets/floating_menu.dart';
-import 'package:bidbird/features/feed/ui/widgets/home_app_bar.dart';
-import 'package:bidbird/features/feed/ui/widgets/keyword_section.dart';
-import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
+import 'package:bidbird/features/feed/data/repository/home_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/repository/home_repository.dart';
+import '../viewmodel/home_viewmodel.dart';
+import '../widgets/Item_grid.dart';
+import '../widgets/floating_menu.dart';
+import '../widgets/home_app_bar.dart';
+import '../widgets/keyword_section.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,18 +17,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late HomeViewmodel viewModel;
-
-  @override
-  void initState() {
-    super.initState();
-    viewModel = HomeViewmodel(HomeRepository());
-  }
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => HomeViewmodel(HomeRepository()),
+      create: (_) => HomeViewmodel(HomeRepositoryImpl()),
       child: MediaQuery(
         //휴대폰 글씨크기 무시, 글씨 고정
         data: MediaQuery.of(

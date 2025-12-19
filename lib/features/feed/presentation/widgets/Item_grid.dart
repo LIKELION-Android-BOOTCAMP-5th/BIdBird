@@ -1,6 +1,6 @@
-import 'package:bidbird/features/feed/viewmodel/home_viewmodel.dart';
 import 'package:flutter/material.dart';
 
+import '../viewmodel/home_viewmodel.dart';
 import 'item_card.dart';
 
 class ItemGrid extends StatelessWidget {

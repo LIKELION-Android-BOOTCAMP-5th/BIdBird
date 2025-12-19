@@ -84,7 +84,7 @@ void main() async {
         // final profile = profileVm.profile;
         // final nickName = profile?.nickName ?? '';
         // final profileImageUrl = profile?.profileImageUrl;
-        Provider(create: (context) => HomeRepository()),
+        Provider(create: (context) => HomeRepositoryImpl()),
         ChangeNotifierProvider(
           create: (context) {
             return NotificationViewmodel(context);
