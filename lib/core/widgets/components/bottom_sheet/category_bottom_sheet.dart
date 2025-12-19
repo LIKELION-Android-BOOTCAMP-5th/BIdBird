@@ -42,11 +42,8 @@ class CategoryBottomSheet extends StatelessWidget {
                   label: category.title,
                   isSelected: isSelected,
                   onTap: () {
-                    debugPrint('[CategoryBottomSheet] 카테고리 선택됨: ${category.title} (id: ${category.id})');
                     onCategorySelected(category.id);
-                    debugPrint('[CategoryBottomSheet] onCategorySelected 콜백 호출 완료');
                     Navigator.of(context).pop();
-                    debugPrint('[CategoryBottomSheet] 바텀시트 닫힘');
                   },
                 );
               },
@@ -109,9 +106,7 @@ class _CategoryItemState extends State<_CategoryItem> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        debugPrint('[CategoryItem] onTap 호출됨: ${widget.label}');
         widget.onTap();
-        debugPrint('[CategoryItem] widget.onTap() 호출 완료');
       },
       child: Container(
         height: 56,
