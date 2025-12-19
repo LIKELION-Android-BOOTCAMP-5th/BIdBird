@@ -2,8 +2,8 @@ import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail_datasource.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
-import 'package:bidbird/features/notification/screen/widgets/notification_card.dart';
-import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
+import 'package:bidbird/features/notification/presentation/viewmodel/notification_viewmodel.dart';
+import 'package:bidbird/features/notification/presentation/widgets/notification_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';

@@ -1,13 +1,15 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/notification/model/notification_entity.dart';
+import 'package:bidbird/features/notification/domain/entities/notification_entity.dart';
 
 class SupabaseNotificationDatasource {
   final _client = SupabaseManager.shared.supabase;
-  Future<List<NotificationEntity>> fetchNotify(String userId) async {
+  Future<List<NotificationEntity>> fetchNotify() async {
+    final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return List.empty();
     final List<Map<String, dynamic>> data = await _client
         .from('alarm')
         .select()
-        .eq('user_id', userId)
+        .eq('user_id', currentUserId)
         .order('created_at', ascending: false);
 
     if (data.length == 0) return List.empty();
