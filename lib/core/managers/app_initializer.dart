@@ -13,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppInitializer {
   static Future<void>? _initFuture;
+  static Future<void>? _firebaseInitFuture;
   static bool _postInitStarted = false;
 
   static Future<void> ensureInitialized() {
@@ -24,22 +25,31 @@ class AppInitializer {
     await dotenv.load(fileName: '.env');
     NetworkApiManager.shared.checkEnv();
 
-    final supabaseInit = Supabase.initialize(
+    CloudinaryObject.fromCloudName(cloudName: 'dn12so6sm');
+
+    await Supabase.initialize(
       url: dotenv.env['SUPABASE_URL'] ?? '',
       anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
     );
-    final firebaseInit = Firebase.initializeApp(
+
+    _firebaseInitFuture ??= Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    CloudinaryObject.fromCloudName(cloudName: 'dn12so6sm');
-
-    await Future.wait([supabaseInit, firebaseInit]);
+    unawaited(
+      _firebaseInitFuture!.catchError((e) {
+        debugPrint('Firebase initialization failed: $e');
+      }),
+    );
   }
 
   static void startPostInitTasks() {
     if (_postInitStarted) return;
     _postInitStarted = true;
+
+    _firebaseInitFuture ??= Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
     unawaited(_initFcmWithRetry());
 
@@ -49,6 +59,7 @@ class AppInitializer {
           await Future.wait([
             () async {
               try {
+                await _firebaseInitFuture;
                 await FirebaseManager.shared.fcm.requestPermission(
                   provisional: true,
                 );
@@ -70,6 +81,13 @@ class AppInitializer {
   }
 
   static Future<void> _initFcmWithRetry() async {
+    try {
+      await _firebaseInitFuture;
+    } catch (e) {
+      debugPrint('Firebase initialization failed: $e');
+      return;
+    }
+
     const delays = <Duration>[
       Duration.zero,
       Duration(milliseconds: 300),

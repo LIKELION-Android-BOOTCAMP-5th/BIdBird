@@ -111,6 +111,25 @@ class _MyAppState extends State<MyApp> {
     return FutureBuilder<void>(
       future: _initFuture,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return MaterialApp(
+            title: widget.title,
+            debugShowCheckedModeBanner: false,
+            color: const Color(0xFFF5F5F5),
+            theme: theme,
+            home: Scaffold(
+              backgroundColor: const Color(0xFFF5F5F5),
+              body: SafeArea(
+                child: Center(
+                  child: Text(
+                    '${snapshot.error}',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
         if (snapshot.connectionState != ConnectionState.done) {
           return MaterialApp(
             title: widget.title,
