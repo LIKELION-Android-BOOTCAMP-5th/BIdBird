@@ -1,3 +1,4 @@
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/features/notification/viewmodel/notification_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +32,7 @@ class NotificationButton extends StatelessWidget {
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF3B82F6), // 파란색 (원하면 변경)
+                          color: blueColor, // 파란색 (원하면 변경)
                           shape: BoxShape.circle,
                         ),
                       ),

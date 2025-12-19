@@ -10,7 +10,11 @@ abstract class ChatRepository {
     int page = 1,
     int limit = 20,
   });
-  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId, {bool forceRefresh = false});
+  Future<ChattingRoomEntity?> fetchNewChattingRoom(String roomId);
+  Future<List<ChatMessageEntity>> getMessages(
+    String chattingRoomId, {
+    bool forceRefresh = false,
+  });
   Future<List<ChatMessageEntity>> getOlderMessages(
     String chattingRoomId,
     String beforeCreatedAtIso, {
@@ -33,7 +37,11 @@ abstract class ChatRepository {
   Future<void> notificationOff(String roomId);
   Future<void> notificationOn(String roomId);
   Future<void> completeTrade(String itemId);
-  Future<void> cancelTrade(String itemId, String reasonCode, bool isSellerFault);
+  Future<void> cancelTrade(
+    String itemId,
+    String reasonCode,
+    bool isSellerFault,
+  );
   Future<void> submitTradeReview({
     required String itemId,
     required String toUserId,
