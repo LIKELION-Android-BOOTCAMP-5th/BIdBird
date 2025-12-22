@@ -223,9 +223,9 @@ class TradeHistoryCard extends StatelessWidget {
       final result = await supabase
           .from('items_detail')
           .select(
-              'start_price, auction_duration_hours, thumbnail_image, buy_now_price, description')
+              'start_price, auction_duration_hours, thumbnail_image, description')
           .eq('item_id', itemId)
-          .maybeSingle();
+          .single();
 
       if (result == null) {
         if (!context.mounted) return;

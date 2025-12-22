@@ -211,13 +211,13 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       });
     }
 
-    const disabledStatusesForBuyNow = {
-      AuctionStatusCode.ready,
-      AuctionStatusCode.instantBuyPaymentPending,
-      AuctionStatusCode.bidWon,
-      AuctionStatusCode.instantBuyCompleted,
-      AuctionStatusCode.failed,
-    };
+    // const disabledStatusesForBuyNow = {
+    //   AuctionStatusCode.ready,
+    //   AuctionStatusCode.instantBuyPaymentPending,
+    //   AuctionStatusCode.bidWon,
+    //   AuctionStatusCode.instantBuyCompleted,
+    //   AuctionStatusCode.failed,
+    // };
     // final bool showBuyNow =
     //     widget.item.buyNowPrice > 0 &&
     //     !disabledStatusesForBuyNow.contains(_statusCode) &&
