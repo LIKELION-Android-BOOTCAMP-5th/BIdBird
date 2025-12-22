@@ -243,13 +243,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // statusCode는 Selector에서 받은 값 또는 현재 값 사용
     final int statusCode = _statusCode ?? currentStatusCode ?? currentItem.statusCode ?? 0;
 
-    const disabledStatusesForBuyNow = {
-      AuctionStatusCode.ready,
-      AuctionStatusCode.instantBuyPaymentPending,
-      AuctionStatusCode.bidWon,
-      AuctionStatusCode.instantBuyCompleted,
-      AuctionStatusCode.failed,
-    };
+    // const disabledStatusesForBuyNow = {
+    //   AuctionStatusCode.ready,
+    //   AuctionStatusCode.instantBuyPaymentPending,
+    //   AuctionStatusCode.bidWon,
+    //   AuctionStatusCode.instantBuyCompleted,
+    //   AuctionStatusCode.failed,
+    // };
+    // final bool showBuyNow =
+    //     currentItem.buyNowPrice > 0 &&
+    //     !disabledStatusesForBuyNow.contains(statusCode) &&
+    //     !isTimeOver &&
+    //     !isTradePaid;
     // final bool showBuyNow =
     //     currentItem.buyNowPrice > 0 &&
     //     !disabledStatusesForBuyNow.contains(statusCode) &&
