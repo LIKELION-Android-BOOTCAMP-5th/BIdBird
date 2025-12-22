@@ -1,14 +1,18 @@
 import 'dart:async';
 
+import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
 import 'package:bidbird/features/chat/data/managers/chat_list_cache_manager.dart';
 import 'package:bidbird/features/chat/data/managers/chat_list_realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_chatting_room_list_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_new_chatting_room_usecase.dart';
+import 'package:bidbird/main.dart';
 import 'package:flutter/material.dart';
 
 class ChatListViewmodel extends ChangeNotifier {
+  StreamSubscription? _loginSubscription;
+
   final FetchChattingRoomListUseCase _fetchChattingRoomListUseCase;
   final FetchNewChattingRoomUseCase _fetchNewChattingRoomUseCase;
 
@@ -50,6 +54,17 @@ class ChatListViewmodel extends ChangeNotifier {
     _pageSize = initialLoadCount ?? 20;
     fetchChattingRoomList(visibleItemCount: _pageSize);
     _setupRealtimeSubscription();
+    _loginSubscription = eventBus.on<LoginEventBus>().listen((event) async {
+      switch (event.type) {
+        case LoginEventType.login:
+          fetchChattingRoomList();
+          _setupRealtimeSubscription();
+          break;
+        case LoginEventType.logout:
+          _realtimeSubscriptionManager.dispose();
+          break;
+      }
+    });
   }
 
   void setPageSize(int initialLoadCount) {

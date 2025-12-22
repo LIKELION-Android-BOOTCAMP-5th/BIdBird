@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/models/user_entity.dart';
+import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
+import 'package:bidbird/main.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:bidbird/core/models/user_entity.dart';
 
 //사용자 상태 관리
 enum AuthStatus {
@@ -57,6 +58,7 @@ class AuthViewModel extends ChangeNotifier {
             _status = AuthStatus.authenticated;
             notifyListeners();
             unawaited(_loadUserAndSetupFCM(session.user.id));
+            eventBus.fire(LoginEventBus(LoginEventType.login));
             return;
           }
 
@@ -72,6 +74,7 @@ class AuthViewModel extends ChangeNotifier {
 
     onLoggedOut?.call();
     unawaited(_performLogoutTasks());
+    eventBus.fire(LoginEventBus(LoginEventType.logout));
   }
 
   Future<void> _performLogoutTasks() async {
@@ -182,4 +185,3 @@ class AuthViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-
