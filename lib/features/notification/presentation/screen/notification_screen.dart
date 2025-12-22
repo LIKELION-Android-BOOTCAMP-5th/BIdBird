@@ -8,8 +8,40 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    final viewModel = context.read<NotificationViewmodel>();
+
+    if (state == AppLifecycleState.resumed) {
+      viewModel.onAppResumed();
+    }
+    if (state == AppLifecycleState.paused) {
+      viewModel.onAppPaused();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

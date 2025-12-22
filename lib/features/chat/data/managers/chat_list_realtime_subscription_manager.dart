@@ -9,6 +9,8 @@ class ChatListRealtimeSubscriptionManager {
   // RealtimeChannel? _buyerChannel;
   // RealtimeChannel? _sellerChannel;
   RealtimeChannel? _roomUsersChannel;
+  bool _isSubscribed = false;
+  bool get isConnected => _isSubscribed;
 
   /// 실시간 구독 설정
   void setupSubscription({
@@ -136,7 +138,19 @@ class ChatListRealtimeSubscriptionManager {
             }
           },
         )
-        .subscribe();
+        .subscribe((status, error) {
+          print('📡 roomUsersChannel status: $status');
+
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            _isSubscribed = true;
+          }
+
+          if (status == RealtimeSubscribeStatus.closed ||
+              status == RealtimeSubscribeStatus.channelError ||
+              status == RealtimeSubscribeStatus.timedOut) {
+            _isSubscribed = false;
+          }
+        });
   }
 
   /// 모든 구독 해제
@@ -153,5 +167,6 @@ class ChatListRealtimeSubscriptionManager {
       _supabase.removeChannel(_roomUsersChannel!);
       _roomUsersChannel = null;
     }
+    _isSubscribed = false; // 👈 안전장치
   }
 }
