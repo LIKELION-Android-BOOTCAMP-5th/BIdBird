@@ -80,7 +80,6 @@ class _ContentInputSectionState extends State<ContentInputSection> {
         focusedBorder: InputBorder.none,
         enabledBorder: InputBorder.none,
       ),
-      onChanged: (_) => setState(() {}),
     );
 
     return isExpandable ? Expanded(child: textField) : textField;
@@ -88,59 +87,66 @@ class _ContentInputSectionState extends State<ContentInputSection> {
 
   @override
   Widget build(BuildContext context) {
-    final textLength = widget.controller.text.length;
-    final isValid = widget.minLength == null || textLength >= widget.minLength!;
     final showValidation = widget.minLength != null;
 
-    return SizedBox(
-      width: double.infinity,
-      child: Container(
-        padding: const EdgeInsets.all(_cardPadding),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: defaultBorder,
-          border: Border.all(
-            color: LightBorderColor,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            FormLabel(text: widget.label),
-            SizedBox(height: _labelBottomSpacing),
-            _buildTextField(),
-            SizedBox(height: _counterTopSpacing),
-            Row(
-              mainAxisAlignment: showValidation && widget.successMessage != null && isValid
-                  ? MainAxisAlignment.spaceBetween
-                  : MainAxisAlignment.end,
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: widget.controller,
+      builder: (_, value, __) {
+        final textLength = value.text.length;
+        final isValid = widget.minLength == null || textLength >= widget.minLength!;
+
+        return SizedBox(
+          width: double.infinity,
+          child: Container(
+            padding: const EdgeInsets.all(_cardPadding),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: defaultBorder,
+              border: Border.all(
+                color: LightBorderColor,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
               children: [
-                if (showValidation && widget.successMessage != null && isValid)
-                  Text(
-                    widget.successMessage!,
-                    style: TextStyle(
-                      fontSize: context.fontSizeSmall,
-                      color: TextSecondary,
+                FormLabel(text: widget.label),
+                SizedBox(height: _labelBottomSpacing),
+                _buildTextField(),
+                SizedBox(height: _counterTopSpacing),
+                Row(
+                  mainAxisAlignment: showValidation && widget.successMessage != null && isValid
+                      ? MainAxisAlignment.spaceBetween
+                      : MainAxisAlignment.end,
+                  children: [
+                    if (showValidation && widget.successMessage != null && isValid)
+                      Text(
+                        widget.successMessage!,
+                        style: TextStyle(
+                          fontSize: context.fontSizeSmall,
+                          color: TextSecondary,
+                        ),
+                      ),
+                    Text(
+                      '$textLength/${widget.maxLength}',
+                      style: TextStyle(
+                        fontSize: context.fontSizeSmall,
+                        color: chatTimeTextColor,
+                      ),
                     ),
-                  ),
-                Text(
-                  '$textLength/${widget.maxLength}',
-                  style: TextStyle(
-                    fontSize: context.fontSizeSmall,
-                    color: chatTimeTextColor,
-                  ),
+                  ],
                 ),
+                if (widget.errorMessage != null)
+                  ErrorText(
+                    text: widget.errorMessage!,
+                    topPadding: _counterTopSpacing,
+                  ),
               ],
             ),
-            if (widget.errorMessage != null)
-              ErrorText(
-                text: widget.errorMessage!,
-                topPadding: _counterTopSpacing,
-              ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
+
