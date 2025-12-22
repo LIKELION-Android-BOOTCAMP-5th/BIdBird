@@ -36,6 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     TransparentRefreshIndicator(
                       onRefresh: viewModel.handleRefresh,
                       child: CustomScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         controller: viewModel.scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [

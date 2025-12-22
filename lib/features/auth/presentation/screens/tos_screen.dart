@@ -33,6 +33,8 @@ class ToSScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         child: Text(
                           viewmodel.tosInfo.first.content,
                           style: const TextStyle(fontSize: 14),
@@ -70,5 +72,3 @@ class ToSScreen extends StatelessWidget {
     );
   }
 }
-
-

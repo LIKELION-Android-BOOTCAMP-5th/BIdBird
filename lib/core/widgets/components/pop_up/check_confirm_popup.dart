@@ -102,6 +102,8 @@ class _CheckConfirmPopupState extends State<CheckConfirmPopup> {
                   if (isLongDescription)
                     Expanded(
                       child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         child: Text(
                           widget.description!,
                           textAlign: TextAlign.left,
@@ -152,12 +154,14 @@ class _CheckConfirmPopupState extends State<CheckConfirmPopup> {
                         child: FilledButton(
                           style: ButtonStyle(
                             backgroundColor:
-                                MaterialStateProperty.resolveWith<Color?>((states) {
-                              if (states.contains(MaterialState.disabled)) {
-                                return Colors.grey.shade300;
-                              }
-                              return blueColor;
-                            }),
+                                MaterialStateProperty.resolveWith<Color?>((
+                                  states,
+                                ) {
+                                  if (states.contains(MaterialState.disabled)) {
+                                    return Colors.grey.shade300;
+                                  }
+                                  return blueColor;
+                                }),
                           ),
                           onPressed: _checked
                               ? () {
@@ -204,4 +208,3 @@ class _CheckConfirmPopupState extends State<CheckConfirmPopup> {
     );
   }
 }
-

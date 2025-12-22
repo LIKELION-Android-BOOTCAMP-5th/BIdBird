@@ -1,17 +1,14 @@
+import 'package:bidbird/core/utils/payment/payment_texts.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/payment/payment_texts.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/presentation/widgets/item_bid_result_body.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class PaymentCompleteScreen extends StatelessWidget {
-  const PaymentCompleteScreen({
-    super.key,
-    required this.item,
-  });
+  const PaymentCompleteScreen({super.key, required this.item});
 
   final ItemBidWinEntity item;
 
@@ -21,6 +18,7 @@ class PaymentCompleteScreen extends StatelessWidget {
       backgroundColor: BackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: ItemBidResultBody(
             item: item,
             title: PaymentTexts.paymentCompleteTitle,
@@ -37,7 +35,7 @@ class PaymentCompleteScreen extends StatelessWidget {
                   final buttonFontSize = context.buttonFontSize;
                   final textButtonFontSize = context.fontSizeMedium;
                   final spacing = context.spacingSmall;
-                  
+
                   return Column(
                     children: [
                       SizedBox(
@@ -92,6 +90,3 @@ class PaymentCompleteScreen extends StatelessWidget {
     );
   }
 }
-
-
-

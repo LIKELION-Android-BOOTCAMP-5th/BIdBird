@@ -33,13 +33,9 @@ class _ReportImageCardState extends State<ReportImageCard> {
     super.dispose();
   }
 
-  Widget _buildSingleImage(
-    BuildContext context,
-    XFile image,
-    int index,
-  ) {
+  Widget _buildSingleImage(BuildContext context, XFile image, int index) {
     final bool isVideo = isVideoFile(image.path);
-    
+
     return GestureDetector(
       child: Stack(
         fit: StackFit.expand,
@@ -61,10 +57,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         color: BackgroundColor,
-                        child: Icon(
-                          Icons.broken_image,
-                          color: iconColor,
-                        ),
+                        child: Icon(Icons.broken_image, color: iconColor),
                       );
                     },
                   ),
@@ -81,11 +74,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
                   color: iconColor.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 16,
-                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 16),
               ),
             ),
           ),
@@ -97,6 +86,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.symmetric(
         horizontal: context.hPadding,
         vertical: context.vPadding,
@@ -121,7 +111,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
             builder: (context, constraints) {
               // 제목 입력 필드와 동일한 너비 사용
               final availableWidth = constraints.maxWidth;
-              
+
               return SizedBox(
                 width: availableWidth,
                 height: availableWidth, // 정사각형
@@ -129,9 +119,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: defaultBorder,
-                    border: Border.all(
-                      color: const Color(0xFFE6E8EB),
-                    ),
+                    border: Border.all(color: const Color(0xFFE6E8EB)),
                   ),
                   child: Stack(
                     children: [
@@ -161,25 +149,27 @@ class _ReportImageCardState extends State<ReportImageCard> {
                       else
                         widget.viewModel.selectedImages.length == 1
                             ? // 이미지가 1개일 때: 전체 영역을 꽉 채움
-                            _buildSingleImage(
-                              context,
-                              widget.viewModel.selectedImages[0],
-                              0,
-                            )
+                              _buildSingleImage(
+                                context,
+                                widget.viewModel.selectedImages[0],
+                                0,
+                              )
                             : // 이미지가 여러 개일 때: 스와이프로 볼 수 있게
-                            PageView.builder(
-                              controller: _imagePageController,
-                              itemCount: widget.viewModel.selectedImages.length,
-                              itemBuilder: (context, index) {
-                                final image = widget.viewModel.selectedImages[index];
-                                
-                                return _buildSingleImage(
-                                  context,
-                                  image,
-                                  index,
-                                );
-                              },
-                            ),
+                              PageView.builder(
+                                controller: _imagePageController,
+                                itemCount:
+                                    widget.viewModel.selectedImages.length,
+                                itemBuilder: (context, index) {
+                                  final image =
+                                      widget.viewModel.selectedImages[index];
+
+                                  return _buildSingleImage(
+                                    context,
+                                    image,
+                                    index,
+                                  );
+                                },
+                              ),
                       // 왼쪽 하단: 이미지 개수 표시
                       Positioned(
                         left: context.inputPadding * 0.67,
@@ -236,9 +226,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
           ),
           // 안내 문구
           Padding(
-            padding: EdgeInsets.only(
-              top: context.spacingSmall,
-            ),
+            padding: EdgeInsets.only(top: context.spacingSmall),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -255,4 +243,3 @@ class _ReportImageCardState extends State<ReportImageCard> {
     );
   }
 }
-

@@ -1,14 +1,12 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/core/utils/ui_set/icons_style.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-
 import 'package:bidbird/features/mypage/data/repositories/terms_repository_impl.dart';
 import 'package:bidbird/features/mypage/domain/usecases/get_terms_content.dart';
 import 'package:bidbird/features/mypage/viewmodel/terms_viewmodel.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
@@ -18,9 +16,7 @@ class TermsScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return ChangeNotifierProvider<TermsViewModel>(
-      create: (_) => TermsViewModel(
-        GetTermsContent(TermsRepositoryImpl()),
-      ),
+      create: (_) => TermsViewModel(GetTermsContent(TermsRepositoryImpl())),
       child: Builder(
         builder: (context) {
           final vm = context.watch<TermsViewModel>();
@@ -55,6 +51,8 @@ class TermsScreen extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     child: Column(
                       children: vm.termsContent
                           .map(
@@ -68,6 +66,8 @@ class TermsScreen extends StatelessWidget {
                                 borderRadius: defaultBorder,
                               ),
                               child: SingleChildScrollView(
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
                                 padding: const EdgeInsets.all(16),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

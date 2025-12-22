@@ -1,16 +1,15 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/ui_set/visible_item_calculator.dart';
-import 'package:bidbird/core/widgets/components/loading_indicator.dart';
-import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
+import 'package:bidbird/core/widgets/notification_button.dart';
+import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
+import 'package:bidbird/features/current_trade/presentation/viewmodels/current_trade_viewmodel.dart';
+import 'package:bidbird/features/current_trade/presentation/widgets/action_hub.dart';
+import 'package:bidbird/features/current_trade/presentation/widgets/trade_history_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:bidbird/features/current_trade/presentation/widgets/trade_history_card.dart';
-import 'package:bidbird/features/current_trade/presentation/widgets/action_hub.dart';
-import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
-import 'package:bidbird/features/current_trade/presentation/viewmodels/current_trade_viewmodel.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
   const CurrentTradeScreen({super.key});
@@ -27,7 +26,8 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   int _initialVisibleCount = 0;
   bool _isScrollListenerAttached = false;
   // displayItems 캐싱을 위한 변수
-  List<({bool isSeller, bool isHighlighted, dynamic item})>? _cachedDisplayItems;
+  List<({bool isSeller, bool isHighlighted, dynamic item})>?
+  _cachedDisplayItems;
   int _cachedDisplayCount = 0;
 
   @override
@@ -36,13 +36,13 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
     // 데이터 로드가 안 되어 있으면 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = context.read<CurrentTradeViewModel>();
-      if (viewModel.bidHistory.isEmpty && 
-          viewModel.saleHistory.isEmpty && 
+      if (viewModel.bidHistory.isEmpty &&
+          viewModel.saleHistory.isEmpty &&
           !viewModel.isLoading) {
         viewModel.loadData();
       }
     });
-    
+
     // 스크롤 리스너를 한 번만 등록
     _scrollController.addListener(_handleScroll);
     _isScrollListenerAttached = true;
@@ -59,7 +59,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
   void _handleScroll() {
     if (!mounted) return;
-    
+
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       if (!_isLoadingMore && _displayedItemCount < _totalItemsCount) {
@@ -96,9 +96,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               },
             ),
             // Layer 3: 통합된 리스트
-            Expanded(
-              child: _buildContent(),
-            ),
+            Expanded(child: _buildContent()),
           ],
         ),
       ),
@@ -124,6 +122,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
           return TransparentRefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               physics: const AlwaysScrollableScrollPhysics(),
               child: SizedBox(
                 height: MediaQuery.of(context).size.height - 200,
@@ -131,13 +130,11 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        error,
-                        style: const TextStyle(color: Colors.red),
-                      ),
+                      Text(error, style: const TextStyle(color: Colors.red)),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () => context.read<CurrentTradeViewModel>().refresh(),
+                        onPressed: () =>
+                            context.read<CurrentTradeViewModel>().refresh(),
                         child: const Text('다시 시도'),
                       ),
                     ],
@@ -147,7 +144,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             ),
           );
         }
-        
+
         return _buildUnifiedHistoryList();
       },
     );
@@ -155,7 +152,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
   Widget _buildUnifiedHistoryList() {
     // ViewModel의 캐싱된 통합 리스트를 직접 사용하도록 Selector 구성
-    return Selector<CurrentTradeViewModel, List<({bool isSeller, bool isHighlighted, dynamic item})>>(
+    return Selector<
+      CurrentTradeViewModel,
+      List<({bool isSeller, bool isHighlighted, dynamic item})>
+    >(
       selector: (_, vm) => vm.allItems,
       builder: (context, allItems, _) {
         final totalItemCount = allItems.length;
@@ -174,29 +174,40 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               final horizontalPadding = context.hPadding;
               final verticalPadding = context.vPadding;
               final spacing = context.spacingSmall;
-              
+
               // 화면에 보이는 개수만큼만 표시 (코어 유틸리티 사용)
-              _initialVisibleCount = VisibleItemCalculator.calculateTradeHistoryVisibleCount(context);
-              
+              _initialVisibleCount =
+                  VisibleItemCalculator.calculateTradeHistoryVisibleCount(
+                    context,
+                  );
+
               // allItems가 변경되었으면 캐시 무효화
               if (_totalItemsCount != allItems.length) {
                 _cachedDisplayItems = null;
                 _cachedDisplayCount = 0;
                 _totalItemsCount = allItems.length;
               }
-              
+
               // 초기 로드 시 또는 아이템이 변경되었을 때 displayedItemCount 초기화
-              if (_displayedItemCount == 0 || _displayedItemCount > allItems.length) {
-                _displayedItemCount = _initialVisibleCount.clamp(0, allItems.length);
+              if (_displayedItemCount == 0 ||
+                  _displayedItemCount > allItems.length) {
+                _displayedItemCount = _initialVisibleCount.clamp(
+                  0,
+                  allItems.length,
+                );
               }
-              
+
               // displayedItemCount가 allItems.length를 초과하지 않도록 제한
-              _displayedItemCount = _displayedItemCount.clamp(0, allItems.length);
-              
+              _displayedItemCount = _displayedItemCount.clamp(
+                0,
+                allItems.length,
+              );
+
               // displayItems 캐싱: _displayedItemCount가 변경되지 않았으면 캐시 재사용
-              final List<({bool isSeller, bool isHighlighted, dynamic item})> displayItems;
-              if (_cachedDisplayItems != null && 
-                  _cachedDisplayCount == _displayedItemCount && 
+              final List<({bool isSeller, bool isHighlighted, dynamic item})>
+              displayItems;
+              if (_cachedDisplayItems != null &&
+                  _cachedDisplayCount == _displayedItemCount &&
                   _cachedDisplayItems!.length == _displayedItemCount) {
                 displayItems = _cachedDisplayItems!;
               } else {
@@ -205,14 +216,17 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                 _cachedDisplayCount = _displayedItemCount;
               }
               final hasMore = allItems.length > _displayedItemCount;
-              
+
               return ListView.separated(
                 controller: _scrollController,
                 padding: EdgeInsets.symmetric(
                   horizontal: horizontalPadding,
                   vertical: verticalPadding,
                 ),
-                itemCount: displayItems.length + (hasMore ? 1 : 0) + 1, // +1 for "전체 보기" 링크
+                itemCount:
+                    displayItems.length +
+                    (hasMore ? 1 : 0) +
+                    1, // +1 for "전체 보기" 링크
                 separatorBuilder: (_, __) => SizedBox(height: spacing),
                 itemBuilder: (context, index) {
                   // "전체 보기" 링크는 항상 마지막에 표시
@@ -246,7 +260,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                       ),
                     );
                   }
-                  
+
                   // 더 보기 로딩 인디케이터 (화면에 보이는 개수보다 많을 때)
                   if (hasMore && index == displayItems.length) {
                     return Padding(
@@ -261,7 +275,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
                   final itemData = displayItems[index];
                   final item = itemData.item;
-                  
+
                   if (itemData.isSeller) {
                     final saleItem = item as SaleHistoryItem;
                     return TradeHistoryCard(
@@ -301,14 +315,17 @@ class _ActionHubSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<CurrentTradeViewModel, ({
-      List<ActionHubItem> saleActionHubItems,
-      List<ActionHubItem> bidActionHubItems,
-      List<SaleHistoryItem> todoSaleItems,
-      List<BidHistoryItem> todoBidItems,
-      List<SaleHistoryItem> saleHistory,
-      List<BidHistoryItem> bidHistory,
-    })>(
+    return Selector<
+      CurrentTradeViewModel,
+      ({
+        List<ActionHubItem> saleActionHubItems,
+        List<ActionHubItem> bidActionHubItems,
+        List<SaleHistoryItem> todoSaleItems,
+        List<BidHistoryItem> todoBidItems,
+        List<SaleHistoryItem> saleHistory,
+        List<BidHistoryItem> bidHistory,
+      })
+    >(
       selector: (_, vm) => (
         saleActionHubItems: vm.saleActionHubItems,
         bidActionHubItems: vm.bidActionHubItems,
@@ -339,4 +356,3 @@ class _ActionHubSection extends StatelessWidget {
     );
   }
 }
-

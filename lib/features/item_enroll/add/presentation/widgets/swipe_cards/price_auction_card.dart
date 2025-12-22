@@ -1,8 +1,8 @@
 import 'package:bidbird/core/mixins/form_validation_mixin.dart';
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/fields/category_selector_field.dart';
 import 'package:bidbird/core/widgets/item/components/fields/duration_chip_selector.dart';
 import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
@@ -29,7 +29,8 @@ class PriceAuctionCard extends StatefulWidget {
   State<PriceAuctionCard> createState() => PriceAuctionCardState();
 }
 
-class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationMixin {
+class PriceAuctionCardState extends State<PriceAuctionCard>
+    with FormValidationMixin {
   String? _startPriceError;
   String? _instantPriceError;
   String? _categoryError;
@@ -38,19 +39,22 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
 
   @override
   bool get shouldShowErrors => _shouldShowErrors;
-  
+
   @override
   set shouldShowErrors(bool value) => _shouldShowErrors = value;
 
   void validatePrices() {
     startValidation(() {
-      final startPrice = parseFormattedPrice(widget.viewModel.startPriceController.text);
+      final startPrice = parseFormattedPrice(
+        widget.viewModel.startPriceController.text,
+      );
       final instantPrice = widget.viewModel.useInstantPrice
           ? parseFormattedPrice(widget.viewModel.instantPriceController.text)
           : null;
 
       if (startPrice <= 0) {
-        _startPriceError = ItemRegistrationErrorMessages.startPriceInvalidNumber;
+        _startPriceError =
+            ItemRegistrationErrorMessages.startPriceInvalidNumber;
       } else if (startPrice < ItemPriceLimits.minPrice) {
         _startPriceError = ItemRegistrationErrorMessages.startPriceRange(
           ItemPriceLimits.minPrice,
@@ -60,14 +64,16 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
 
       if (widget.viewModel.useInstantPrice) {
         if (instantPrice == null || instantPrice <= 0) {
-          _instantPriceError = ItemRegistrationErrorMessages.instantPriceInvalidNumber;
+          _instantPriceError =
+              ItemRegistrationErrorMessages.instantPriceInvalidNumber;
         } else if (instantPrice < ItemPriceLimits.minPrice) {
           _instantPriceError = ItemRegistrationErrorMessages.instantPriceRange(
             ItemPriceLimits.minPrice,
             ItemPriceLimits.maxPrice,
           );
         } else if (instantPrice <= startPrice) {
-          _instantPriceError = ItemRegistrationErrorMessages.instantPriceMustBeHigher;
+          _instantPriceError =
+              ItemRegistrationErrorMessages.instantPriceMustBeHigher;
         }
       }
 
@@ -98,12 +104,10 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
     if (formatted != value) {
       controller.value = TextEditingValue(
         text: formatted,
-        selection: TextSelection.collapsed(
-          offset: formatted.length,
-        ),
+        selection: TextSelection.collapsed(offset: formatted.length),
       );
     }
-    
+
     // 검증 콜백이 있으면 실행
     if (onValidated != null) {
       final price = parseFormattedPrice(formatted);
@@ -117,6 +121,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
     final spacing = context.spacingMedium;
 
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.symmetric(
         horizontal: context.hPadding,
         vertical: context.vPadding,
@@ -132,16 +137,19 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
               TextField(
                 controller: widget.viewModel.startPriceController,
                 keyboardType: TextInputType.number,
-                decoration: widget.inputDecoration('시작 가격 입력').copyWith(
-                  errorText: shouldShowErrors ? _startPriceError : null,
-                ),
+                decoration: widget
+                    .inputDecoration('시작 가격 입력')
+                    .copyWith(
+                      errorText: shouldShowErrors ? _startPriceError : null,
+                    ),
                 onChanged: (value) {
                   _handlePriceInput(
                     value,
                     widget.viewModel.startPriceController,
                     shouldShowErrors && _startPriceError != null
                         ? (startPrice) {
-                            if (startPrice > 0 && startPrice >= ItemPriceLimits.minPrice) {
+                            if (startPrice > 0 &&
+                                startPrice >= ItemPriceLimits.minPrice) {
                               clearError(() => _startPriceError = null);
                             }
                           }
@@ -169,20 +177,25 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
                 controller: widget.viewModel.instantPriceController,
                 keyboardType: TextInputType.number,
                 enabled: widget.viewModel.useInstantPrice,
-                decoration: widget.inputDecoration('즉시 구매가 입력').copyWith(
-                  errorText: shouldShowErrors ? _instantPriceError : null,
-                  fillColor: widget.viewModel.useInstantPrice
-                      ? Colors.white
-                      : BorderColor.withValues(alpha: 0.2),
-                ),
+                decoration: widget
+                    .inputDecoration('즉시 구매가 입력')
+                    .copyWith(
+                      errorText: shouldShowErrors ? _instantPriceError : null,
+                      fillColor: widget.viewModel.useInstantPrice
+                          ? Colors.white
+                          : BorderColor.withValues(alpha: 0.2),
+                    ),
                 onChanged: (value) {
                   _handlePriceInput(
                     value,
                     widget.viewModel.instantPriceController,
                     shouldShowErrors && _instantPriceError != null
                         ? (instantPrice) {
-                            final startPrice = parseFormattedPrice(widget.viewModel.startPriceController.text);
-                            if (instantPrice >= ItemPriceLimits.minPrice && instantPrice > startPrice) {
+                            final startPrice = parseFormattedPrice(
+                              widget.viewModel.startPriceController.text,
+                            );
+                            if (instantPrice >= ItemPriceLimits.minPrice &&
+                                instantPrice > startPrice) {
                               clearError(() => _instantPriceError = null);
                             }
                           }
@@ -218,11 +231,14 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               FormLabel(text: '카테고리'),
-              Selector<ItemAddViewModel, ({
-                List<KeywordTypeEntity> keywordTypes,
-                int? selectedKeywordTypeId,
-                bool isLoadingKeywords,
-              })>(
+              Selector<
+                ItemAddViewModel,
+                ({
+                  List<KeywordTypeEntity> keywordTypes,
+                  int? selectedKeywordTypeId,
+                  bool isLoadingKeywords,
+                })
+              >(
                 selector: (_, vm) => (
                   keywordTypes: vm.keywordTypes,
                   selectedKeywordTypeId: vm.selectedKeywordTypeId,
@@ -252,5 +268,3 @@ class PriceAuctionCardState extends State<PriceAuctionCard> with FormValidationM
     );
   }
 }
-
-

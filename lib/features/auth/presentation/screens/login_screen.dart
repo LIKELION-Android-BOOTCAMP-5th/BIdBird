@@ -30,6 +30,7 @@ class LoginScreen extends StatelessWidget {
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -142,4 +143,3 @@ class LoginScreen extends StatelessWidget {
     );
   }
 }
-

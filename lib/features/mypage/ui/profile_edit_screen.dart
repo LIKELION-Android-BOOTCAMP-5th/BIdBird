@@ -3,21 +3,18 @@ import 'dart:io'; //File경로/FileImage프리뷰
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/core/utils/ui_set/icons_style.dart';
+import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-
 import 'package:bidbird/features/mypage/data/repositories/profile_repository_impl.dart';
 import 'package:bidbird/features/mypage/domain/usecases/delete_account.dart';
 import 'package:bidbird/features/mypage/domain/usecases/update_profile.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_edit_viewmodel.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
-
-import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 class ProfileEditScreen extends StatelessWidget {
   const ProfileEditScreen({super.key});
@@ -99,6 +96,8 @@ class ProfileEditScreen extends StatelessWidget {
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             return SingleChildScrollView(
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
                                   minHeight: constraints.maxHeight,
