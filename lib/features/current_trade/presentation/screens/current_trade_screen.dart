@@ -152,20 +152,11 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   }
 
   Widget _buildContent() {
-    // 로딩 상태만 Selector
-    return Selector<CurrentTradeViewModel, bool>(
-      selector: (_, vm) => vm.isLoading,
-      builder: (context, isLoading, _) {
-        return _buildErrorOrContent();
-      },
-    );
-  }
-
-  Widget _buildErrorOrContent() {
-    // 에러 상태만 Selector
+    // 에러 상태만 체크
     return Selector<CurrentTradeViewModel, String?>(
       selector: (_, vm) => vm.error,
       builder: (context, error, _) {
+        // 에러가 있을 때
         if (error != null) {
           return TransparentRefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
@@ -192,136 +183,118 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             ),
           );
         }
-
+        
         return _buildUnifiedHistoryList();
       },
     );
   }
 
+
   Widget _buildUnifiedHistoryList() {
-    // ViewModel의 캐싱된 통합 리스트를 직접 사용하도록 Selector 구성
     return Selector<CurrentTradeViewModel, List<({bool isSeller, bool isHighlighted, dynamic item})>>(
       selector: (_, vm) => vm.allItems,
       builder: (context, allItems, _) {
-        final totalItemCount = allItems.length;
-
-        if (totalItemCount == 0) {
-          return RefreshIndicator(
+        final horizontalPadding = context.hPadding;
+        final verticalPadding = context.vPadding;
+        final spacing = context.spacingSmall;
+        
+        // 빈 상태일 때
+        if (allItems.isEmpty) {
+          return TransparentRefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-            child: const SizedBox.shrink(),
+            child: ListView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: verticalPadding,
+              ),
+              children: [
+                SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+              ],
+            ),
           );
         }
-
+        
+        // 데이터가 있을 때
         return TransparentRefreshIndicator(
           onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-          child: Builder(
-            builder: (context) {
-              final horizontalPadding = context.hPadding;
-              final verticalPadding = context.vPadding;
-              final spacing = context.spacingSmall;
-
-              final initialVisibleCount =
-                  VisibleItemCalculator.calculateTradeHistoryVisibleCount(
-                    context,
-                  );
-              _paginationController.updateTotals(
-                totalCount: totalItemCount,
-                initialVisibleCount: initialVisibleCount,
-              );
-
-              final displayCount = _paginationController.displayedCount;
-              final displayItems = allItems
-                  .take(displayCount)
-                  .map((item) => _DisplayItem(
-                        item: item.item,
-                        isSeller: item.isSeller,
-                        isHighlighted: item.isHighlighted,
-                      ))
-                  .toList(growable: false);
-              final hasMore = _paginationController.hasMore;
-
-              return ListView.separated(
-                controller: _scrollController,
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: verticalPadding,
-                ),
-                itemCount: displayItems.length + (hasMore ? 1 : 0) + 1,
-                separatorBuilder: (_, __) => SizedBox(height: spacing),
-                itemBuilder: (context, index) {
-                  // "전체 보기" 링크는 항상 마지막에 표시
-                  if (index == displayItems.length + (hasMore ? 1 : 0)) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 24),
-                      child: Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            context.push('/mypage/trade');
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '전체 보기',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: textColor,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.chevron_right,
-                                size: 16,
-                                color: textColor,
-                              ),
-                            ],
+          child: ListView.builder(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
+            itemCount: allItems.length + 1, // +1 for "전체 보기"
+            itemBuilder: (context, index) {
+              // "전체 보기" 링크
+              if (index == allItems.length) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 16, bottom: 24),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => context.push('/mypage/trade'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '전체 보기',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: textColor,
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 16,
+                            color: textColor,
+                          ),
+                        ],
                       ),
-                    );
-                  }
-
-                  // 더 보기 로딩 인디케이터 (화면에 보이는 개수보다 많을 때)
-                  if (hasMore && index == displayItems.length) {
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Center(
-                        child: _paginationController.isLoadingMore
-                            ? const CircularProgressIndicator()
-                            : const SizedBox.shrink(),
-                      ),
-                    );
-                  }
-
-                  final itemData = displayItems[index];
-                  final useResponsive = MediaQuery.of(context).size.width >= 360;
-
-                  if (itemData.isSeller) {
-                    final saleItem = itemData.item as SaleHistoryItem;
-                    return TradeHistoryCard(
-                      title: saleItem.title,
-                      thumbnailUrl: saleItem.thumbnailUrl,
-                      status: saleItem.status,
-                      price: saleItem.price,
-                      itemId: saleItem.itemId,
-                      isSeller: true,
-                      isHighlighted: itemData.isHighlighted,
-                      useResponsive: useResponsive,
-                    );
-                  } else {
-                    final bidItem = itemData.item as BidHistoryItem;
-                    return TradeHistoryCard(
-                      title: bidItem.title,
-                      thumbnailUrl: bidItem.thumbnailUrl,
-                      status: bidItem.status,
-                      price: bidItem.price,
-                      itemId: bidItem.itemId,
-                      isSeller: false,
-                      isHighlighted: itemData.isHighlighted,
-                      useResponsive: useResponsive,
-                    );
-                  }
-                },
+                    ),
+                  ),
+                );
+              }
+              
+              // 일반 아이템
+              final item = allItems[index];
+              final useResponsive = MediaQuery.of(context).size.width >= 360;
+              
+              Widget card;
+              if (item.isSeller) {
+                final saleItem = item.item as SaleHistoryItem;
+                card = TradeHistoryCard(
+                  title: saleItem.title,
+                  thumbnailUrl: saleItem.thumbnailUrl,
+                  status: saleItem.status,
+                  price: saleItem.price,
+                  itemId: saleItem.itemId,
+                  isSeller: true,
+                  isHighlighted: item.isHighlighted,
+                  useResponsive: useResponsive,
+                );
+              } else {
+                final bidItem = item.item as BidHistoryItem;
+                card = TradeHistoryCard(
+                  title: bidItem.title,
+                  thumbnailUrl: bidItem.thumbnailUrl,
+                  status: bidItem.status,
+                  price: bidItem.price,
+                  itemId: bidItem.itemId,
+                  isSeller: false,
+                  isHighlighted: item.isHighlighted,
+                  useResponsive: useResponsive,
+                );
+              }
+              
+              // 간격을 Container로 감싸서 안전하게 처리
+              return Container(
+                margin: EdgeInsets.only(
+                  bottom: index < allItems.length - 1 ? spacing : 0,
+                ),
+                child: card,
               );
             },
           ),

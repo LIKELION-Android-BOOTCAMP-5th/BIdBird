@@ -15,13 +15,13 @@ class BidBottomSheet extends StatefulWidget {
     required this.itemId,
     required this.currentPrice,
     required this.bidUnit,
-    required this.buyNowPrice,
+    // required this.buyNowPrice,
   });
 
   final String itemId;
   final int currentPrice;
   final int bidUnit;
-  final int buyNowPrice;
+  // final int buyNowPrice;
 
   @override
   State<BidBottomSheet> createState() => _BidBottomSheetState();
@@ -560,9 +560,9 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     if (next < _minNextBid) {
       next = _minNextBid;
     }
-    if (widget.buyNowPrice > 0 && next > widget.buyNowPrice) {
-      next = widget.buyNowPrice;
-    }
+    // if (widget.buyNowPrice > 0 && next > widget.buyNowPrice) {
+    //   next = widget.buyNowPrice;
+    // }
     return next;
   }
 
@@ -591,16 +591,20 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
 
         final minBid = _minNextBid;
         final isBelowMinBid = _bidAmount < minBid;
-        final exceedsBuyNow =
-            widget.buyNowPrice > 0 && _bidAmount > widget.buyNowPrice;
-        final isValidBid = !isBelowMinBid && !exceedsBuyNow;
+        // final exceedsBuyNow =
+        //     widget.buyNowPrice > 0 && _bidAmount > widget.buyNowPrice;
+        // final isValidBid = !isBelowMinBid && !exceedsBuyNow;
+        final isValidBid = !isBelowMinBid;
         final canSubmit = isValidBid && !isSubmitting;
 
+        // final statusMessage = isBelowMinBid
+        //     ? '최소 ${formatPrice(minBid)}원부터 가능합니다'
+        //     : exceedsBuyNow
+        //         ? '즉시 구매가를 초과할 수 없습니다'
+        //         : '유효한 입찰입니다';
         final statusMessage = isBelowMinBid
             ? '최소 ${formatPrice(minBid)}원부터 가능합니다'
-            : exceedsBuyNow
-                ? '즉시 구매가를 초과할 수 없습니다'
-                : '유효한 입찰입니다';
+            : '유효한 입찰입니다';
 
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -627,9 +631,10 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                     onIncrease: _increaseBid,
                     onDecrease: _decreaseBid,
                     canDecrease: _bidAmount > minBid,
-                    canIncrease: widget.buyNowPrice <= 0
-                        ? true
-                        : _bidAmount < widget.buyNowPrice,
+                    // canIncrease: widget.buyNowPrice <= 0
+                    //     ? true
+                    //     : _bidAmount < widget.buyNowPrice,
+                    canIncrease: true,
                   ),
                   quickPresetRow: _QuickPresetRow(
                     actions: _presetActions,

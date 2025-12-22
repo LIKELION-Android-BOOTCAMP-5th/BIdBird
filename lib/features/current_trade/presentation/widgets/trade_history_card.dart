@@ -67,15 +67,12 @@ class TradeHistoryCard extends StatelessWidget {
         ? ResponsiveConstants.fontSizeMedium(context)
         : 15.0;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < 340;
-        final adaptivePadding =
-            isCompact ? cardPaddingValue * 0.75 : cardPaddingValue;
-        final adaptiveSpacing = isCompact ? mediaSpacing * 0.75 : mediaSpacing;
-        final adaptiveThumbnail = isCompact ? thumbnailSize * 0.85 : thumbnailSize;
-
-        return Container(
+    // 단순한 고정 값 사용으로 레이아웃 오류 방지
+    const adaptivePadding = 10.8;
+    const adaptiveSpacing = 12.0;
+    const adaptiveThumbnail = 60.0;
+    
+    return Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: defaultBorder,
@@ -101,7 +98,7 @@ class TradeHistoryCard extends StatelessWidget {
             children: [
               Container(
                 width: 4,
-                height: double.infinity,
+                constraints: const BoxConstraints(minHeight: 80),
                 decoration: BoxDecoration(
                   color: roleColor,
                   borderRadius: const BorderRadius.only(
@@ -113,10 +110,11 @@ class TradeHistoryCard extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.all(adaptivePadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                       GestureDetector(
                         onTap: () async {
                           if (itemId.isEmpty) return;
@@ -140,6 +138,7 @@ class TradeHistoryCard extends StatelessWidget {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Row(
                                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -207,15 +206,14 @@ class TradeHistoryCard extends StatelessWidget {
                           padding: EdgeInsets.only(top: adaptiveSpacing),
                           child: onActionButtonPressed!() ?? const SizedBox.shrink(),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
           ),
         );
-      },
-    );
   }
 
   Future<void> _navigateToRegistrationDetail(BuildContext context) async {
