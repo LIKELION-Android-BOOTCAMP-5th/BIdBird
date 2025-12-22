@@ -6,8 +6,8 @@ abstract class BidRepository {
   /// 일반 입찰 실행
   Future<void> placeBid(BidRequest request);
   
-  // /// 즉시 구매 입찰 실행
-  // Future<void> placeBuyNowBid(BuyNowBidRequest request);
+  /// 즉시 구매 입찰 실행
+  Future<void> placeBuyNowBid(BuyNowBidRequest request);
   
   /// 입찰 제한 여부 확인 (true면 제한됨)
   Future<bool> isBidRestricted();
