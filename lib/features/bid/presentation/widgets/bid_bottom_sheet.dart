@@ -21,7 +21,7 @@ class BidBottomSheet extends StatefulWidget {
   final String itemId;
   final int currentPrice;
   final int bidUnit;
-  // final int buyNowPrice;
+  // final int? buyNowPrice;
 
   @override
   State<BidBottomSheet> createState() => _BidBottomSheetState();

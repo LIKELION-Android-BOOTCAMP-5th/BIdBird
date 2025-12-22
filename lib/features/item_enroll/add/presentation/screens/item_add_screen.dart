@@ -84,12 +84,12 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
         
         // 즉시 구매가가 체크되어 있으면 그것도 유효해야 함
         bool hasValidInstantPrice = true;
-        if (viewModel.useInstantPrice) {
-          final instantPrice = parseFormattedPrice(viewModel.instantPriceController.text);
-          hasValidInstantPrice = instantPrice > 0 && 
-              instantPrice >= ItemPriceLimits.minPrice && 
-              instantPrice > startPrice;
-        }
+        // if (viewModel.useInstantPrice) {
+        //   final instantPrice = parseFormattedPrice(viewModel.instantPriceController.text);
+        //   hasValidInstantPrice = instantPrice > 0 && 
+        //       instantPrice >= ItemPriceLimits.minPrice && 
+        //       instantPrice > startPrice;
+        // }
         
         return hasValidStartPrice && hasDuration && hasCategory && hasValidInstantPrice;
       case 2:

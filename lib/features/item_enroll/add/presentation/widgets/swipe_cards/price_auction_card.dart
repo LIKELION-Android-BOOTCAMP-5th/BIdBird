@@ -32,7 +32,7 @@ class PriceAuctionCard extends StatefulWidget {
 class PriceAuctionCardState extends State<PriceAuctionCard>
     with FormValidationMixin {
   String? _startPriceError;
-  String? _instantPriceError;
+  // String? _instantPriceError;
   String? _categoryError;
   String? _durationError;
   bool _shouldShowErrors = false;
@@ -48,9 +48,9 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
       final startPrice = parseFormattedPrice(
         widget.viewModel.startPriceController.text,
       );
-      final instantPrice = widget.viewModel.useInstantPrice
-          ? parseFormattedPrice(widget.viewModel.instantPriceController.text)
-          : null;
+      // final instantPrice = widget.viewModel.useInstantPrice
+      //     ? parseFormattedPrice(widget.viewModel.instantPriceController.text)
+      //     : null;
 
       if (startPrice <= 0) {
         _startPriceError =
@@ -62,20 +62,20 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
         );
       }
 
-      if (widget.viewModel.useInstantPrice) {
-        if (instantPrice == null || instantPrice <= 0) {
-          _instantPriceError =
-              ItemRegistrationErrorMessages.instantPriceInvalidNumber;
-        } else if (instantPrice < ItemPriceLimits.minPrice) {
-          _instantPriceError = ItemRegistrationErrorMessages.instantPriceRange(
-            ItemPriceLimits.minPrice,
-            ItemPriceLimits.maxPrice,
-          );
-        } else if (instantPrice <= startPrice) {
-          _instantPriceError =
-              ItemRegistrationErrorMessages.instantPriceMustBeHigher;
-        }
-      }
+      // if (widget.viewModel.useInstantPrice) {
+      //   if (instantPrice == null || instantPrice <= 0) {
+      //     _instantPriceError =
+      //         ItemRegistrationErrorMessages.instantPriceInvalidNumber;
+      //   } else if (instantPrice < ItemPriceLimits.minPrice) {
+      //     _instantPriceError = ItemRegistrationErrorMessages.instantPriceRange(
+      //       ItemPriceLimits.minPrice,
+      //       ItemPriceLimits.maxPrice,
+      //     );
+      //   } else if (instantPrice <= startPrice) {
+      //     _instantPriceError =
+      //         ItemRegistrationErrorMessages.instantPriceMustBeHigher;
+      //   }
+      // }
 
       if (widget.viewModel.selectedDuration == null) {
         _durationError = ItemRegistrationErrorMessages.auctionDurationRequired;
@@ -90,7 +90,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
   @override
   void clearAllErrors() {
     _startPriceError = null;
-    _instantPriceError = null;
+    // _instantPriceError = null;
     _categoryError = null;
     _durationError = null;
   }
@@ -160,28 +160,28 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
             ],
           ),
           // SizedBox(height: spacing),
-          // // 즉시 구매가 체크박스
-          // Column(
-          //   crossAxisAlignment: CrossAxisAlignment.start,
-          //   children: [
-          //     FormLabelWithCheckbox(
-          //       text: '즉시 구매가 (원)',
-          //       value: widget.viewModel.useInstantPrice,
-          //       onChanged: (value) {
-          //         widget.viewModel.setUseInstantPrice(value);
-          //         // 체크박스 변경 시에는 검증하지 않음
-          //       },
-          //     ),
-          //     // 즉시 구매가 입력 (항상 표시, 체크박스로 활성화/비활성화)
-          //     TextField(
-          //       controller: widget.viewModel.instantPriceController,
-          //       keyboardType: TextInputType.number,
-          //       enabled: widget.viewModel.useInstantPrice,
-          //       decoration: widget
-          //           .inputDecoration('즉시 구매가 입력')
-          //           .copyWith(
-          //             errorText: shouldShowErrors ? _instantPriceError : null,
-          //             fillColor: widget.viewModel.useInstantPrice
+          // // 즉시 구매가 체크박스 - 주석 처리됨
+          // // Column(
+          // //   crossAxisAlignment: CrossAxisAlignment.start,
+          // //   children: [
+          // //     FormLabelWithCheckbox(
+          // //       text: '즉시 구매가 (원)',
+          // //       value: widget.viewModel.useInstantPrice,
+          // //       onChanged: (value) {
+          // //         widget.viewModel.setUseInstantPrice(value);
+          // //         // 체크박스 변경 시에는 검증하지 않음
+          // //       },
+          // //     ),
+          // //     // 즉시 구매가 입력 (항상 표시, 체크박스로 활성화/비활성화)
+          // //     TextField(
+          // //       controller: widget.viewModel.instantPriceController,
+          // //       keyboardType: TextInputType.number,
+          // //       enabled: widget.viewModel.useInstantPrice,
+          // //       decoration: widget
+          // //           .inputDecoration('즉시 구매가 입력')
+          // //           .copyWith(
+          // //             errorText: shouldShowErrors ? _instantPriceError : null,
+          // //             fillColor: widget.viewModel.useInstantPrice
           //                 ? Colors.white
           //                 : BorderColor.withValues(alpha: 0.2),
           //           ),

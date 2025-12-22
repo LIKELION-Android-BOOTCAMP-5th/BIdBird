@@ -239,7 +239,7 @@ class TradeHistoryCard extends StatelessWidget {
       final auctionDurationHours =
           getIntFromRow(result, 'auction_duration_hours', 24);
       final thumbnailUrl = getNullableStringFromRow(result, 'thumbnail_image');
-      final buyNowPrice = getIntFromRow(result, 'buy_now_price');
+      // final buyNowPrice = getIntFromRow(result, 'buy_now_price');
       final description = getStringFromRow(result, 'description');
 
       // ItemRegistrationData 생성
@@ -248,7 +248,7 @@ class TradeHistoryCard extends StatelessWidget {
         title: title,
         description: description,
         startPrice: startPrice,
-        instantPrice: buyNowPrice,
+        // instantPrice: buyNowPrice,
         auctionDurationHours: auctionDurationHours,
         thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       );
