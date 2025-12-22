@@ -1122,13 +1122,15 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             ),
           ),
           builder: (context) {
-            return ChangeNotifierProvider<BuyNowInputViewModel>(
-              create: (_) => BuyNowInputViewModel(),
-              child: BuyNowInputBottomSheet(
-                itemId: widget.item.itemId,
-                buyNowPrice: widget.item.buyNowPrice,
-              ),
-            );
+            // 즉시 구매 기능 비활성화
+            // return ChangeNotifierProvider<BuyNowInputViewModel>(
+            //   create: (_) => BuyNowInputViewModel(),
+            //   child: BuyNowInputBottomSheet(
+            //     itemId: widget.item.itemId,
+            //     buyNowPrice: widget.item.buyNowPrice,
+            //   ),
+            // );
+            return Container(); // 빈 컨테이너 반환
           },
         );
       },
