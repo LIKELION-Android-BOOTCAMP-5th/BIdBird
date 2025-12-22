@@ -7,6 +7,9 @@ class NotificationListRealtimeSubscriptionManager {
 
   RealtimeChannel? _notifyChannel;
 
+  bool _isSubscribed = false;
+  bool get isConnected => _isSubscribed;
+
   void setupRealtimeSubscription({
     required void Function(NotificationEntity notify) updateNotification,
   }) {
@@ -31,7 +34,19 @@ class NotificationListRealtimeSubscriptionManager {
             updateNotification(newNotification);
           },
         )
-        .subscribe();
+        .subscribe((status, error) {
+          print('📡 notifyChannel status: $status');
+
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            _isSubscribed = true;
+          }
+
+          if (status == RealtimeSubscribeStatus.closed ||
+              status == RealtimeSubscribeStatus.channelError ||
+              status == RealtimeSubscribeStatus.timedOut) {
+            _isSubscribed = false;
+          }
+        });
 
     print("알림 채널이 연결 되었습니다");
   }
@@ -40,5 +55,6 @@ class NotificationListRealtimeSubscriptionManager {
     if (_notifyChannel != null)
       SupabaseManager.shared.supabase.removeChannel(_notifyChannel!);
     _notifyChannel = null;
+    _isSubscribed = false;
   }
 }

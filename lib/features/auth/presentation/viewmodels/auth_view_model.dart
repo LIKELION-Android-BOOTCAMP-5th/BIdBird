@@ -21,6 +21,7 @@ class AuthViewModel extends ChangeNotifier {
   AuthStatus get status => _status;
 
   bool get isLoggedIn => _status == AuthStatus.authenticated;
+  bool _loginEventFired = false;
 
   UserEntity? _user;
   UserEntity? get user => _user;
@@ -49,16 +50,23 @@ class AuthViewModel extends ChangeNotifier {
     // Supabase 인증 상태 구독
     _subscription = SupabaseManager.shared.supabase.auth.onAuthStateChange
         .listen((data) async {
+          print("============= Supabase 인증 상태 listen 작동 ===========");
           final session = data.session;
 
           if (session == null) {
             _user = null;
             _status = AuthStatus.unauthenticated;
+            _loginEventFired = false; // 👈 로그아웃 시 초기화
           } else {
             _status = AuthStatus.authenticated;
             notifyListeners();
+
+            // 🔥 여기서 딱 한 번만 fire
+            if (!_loginEventFired) {
+              _loginEventFired = true;
+              eventBus.fire(LoginEventBus(LoginEventType.login));
+            }
             unawaited(_loadUserAndSetupFCM(session.user.id));
-            eventBus.fire(LoginEventBus(LoginEventType.login));
             return;
           }
 
