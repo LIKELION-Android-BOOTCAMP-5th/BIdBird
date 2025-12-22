@@ -15,65 +15,60 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
 
     if (rows.isEmpty) return [];
 
-    final List<String> itemIds = [];
-    final Map<String, Map<String, dynamic>> favoritesById = {};
+    final List<FavoriteDto> favorites = [];
     for (final Map<String, dynamic> row in rows) {
       final itemId = row['item_id']?.toString();
       if (itemId == null || itemId.isEmpty) continue;
-      itemIds.add(itemId);
-      favoritesById[itemId] = row;
-    }
 
-    if (itemIds.isEmpty) return [];
+      final itemRow = _asMap(row['item']) ?? _asMap(row['items_detail']);
+      final auctionRow = _firstMap(itemRow?['auctions'] ?? row['auctions']);
 
-    final itemsById = await _fetchItemsDetail(itemIds);
-    final auctionsByItemId = await _fetchAuctions(itemIds);
+      final favorite = _mapFavorites(
+        itemId: itemId,
+        favoriteRow: row,
+        itemRow: itemRow,
+        auctionRow: auctionRow,
+      );
 
-    return itemIds
-        .map(
-          (itemId) => _mapFavorites(
-            itemId: itemId,
-            favoriteRow: favoritesById[itemId],
-            itemRow: itemsById[itemId],
-            auctionRow: auctionsByItemId[itemId],
-          ),
-        )
-        .whereType<FavoriteDto>()
-        .map((dto) => dto.toEntity())
-        .toList();
-  }
-
-  Future<Map<String, Map<String, dynamic>>> _fetchItemsDetail(
-    List<String> itemIds,
-  ) async {
-    final rows = await _remoteDataSource.fetchItemsDetail(itemIds);
-
-    final Map<String, Map<String, dynamic>> map = {};
-    for (final dynamic row in rows) {
-      if (row is! Map<String, dynamic>) continue;
-      final itemId = row['item_id']?.toString();
-      if (itemId != null) {
-        map[itemId] = row;
+      if (favorite != null) {
+        favorites.add(favorite);
       }
     }
-    return map;
+
+    return favorites.map((dto) => dto.toEntity()).toList();
   }
 
-  Future<Map<String, Map<String, dynamic>>> _fetchAuctions(
-    List<String> itemIds,
-  ) async {
-    final rows = await _remoteDataSource.fetchAuctions(itemIds);
+  // Future<Map<String, Map<String, dynamic>>> _fetchItemsDetail(
+  //   List<String> itemIds,
+  // ) async {
+  //   final rows = await _remoteDataSource.fetchItemsDetail(itemIds);
 
-    final Map<String, Map<String, dynamic>> map = {};
-    for (final dynamic row in rows) {
-      if (row is! Map<String, dynamic>) continue;
-      final itemId = row['item_id']?.toString();
-      if (itemId != null) {
-        map[itemId] = row;
-      }
-    }
-    return map;
-  }
+  //   final Map<String, Map<String, dynamic>> map = {};
+  //   for (final dynamic row in rows) {
+  //     if (row is! Map<String, dynamic>) continue;
+  //     final itemId = row['item_id']?.toString();
+  //     if (itemId != null) {
+  //       map[itemId] = row;
+  //     }
+  //   }
+  //   return map;
+  // }
+
+  // Future<Map<String, Map<String, dynamic>>> _fetchAuctions(
+  //   List<String> itemIds,
+  // ) async {
+  //   final rows = await _remoteDataSource.fetchAuctions(itemIds);
+
+  //   final Map<String, Map<String, dynamic>> map = {};
+  //   for (final dynamic row in rows) {
+  //     if (row is! Map<String, dynamic>) continue;
+  //     final itemId = row['item_id']?.toString();
+  //     if (itemId != null) {
+  //       map[itemId] = row;
+  //     }
+  //   }
+  //   return map;
+  // }
 
   FavoriteDto? _mapFavorites({
     required String itemId,
@@ -90,7 +85,9 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
         (auctionRow?['current_price'] as num?)?.toInt() ?? 0;
     final int? buyNowPrice = (itemRow?['buy_now_price'] as num?)?.toInt();
     final int statusCode =
-        (auctionRow?['auction_status_code'] as int?) ?? 0;
+        (auctionRow?['trade_status_code'] as int?) ??
+        (auctionRow?['auction_status_code'] as int?) ??
+        0;
 
     return FavoriteDto(
       favoriteId: favoriteId,
@@ -112,5 +109,20 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
   @override
   Future<void> addFavorite(String itemId) {
     return _remoteDataSource.addFavorite(itemId);
+  }
+
+  Map<String, dynamic>? _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    return null;
+  }
+
+  Map<String, dynamic>? _firstMap(dynamic value) {
+    // if (value is Map<String, dynamic>) return value;
+    if (value is List &&
+        value.isNotEmpty &&
+        value.first is Map<String, dynamic>) {
+      return value.first as Map<String, dynamic>;
+    }
+    return null;
   }
 }

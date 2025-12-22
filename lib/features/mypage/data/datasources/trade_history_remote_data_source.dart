@@ -18,6 +18,30 @@ class TradeHistoryRemoteDataSource {
         .order('created_at', ascending: false);
   }
 
+  Future<List<Map<String, dynamic>>> fetchSellerHistory(String userId) {
+    return _client
+        .from('items_detail')
+        .select('''
+          item_id,
+          title,
+          thumbnail_image,
+          buy_now_price,
+          created_at,
+          auctions:auctions!inner(
+            item_id,
+            auction_end_at,
+            current_price,
+            last_bid_user_id,
+            auction_status_code,
+            trade_status_code,
+            round
+          )
+        ''')
+        .eq('seller_id', userId)
+        .eq('auctions.round', 1)
+        .order('created_at', ascending: false);
+  }
+
   Future<List<Map<String, dynamic>>> fetchAuctionsByItemIds(
     List<String> itemIds,
   ) {

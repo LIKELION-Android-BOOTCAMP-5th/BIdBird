@@ -43,56 +43,38 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
       throw Exception('로그인 정보가 없습니다.');
     }
 
-    final rows = await _remoteDataSource.fetchSellerItems(userId);
+    final rows = await _remoteDataSource.fetchSellerHistory(userId);
 
     if (rows.isEmpty) return [];
 
-    final List<String> itemIds = [];
-    final Map<String, Map<String, dynamic>> tradesById = {};
+    final List<TradeHistoryDto> results = [];
     for (final row in rows) {
       final itemId = row['item_id']?.toString();
-      if (itemId == null) continue;
-      itemIds.add(itemId);
-      tradesById[itemId] = row;
-    }
+      if (itemId == null || itemId.isEmpty) continue;
 
-    final Map<String, Map<String, dynamic>> auctionsByItemId = {};
-    if (itemIds.isNotEmpty) {
-      final auctionRows = await _remoteDataSource.fetchAuctionsByItemIds(
-        itemIds,
-      );
-
-      for (final row in auctionRows) {
-        final itemId = row['item_id']?.toString();
-        if (itemId != null) {
-          auctionsByItemId[itemId] = row;
-        }
-      }
-    }
-
-    final List<TradeHistoryDto> results = itemIds.map((itemId) {
-      final item = tradesById[itemId] ?? <String, dynamic>{};
-      final auction = auctionsByItemId[itemId] ?? <String, dynamic>{};
-      final price = (auction['current_price'] as num?)?.toInt() ?? 0;
-      final auctionCode = auction['auction_status_code'] as int?;
-      final tradeCode = auction['trade_status_code'] as int?;
+      final auction = _firstMap(row['auctions']);
+      final price = (auction?['current_price'] as num?)?.toInt() ?? 0;
+      final auctionCode = auction?['auction_status_code'] as int?;
+      final tradeCode = auction?['trade_status_code'] as int?;
       final statusCode = tradeCode ?? auctionCode ?? 0;
       final endAt = DateTime.tryParse(
-        auction['auction_end_at']?.toString() ?? '',
+        auction?['auction_end_at']?.toString() ?? '',
       );
 
-      return TradeHistoryDto(
-        itemId: itemId,
-        role: TradeRole.seller,
-        title: item['title']?.toString() ?? '',
-        currentPrice: price,
-        statusCode: statusCode,
-        buyNowPrice: item['buy_now_price']?.toInt(),
-        thumbnailUrl: item['thumbnail_image']?.toString(),
-        createdAt: DateTime.tryParse(item['created_at']?.toString() ?? ''),
-        endAt: endAt,
+      results.add(
+        TradeHistoryDto(
+          itemId: itemId,
+          role: TradeRole.seller,
+          title: row['title']?.toString() ?? '',
+          currentPrice: price,
+          statusCode: statusCode,
+          buyNowPrice: (row['buy_now_price'] as num?)?.toInt(),
+          thumbnailUrl: row['thumbnail_image']?.toString(),
+          createdAt: DateTime.tryParse(row['created_at']?.toString() ?? ''),
+          endAt: endAt,
+        ),
       );
-    }).toList();
+    }
 
     results.sort((a, b) {
       final da = a.endAt ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -320,5 +302,15 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
     });
 
     return results;
+  }
+
+  Map<String, dynamic>? _firstMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is List &&
+        value.isNotEmpty &&
+        value.first is Map<String, dynamic>) {
+      return value.first as Map<String, dynamic>;
+    }
+    return null;
   }
 }
