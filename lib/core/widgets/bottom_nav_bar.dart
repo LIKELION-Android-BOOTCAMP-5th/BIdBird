@@ -25,7 +25,10 @@ class BottomNavBar extends StatelessWidget {
       backgroundColor: Colors.white,
       unselectedItemColor: iconColor,
       currentIndex: currentIndex,
-      selectedLabelStyle: const TextStyle(color: Colors.black),
+      selectedLabelStyle: const TextStyle(
+        color: Colors.black,
+        fontWeight: FontWeight.w700,
+      ),
       selectedItemColor: Colors.black,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
@@ -124,7 +127,7 @@ class BottomNavBar extends StatelessWidget {
                       -1.2,
                     ), // 좌표 기반 위치 조정
                     child: Image.asset(
-                      'assets/icons/chat_icon.png', // 아이콘이 active일 때와 아닐 때 분기 처리 필요
+                      'assets/icons/chat_select_icon.png', // 아이콘이 active일 때와 아닐 때 분기 처리 필요
                       width: iconSize.width,
                       height: iconSize.height,
                     ),

@@ -1,4 +1,3 @@
-// 프로젝트의 실제 경로에 맞춰 임포트들을 확인해주세요.
 import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/item/components/others/double_back_exit_handler.dart';
 import 'package:bidbird/features/auth/presentation/screens/auth_set_profile_screen.dart';
@@ -68,6 +67,7 @@ Page<T> buildPage<T>({
   required GoRouterState state,
   required Widget child,
 }) {
+  // iOS 스와이프 기능
   if (Theme.of(context).platform == TargetPlatform.iOS) {
     return CupertinoPage<T>(key: state.pageKey, child: child);
   }
