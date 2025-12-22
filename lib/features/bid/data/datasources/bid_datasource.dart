@@ -57,18 +57,13 @@ class BidDatasource {
         ? 'place_bid_instant'
         : 'place_bid_normal';
 
-    final response = await _supabase.rpc(
+    await _supabase.rpc(
       rpcName,
-      params: <String, dynamic>{
+      params: {
         'p_item_id': request.itemId,
-        'p_bidder_id': user.id,
         'p_bid_price': request.bidPrice,
       },
     );
-
-    final data = response;
-
-    if (data is! Map<String, dynamic>) {
       throw Exception(BidErrorMessages.bidProcessingFailed);
     }
 
