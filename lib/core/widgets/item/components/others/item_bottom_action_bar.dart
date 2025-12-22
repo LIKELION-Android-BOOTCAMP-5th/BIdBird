@@ -609,8 +609,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 경매 낙찰(321) 상태에서, 내가 낙찰자이고 아직 결제가 완료되지 않은 경우에만 결제 버튼 노출
     // 현재 화면의 ViewModel 에서 isTopBidder 가 true 인 상태를 낙찰자로 간주
     if (statusCode == 321 && isTopBidder && !isTradePaid) {
+      /*
       final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-
       return ElevatedButton(
         onPressed: () async {
           final authVM = context.read<AuthViewModel>();
@@ -635,7 +635,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           if (!mounted) return;
 
           if (result == true) {
-            // 결제 성공 시 결제 완료 화면으로 이동
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -663,24 +662,20 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           backgroundColor: blueColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.7),
+            ),
           ),
-        ),
-        child: const Text(
-          '결제하러 가기',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+          child: const Text(
+            '결제하러 가기',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
-        ),
-      );
-    }
-
-    // 즉시 구매 진행 중(1006)인 경우
-    // - 즉시 구매를 건 사용자(현재 최고 입찰자)는 '결제하러 가기' 버튼 노출
-    // - 그 외 사용자는 안내 문구만 노출
-    if (isBuyNowInProgress && !isBuyNowCompleted) {
+        );
+        */
       if (isTopBidder) {
+        /*
         return ElevatedButton(
           onPressed: () async {
             const buyerTel = '01012345678';
@@ -704,7 +699,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             if (!mounted) return;
 
             if (result == true) {
-              // 즉시 구매 결제 성공 시에도 결제 완료 화면으로 이동
               final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
 
               Navigator.push(
@@ -745,6 +739,13 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             ),
           ),
         );
+            );
+            ...
+          },
+          ...
+        );
+        */
+        return const SizedBox.shrink();
       }
 
       // 다른 사용자는 결제 대기 안내 문구만 표시

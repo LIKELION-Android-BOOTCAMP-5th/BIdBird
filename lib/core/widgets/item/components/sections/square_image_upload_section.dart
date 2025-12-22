@@ -108,22 +108,34 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
               left: 0,
               right: 0,
               child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: context.inputPadding * SpacingRatios.imageOverlayPadding,
-                    vertical: context.spacingSmall * SpacingRatios.smallSpacing,
-                  ),
-                  decoration: BoxDecoration(
-                    color: blueColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '대표 이미지',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: context.fontSizeSmall * SpacingRatios.smallFontSize,
-                      fontWeight: FontWeight.w600,
+                child: IntrinsicWidth(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: context.iconSizeMedium,
+                      minHeight: context.iconSizeMedium,
+                    ),
+                    child: Container(
+                      height: context.iconSizeMedium,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: context.inputPadding * SpacingRatios.imageOverlayPadding,
+                      ),
+                      decoration: BoxDecoration(
+                        color: blueColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      alignment: Alignment.center,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '대표 이미지',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: context.fontSizeSmall * SpacingRatios.smallFontSize,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -211,21 +223,33 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                 Positioned(
                   left: context.inputPadding * SpacingRatios.imageOverlayPadding,
                   bottom: context.inputPadding * SpacingRatios.imageOverlayPadding,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: context.inputPadding * SpacingRatios.imageOverlayPadding,
-                      vertical: context.spacingSmall * SpacingRatios.smallSpacing,
-                    ),
-                    decoration: BoxDecoration(
-                      color: blueColor,
-                      borderRadius: defaultBorder,
-                    ),
-                    child: Text(
-                      '${widget.images.length}/${ItemImageLimits.maxImageCount}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: context.fontSizeSmall,
-                        fontWeight: FontWeight.w600,
+                  child: IntrinsicWidth(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: context.iconSizeMedium,
+                        minHeight: context.iconSizeMedium,
+                      ),
+                      child: Container(
+                        height: context.iconSizeMedium,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: context.inputPadding * SpacingRatios.imageOverlayPadding,
+                        ),
+                        decoration: BoxDecoration(
+                          color: blueColor,
+                          borderRadius: defaultBorder,
+                        ),
+                        alignment: Alignment.center,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '${widget.images.length}/${ItemImageLimits.maxImageCount}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: context.fontSizeSmall,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

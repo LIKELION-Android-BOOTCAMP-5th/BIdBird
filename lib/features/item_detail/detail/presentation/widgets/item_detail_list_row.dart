@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 
 class ItemDetailListRow extends StatelessWidget {
   const ItemDetailListRow({
@@ -16,22 +17,36 @@ class ItemDetailListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rowHeight = context.heightRatio(0.07, min: 52.0, max: 68.0);
+    final iconSize = context.widthRatio(0.11, min: 38.0, max: 48.0);
+    final horizontalSpacing = context.spacingSmall;
+    final titleFont = TextStyle(
+      fontSize: context.fontSizeMedium,
+      fontWeight: FontWeight.w500,
+      color: const Color(0xFF191F28),
+    );
+    final subtitleFont = TextStyle(
+      fontSize: context.fontSizeSmall,
+      color: const Color(0xFF6B7684),
+    );
+    final chevronSize = context.iconSizeSmall;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 56,
+          height: rowHeight,
           padding: EdgeInsets.zero,
           child: Row(
             children: [
               // 좌: 아이콘 영역 40
               SizedBox(
-                width: 40,
-                height: 40,
+                width: iconSize,
+                height: iconSize,
                 child: icon,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: horizontalSpacing),
               // 중앙: 텍스트 스택
               Expanded(
                 child: Column(
@@ -40,30 +55,23 @@ class ItemDetailListRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF191F28), // Primary Text
-                      ),
+                      style: titleFont,
                     ),
                     if (subtitle != null) ...[
-                      const SizedBox(height: 4),
+                      SizedBox(height: horizontalSpacing * 0.45),
                       Text(
                         subtitle!,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7684), // Secondary
-                        ),
+                        style: subtitleFont,
                       ),
                     ],
                   ],
                 ),
               ),
               // 우: chevron
-              const Icon(
+              Icon(
                 Icons.chevron_right,
-                size: 20,
-                color: Color(0xFF9CA3AF), // Tertiary
+                size: chevronSize,
+                color: const Color(0xFF9CA3AF), // Tertiary
               ),
             ],
           ),
