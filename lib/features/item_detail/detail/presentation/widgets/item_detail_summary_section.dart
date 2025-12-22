@@ -133,16 +133,16 @@ class ItemDetailSummarySection extends StatelessWidget {
                 if (contactButton != null) contactButton,
               ],
             ),
-          SizedBox(height: spacingSmall * 0.6),
-          Text(
-            item.buyNowPrice > 0
-                ? '즉시 구매가 ${formatPrice(item.buyNowPrice)}원'
-                : '즉시 구매 불가',
-            style: TextStyle(
-              fontSize: subtitleFontSize,
-              color: const Color(0xFF9CA3AF),
-            ),
-          ),
+          // SizedBox(height: spacingSmall * 0.6),
+          // Text(
+          //   item.buyNowPrice > 0
+          //       ? '즉시 구매가 ${formatPrice(item.buyNowPrice)}원'
+          //       : '즉시 구매 불가',
+          //   style: TextStyle(
+          //     fontSize: subtitleFontSize,
+          //     color: const Color(0xFF9CA3AF),
+          //   ),
+          // ),
           SizedBox(height: spacingMedium),
           const Divider(
             height: 1,

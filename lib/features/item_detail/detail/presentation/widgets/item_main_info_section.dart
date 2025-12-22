@@ -56,16 +56,16 @@ class ItemMainInfoSection extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      item.buyNowPrice > 0
-                          ? '즉시 구매가 ${formatPrice(item.buyNowPrice)}원'
-                          : '즉시 구매 없음',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: item.buyNowPrice > 0 ? blueColor : iconColor,
-                      ),
-                    ),
+                    // Text(
+                    //   item.buyNowPrice > 0
+                    //       ? '즉시 구매가 ${formatPrice(item.buyNowPrice)}원'
+                    //       : '즉시 구매 없음',
+                    //   style: TextStyle(
+                    //     fontSize: 13,
+                    //     fontWeight: FontWeight.w600,
+                    //     color: item.buyNowPrice > 0 ? blueColor : iconColor,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),

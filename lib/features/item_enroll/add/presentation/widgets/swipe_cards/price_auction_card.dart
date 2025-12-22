@@ -159,52 +159,52 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
               ),
             ],
           ),
-          SizedBox(height: spacing),
-          // 즉시 구매가 체크박스
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FormLabelWithCheckbox(
-                text: '즉시 구매가 (원)',
-                value: widget.viewModel.useInstantPrice,
-                onChanged: (value) {
-                  widget.viewModel.setUseInstantPrice(value);
-                  // 체크박스 변경 시에는 검증하지 않음
-                },
-              ),
-              // 즉시 구매가 입력 (항상 표시, 체크박스로 활성화/비활성화)
-              TextField(
-                controller: widget.viewModel.instantPriceController,
-                keyboardType: TextInputType.number,
-                enabled: widget.viewModel.useInstantPrice,
-                decoration: widget
-                    .inputDecoration('즉시 구매가 입력')
-                    .copyWith(
-                      errorText: shouldShowErrors ? _instantPriceError : null,
-                      fillColor: widget.viewModel.useInstantPrice
-                          ? Colors.white
-                          : BorderColor.withValues(alpha: 0.2),
-                    ),
-                onChanged: (value) {
-                  _handlePriceInput(
-                    value,
-                    widget.viewModel.instantPriceController,
-                    shouldShowErrors && _instantPriceError != null
-                        ? (instantPrice) {
-                            final startPrice = parseFormattedPrice(
-                              widget.viewModel.startPriceController.text,
-                            );
-                            if (instantPrice >= ItemPriceLimits.minPrice &&
-                                instantPrice > startPrice) {
-                              clearError(() => _instantPriceError = null);
-                            }
-                          }
-                        : null,
-                  );
-                },
-              ),
-            ],
-          ),
+          // SizedBox(height: spacing),
+          // // 즉시 구매가 체크박스
+          // Column(
+          //   crossAxisAlignment: CrossAxisAlignment.start,
+          //   children: [
+          //     FormLabelWithCheckbox(
+          //       text: '즉시 구매가 (원)',
+          //       value: widget.viewModel.useInstantPrice,
+          //       onChanged: (value) {
+          //         widget.viewModel.setUseInstantPrice(value);
+          //         // 체크박스 변경 시에는 검증하지 않음
+          //       },
+          //     ),
+          //     // 즉시 구매가 입력 (항상 표시, 체크박스로 활성화/비활성화)
+          //     TextField(
+          //       controller: widget.viewModel.instantPriceController,
+          //       keyboardType: TextInputType.number,
+          //       enabled: widget.viewModel.useInstantPrice,
+          //       decoration: widget
+          //           .inputDecoration('즉시 구매가 입력')
+          //           .copyWith(
+          //             errorText: shouldShowErrors ? _instantPriceError : null,
+          //             fillColor: widget.viewModel.useInstantPrice
+          //                 ? Colors.white
+          //                 : BorderColor.withValues(alpha: 0.2),
+          //           ),
+          //       onChanged: (value) {
+          //         _handlePriceInput(
+          //           value,
+          //           widget.viewModel.instantPriceController,
+          //           shouldShowErrors && _instantPriceError != null
+          //               ? (instantPrice) {
+          //                   final startPrice = parseFormattedPrice(
+          //                     widget.viewModel.startPriceController.text,
+          //                   );
+          //                   if (instantPrice >= ItemPriceLimits.minPrice &&
+          //                       instantPrice > startPrice) {
+          //                     clearError(() => _instantPriceError = null);
+          //                   }
+          //                 }
+          //               : null,
+          //         );
+          //       },
+          //     ),
+          //   ],
+          // ),
           SizedBox(height: spacing),
           // 경매 기간 선택
           Column(
