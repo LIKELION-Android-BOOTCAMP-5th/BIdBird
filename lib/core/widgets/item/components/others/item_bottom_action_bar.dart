@@ -681,20 +681,21 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             const buyerTel = '01012345678';
             const appScheme = 'bidbird';
 
-            final request = ItemPaymentRequest(
-              itemId: widget.item.itemId,
-              itemTitle: widget.item.itemTitle,
-              amount: widget.item.buyNowPrice,
-              buyerTel: buyerTel,
-              appScheme: appScheme,
-            );
+            // final request = ItemPaymentRequest(
+            //   itemId: widget.item.itemId,
+            //   itemTitle: widget.item.itemTitle,
+            //   amount: 0, // 더미 값으로 0 사용
+            //   buyerTel: buyerTel,
+            //   appScheme: appScheme,
+            // );
 
-            final result = await Navigator.push<bool>(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PortonePaymentScreen(request: request),
-              ),
-            );
+            // final result = await Navigator.push<bool>(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (_) => PortonePaymentScreen(request: request),
+            //   ),
+            // );
+            final result = false; // 더미 값으로 대체
 
             if (!mounted) return;
 
