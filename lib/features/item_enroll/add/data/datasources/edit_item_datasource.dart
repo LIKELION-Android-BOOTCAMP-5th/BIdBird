@@ -38,7 +38,7 @@ class EditItemDatasource {
         title: getStringFromRow(row, 'title'),
         description: getStringFromRow(row, 'description'),
         startPrice: getIntFromRow(row, 'start_price'),
-        buyNowPrice: getIntFromRow(row, 'buy_now_price', 0),
+        // buyNowPrice: getIntFromRow(row, 'buy_now_price', 0),
         keywordTypeId: getIntFromRow(row, 'keyword_type'),
         auctionDurationHours: getIntFromRow(row, 'auction_duration_hours', 4),
         imageUrls: imageUrls,

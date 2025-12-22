@@ -200,14 +200,16 @@ class ItemAddViewModel extends ItemBaseViewModel {
         startPriceController.text = formatNumber(startPrice.toString());
       }
 
-      final int buyNowPrice = editItem.buyNowPrice;
-      if (buyNowPrice > 0) {
-        useInstantPrice = true;
-        instantPriceController.text = formatNumber(buyNowPrice.toString());
-      } else {
-        useInstantPrice = false;
-        instantPriceController.clear();
-      }
+      // final int buyNowPrice = editItem.buyNowPrice;
+      // if (buyNowPrice > 0) {
+      //   useInstantPrice = true;
+      //   instantPriceController.text = formatNumber(buyNowPrice.toString());
+      // } else {
+      //   useInstantPrice = false;
+      //   instantPriceController.clear();
+      // }
+      useInstantPrice = false;
+      instantPriceController.clear();
 
       selectedKeywordTypeId = editItem.keywordTypeId;
 
