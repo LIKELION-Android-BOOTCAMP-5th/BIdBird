@@ -230,8 +230,46 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     );
   }
 
+  late final ItemAddViewModel _viewModel;
+  late final ValueNotifier<int> _titleLengthNotifier;
+  late final ValueNotifier<int> _startPriceLengthNotifier;
+  late final ValueNotifier<int> _instantPriceLengthNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = context.read<ItemAddViewModel>();
+    _titleLengthNotifier = ValueNotifier<int>(_viewModel.titleController.text.length);
+    _startPriceLengthNotifier =
+        ValueNotifier<int>(_viewModel.startPriceController.text.length);
+    _instantPriceLengthNotifier =
+        ValueNotifier<int>(_viewModel.instantPriceController.text.length);
+
+    _viewModel.titleController.addListener(_onTitleChanged);
+    _viewModel.startPriceController.addListener(_onStartPriceChanged);
+    _viewModel.instantPriceController.addListener(_onInstantPriceChanged);
+  }
+
+  void _onTitleChanged() {
+    _titleLengthNotifier.value = _viewModel.titleController.text.length;
+  }
+
+  void _onStartPriceChanged() {
+    _startPriceLengthNotifier.value = _viewModel.startPriceController.text.length;
+  }
+
+  void _onInstantPriceChanged() {
+    _instantPriceLengthNotifier.value = _viewModel.instantPriceController.text.length;
+  }
+
   @override
   void dispose() {
+    _viewModel.titleController.removeListener(_onTitleChanged);
+    _viewModel.startPriceController.removeListener(_onStartPriceChanged);
+    _viewModel.instantPriceController.removeListener(_onInstantPriceChanged);
+    _titleLengthNotifier.dispose();
+    _startPriceLengthNotifier.dispose();
+    _instantPriceLengthNotifier.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -254,7 +292,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
         isSubmitting: vm.isSubmitting,
       ),
       builder: (context, data, _) {
-        final viewModel = context.read<ItemAddViewModel>();
+        final viewModel = _viewModel;
         
         // 키보드 감지 - MediaQuery를 직접 사용하여 setState 없이 처리
         final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;

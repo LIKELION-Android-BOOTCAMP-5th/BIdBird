@@ -18,21 +18,80 @@ class CurrentTradeScreen extends StatefulWidget {
   State<CurrentTradeScreen> createState() => _CurrentTradeScreenState();
 }
 
+class _PaginationController {
+  _PaginationController({required this.onLoadMore});
+
+  final VoidCallback onLoadMore;
+  int _displayedCount = 0;
+  int _totalCount = 0;
+  int _initialVisibleCount = 0;
+  bool isLoadingMore = false;
+
+  int get displayedCount => _displayedCount;
+  bool get hasMore => _displayedCount < _totalCount;
+
+  void updateTotals({
+    required int totalCount,
+    required int initialVisibleCount,
+  }) {
+    final totalsChanged =
+        _totalCount != totalCount || _initialVisibleCount != initialVisibleCount;
+    _totalCount = totalCount;
+    _initialVisibleCount = initialVisibleCount;
+
+    if (_displayedCount == 0 || totalsChanged) {
+      _displayedCount = _initialVisibleCount.clamp(0, _totalCount);
+    } else {
+      _displayedCount = _displayedCount.clamp(0, _totalCount);
+    }
+  }
+
+  void handleScroll(ScrollPosition position) {
+    if (!hasMore || isLoadingMore) return;
+    final threshold = position.maxScrollExtent - 200;
+    if (position.pixels >= threshold) {
+      tryLoadMore();
+    }
+  }
+
+  bool tryLoadMore() {
+    if (!hasMore || isLoadingMore) return false;
+    isLoadingMore = true;
+    _displayedCount = (_displayedCount + _initialVisibleCount).clamp(
+      0,
+      _totalCount,
+    );
+    isLoadingMore = false;
+    onLoadMore();
+    return true;
+  }
+}
+
+class _DisplayItem {
+  const _DisplayItem({
+    required this.item,
+    required this.isSeller,
+    required this.isHighlighted,
+  });
+
+  final dynamic item;
+  final bool isSeller;
+  final bool isHighlighted;
+}
+
 class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   final ScrollController _scrollController = ScrollController();
-  int _displayedItemCount = 0;
-  bool _isLoadingMore = false;
-  int _totalItemsCount = 0;
-  int _initialVisibleCount = 0;
+  late final _PaginationController _paginationController;
   bool _isScrollListenerAttached = false;
-  // displayItems 캐싱을 위한 변수
-  List<({bool isSeller, bool isHighlighted, dynamic item})>?
-  _cachedDisplayItems;
-  int _cachedDisplayCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _paginationController = _PaginationController(
+      onLoadMore: () {
+        setState(() {});
+      },
+    );
     // 데이터 로드가 안 되어 있으면 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = context.read<CurrentTradeViewModel>();
@@ -59,18 +118,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
   void _handleScroll() {
     if (!mounted) return;
-
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      if (!_isLoadingMore && _displayedItemCount < _totalItemsCount) {
-        setState(() {
-          _isLoadingMore = true;
-          _displayedItemCount = (_displayedItemCount + _initialVisibleCount)
-              .clamp(0, _totalItemsCount);
-          _isLoadingMore = false;
-        });
-      }
-    }
+    _paginationController.handleScroll(_scrollController.position);
   }
 
   @override
@@ -152,10 +200,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
   Widget _buildUnifiedHistoryList() {
     // ViewModel의 캐싱된 통합 리스트를 직접 사용하도록 Selector 구성
-    return Selector<
-      CurrentTradeViewModel,
-      List<({bool isSeller, bool isHighlighted, dynamic item})>
-    >(
+    return Selector<CurrentTradeViewModel, List<({bool isSeller, bool isHighlighted, dynamic item})>>(
       selector: (_, vm) => vm.allItems,
       builder: (context, allItems, _) {
         final totalItemCount = allItems.length;
@@ -175,47 +220,25 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               final verticalPadding = context.vPadding;
               final spacing = context.spacingSmall;
 
-              // 화면에 보이는 개수만큼만 표시 (코어 유틸리티 사용)
-              _initialVisibleCount =
+              final initialVisibleCount =
                   VisibleItemCalculator.calculateTradeHistoryVisibleCount(
                     context,
                   );
-
-              // allItems가 변경되었으면 캐시 무효화
-              if (_totalItemsCount != allItems.length) {
-                _cachedDisplayItems = null;
-                _cachedDisplayCount = 0;
-                _totalItemsCount = allItems.length;
-              }
-
-              // 초기 로드 시 또는 아이템이 변경되었을 때 displayedItemCount 초기화
-              if (_displayedItemCount == 0 ||
-                  _displayedItemCount > allItems.length) {
-                _displayedItemCount = _initialVisibleCount.clamp(
-                  0,
-                  allItems.length,
-                );
-              }
-
-              // displayedItemCount가 allItems.length를 초과하지 않도록 제한
-              _displayedItemCount = _displayedItemCount.clamp(
-                0,
-                allItems.length,
+              _paginationController.updateTotals(
+                totalCount: totalItemCount,
+                initialVisibleCount: initialVisibleCount,
               );
 
-              // displayItems 캐싱: _displayedItemCount가 변경되지 않았으면 캐시 재사용
-              final List<({bool isSeller, bool isHighlighted, dynamic item})>
-              displayItems;
-              if (_cachedDisplayItems != null &&
-                  _cachedDisplayCount == _displayedItemCount &&
-                  _cachedDisplayItems!.length == _displayedItemCount) {
-                displayItems = _cachedDisplayItems!;
-              } else {
-                displayItems = allItems.take(_displayedItemCount).toList();
-                _cachedDisplayItems = displayItems;
-                _cachedDisplayCount = _displayedItemCount;
-              }
-              final hasMore = allItems.length > _displayedItemCount;
+              final displayCount = _paginationController.displayedCount;
+              final displayItems = allItems
+                  .take(displayCount)
+                  .map((item) => _DisplayItem(
+                        item: item.item,
+                        isSeller: item.isSeller,
+                        isHighlighted: item.isHighlighted,
+                      ))
+                  .toList(growable: false);
+              final hasMore = _paginationController.hasMore;
 
               return ListView.separated(
                 controller: _scrollController,
@@ -223,10 +246,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                   horizontal: horizontalPadding,
                   vertical: verticalPadding,
                 ),
-                itemCount:
-                    displayItems.length +
-                    (hasMore ? 1 : 0) +
-                    1, // +1 for "전체 보기" 링크
+                itemCount: displayItems.length + (hasMore ? 1 : 0) + 1,
                 separatorBuilder: (_, __) => SizedBox(height: spacing),
                 itemBuilder: (context, index) {
                   // "전체 보기" 링크는 항상 마지막에 표시
@@ -266,7 +286,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                     return Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Center(
-                        child: _isLoadingMore
+                        child: _paginationController.isLoadingMore
                             ? const CircularProgressIndicator()
                             : const SizedBox.shrink(),
                       ),
@@ -274,10 +294,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                   }
 
                   final itemData = displayItems[index];
-                  final item = itemData.item;
+                  final useResponsive = MediaQuery.of(context).size.width >= 360;
 
                   if (itemData.isSeller) {
-                    final saleItem = item as SaleHistoryItem;
+                    final saleItem = itemData.item as SaleHistoryItem;
                     return TradeHistoryCard(
                       title: saleItem.title,
                       thumbnailUrl: saleItem.thumbnailUrl,
@@ -286,9 +306,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                       itemId: saleItem.itemId,
                       isSeller: true,
                       isHighlighted: itemData.isHighlighted,
+                      useResponsive: useResponsive,
                     );
                   } else {
-                    final bidItem = item as BidHistoryItem;
+                    final bidItem = itemData.item as BidHistoryItem;
                     return TradeHistoryCard(
                       title: bidItem.title,
                       thumbnailUrl: bidItem.thumbnailUrl,
@@ -297,6 +318,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                       itemId: bidItem.itemId,
                       isSeller: false,
                       isHighlighted: itemData.isHighlighted,
+                      useResponsive: useResponsive,
                     );
                   }
                 },

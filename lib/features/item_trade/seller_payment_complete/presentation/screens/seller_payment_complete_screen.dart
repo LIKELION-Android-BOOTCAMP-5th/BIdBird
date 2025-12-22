@@ -32,7 +32,11 @@ class SellerPaymentCompleteScreen extends StatelessWidget {
                       constraints: BoxConstraints(
                         minHeight: constraints.maxHeight,
                       ),
-                      child: IntrinsicHeight(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveConstants.spacingMedium(context),
+                          horizontal: ResponsiveConstants.screenPadding(context),
+                        ),
                         child: ItemBidResultBody(
                           item: item,
                           title: '결제가 완료되었습니다',

@@ -138,8 +138,6 @@ class ProductInfoCardState extends State<ProductInfoCard>
                       value.trim().isNotEmpty) {
                     clearError(() => _titleError = null);
                   }
-                  // 글자수 표시를 위해 상태 업데이트
-                  setState(() {});
                 },
               ),
               // 글자수 표시
@@ -147,12 +145,17 @@ class ProductInfoCardState extends State<ProductInfoCard>
                 padding: EdgeInsets.only(top: context.spacingSmall),
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: Text(
-                    '${widget.viewModel.titleController.text.length}/${ItemTextLimits.maxTitleLength}',
-                    style: TextStyle(
-                      fontSize: context.fontSizeSmall,
-                      color: TextSecondary,
-                    ),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: widget.viewModel.titleController,
+                    builder: (_, value, __) {
+                      return Text(
+                        '${value.text.length}/${ItemTextLimits.maxTitleLength}',
+                        style: TextStyle(
+                          fontSize: context.fontSizeSmall,
+                          color: TextSecondary,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),

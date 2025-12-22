@@ -168,27 +168,36 @@ class ImageUploadSection extends StatelessWidget {
                         Positioned(
                           left: 0,
                           right: 0,
-                          top: (context.imageSize - 24) / 2,
+                          top: (context.imageSize - context.iconSizeMedium) / 2,
                           child: Center(
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: context.inputPadding * 0.67,
-                                vertical: context.spacingSmall * 0.5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: blueColor,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '대표 이미지',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: context.widthRatio(
-                                    0.028,
-                                    min: 9.0,
-                                    max: 13.0,
+                            child: IntrinsicWidth(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: context.iconSizeMedium,
+                                  minHeight: context.iconSizeMedium,
+                                ),
+                                child: Container(
+                                  height: context.iconSizeMedium,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: context.inputPadding * 0.67,
                                   ),
-                                  fontWeight: FontWeight.w600,
+                                  decoration: BoxDecoration(
+                                    color: blueColor,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '대표 이미지',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: context.widthRatio(
+                                        0.028,
+                                        min: 9.0,
+                                        max: 13.0,
+                                      ),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
