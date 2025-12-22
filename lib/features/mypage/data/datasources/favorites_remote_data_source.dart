@@ -15,28 +15,50 @@ class FavoritesRemoteDataSource {
     }
 
     final List<dynamic> rows = await _client
+        // .from('favorites')
+        // .select('id, item_id, created_at')
+        // .eq('user_id', user.id)
+        // .order('created_at', ascending: false);
         .from('favorites')
-        .select('id, item_id, created_at')
+        .select('''
+          id,
+          item_id,
+          created_at,
+          item:items_detail(
+            item_id,
+            title,
+            thumbnail_image,
+            buy_now_price,
+            auctions:auctions!inner(
+              item_id,
+              current_price,
+              auction_status_code,
+              trade_status_code,
+              round
+            )
+          )
+        ''')
         .eq('user_id', user.id)
+        .eq('item.auctions.round', 1)
         .order('created_at', ascending: false);
 
     return rows.whereType<Map<String, dynamic>>().toList();
   }
 
-  Future<List<Map<String, dynamic>>> fetchItemsDetail(List<String> itemIds) {
-    return _client
-        .from('items_detail')
-        .select('item_id, title, thumbnail_image, buy_now_price')
-        .inFilter('item_id', itemIds);
-  }
+  // Future<List<Map<String, dynamic>>> fetchItemsDetail(List<String> itemIds) {
+  //   return _client
+  //       .from('items_detail')
+  //       .select('item_id, title, thumbnail_image, buy_now_price')
+  //       .inFilter('item_id', itemIds);
+  // }
 
-  Future<List<Map<String, dynamic>>> fetchAuctions(List<String> itemIds) {
-    return _client
-        .from('auctions')
-        .select('item_id, current_price, auction_status_code')
-        .inFilter('item_id', itemIds)
-        .eq('round', 1);
-  }
+  // Future<List<Map<String, dynamic>>> fetchAuctions(List<String> itemIds) {
+  //   return _client
+  //       .from('auctions')
+  //       .select('item_id, current_price, auction_status_code')
+  //       .inFilter('item_id', itemIds)
+  //       .eq('round', 1);
+  // }
 
   Future<void> removeFavorite(String itemId) async {
     final user = _client.auth.currentUser;
