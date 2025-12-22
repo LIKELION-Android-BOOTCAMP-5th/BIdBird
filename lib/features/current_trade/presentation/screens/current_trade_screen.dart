@@ -152,12 +152,17 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   }
 
   Widget _buildContent() {
-    // 에러 상태만 체크
-    return Selector<CurrentTradeViewModel, String?>(
-      selector: (_, vm) => vm.error,
-      builder: (context, error, _) {
+    // 로딩 상태와 에러 상태 체크
+    return Selector<CurrentTradeViewModel, ({bool isLoading, String? error})>(
+      selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error),
+      builder: (context, state, _) {
+        // 로딩 중일 때 빈 배경만 표시
+        if (state.isLoading) {
+          return Container();
+        }
+        
         // 에러가 있을 때
-        if (error != null) {
+        if (state.error != null) {
           return TransparentRefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
             child: SingleChildScrollView(
@@ -169,7 +174,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(error, style: const TextStyle(color: Colors.red)),
+                      Text(state.error!, style: const TextStyle(color: Colors.red)),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () =>
@@ -202,16 +207,27 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
         if (allItems.isEmpty) {
           return TransparentRefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-            child: ListView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: verticalPadding,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '현재 거래내역이 없습니다',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '새로운 상품을 등록하거나 입찰에 참여해보세요!',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
               ),
-              children: [
-                SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-              ],
             ),
           );
         }
