@@ -99,7 +99,7 @@ class ItemAddDatasource {
           'title': entity.title,
           'description': entity.description,
           'startPrice': entity.startPrice,
-          'buyNowPrice': entity.instantPrice > 0 ? entity.instantPrice : null,
+          // 'buyNowPrice': entity.instantPrice > 0 ? entity.instantPrice : null,
           'keywordType': entity.keywordTypeId,
           'durationMinutes': entity.auctionDurationHours * 60,
           'auctionDurationHours': entity.auctionDurationHours,
