@@ -183,7 +183,7 @@ class _ChatScreenState extends State<ChatScreen>
     data,
   ) {
     if (data.chattingRoomList.isEmpty) {
-      return const SizedBox.shrink();
+      return const Center(child: Text('채팅방이 없습니다.'));
     }
 
     // ViewModel 참조 (메서드 호출용)
