@@ -1,3 +1,6 @@
 class LoginEventBus {
-  LoginEventBus();
+  LoginEventType type;
+  LoginEventBus(this.type);
 }
+
+enum LoginEventType { login, logout }
