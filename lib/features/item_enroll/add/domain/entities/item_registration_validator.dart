@@ -87,35 +87,35 @@ class ItemRegistrationValidator {
     return null;
   }
 
-  /// 즉시 입찰가 검증
-  static ItemRegistrationValidationResult? validateInstantPrice(
-    int? instantPrice,
-    int startPrice,
-    bool isRequired,
-  ) {
-    if (isRequired && instantPrice == null) {
-      return ItemRegistrationValidationResult.failure(
-        ItemRegistrationErrorMessages.instantPriceInvalidNumber,
-      );
-    }
+  // /// 즉시 입찰가 검증
+  // static ItemRegistrationValidationResult? validateInstantPrice(
+  //   int? instantPrice,
+  //   int startPrice,
+  //   bool isRequired,
+  // ) {
+  //   if (isRequired && instantPrice == null) {
+  //     return ItemRegistrationValidationResult.failure(
+  //       ItemRegistrationErrorMessages.instantPriceInvalidNumber,
+  //     );
+  //   }
 
-    if (instantPrice != null && instantPrice > 0) {
-      if (instantPrice < ItemPriceLimits.minPrice || instantPrice > ItemPriceLimits.maxPrice) {
-        return ItemRegistrationValidationResult.failure(
-          ItemRegistrationErrorMessages.instantPriceRange(
-            ItemPriceLimits.minPrice,
-            ItemPriceLimits.maxPrice,
-          ),
-        );
-      }
-      if (instantPrice <= startPrice) {
-        return ItemRegistrationValidationResult.failure(
-          ItemRegistrationErrorMessages.instantPriceMustBeHigher,
-        );
-      }
-    }
-    return null;
-  }
+  //   if (instantPrice != null && instantPrice > 0) {
+  //     if (instantPrice < ItemPriceLimits.minPrice || instantPrice > ItemPriceLimits.maxPrice) {
+  //       return ItemRegistrationValidationResult.failure(
+  //         ItemRegistrationErrorMessages.instantPriceRange(
+  //           ItemPriceLimits.minPrice,
+  //           ItemPriceLimits.maxPrice,
+  //         ),
+  //       );
+  //     }
+  //     if (instantPrice <= startPrice) {
+  //       return ItemRegistrationValidationResult.failure(
+  //         ItemRegistrationErrorMessages.instantPriceMustBeHigher,
+  //       );
+  //     }
+  //   }
+  //   return null;
+  // }
 
   /// 이미지 검증
   static ItemRegistrationValidationResult? validateImages(List<dynamic> images) {
@@ -164,14 +164,14 @@ class ItemRegistrationValidator {
     final startPriceResult = validateStartPrice(startPrice);
     if (startPriceResult != null) return startPriceResult.errorMessage;
 
-    if (useInstantPrice) {
-      final instantPriceResult = validateInstantPrice(
-        instantPrice,
-        startPrice ?? 0,
-        true,
-      );
-      if (instantPriceResult != null) return instantPriceResult.errorMessage;
-    }
+    // if (useInstantPrice) {
+    //   final instantPriceResult = validateInstantPrice(
+    //     instantPrice,
+    //     startPrice ?? 0,
+    //     true,
+    //   );
+    //   if (instantPriceResult != null) return instantPriceResult.errorMessage;
+    // }
 
     final imagesResult = validateImages(images);
     if (imagesResult != null) return imagesResult.errorMessage;
@@ -224,10 +224,10 @@ class ItemRegistrationValidator {
       );
     }
 
-    // 즉시 입찰가 검증
-    if (instantPrice > 0 && instantPrice <= startPrice) {
-      throw Exception(ItemRegistrationErrorMessages.instantPriceMustBeHigherForException);
-    }
+    // // 즉시 입찰가 검증
+    // if (instantPrice > 0 && instantPrice <= startPrice) {
+    //   throw Exception(ItemRegistrationErrorMessages.instantPriceMustBeHigherForException);
+    // }
 
     // 카테고리 검증
     if (keywordTypeId <= 0) {

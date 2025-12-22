@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/trade_status_codes.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 
 class ItemDetailSummarySection extends StatelessWidget {
   const ItemDetailSummarySection({
@@ -26,91 +27,123 @@ class ItemDetailSummarySection extends StatelessWidget {
     final bool isAuctionExpired = isAuctionEnded;
 
     // Section Container - padding 24
+    final horizontalPadding = context.screenPadding;
+    final spacingSmall = context.spacingSmall;
+    final spacingMedium = context.spacingMedium;
+    final priceFontSize = context.widthRatio(0.085, min: 26.0, max: 36.0);
+    final labelFontSize = context.fontSizeSmall;
+    final subtitleFontSize = context.fontSizeSmall;
+    final isCompact = context.isSmallScreen(threshold: 360);
+
+    Widget buildContactButton() {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChattingRoomScreen(itemId: item.itemId),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: spacingSmall * 1.5,
+              vertical: spacingSmall * 0.7,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3182F6).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '판매자 연락',
+                  style: TextStyle(
+                    fontSize: labelFontSize,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF3182F6),
+                  ),
+                ),
+                SizedBox(width: spacingSmall * 0.6),
+                Icon(
+                  Icons.message,
+                  size: context.iconSizeSmall,
+                  color: const Color(0xFF3182F6),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final contactButton = (!isMyItem && !isAuctionExpired) ? buildContactButton() : null;
+
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(horizontalPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Label - 현재 입찰가
           Text(
             '현재 입찰가',
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF6B7684), // Secondary Text
+            style: TextStyle(
+              fontSize: labelFontSize,
+              color: const Color(0xFF6B7684),
             ),
           ),
-          const SizedBox(height: 4),
-          // 가격과 판매자 연락 버튼을 Row로 배치 (같은 높이)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Metric Value - 큰 숫자
-              Expanded(
-                child: Text(
+          SizedBox(height: spacingSmall * 0.5),
+          if (isCompact)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   '${formatPrice(item.currentPrice)} 원',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    fontSize: priceFontSize,
+                    fontWeight: FontWeight.w700,
                     height: 1.2,
-                    color: Color(0xFF191F28), // Primary Text
+                    color: const Color(0xFF191F28),
                   ),
                 ),
-              ),
-              // 판매자 연락 버튼 - 텍스트가 들어가는 박스
-              if (!isMyItem && !isAuctionExpired)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChattingRoomScreen(itemId: item.itemId),
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3182F6).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            '판매자 연락',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF3182F6), // Primary Blue
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.message,
-                            size: 16,
-                            color: Color(0xFF3182F6), // Primary Blue
-                          ),
-                        ],
-                      ),
+                if (contactButton != null) ...[
+                  SizedBox(height: spacingSmall),
+                  contactButton,
+                ],
+              ],
+            )
+          else
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    '${formatPrice(item.currentPrice)} 원',
+                    style: TextStyle(
+                      fontSize: priceFontSize,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                      color: const Color(0xFF191F28),
                     ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          // Metric Sub - 한 줄, Tertiary 컬러
-          Text(
-            item.buyNowPrice > 0 ? '즉시 구매가 ${formatPrice(item.buyNowPrice)}원' : '즉시 구매 불가',
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF9CA3AF), // Tertiary
+                if (contactButton != null) contactButton,
+              ],
             ),
-          ),
-          const SizedBox(height: 20),
-          // Divider
+          // SizedBox(height: spacingSmall * 0.6),
+          // Text(
+          //   item.buyNowPrice > 0
+          //       ? '즉시 구매가 ${formatPrice(item.buyNowPrice)}원'
+          //       : '즉시 구매 불가',
+          //   style: TextStyle(
+          //     fontSize: subtitleFontSize,
+          //     color: const Color(0xFF9CA3AF),
+          //   ),
+          // ),
+          SizedBox(height: spacingMedium),
           const Divider(
             height: 1,
             thickness: 1,

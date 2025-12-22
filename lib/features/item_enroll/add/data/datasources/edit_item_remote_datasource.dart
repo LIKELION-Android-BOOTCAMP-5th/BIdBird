@@ -38,7 +38,7 @@ class EditItemRemoteDataSource {
         title: getStringFromRow(row, 'title'),
         description: getStringFromRow(row, 'description'),
         startPrice: getIntFromRow(row, 'start_price'),
-        buyNowPrice: getIntFromRow(row, 'buy_now_price'),
+        // buyNowPrice: getIntFromRow(row, 'buy_now_price'),
         keywordTypeId: getIntFromRow(row, 'keyword_type'),
         auctionDurationHours: getIntFromRow(row, 'auction_duration_hours', 4),
         imageUrls: imageUrls,

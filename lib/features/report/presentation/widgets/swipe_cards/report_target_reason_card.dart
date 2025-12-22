@@ -64,8 +64,8 @@ class ReportTargetReasonCardState extends State<ReportTargetReasonCard>
   void didUpdateWidget(ReportTargetReasonCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 카테고리나 사유가 선택되었을 때만 체크하여 에러 제거
-    if (widget.viewModel.selectedCategory != null && 
-        oldWidget.viewModel.selectedCategory == null && 
+    if (widget.viewModel.selectedCategory != null &&
+        oldWidget.viewModel.selectedCategory == null &&
         _categoryError != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -73,8 +73,8 @@ class ReportTargetReasonCardState extends State<ReportTargetReasonCard>
         }
       });
     }
-    if (widget.viewModel.selectedReportCode != null && 
-        oldWidget.viewModel.selectedReportCode == null && 
+    if (widget.viewModel.selectedReportCode != null &&
+        oldWidget.viewModel.selectedReportCode == null &&
         _reasonError != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -89,6 +89,7 @@ class ReportTargetReasonCardState extends State<ReportTargetReasonCard>
     final spacing = context.spacingMedium;
 
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.symmetric(
         horizontal: context.hPadding,
         vertical: context.vPadding,
@@ -115,4 +116,3 @@ class ReportTargetReasonCardState extends State<ReportTargetReasonCard>
     );
   }
 }
-

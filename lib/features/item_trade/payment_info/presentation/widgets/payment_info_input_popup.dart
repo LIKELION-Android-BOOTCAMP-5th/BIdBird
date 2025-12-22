@@ -19,7 +19,8 @@ class PaymentInfoInputPopup extends StatefulWidget {
     required String accountNumber,
     required String accountHolder,
     required bool isDirectTrade,
-  }) onConfirm;
+  })
+  onConfirm;
   final String? initialBankName;
   final String? initialAccountNumber;
   final String? initialAccountHolder;
@@ -42,13 +43,14 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
   @override
   void initState() {
     super.initState();
-    _hasExistingData = widget.initialBankName != null && 
-                       widget.initialBankName!.isNotEmpty &&
-                       widget.initialAccountNumber != null && 
-                       widget.initialAccountNumber!.isNotEmpty;
-    
+    _hasExistingData =
+        widget.initialBankName != null &&
+        widget.initialBankName!.isNotEmpty &&
+        widget.initialAccountNumber != null &&
+        widget.initialAccountNumber!.isNotEmpty;
+
     _isDirectTrade = widget.isDirectTrade;
-    
+
     _bankNameController = TextEditingController(
       text: widget.initialBankName ?? '',
     );
@@ -58,19 +60,19 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
     _accountHolderController = TextEditingController(
       text: widget.initialAccountHolder ?? '',
     );
-    
+
     _isEditing = !_hasExistingData;
-    
+
     _checkFormValidity();
-    
+
     _bankNameController.addListener(_checkFormValidity);
     _accountNumberController.addListener(_checkFormValidity);
     _accountHolderController.addListener(_checkFormValidity);
   }
-  
+
   void _checkFormValidity() {
     if (!mounted || _isUpdatingDirectTrade) return;
-    
+
     // 직거래 모드일 때는 항상 유효
     if (_isDirectTrade) {
       if (!_isFormValid) {
@@ -80,11 +82,11 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
       }
       return;
     }
-    
+
     final bankNameValid = _bankNameController.text.trim().isNotEmpty;
     final accountNumberValid = _accountNumberController.text.trim().isNotEmpty;
     final accountHolderValid = _accountHolderController.text.trim().isNotEmpty;
-    
+
     final isValid = bankNameValid && accountNumberValid && accountHolderValid;
     if (_isFormValid != isValid) {
       setState(() {
@@ -114,12 +116,11 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: maxHeight,
-        ),
+        constraints: BoxConstraints(maxHeight: maxHeight),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,12 +147,19 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                 if (_isEditing && !_hasExistingData)
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: _isDirectTrade ? blueColor.withOpacity(0.1) : Colors.grey.shade50,
+                      color: _isDirectTrade
+                          ? blueColor.withOpacity(0.1)
+                          : Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: _isDirectTrade ? blueColor : Colors.grey.shade300,
+                        color: _isDirectTrade
+                            ? blueColor
+                            : Colors.grey.shade300,
                       ),
                     ),
                     child: Row(
@@ -160,29 +168,39 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                           value: _isDirectTrade,
                           onChanged: (value) {
                             if (!mounted) return;
-                            
+
                             final newValue = value ?? false;
-                            
-                            _bankNameController.removeListener(_checkFormValidity);
-                            _accountNumberController.removeListener(_checkFormValidity);
-                            _accountHolderController.removeListener(_checkFormValidity);
-                            
+
+                            _bankNameController.removeListener(
+                              _checkFormValidity,
+                            );
+                            _accountNumberController.removeListener(
+                              _checkFormValidity,
+                            );
+                            _accountHolderController.removeListener(
+                              _checkFormValidity,
+                            );
+
                             _isUpdatingDirectTrade = true;
-                            
+
                             if (newValue) {
                               _bankNameController.clear();
                               _accountNumberController.clear();
                               _accountHolderController.clear();
                             }
-                            
+
                             setState(() {
                               _isDirectTrade = newValue;
                             });
-                            
+
                             _bankNameController.addListener(_checkFormValidity);
-                            _accountNumberController.addListener(_checkFormValidity);
-                            _accountHolderController.addListener(_checkFormValidity);
-                            
+                            _accountNumberController.addListener(
+                              _checkFormValidity,
+                            );
+                            _accountHolderController.addListener(
+                              _checkFormValidity,
+                            );
+
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (mounted) {
                                 _isUpdatingDirectTrade = false;
@@ -243,13 +261,17 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: (_isEditing && !_isDirectTrade) ? blueColor : Colors.grey.shade300,
+                          color: (_isEditing && !_isDirectTrade)
+                              ? blueColor
+                              : Colors.grey.shade300,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: (_isEditing && !_isDirectTrade) ? blueColor : Colors.grey.shade300,
+                          color: (_isEditing && !_isDirectTrade)
+                              ? blueColor
+                              : Colors.grey.shade300,
                         ),
                       ),
                       disabledBorder: OutlineInputBorder(
@@ -258,10 +280,15 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: blueColor, width: 2),
+                        borderSide: const BorderSide(
+                          color: blueColor,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
-                      fillColor: (_isEditing && !_isDirectTrade) ? Colors.white : Colors.grey.shade50,
+                      fillColor: (_isEditing && !_isDirectTrade)
+                          ? Colors.white
+                          : Colors.grey.shade50,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -291,13 +318,17 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: (_isEditing && !_isDirectTrade) ? blueColor : Colors.grey.shade300,
+                          color: (_isEditing && !_isDirectTrade)
+                              ? blueColor
+                              : Colors.grey.shade300,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: (_isEditing && !_isDirectTrade) ? blueColor : Colors.grey.shade300,
+                          color: (_isEditing && !_isDirectTrade)
+                              ? blueColor
+                              : Colors.grey.shade300,
                         ),
                       ),
                       disabledBorder: OutlineInputBorder(
@@ -306,10 +337,15 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: blueColor, width: 2),
+                        borderSide: const BorderSide(
+                          color: blueColor,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
-                      fillColor: (_isEditing && !_isDirectTrade) ? Colors.white : Colors.grey.shade50,
+                      fillColor: (_isEditing && !_isDirectTrade)
+                          ? Colors.white
+                          : Colors.grey.shade50,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -338,13 +374,17 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: (_isEditing && !_isDirectTrade) ? blueColor : Colors.grey.shade300,
+                          color: (_isEditing && !_isDirectTrade)
+                              ? blueColor
+                              : Colors.grey.shade300,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: (_isEditing && !_isDirectTrade) ? blueColor : Colors.grey.shade300,
+                          color: (_isEditing && !_isDirectTrade)
+                              ? blueColor
+                              : Colors.grey.shade300,
                         ),
                       ),
                       disabledBorder: OutlineInputBorder(
@@ -353,10 +393,15 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: blueColor, width: 2),
+                        borderSide: const BorderSide(
+                          color: blueColor,
+                          width: 2,
+                        ),
                       ),
                       filled: true,
-                      fillColor: (_isEditing && !_isDirectTrade) ? Colors.white : Colors.grey.shade50,
+                      fillColor: (_isEditing && !_isDirectTrade)
+                          ? Colors.white
+                          : Colors.grey.shade50,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -391,9 +436,12 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                             if (_hasExistingData) {
                               setState(() {
                                 _isEditing = false;
-                                _bankNameController.text = widget.initialBankName ?? '';
-                                _accountNumberController.text = widget.initialAccountNumber ?? '';
-                                _accountHolderController.text = widget.initialAccountHolder ?? '';
+                                _bankNameController.text =
+                                    widget.initialBankName ?? '';
+                                _accountNumberController.text =
+                                    widget.initialAccountNumber ?? '';
+                                _accountHolderController.text =
+                                    widget.initialAccountHolder ?? '';
                               });
                             } else {
                               Navigator.pop(context);
@@ -413,45 +461,56 @@ class _PaymentInfoInputPopupState extends State<PaymentInfoInputPopup> {
                               _isFormValid ? blueColor : Colors.grey.shade300,
                             ),
                           ),
-                          onPressed: _isFormValid ? () async {
-                            if (!context.mounted) return;
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (dialogContext) => AskPopup(
-                                content: _isDirectTrade 
-                                    ? '직거래로 진행하시겠습니까?\n구매자에게 직거래 안내가 전송됩니다.'
-                                    : '계좌 정보를 구매자에게 전송하시겠습니까?',
-                                yesText: '확인',
-                                noText: '취소',
-                                yesLogic: () async {
-                                  if (dialogContext.mounted) {
-                                    Navigator.pop(dialogContext);
-                                  }
-                                  
+                          onPressed: _isFormValid
+                              ? () async {
                                   if (!context.mounted) return;
-                                  
-                                  try {
-                                    await widget.onConfirm(
-                                      bankName: _isDirectTrade ? '직거래' : _bankNameController.text.trim(),
-                                      accountNumber: _isDirectTrade ? '' : _accountNumberController.text.trim(),
-                                      accountHolder: _isDirectTrade ? '' : _accountHolderController.text.trim(),
-                                      isDirectTrade: _isDirectTrade,
-                                    );
-                                    
-                                    if (context.mounted) {
-                                      Navigator.pop(context);
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      Navigator.pop(context);
-                                    }
-                                    rethrow;
-                                  }
-                                },
-                              ),
-                            );
-                          } : null,
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (dialogContext) => AskPopup(
+                                      content: _isDirectTrade
+                                          ? '직거래로 진행하시겠습니까?\n구매자에게 직거래 안내가 전송됩니다.'
+                                          : '계좌 정보를 구매자에게 전송하시겠습니까?',
+                                      yesText: '확인',
+                                      noText: '취소',
+                                      yesLogic: () async {
+                                        if (dialogContext.mounted) {
+                                          Navigator.pop(dialogContext);
+                                        }
+
+                                        if (!context.mounted) return;
+
+                                        try {
+                                          await widget.onConfirm(
+                                            bankName: _isDirectTrade
+                                                ? '직거래'
+                                                : _bankNameController.text
+                                                      .trim(),
+                                            accountNumber: _isDirectTrade
+                                                ? ''
+                                                : _accountNumberController.text
+                                                      .trim(),
+                                            accountHolder: _isDirectTrade
+                                                ? ''
+                                                : _accountHolderController.text
+                                                      .trim(),
+                                            isDirectTrade: _isDirectTrade,
+                                          );
+
+                                          if (context.mounted) {
+                                            Navigator.pop(context);
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            Navigator.pop(context);
+                                          }
+                                          rethrow;
+                                        }
+                                      },
+                                    ),
+                                  );
+                                }
+                              : null,
                           child: Text(_isDirectTrade ? '직거래 선택' : '전송하기'),
                         ),
                       ),

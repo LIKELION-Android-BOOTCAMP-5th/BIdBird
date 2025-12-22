@@ -5,16 +5,14 @@ import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_viewmodel.dart';
 import 'package:bidbird/features/report/presentation/screens/report_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 /// 채팅방 헤더 위젯
 /// AppBar의 title과 actions를 포함
 class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
   final ChattingRoomViewmodel viewModel;
 
-  const ChatRoomHeader({
-    super.key,
-    required this.viewModel,
-  });
+  const ChatRoomHeader({super.key, required this.viewModel});
 
   @override
   Widget build(BuildContext context) {
@@ -26,33 +24,39 @@ class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
       title: Builder(
         builder: (context) {
           // 현재 사용자가 판매자인지 확인
-          final currentUserId = SupabaseManager
-              .shared
-              .supabase
-              .auth
-              .currentUser
-              ?.id;
-          final isSeller = currentUserId != null &&
+          final currentUserId =
+              SupabaseManager.shared.supabase.auth.currentUser?.id;
+          final isSeller =
+              currentUserId != null &&
               viewModel.itemInfo != null &&
               viewModel.itemInfo!.sellerId == currentUserId;
 
           // 낙찰자 여부 확인
           final isTopBidder = viewModel.isTopBidder;
-          final isOpponentTopBidder = isSeller && !isTopBidder && viewModel.hasTopBidder;
+          final isOpponentTopBidder =
+              isSeller && !isTopBidder && viewModel.hasTopBidder;
 
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
-                child: Text(
-                  viewModel.roomInfo != null
-                      ? viewModel.roomInfo?.opponent.nickName ?? "사용자"
-                      : "",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: context.fontSizeLarge,
-                    fontWeight: FontWeight.w600,
+                child: TextButton(
+                  onPressed: () {
+                    final userId = viewModel.roomInfo?.opponent.userId;
+                    if (userId != null) {
+                      context.push("/user/$userId");
+                    }
+                  },
+                  child: Text(
+                    viewModel.roomInfo != null
+                        ? viewModel.roomInfo?.opponent.nickName ?? "사용자"
+                        : "",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: context.fontSizeLarge,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -80,12 +84,8 @@ class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
                 Navigator.of(context).pop();
                 if (viewModel.roomInfo != null) {
                   // 상대방 ID 찾기: itemInfo의 sellerId와 현재 사용자 비교
-                  final currentUserId = SupabaseManager
-                      .shared
-                      .supabase
-                      .auth
-                      .currentUser
-                      ?.id;
+                  final currentUserId =
+                      SupabaseManager.shared.supabase.auth.currentUser?.id;
                   String? targetUserId;
 
                   if (currentUserId != null && viewModel.itemInfo != null) {
@@ -138,4 +138,3 @@ class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
-

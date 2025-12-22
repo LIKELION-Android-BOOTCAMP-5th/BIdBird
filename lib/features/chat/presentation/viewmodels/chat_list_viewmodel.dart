@@ -1,14 +1,19 @@
 import 'dart:async';
 
+import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
 import 'package:bidbird/features/chat/data/managers/chat_list_cache_manager.dart';
 import 'package:bidbird/features/chat/data/managers/chat_list_realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_chatting_room_list_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_new_chatting_room_usecase.dart';
+import 'package:bidbird/main.dart';
 import 'package:flutter/material.dart';
 
 class ChatListViewmodel extends ChangeNotifier {
+  StreamSubscription? _loginSubscription;
+
   final FetchChattingRoomListUseCase _fetchChattingRoomListUseCase;
   final FetchNewChattingRoomUseCase _fetchNewChattingRoomUseCase;
 
@@ -21,6 +26,8 @@ class ChatListViewmodel extends ChangeNotifier {
     return chattingRoomList.fold(0, (sum, room) => sum + (room.count ?? 0));
   }
 
+  DateTime? _lastPausedAt;
+  bool _initializedAfterLogin = false;
   bool isLoading = false;
   bool isLoadingMore = false;
   bool hasMore = true;
@@ -45,15 +52,70 @@ class ChatListViewmodel extends ChangeNotifier {
     _cacheManager = ChatListCacheManager();
 
     _instance = this;
-
+    print("============== 채팅 리스트 뷰모델 생성 =================");
     // 초기 로드는 화면 크기에 맞게 전달받은 개수만 로드
     _pageSize = initialLoadCount ?? 20;
     fetchChattingRoomList(visibleItemCount: _pageSize);
     _setupRealtimeSubscription();
+    _loginSubscription = eventBus.on<LoginEventBus>().listen((event) async {
+      print("=========== 채팅 리스트 뷰모델 로그인 상태 이벤트버스 받음 ============");
+      switch (event.type) {
+        case LoginEventType.login:
+          if (_initializedAfterLogin) return; // 👈 중복 방지
+
+          _initializedAfterLogin = true;
+          final wasDisconnected = !_realtimeSubscriptionManager.isConnected;
+
+          if (wasDisconnected) {
+            debugPrint('🔄 Realtime was disconnected → full sync');
+            await fetchChattingRoomList(visibleItemCount: _pageSize);
+            _setupRealtimeSubscription();
+            return;
+          } else {
+            debugPrint('✅ Realtime alive → initial fetch only');
+            await fetchChattingRoomList(visibleItemCount: _pageSize);
+          }
+          break;
+        case LoginEventType.logout:
+          _initializedAfterLogin = false;
+          chattingRoomList.clear();
+          _currentPage = 1;
+          hasMore = true;
+          _realtimeSubscriptionManager.dispose();
+          notifyListeners();
+          break;
+      }
+    });
   }
 
   void setPageSize(int initialLoadCount) {
     _pageSize = initialLoadCount;
+  }
+
+  void onAppPaused() {
+    _lastPausedAt = DateTime.now();
+  }
+
+  Future<void> onAppResumed() async {
+    final now = DateTime.now();
+    final wasDisconnected = !_realtimeSubscriptionManager.isConnected;
+
+    if (wasDisconnected) {
+      debugPrint('🔄 Realtime was disconnected → full sync');
+      await fetchChattingRoomList(visibleItemCount: _pageSize);
+      _setupRealtimeSubscription();
+      return;
+    }
+
+    // ⏱️ 오래 백그라운드였으면 보정
+    if (_lastPausedAt != null &&
+        now.difference(_lastPausedAt!) > const Duration(minutes: 2)) {
+      debugPrint('⏱️ Long background → full sync');
+      await fetchChattingRoomList(visibleItemCount: _pageSize);
+      return;
+    }
+
+    debugPrint('✅ Realtime alive → skip fetch');
   }
 
   /// 새 채팅방 조회
@@ -70,6 +132,11 @@ class ChatListViewmodel extends ChangeNotifier {
     bool forceRefresh = false,
     int? visibleItemCount,
   }) async {
+    final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (userId == null) {
+      debugPrint('⛔ fetchChattingRoomList skipped: no user');
+      return;
+    }
     if (forceRefresh) {
       chattingRoomList.clear();
       _currentPage = 1;

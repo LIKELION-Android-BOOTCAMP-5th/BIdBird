@@ -25,12 +25,12 @@ class ItemRegistrationErrorMessages {
       '시작 가격은 $minPrice원 이상이어야 합니다.';
 
   static const String instantPriceInvalidNumber = '즉시 입찰가를 숫자로 입력해주세요.';
-  static String instantPriceRange(int minPrice, int maxPrice) => 
-      '즉시 입찰가는 ${formatPrice(minPrice)}원 이상 ${formatPrice(maxPrice)}원 이하로 입력해주세요.';
-  static String instantPriceMustBeHigher = '즉시 입찰가는 시작가보다 높아야 합니다.';
-  static String instantPriceMustBeHigherForException = '즉시 구매가는 시작 가격보다 커야 합니다.';
-  static String buyNowPriceRange(int minPrice, int maxPrice) => 
-      '즉시 구매가는 ${formatPrice(minPrice)}원 이상 ${formatPrice(maxPrice)}원 이하만 가능합니다.';
+  // static String instantPriceRange(int minPrice, int maxPrice) => 
+  //     '즉시 입찰가는 ${formatPrice(minPrice)}원 이상 ${formatPrice(maxPrice)}원 이하로 입력해주세요.';
+  // static String instantPriceMustBeHigher = '즉시 입찰가는 시작가보다 높아야 합니다.';
+  // static String instantPriceMustBeHigherForException = '즉시 구매가는 시작 가격보다 커야 합니다.';
+  // static String buyNowPriceRange(int minPrice, int maxPrice) => 
+  //     '즉시 구매가는 ${formatPrice(minPrice)}원 이상 ${formatPrice(maxPrice)}원 이하만 가능합니다.';
 
   /// 이미지 관련
   static const String imageMinRequired = '상품 이미지를 최소 1장 이상 선택해주세요.';

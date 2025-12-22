@@ -243,18 +243,23 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // statusCode는 Selector에서 받은 값 또는 현재 값 사용
     final int statusCode = _statusCode ?? currentStatusCode ?? currentItem.statusCode ?? 0;
 
-    const disabledStatusesForBuyNow = {
-      AuctionStatusCode.ready,
-      AuctionStatusCode.instantBuyPaymentPending,
-      AuctionStatusCode.bidWon,
-      AuctionStatusCode.instantBuyCompleted,
-      AuctionStatusCode.failed,
-    };
-    final bool showBuyNow =
-        currentItem.buyNowPrice > 0 &&
-        !disabledStatusesForBuyNow.contains(statusCode) &&
-        !isTimeOver &&
-        !isTradePaid;
+    // const disabledStatusesForBuyNow = {
+    //   AuctionStatusCode.ready,
+    //   AuctionStatusCode.instantBuyPaymentPending,
+    //   AuctionStatusCode.bidWon,
+    //   AuctionStatusCode.instantBuyCompleted,
+    //   AuctionStatusCode.failed,
+    // };
+    // final bool showBuyNow =
+    //     currentItem.buyNowPrice > 0 &&
+    //     !disabledStatusesForBuyNow.contains(statusCode) &&
+    //     !isTimeOver &&
+    //     !isTradePaid;
+    // final bool showBuyNow =
+    //     currentItem.buyNowPrice > 0 &&
+    //     !disabledStatusesForBuyNow.contains(statusCode) &&
+    //     !isTimeOver &&
+    //     !isTradePaid;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -303,10 +308,10 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             _buildFavoriteButton(itemDetailViewModel),
             const SizedBox(width: 12),
             Expanded(child: _buildBidButton(isTopBidder, isTimeOver)),
-            if (showBuyNow) ...[
-              const SizedBox(width: 8),
-              Expanded(child: _buildBuyNowButton()),
-            ],
+            // if (showBuyNow) ...[
+            //   const SizedBox(width: 8),
+            //   Expanded(child: _buildBuyNowButton()),
+            // ],
           ] else ...[
             // 판매자 입장: 낙찰(321) 상태이거나 경매 종료 후 아직 결제 전이면 결제 정보 입력 버튼 표시
             if ((statusCode == 321 || isTimeOver) && !isTradePaid) ...[
@@ -1037,7 +1042,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                   itemId: widget.item.itemId,
                   currentPrice: widget.item.currentPrice,
                   bidUnit: widget.item.bidPrice,
-                  buyNowPrice: widget.item.buyNowPrice,
+                  // buyNowPrice: widget.item.buyNowPrice,
                 ),
               );
             },

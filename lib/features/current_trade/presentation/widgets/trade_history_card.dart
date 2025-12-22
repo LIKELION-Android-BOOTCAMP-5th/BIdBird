@@ -4,7 +4,6 @@ import 'package:bidbird/core/utils/item/item_trade_status_utils.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/ui_set/shadow_style.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
@@ -43,252 +42,178 @@ class TradeHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // 역할 색상 결정
     final roleColor = isSeller ? roleSalePrimary : rolePurchasePrimary;
+    final cardPaddingValue =
+        useResponsive ? ResponsiveConstants.screenPadding(context) : 14.0;
+    final thumbnailSize =
+        useResponsive ? context.widthRatio(0.16, min: 64.0, max: 80.0) : 64.0;
+    final mediaSpacing =
+        useResponsive ? ResponsiveConstants.spacingSmall(context) : 12.0;
+    final tagFontSize = useResponsive
+        ? ResponsiveConstants.fontSizeSmall(context)
+        : 11.0;
+    final tagSpacing =
+        useResponsive ? ResponsiveConstants.spacingSmall(context) * 0.5 : 6.0;
+    final rowSpacing =
+        useResponsive ? ResponsiveConstants.spacingSmall(context) : 8.0;
+    final badgePadding =
+        useResponsive ? ResponsiveConstants.spacingSmall(context) * 0.8 : 10.0;
+    final badgeFontSize = useResponsive
+        ? ResponsiveConstants.fontSizeSmall(context)
+        : 12.0;
+    final priceFontSize = useResponsive
+        ? ResponsiveConstants.fontSizeMedium(context)
+        : 13.0;
+    final titleFontSize = useResponsive
+        ? ResponsiveConstants.fontSizeMedium(context)
+        : 15.0;
 
+    // 단순한 고정 값 사용으로 레이아웃 오류 방지
+    const adaptivePadding = 10.8;
+    const adaptiveSpacing = 12.0;
+    const adaptiveThumbnail = 60.0;
+    
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: defaultBorder,
-        border: Border.all(
-          color: BorderColor.withValues(alpha: 0.25),
-          width: isHighlighted ? 1.5 : 1,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: shadowHigh,
-            blurRadius: 10,
-            offset: Offset(0, 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: defaultBorder,
+            border: Border.all(
+              color: BorderColor.withValues(alpha: 0.25),
+              width: isHighlighted ? 1.5 : 1,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: shadowHigh,
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+              BoxShadow(
+                color: shadowLow,
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
           ),
-          BoxShadow(
-            color: shadowLow,
-            blurRadius: 4,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 좌측 역할 인디케이터 스트립
-            Container(
-              width: 4,
-              decoration: BoxDecoration(
-                color: roleColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(defaultRadius),
-                  bottomLeft: Radius.circular(defaultRadius),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 4,
+                constraints: const BoxConstraints(minHeight: 80),
+                decoration: BoxDecoration(
+                  color: roleColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(defaultRadius),
+                    bottomLeft: Radius.circular(defaultRadius),
+                  ),
                 ),
               ),
-            ),
-            // 메인 컨텐츠
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      if (itemId.isEmpty) return;
-
-                      // 경매 대기 상태이고 판매자인 경우 매물 등록 최종 화면으로 이동
-                      if (isSeller && status == '경매 대기') {
-                        await _navigateToRegistrationDetail(context);
-                      } else {
-                        context.push('/item/$itemId');
-                      }
-                    },
-                    child: Builder(
-                      builder: (context) {
-                        final cardPadding = useResponsive
-                            ? EdgeInsets.all(ResponsiveConstants.screenPadding(context))
-                            : const EdgeInsets.all(14);
-                        return Padding(
-                          padding: cardPadding,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(adaptivePadding),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                      GestureDetector(
+                        onTap: () async {
+                          if (itemId.isEmpty) return;
+                          if (isSeller && status == '경매 대기') {
+                            await _navigateToRegistrationDetail(context);
+                          } else {
+                            context.push('/item/$itemId');
+                          }
+                        },
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FixedRatioThumbnail(
+                              imageUrl: thumbnailUrl,
+                              width: adaptiveThumbnail,
+                              height: adaptiveThumbnail,
+                              aspectRatio: 1.0,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            SizedBox(width: adaptiveSpacing),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  // 썸네일
-                                  Builder(
-                                    builder: (context) {
-                                      final thumbnailSize = useResponsive
-                                          ? context.widthRatio(0.16, min: 64.0, max: 80.0)
-                                          : 64.0;
-                                      return FixedRatioThumbnail(
-                                        imageUrl: thumbnailUrl,
-                                        width: thumbnailSize,
-                                        height: thumbnailSize,
-                                        aspectRatio: 1.0,
-                                        borderRadius: BorderRadius.circular(8),
-                                      );
-                                    },
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      RoleBadge(
+                                        isSeller: isSeller,
+                                        fontSize: tagFontSize,
+                                      ),
+                                      SizedBox(width: tagSpacing),
+                                      Expanded(
+                                        child: Text(
+                                          title,
+                                          style: TextStyle(
+                                            fontSize: titleFontSize,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  Builder(
-                                    builder: (context) {
-                                      final spacing = useResponsive
-                                          ? ResponsiveConstants.spacingSmall(
-                                              context)
-                                          : 12.0;
-                                      return SizedBox(width: spacing);
-                                    },
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // 역할 태그와 제목
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            // 역할 태그
-                                            Builder(
-                                              builder: (context) {
-                                                final tagFontSize = useResponsive
-                                                    ? ResponsiveConstants
-                                                        .fontSizeSmall(context)
-                                                    : 11.0;
-                                                return RoleBadge(
-                                                  isSeller: isSeller,
-                                                  fontSize: tagFontSize,
-                                                );
-                                              },
-                                            ),
-                                            Builder(
-                                              builder: (context) {
-                                                final spacing = useResponsive
-                                                    ? ResponsiveConstants
-                                                            .spacingSmall(
-                                                        context) *
-                                                        0.5
-                                                    : 6.0;
-                                                return SizedBox(width: spacing);
-                                              },
-                                            ),
-                                            Expanded(
-                                              child: Builder(
-                                                builder: (context) {
-                                                  final titleFontSize =
-                                                      useResponsive
-                                                          ? ResponsiveConstants
-                                                              .fontSizeMedium(
-                                                                  context)
-                                                          : 15.0;
-                                                  return Text(
-                                                    title,
-                                                    style: TextStyle(
-                                                      fontSize: titleFontSize,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                          ],
+                                  SizedBox(height: rowSpacing),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: badgePadding,
+                                          vertical: badgePadding * 0.4,
                                         ),
-                                        Builder(
-                                          builder: (context) {
-                                            final spacing = useResponsive
-                                                ? ResponsiveConstants
-                                                    .spacingSmall(context)
-                                                : 8.0;
-                                            return SizedBox(height: spacing);
-                                          },
+                                        decoration: BoxDecoration(
+                                          color: getTradeStatusColor(status)
+                                              .withValues(alpha: 0.1),
+                                          borderRadius: defaultBorder,
                                         ),
-                                        // 상태 배지와 가격
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.center,
-                                          children: [
-                                            Builder(
-                                              builder: (context) {
-                                                final badgePadding =
-                                                    useResponsive
-                                                        ? ResponsiveConstants
-                                                                .spacingSmall(
-                                                            context) *
-                                                            0.8
-                                                        : 10.0;
-                                                final badgeFontSize =
-                                                    useResponsive
-                                                        ? ResponsiveConstants
-                                                            .fontSizeSmall(
-                                                                context)
-                                                        : 12.0;
-                                                return Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: badgePadding,
-                                                    vertical: badgePadding * 0.4,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: getTradeStatusColor(
-                                                            status)
-                                                        .withValues(alpha: 0.1),
-                                                    borderRadius:
-                                                        defaultBorder,
-                                                  ),
-                                                  child: Text(
-                                                    status,
-                                                    style: TextStyle(
-                                                      color: getTradeStatusColor(
-                                                          status),
-                                                      fontSize: badgeFontSize,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                            Builder(
-                                              builder: (context) {
-                                                final priceFontSize =
-                                                    useResponsive
-                                                        ? ResponsiveConstants
-                                                            .fontSizeMedium(
-                                                                context)
-                                                        : 13.0;
-                                                return Text(
-                                                  _formatMoney(price),
-                                                  style: TextStyle(
-                                                    fontSize: priceFontSize,
-                                                    color: textColor,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ],
+                                        child: Text(
+                                          status,
+                                          style: TextStyle(
+                                            color: getTradeStatusColor(status),
+                                            fontSize: badgeFontSize,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                      Text(
+                                        _formatMoney(price),
+                                        style: TextStyle(
+                                          fontSize: priceFontSize,
+                                          color: textColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        );
-                      },
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (onActionButtonPressed != null)
+                        Padding(
+                          padding: EdgeInsets.only(top: adaptiveSpacing),
+                          child: onActionButtonPressed!() ?? const SizedBox.shrink(),
+                        ),
+                      ],
                     ),
                   ),
-                  // 하단 액션 버튼 (있는 경우)
-                  if (onActionButtonPressed != null)
-                    onActionButtonPressed!() ?? const SizedBox.shrink(),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
+            ],
+          ),
+        );
   }
 
   Future<void> _navigateToRegistrationDetail(BuildContext context) async {
@@ -298,9 +223,9 @@ class TradeHistoryCard extends StatelessWidget {
       final result = await supabase
           .from('items_detail')
           .select(
-              'start_price, auction_duration_hours, thumbnail_image, buy_now_price, description')
+              'start_price, auction_duration_hours, thumbnail_image, description')
           .eq('item_id', itemId)
-          .maybeSingle();
+          .single();
 
       if (result == null) {
         if (!context.mounted) return;
@@ -314,7 +239,7 @@ class TradeHistoryCard extends StatelessWidget {
       final auctionDurationHours =
           getIntFromRow(result, 'auction_duration_hours', 24);
       final thumbnailUrl = getNullableStringFromRow(result, 'thumbnail_image');
-      final buyNowPrice = getIntFromRow(result, 'buy_now_price');
+      final buyNowPrice = getIntFromRow(result, 'buy_now_price', 0);
       final description = getStringFromRow(result, 'description');
 
       // ItemRegistrationData 생성

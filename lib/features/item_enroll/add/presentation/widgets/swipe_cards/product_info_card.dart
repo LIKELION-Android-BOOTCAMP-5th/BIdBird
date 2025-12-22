@@ -2,7 +2,6 @@ import 'package:bidbird/core/mixins/form_validation_mixin.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
 import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
 import 'package:bidbird/core/widgets/item/components/fields/form_label.dart';
 import 'package:bidbird/core/widgets/item/components/sections/square_image_upload_section.dart';
@@ -27,10 +26,11 @@ class ProductInfoCard extends StatefulWidget {
   State<ProductInfoCard> createState() => ProductInfoCardState();
 }
 
-class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMixin {
-  static const String _imageLimitText = 
+class ProductInfoCardState extends State<ProductInfoCard>
+    with FormValidationMixin {
+  static const String _imageLimitText =
       '최소 ${ItemImageLimits.minImageCount}장 최대 ${ItemImageLimits.maxImageCount}장';
-  
+
   String? _imageError;
   String? _titleError;
   bool _shouldShowErrors = false;
@@ -63,7 +63,8 @@ class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMix
   void didUpdateWidget(ProductInfoCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 이미지가 추가되었을 때만 체크하여 에러 제거
-    if (widget.viewModel.selectedImages.length > oldWidget.viewModel.selectedImages.length) {
+    if (widget.viewModel.selectedImages.length >
+        oldWidget.viewModel.selectedImages.length) {
       if (shouldShowErrors && _imageError != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -79,6 +80,7 @@ class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMix
     final spacing = context.spacingMedium;
 
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.symmetric(
         horizontal: context.hPadding,
         vertical: context.vPadding,
@@ -123,17 +125,19 @@ class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMix
               TextField(
                 controller: widget.viewModel.titleController,
                 maxLength: ItemTextLimits.maxTitleLength,
-                decoration: widget.inputDecoration('상품 제목을 입력하세요').copyWith(
-                  errorText: shouldShowErrors ? _titleError : null,
-                  counterText: '', // 기본 카운터 숨기기
-                ),
+                decoration: widget
+                    .inputDecoration('상품 제목을 입력하세요')
+                    .copyWith(
+                      errorText: shouldShowErrors ? _titleError : null,
+                      counterText: '', // 기본 카운터 숨기기
+                    ),
                 onChanged: (value) {
                   // 입력 시 에러가 있으면 제거
-                  if (shouldShowErrors && _titleError != null && value.trim().isNotEmpty) {
+                  if (shouldShowErrors &&
+                      _titleError != null &&
+                      value.trim().isNotEmpty) {
                     clearError(() => _titleError = null);
                   }
-                  // 글자수 표시를 위해 상태 업데이트
-                  setState(() {});
                 },
               ),
               // 글자수 표시
@@ -141,12 +145,17 @@ class ProductInfoCardState extends State<ProductInfoCard> with FormValidationMix
                 padding: EdgeInsets.only(top: context.spacingSmall),
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: Text(
-                    '${widget.viewModel.titleController.text.length}/${ItemTextLimits.maxTitleLength}',
-                    style: TextStyle(
-                      fontSize: context.fontSizeSmall,
-                      color: TextSecondary,
-                    ),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: widget.viewModel.titleController,
+                    builder: (_, value, __) {
+                      return Text(
+                        '${value.text.length}/${ItemTextLimits.maxTitleLength}',
+                        style: TextStyle(
+                          fontSize: context.fontSizeSmall,
+                          color: TextSecondary,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),

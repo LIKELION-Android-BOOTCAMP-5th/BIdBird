@@ -20,11 +20,39 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with RouteAware {
+class _ChatScreenState extends State<ChatScreen>
+    with RouteAware, WidgetsBindingObserver {
   late ChatListViewmodel? _viewModel;
   bool _isViewModelInitialized = false;
   final ScrollController _scrollController = ScrollController();
   bool _isListenerAttached = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (_viewModel == null) return;
+
+    if (state == AppLifecycleState.resumed) {
+      debugPrint("📱 ChatScreen resumed");
+
+      // ✅ 포그라운드 복귀 시
+      _viewModel!.onAppResumed();
+    }
+
+    if (state == AppLifecycleState.paused) {
+      debugPrint("📱 ChatScreen paused");
+
+      // ✅ 백그라운드 진입 시
+      _viewModel!.onAppPaused();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -60,6 +88,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // 👈 추가
     routeObserver.unsubscribe(this);
     if (_isListenerAttached) {
       _scrollController.removeListener(_scrollListener);
@@ -154,7 +183,7 @@ class _ChatScreenState extends State<ChatScreen> with RouteAware {
     data,
   ) {
     if (data.chattingRoomList.isEmpty) {
-      return const SizedBox.shrink();
+      return const Center(child: Text('채팅방이 없습니다.'));
     }
 
     // ViewModel 참조 (메서드 호출용)

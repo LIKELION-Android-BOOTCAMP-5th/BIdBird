@@ -211,18 +211,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       });
     }
 
-    const disabledStatusesForBuyNow = {
-      AuctionStatusCode.ready,
-      AuctionStatusCode.instantBuyPaymentPending,
-      AuctionStatusCode.bidWon,
-      AuctionStatusCode.instantBuyCompleted,
-      AuctionStatusCode.failed,
-    };
-    final bool showBuyNow =
-        widget.item.buyNowPrice > 0 &&
-        !disabledStatusesForBuyNow.contains(_statusCode) &&
-        !isTimeOver &&
-        !isTradePaid;
+    // const disabledStatusesForBuyNow = {
+    //   AuctionStatusCode.ready,
+    //   AuctionStatusCode.instantBuyPaymentPending,
+    //   AuctionStatusCode.bidWon,
+    //   AuctionStatusCode.instantBuyCompleted,
+    //   AuctionStatusCode.failed,
+    // };
+    // final bool showBuyNow =
+    //     widget.item.buyNowPrice > 0 &&
+    //     !disabledStatusesForBuyNow.contains(_statusCode) &&
+    //     !isTimeOver &&
+    //     !isTradePaid;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -271,10 +271,10 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             _buildFavoriteButton(itemDetailViewModel),
             const SizedBox(width: 12),
             Expanded(child: _buildBidButton(isTopBidder)),
-            if (showBuyNow) ...[
-              const SizedBox(width: 8),
-              Expanded(child: _buildBuyNowButton()),
-            ],
+            // if (showBuyNow) ...[
+            //   const SizedBox(width: 8),
+            //   Expanded(child: _buildBuyNowButton()),
+            // ],
           ] else ...[
             // 판매자 입장: trade_status_code가 520이면 구매자 연락하기, 배송 정보 입력하기 버튼 표시
             if (isTradePaid) ...[
@@ -609,8 +609,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 경매 낙찰(321) 상태에서, 내가 낙찰자이고 아직 결제가 완료되지 않은 경우에만 결제 버튼 노출
     // 현재 화면의 ViewModel 에서 isTopBidder 가 true 인 상태를 낙찰자로 간주
     if (statusCode == 321 && isTopBidder && !isTradePaid) {
+      /*
       final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-
       return ElevatedButton(
         onPressed: () async {
           final authVM = context.read<AuthViewModel>();
@@ -635,7 +635,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           if (!mounted) return;
 
           if (result == true) {
-            // 결제 성공 시 결제 완료 화면으로 이동
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -663,24 +662,20 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           backgroundColor: blueColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.7),
+            ),
           ),
-        ),
-        child: const Text(
-          '결제하러 가기',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+          child: const Text(
+            '결제하러 가기',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
           ),
-        ),
-      );
-    }
-
-    // 즉시 구매 진행 중(1006)인 경우
-    // - 즉시 구매를 건 사용자(현재 최고 입찰자)는 '결제하러 가기' 버튼 노출
-    // - 그 외 사용자는 안내 문구만 노출
-    if (isBuyNowInProgress && !isBuyNowCompleted) {
+        );
+        */
       if (isTopBidder) {
+        /*
         return ElevatedButton(
           onPressed: () async {
             const buyerTel = '01012345678';
@@ -704,7 +699,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             if (!mounted) return;
 
             if (result == true) {
-              // 즉시 구매 결제 성공 시에도 결제 완료 화면으로 이동
               final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
 
               Navigator.push(
@@ -745,6 +739,13 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             ),
           ),
         );
+            );
+            ...
+          },
+          ...
+        );
+        */
+        return const SizedBox.shrink();
       }
 
       // 다른 사용자는 결제 대기 안내 문구만 표시
@@ -814,7 +815,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                   itemId: widget.item.itemId,
                   currentPrice: widget.item.currentPrice,
                   bidUnit: widget.item.bidPrice,
-                  buyNowPrice: widget.item.buyNowPrice,
+                  // buyNowPrice: widget.item.buyNowPrice,
                 ),
               );
             },
@@ -889,45 +890,45 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     );
   }
 
-  Widget _buildBuyNowButton() {
-    return ElevatedButton(
-      onPressed: () async {
-        final passed = await _ensureIdentityVerified();
-        if (!passed) return;
-        if (!mounted) return;
-
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(defaultRadius),
-            ),
-          ),
-          builder: (context) {
-            return ChangeNotifierProvider<BuyNowInputViewModel>(
-              create: (_) => BuyNowInputViewModel(),
-              child: BuyNowInputBottomSheet(
-                itemId: widget.item.itemId,
-                buyNowPrice: widget.item.buyNowPrice,
-              ),
-            );
-          },
-        );
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: blueColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.7)),
-      ),
-      child: const Text(
-        '즉시 구매하기',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
+  // Widget _buildBuyNowButton() {
+  //   return ElevatedButton(
+  //     onPressed: () async {
+  //       final passed = await _ensureIdentityVerified();
+  //       if (!passed) return;
+  //       if (!mounted) return;
+  //
+  //       showModalBottomSheet(
+  //         context: context,
+  //         isScrollControlled: true,
+  //         backgroundColor: Colors.white,
+  //         shape: const RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.vertical(
+  //             top: Radius.circular(defaultRadius),
+  //           ),
+  //         ),
+  //         builder: (context) {
+  //           return ChangeNotifierProvider<BuyNowInputViewModel>(
+  //             create: (_) => BuyNowInputViewModel(),
+  //             child: BuyNowInputBottomSheet(
+  //               itemId: widget.item.itemId,
+  //               buyNowPrice: widget.item.buyNowPrice,
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //     style: ElevatedButton.styleFrom(
+  //       backgroundColor: blueColor,
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.7)),
+  //     ),
+  //     child: const Text(
+  //       '즉시 구매하기',
+  //       style: TextStyle(
+  //         fontSize: 13,
+  //         fontWeight: FontWeight.w600,
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //   );
+  // }
 }

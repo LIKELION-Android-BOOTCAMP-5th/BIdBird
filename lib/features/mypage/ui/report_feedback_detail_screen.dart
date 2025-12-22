@@ -1,12 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/core/utils/ui_set/icons_style.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:bidbird/features/mypage/domain/entities/report_feedback_entity.dart';
 import 'package:bidbird/features/mypage/ui/report_feedback_ui_helper.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ReportFeedbackDetailScreen extends StatelessWidget {
   final ReportFeedbackEntity? report;
@@ -50,6 +46,7 @@ class _DetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -138,8 +135,9 @@ class _ReportCode extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: ReportFeedbackUiHelper.getReportCodeColor(reportCode)
-            .withValues(alpha: 0.1),
+        color: ReportFeedbackUiHelper.getReportCodeColor(
+          reportCode,
+        ).withValues(alpha: 0.1),
         borderRadius: defaultBorder,
       ),
       child: Text(

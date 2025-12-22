@@ -9,7 +9,6 @@ import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/presentation/screens/item_bid_win_screen.dart';
 import 'package:bidbird/features/chat/presentation/screens/chat_screen.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
 import 'package:bidbird/features/current_trade/presentation/screens/current_trade_screen.dart';
 import 'package:bidbird/features/current_trade/presentation/screens/filtered_trade_list_screen.dart';
 import 'package:bidbird/features/current_trade/presentation/viewmodels/current_trade_viewmodel.dart';
@@ -53,6 +52,7 @@ import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
 import 'package:bidbird/features/notification/presentation/screen/notification_screen.dart';
 import 'package:bidbird/features/payment/payment_history/presentation/screens/payment_history_screen.dart';
 import 'package:bidbird/features/splash/ui/splash_screen.dart';
+import 'package:flutter/cupertino.dart'; // iOS 스타일 페이지를 위해 필요
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -61,15 +61,25 @@ final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// [수정 핵심] 플랫폼에 따라 iOS는 CupertinoPage(스와이프 가능), 나머지는 애니메이션 없는 페이지 반환
+Page<T> buildPage<T>({
+  required BuildContext context,
+  required GoRouterState state,
+  required Widget child,
+}) {
+  // iOS 스와이프 기능
+  if (Theme.of(context).platform == TargetPlatform.iOS) {
+    return CupertinoPage<T>(key: state.pageKey, child: child);
+  }
+  return NoTransitionPage<T>(key: state.pageKey, child: child);
+}
+
 GoRouter createAppRouter(BuildContext context) {
   final AuthViewModel authVM = context.read<AuthViewModel>();
-
   final doubleBackHandler = DoubleBackExitHandler();
 
   return GoRouter(
-    observers: [
-      routeObserver, // ← 여기!!
-    ],
+    observers: [routeObserver],
     navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: authVM,
@@ -77,77 +87,76 @@ GoRouter createAppRouter(BuildContext context) {
       final authVM = context.read<AuthViewModel>();
       final location = state.uri.toString();
 
-      // 1. 초기화 중이면 Splash 고정
       if (authVM.status == AuthStatus.initializing) {
         return location == '/splash' ? null : '/splash';
       }
-
-      // 2. 비로그인
       if (authVM.status == AuthStatus.unauthenticated) {
         return location.startsWith('/login') ? null : '/login';
       }
-
-      // 3. 로그인 완료 + 유저 정보 있음
       final user = authVM.user;
       if (user != null && user.nick_name == null) {
         return location.startsWith('/login/ToS') ? null : '/login/ToS';
       }
-
-      // 4. 정상 로그인 상태
       if (location == '/login' || location == '/splash') {
         return '/home';
       }
-
       return null;
     },
-
     routes: [
+      // --- 스플래시 및 로그인 ---
       GoRoute(
         path: '/splash',
-        pageBuilder: (context, state) {
-          return const NoTransitionPage(child: SplashScreen());
-        },
+        pageBuilder: (context, state) => buildPage(
+          context: context,
+          state: state,
+          child: const SplashScreen(),
+        ),
       ),
       GoRoute(
         path: '/login',
-        pageBuilder: (context, state) {
-          return const NoTransitionPage(child: LoginScreen());
-        },
+        pageBuilder: (context, state) => buildPage(
+          context: context,
+          state: state,
+          child: const LoginScreen(),
+        ),
         routes: [
           GoRoute(
             path: 'ToS',
-            pageBuilder: (context, state) {
-              return NoTransitionPage(
-                child: ChangeNotifierProvider(
-                  create: (_) => ToSViewmodel(),
-                  child: const ToSScreen(),
-                ),
-              );
-            },
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: ChangeNotifierProvider(
+                create: (_) => ToSViewmodel(),
+                child: const ToSScreen(),
+              ),
+            ),
             routes: [
               GoRoute(
                 path: 'auth_set_profile',
-                pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: AuthSetProfileScreen());
-                },
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: const AuthSetProfileScreen(),
+                ),
               ),
             ],
           ),
         ],
       ),
 
+      // --- 메인 쉘 (바텀 네비게이션 포함) ---
       ShellRoute(
         builder: (context, state, child) {
-          return WillPopScope(
-            onWillPop: () async {
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) async {
+              if (didPop) return;
               final location = state.uri.toString();
-
               if (location != '/home') {
                 context.go('/home');
-                return false;
+              } else {
+                await doubleBackHandler.onWillPop(context);
               }
-
-              return doubleBackHandler.onWillPop(context);
             },
             child: Scaffold(
               body: child,
@@ -158,369 +167,355 @@ GoRouter createAppRouter(BuildContext context) {
         routes: [
           GoRoute(
             path: '/home',
-            pageBuilder: (context, state) {
-              return const NoTransitionPage(child: HomeScreen());
-            },
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: const HomeScreen(),
+            ),
             routes: [
               GoRoute(
-                path: '/search',
-                pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: LoginScreen());
-                },
+                path: 'search',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: const LoginScreen(),
+                ),
               ),
             ],
           ),
           GoRoute(
             path: '/bid',
-            pageBuilder: (context, state) {
-              return NoTransitionPage(
-                child: ChangeNotifierProvider<CurrentTradeViewModel>(
-                  create: (_) => CurrentTradeViewModel()..loadData(),
-                  child: const CurrentTradeScreen(),
-                ),
-              );
-            },
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: ChangeNotifierProvider<CurrentTradeViewModel>(
+                create: (_) => CurrentTradeViewModel()..loadData(),
+                child: const CurrentTradeScreen(),
+              ),
+            ),
             routes: [
               GoRoute(
                 path: 'filtered',
                 pageBuilder: (context, state) {
-                  final extra = state.extra;
-                  if (extra is Map<String, dynamic>) {
-                    final actionType = extra['actionType'] as TradeActionType;
-                    final isSeller = extra['isSeller'] as bool?;
-                    final actionTypes =
-                        extra['actionTypes'] as List<TradeActionType>?;
-
-                    // 부모 경로의 ViewModel 찾기
-                    CurrentTradeViewModel? parentViewModel;
-                    try {
-                      // Navigator를 통해 부모 위젯 트리에서 Provider 찾기
-                      final navigatorContext = Navigator.of(
-                        context,
-                        rootNavigator: false,
-                      ).context;
-                      parentViewModel = Provider.of<CurrentTradeViewModel>(
-                        navigatorContext,
-                        listen: false,
-                      );
-                    } catch (e) {
-                      // Provider를 찾을 수 없으면 null
-                    }
-
-                    // 기존 ViewModel이 있으면 재사용, 없으면 새로 생성
-                    if (parentViewModel != null) {
-                      return NoTransitionPage(
-                        child:
-                            ChangeNotifierProvider<CurrentTradeViewModel>.value(
-                              value: parentViewModel,
-                              child: FilteredTradeListScreen(
-                                actionType: actionType,
-                                isSeller: isSeller,
-                                actionTypes: actionTypes,
-                              ),
-                            ),
-                      );
-                    } else {
-                      return NoTransitionPage(
-                        child: ChangeNotifierProvider<CurrentTradeViewModel>(
-                          create: (_) => CurrentTradeViewModel()..loadData(),
-                          child: FilteredTradeListScreen(
-                            actionType: actionType,
-                            isSeller: isSeller,
-                            actionTypes: actionTypes,
-                          ),
-                        ),
-                      );
-                    }
+                  final extra = state.extra as Map<String, dynamic>?;
+                  if (extra != null) {
+                    final actionType = extra['actionType'];
+                    final isSeller = extra['isSeller'];
+                    final actionTypes = extra['actionTypes'];
+                    return buildPage(
+                      context: context,
+                      state: state,
+                      child: FilteredTradeListScreen(
+                        actionType: actionType,
+                        isSeller: isSeller,
+                        actionTypes: actionTypes,
+                      ),
+                    );
                   }
-                  return const NoTransitionPage(child: CurrentTradeScreen());
+                  return buildPage(
+                    context: context,
+                    state: state,
+                    child: const CurrentTradeScreen(),
+                  );
                 },
               ),
             ],
           ),
           GoRoute(
             path: '/chat',
-            pageBuilder: (context, state) {
-              return const NoTransitionPage(child: ChatScreen());
-            },
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: const ChatScreen(),
+            ),
           ),
           GoRoute(
             path: '/mypage',
-            pageBuilder: (context, state) {
-              return const NoTransitionPage(child: MypageScreen());
-            },
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: const MypageScreen(),
+            ),
             routes: [
               GoRoute(
-                path: '/update_info',
-                pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: ProfileEditScreen());
-                },
+                path: 'update_info',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: const ProfileEditScreen(),
+                ),
               ),
               GoRoute(
-                path: '/favorite',
-                pageBuilder: (context, state) {
-                  return NoTransitionPage(
-                    child: ChangeNotifierProvider(
-                      create: (_) {
-                        final repo = FavoritesRepositoryImpl();
-                        return FavoritesViewModel(
-                          getFavorites: GetFavorites(repo),
-                          addFavorite: AddFavorite(repo),
-                          removeFavorite: RemoveFavorite(repo),
-                        )..loadFavorites();
-                      },
-                      child: const FavoritesScreen(),
-                    ),
-                  );
-                },
+                path: 'favorite',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: ChangeNotifierProvider(
+                    create: (_) {
+                      final repo = FavoritesRepositoryImpl();
+                      return FavoritesViewModel(
+                        getFavorites: GetFavorites(repo),
+                        addFavorite: AddFavorite(repo),
+                        removeFavorite: RemoveFavorite(repo),
+                      )..loadFavorites();
+                    },
+                    child: const FavoritesScreen(),
+                  ),
+                ),
               ),
               GoRoute(
-                path: '/trade',
-                pageBuilder: (context, state) {
-                  return NoTransitionPage(
-                    child: ChangeNotifierProvider(
-                      create: (_) {
-                        final repo = TradeHistoryRepositoryImpl();
-                        return TradeHistoryViewModel(
-                          getTradeHistory: GetTradeHistory(repo),
-                        )..loadPage(reset: true);
-                      },
-                      child: const TradeHistoryScreen(),
-                    ),
-                  );
-                },
+                path: 'trade',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: ChangeNotifierProvider(
+                    create: (_) {
+                      final repo = TradeHistoryRepositoryImpl();
+                      return TradeHistoryViewModel(
+                        getTradeHistory: GetTradeHistory(repo),
+                      )..loadPage(reset: true);
+                    },
+                    child: const TradeHistoryScreen(),
+                  ),
+                ),
               ),
               GoRoute(
-                path: '/service_center',
-                pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: CsScreen());
-                },
+                path: 'service_center',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: const CsScreen(),
+                ),
                 routes: [
                   GoRoute(
-                    path: '/terms',
-                    pageBuilder: (context, state) {
-                      return const NoTransitionPage(child: TermsScreen());
-                    },
+                    path: 'terms',
+                    pageBuilder: (context, state) => buildPage(
+                      context: context,
+                      state: state,
+                      child: const TermsScreen(),
+                    ),
                   ),
                   GoRoute(
-                    path: '/report_feedback',
-                    pageBuilder: (context, state) {
-                      return NoTransitionPage(
-                        child: ChangeNotifierProvider(
-                          create: (_) {
-                            final repo = ReportFeedbackRepositoryImpl();
-                            return ReportFeedbackViewModel(
-                              getReportFeedback: GetReportFeedback(repo),
-                            )..loadReports();
-                          },
-                          child: const ReportFeedbackScreen(),
-                        ),
-                      );
-                    },
+                    path: 'report_feedback',
+                    pageBuilder: (context, state) => buildPage(
+                      context: context,
+                      state: state,
+                      child: ChangeNotifierProvider(
+                        create: (_) {
+                          final repo = ReportFeedbackRepositoryImpl();
+                          return ReportFeedbackViewModel(
+                            getReportFeedback: GetReportFeedback(repo),
+                          )..loadReports();
+                        },
+                        child: const ReportFeedbackScreen(),
+                      ),
+                    ),
                     routes: [
                       GoRoute(
-                        path: '/:feedbackId',
-                        pageBuilder: (context, state) {
-                          final feedbackId =
-                              state.pathParameters["feedbackId"] ?? "";
-                          final report =
-                              state.extra
-                                  as ReportFeedbackEntity?; //state.extra(Object?타입)쓸떄사용해야하는문법
-                          return NoTransitionPage(
-                            child: ReportFeedbackDetailScreen(
-                              feedbackId: feedbackId,
-                              report: report,
-                            ),
-                          );
-                        },
+                        path: ':feedbackId',
+                        pageBuilder: (context, state) => buildPage(
+                          context: context,
+                          state: state,
+                          child: ReportFeedbackDetailScreen(
+                            feedbackId:
+                                state.pathParameters["feedbackId"] ?? "",
+                            report: state.extra as ReportFeedbackEntity?,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
               GoRoute(
-                path: '/black_list',
-                pageBuilder: (context, state) {
-                  return NoTransitionPage(
-                    child: ChangeNotifierProvider(
-                      create: (_) {
-                        final repo = BlacklistRepositoryImpl();
-                        return BlacklistViewModel(
-                          getBlacklist: GetBlacklist(repo),
-                          blockUser: BlockUser(repo),
-                          unblockUser: UnblockUser(repo),
-                        )..loadBlacklist();
-                      },
-                      child: const BlacklistScreen(),
-                    ),
-                  );
-                },
-              ),
-              GoRoute(
-                path: '/setting',
-                pageBuilder: (context, state) {
-                  return const NoTransitionPage(child: MypageScreen());
-                },
+                path: 'black_list',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: ChangeNotifierProvider(
+                    create: (_) {
+                      final repo = BlacklistRepositoryImpl();
+                      return BlacklistViewModel(
+                        getBlacklist: GetBlacklist(repo),
+                        blockUser: BlockUser(repo),
+                        unblockUser: UnblockUser(repo),
+                      )..loadBlacklist();
+                    },
+                    child: const BlacklistScreen(),
+                  ),
+                ),
               ),
             ],
           ),
         ],
       ),
+
+      // --- 독립적 인 라우트 (바텀바 없음) ---
+      GoRoute(
+        path: '/notifications',
+        pageBuilder: (context, state) => buildPage(
+          context: context,
+          state: state,
+          child: const NotificationScreen(),
+        ),
+      ),
       GoRoute(
         path: '/chat/room',
         pageBuilder: (context, state) {
-          final String thisItemId =
-              state.uri.queryParameters["itemId"] ?? "null";
-          final String? thisRoomId =
-              state.uri.queryParameters["roomId"] ?? null;
-          return NoTransitionPage(
-            child: ChattingRoomScreen(itemId: thisItemId, roomId: thisRoomId),
+          final itemId = state.uri.queryParameters["itemId"] ?? "null";
+          final roomId = state.uri.queryParameters["roomId"];
+          return buildPage(
+            context: context,
+            state: state,
+            child: ChattingRoomScreen(itemId: itemId, roomId: roomId),
           );
         },
         routes: [
           GoRoute(
             path: 'trade-status',
-            pageBuilder: (context, state) {
-              final String itemId = state.uri.queryParameters["itemId"] ?? "";
-              return NoTransitionPage(child: TradeStatusScreen(itemId: itemId));
-            },
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: TradeStatusScreen(
+                itemId: state.uri.queryParameters["itemId"] ?? "",
+              ),
+            ),
           ),
         ],
       ),
       GoRoute(
-        path: '/payment',
-        pageBuilder: (context, state) {
-          return const NoTransitionPage(child: HomeScreen());
-        },
-      ),
-      GoRoute(
         path: '/payments',
-        pageBuilder: (context, state) {
-          final String? itemId = state.uri.queryParameters['itemId'];
-          return NoTransitionPage(child: PaymentHistoryScreen(itemId: itemId));
-        },
-      ),
-      GoRoute(
-        path: '/item/:itemId/relist',
-        pageBuilder: (context, state) {
-          final itemId = state.pathParameters['itemId'] ?? '';
-          return NoTransitionPage(child: ItemRelistScreen(itemId: itemId));
-        },
+        pageBuilder: (context, state) => buildPage(
+          context: context,
+          state: state,
+          child: PaymentHistoryScreen(
+            itemId: state.uri.queryParameters['itemId'],
+          ),
+        ),
       ),
       GoRoute(
         path: '/item/:id',
-        pageBuilder: (context, state) {
-          final itemId = state.pathParameters["id"] ?? "";
-          return NoTransitionPage(child: ItemDetailScreen(itemId: itemId));
-        },
+        pageBuilder: (context, state) => buildPage(
+          context: context,
+          state: state,
+          child: ItemDetailScreen(itemId: state.pathParameters["id"] ?? ""),
+        ),
+      ),
+      GoRoute(
+        path: '/item/:itemId/relist',
+        pageBuilder: (context, state) => buildPage(
+          context: context,
+          state: state,
+          child: ItemRelistScreen(itemId: state.pathParameters['itemId'] ?? ''),
+        ),
       ),
       GoRoute(
         path: '/item_bid_win',
         pageBuilder: (context, state) {
-          final extra = state.extra;
-          final item = extra is ItemBidWinEntity ? extra : null;
-
-          if (item == null) {
-            return const NoTransitionPage(child: HomeScreen());
-          }
-
-          return NoTransitionPage(child: ItemBidWinScreen(item: item));
-        },
-      ),
-      GoRoute(
-        path: '/notifications',
-        pageBuilder: (context, state) {
-          return const NoTransitionPage(child: NotificationScreen());
+          final item = state.extra is ItemBidWinEntity
+              ? state.extra as ItemBidWinEntity
+              : null;
+          return buildPage(
+            context: context,
+            state: state,
+            child: item != null
+                ? ItemBidWinScreen(item: item)
+                : const HomeScreen(),
+          );
         },
       ),
       GoRoute(
         path: '/add_item',
         pageBuilder: (context, state) {
-          final extra = state.extra;
-          final String? editingItemId = extra is String ? extra : null;
-          return NoTransitionPage(
+          final editingItemId = state.extra is String
+              ? state.extra as String
+              : null;
+          return buildPage(
+            context: context,
+            state: state,
             child: ChangeNotifierProvider<ItemAddViewModel>(
               create: (_) {
                 final vm = ItemAddViewModel();
-                if (editingItemId != null) {
+                if (editingItemId != null)
                   vm.startEdit(editingItemId);
-                } else {
-                  // init()은 비동기이므로 postFrameCallback에서 호출
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    vm.init();
-                  });
-                }
+                else
+                  WidgetsBinding.instance.addPostFrameCallback(
+                    (_) => vm.init(),
+                  );
                 return vm;
               },
               child: const ItemAddScreen(),
             ),
           );
         },
-      ),
-      GoRoute(
-        path: '/add_item/item_registration_list',
-        pageBuilder: (context, state) {
-          return const NoTransitionPage(child: ItemRegistrationListScreen());
-        },
-      ),
-      GoRoute(
-        path: '/add_item/item_registration_detail',
-        pageBuilder: (context, state) {
-          final extra = state.extra;
-          final item = extra is ItemRegistrationData ? extra : null;
-
-          if (item == null) {
-            return const NoTransitionPage(child: HomeScreen());
-          }
-          return NoTransitionPage(
-            child: ItemRegistrationDetailScreen(item: item),
-          );
-        },
+        routes: [
+          GoRoute(
+            path: 'item_registration_list',
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: const ItemRegistrationListScreen(),
+            ),
+          ),
+          GoRoute(
+            path: 'item_registration_detail',
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: ItemRegistrationDetailScreen(
+                item: state.extra as ItemRegistrationData,
+              ),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/user/:userId',
-        pageBuilder: (context, state) {
-          final userId = state.pathParameters["userId"] ?? "";
-          return NoTransitionPage(child: UserProfileScreen(userId: userId));
-        },
+        pageBuilder: (context, state) => buildPage(
+          context: context,
+          state: state,
+          child: UserProfileScreen(
+            userId: state.pathParameters["userId"] ?? "",
+          ),
+        ),
         routes: [
           GoRoute(
-            path: '/trade',
-            pageBuilder: (context, state) {
-              final userId = state.pathParameters["userId"] ?? "";
-              return NoTransitionPage(
-                child: UserProfileHistoryScreen(userId: userId),
-              );
-            },
+            path: 'trade',
+            pageBuilder: (context, state) => buildPage(
+              context: context,
+              state: state,
+              child: UserProfileHistoryScreen(
+                userId: state.pathParameters["userId"] ?? "",
+              ),
+            ),
           ),
         ],
       ),
       GoRoute(
         path: '/blocked',
-        pageBuilder: (context, state) {
-          return const NoTransitionPage(child: HomeScreen());
-        },
+        pageBuilder: (context, state) => buildPage(
+          context: context,
+          state: state,
+          child: const HomeScreen(),
+        ),
       ),
     ],
   );
 }
 
-// 애니메이션 없이 페이지를 전환해주는 클래스
+/// 안드로이드 등에서 사용될 애니메이션 없는 페이지 클래스
 class NoTransitionPage<T> extends CustomTransitionPage<T> {
   const NoTransitionPage({required super.child, super.key})
     : super(
-        transitionDuration: Duration.zero, // 전환 시간 0
-        reverseTransitionDuration: Duration.zero, // 역전환 시간 0
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
         transitionsBuilder: _noTransitionBuilder,
       );
 }
 
-// 애니메이션 없이 child만 반환하는 빌더
 Widget _noTransitionBuilder(
   BuildContext context,
-  Animation<double> animation,
-  Animation<double> secondaryAnimation,
+  Animation<double> a,
+  Animation<double> sa,
   Widget child,
-) {
-  return child;
-}
+) => child;

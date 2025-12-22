@@ -121,10 +121,7 @@ class _MyAppState extends State<MyApp> {
               backgroundColor: const Color(0xFFF5F5F5),
               body: SafeArea(
                 child: Center(
-                  child: Text(
-                    '${snapshot.error}',
-                    textAlign: TextAlign.center,
-                  ),
+                  child: Text('${snapshot.error}', textAlign: TextAlign.center),
                 ),
               ),
             ),
@@ -148,18 +145,24 @@ class _MyAppState extends State<MyApp> {
 
         _router ??= createAppRouter(context);
 
-        return MaterialApp.router(
-          title: widget.title,
-          debugShowCheckedModeBanner: false,
-          color: const Color(0xFFF5F5F5),
-          theme: theme,
-          builder: (context, child) {
-            return ColoredBox(
-              color: const Color(0xFFF5F5F5),
-              child: child ?? const SizedBox.shrink(),
-            );
+        return GestureDetector(
+          onTap: () {
+            FocusManager.instance.primaryFocus?.unfocus();
           },
-          routerConfig: _router!,
+          behavior: HitTestBehavior.translucent,
+          child: MaterialApp.router(
+            title: widget.title,
+            debugShowCheckedModeBanner: false,
+            color: const Color(0xFFF5F5F5),
+            theme: theme,
+            builder: (context, child) {
+              return ColoredBox(
+                color: const Color(0xFFF5F5F5),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
+            routerConfig: _router!,
+          ),
         );
       },
     );

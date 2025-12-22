@@ -1,17 +1,17 @@
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_terms.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
-import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
+import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
 import 'package:bidbird/features/item_enroll/registration/detail/presentation/viewmodels/item_registration_detail_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -27,8 +27,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
         ? formatPrice(item.instantPrice)
         : null;
 
-    final String auctionDurationText = 
-        formatAuctionDurationForDisplay(item.auctionDurationHours);
+    final String auctionDurationText = formatAuctionDurationForDisplay(
+      item.auctionDurationHours,
+    );
 
     return ChangeNotifierProvider<ItemRegistrationDetailViewModel>(
       create: (_) => ItemRegistrationDetailViewModel(item: item)
@@ -62,6 +63,8 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,7 +94,10 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection(BuildContext context, ItemRegistrationDetailViewModel viewModel) {
+  Widget _buildImageSection(
+    BuildContext context,
+    ItemRegistrationDetailViewModel viewModel,
+  ) {
     final imageUrls = viewModel.imageUrls;
     final hasImages = imageUrls.isNotEmpty;
 
@@ -104,9 +110,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: 1,
         child: hasImages
-            ? _ImageGallery(
-                imageUrls: imageUrls,
-              )
+            ? _ImageGallery(imageUrls: imageUrls)
             : const Center(
                 child: Text(
                   '이미지 없음',
@@ -285,7 +289,9 @@ class _ImageGalleryState extends State<_ImageGallery> {
           itemBuilder: (context, index) {
             final imageUrl = widget.imageUrls[index];
             final bool isVideo = isVideoFile(imageUrl);
-            final displayUrl = isVideo ? getVideoThumbnailUrl(imageUrl) : imageUrl;
+            final displayUrl = isVideo
+                ? getVideoThumbnailUrl(imageUrl)
+                : imageUrl;
 
             return GestureDetector(
               onTap: () {
@@ -296,7 +302,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
                       .where((url) => !isVideoFile(url))
                       .toList();
                   final imageIndex = imageOnlyUrls.indexOf(imageUrl);
-                  
+
                   if (imageIndex >= 0) {
                     FullScreenImageGalleryViewer.show(
                       context,
@@ -366,4 +372,3 @@ class _ImageGalleryState extends State<_ImageGallery> {
     );
   }
 }
-

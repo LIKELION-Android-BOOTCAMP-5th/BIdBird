@@ -1,16 +1,10 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/info_box.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_input_popup.dart';
-import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/trade_status_item_card.dart';
-import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
-import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/item_trade/shipping/data/repositories/shipping_info_repository.dart';
+import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_input_popup.dart';
 import 'package:bidbird/features/item_trade/trade_status/domain/entities/trade_status_entity.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/viewmodels/trade_status_viewmodel.dart';
-import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
-import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
-import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
+import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/trade_status_item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -21,10 +15,7 @@ import 'package:provider/provider.dart';
 class TradeStatusScreen extends StatelessWidget {
   final String itemId;
 
-  const TradeStatusScreen({
-    super.key,
-    required this.itemId,
-  });
+  const TradeStatusScreen({super.key, required this.itemId});
 
   @override
   Widget build(BuildContext context) {
@@ -43,34 +34,28 @@ class _TradeStatusScreenContent extends StatelessWidget {
     final viewModel = context.watch<TradeStatusViewModel>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('거래 현황'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('거래 현황'), centerTitle: true),
       backgroundColor: BackgroundColor,
       body: SafeArea(
         child: viewModel.isLoading
             ? const SizedBox.shrink()
             : viewModel.error != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '오류가 발생했습니다.',
-                          style: TextStyle(color: RedColor),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            viewModel.loadData();
-                          },
-                          child: const Text('다시 시도'),
-                        ),
-                      ],
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('오류가 발생했습니다.', style: TextStyle(color: RedColor)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        viewModel.loadData();
+                      },
+                      child: const Text('다시 시도'),
                     ),
-                  )
-                : _buildContent(context, viewModel),
+                  ],
+                ),
+              )
+            : _buildContent(context, viewModel),
       ),
     );
   }
@@ -84,6 +69,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
     }
 
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -199,7 +185,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
                   final currentIndex = _getStepIndex(currentStep);
                   final isCompleted = stepIndex < currentIndex;
                   final isCurrent = stepIndex == currentIndex;
-                  
+
                   return Expanded(
                     child: Container(
                       height: 2,
@@ -210,8 +196,8 @@ class _TradeStatusScreenContent extends StatelessWidget {
                       color: isCompleted
                           ? Colors.green
                           : isCurrent
-                              ? blueColor
-                              : Colors.grey[300],
+                          ? blueColor
+                          : Colors.grey[300],
                     ),
                   );
                 }),
@@ -237,8 +223,8 @@ class _TradeStatusScreenContent extends StatelessWidget {
                           color: isCompleted
                               ? Colors.green
                               : isActive
-                                  ? blueColor
-                                  : Colors.grey[300],
+                              ? blueColor
+                              : Colors.grey[300],
                         ),
                         child: Center(
                           child: isCompleted
@@ -271,8 +257,8 @@ class _TradeStatusScreenContent extends StatelessWidget {
                           color: isCompleted
                               ? Colors.green
                               : isActive || isCompleted
-                                  ? blueColor
-                                  : Colors.grey[600],
+                              ? blueColor
+                              : Colors.grey[600],
                         ),
                       ),
                     ],
@@ -410,7 +396,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
       //     ),
       //   ),
       // );
-      
+
       // 임시: 결제 기능 비활성화 안내
       return SizedBox(
         width: double.infinity,
@@ -434,7 +420,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
         ),
       );
     }
-    
+
     if (currentStep == TradeStep.shipping) {
       final shippingInfoRepository = ShippingInfoRepositoryImpl();
       final tradeStatus = viewModel.tradeStatus;
@@ -483,13 +469,11 @@ class _TradeStatusScreenContent extends StatelessWidget {
                             );
                             if (dialogContext.mounted) {
                               ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                const SnackBar(
-                                  content: Text('송장 정보가 입력되었습니다'),
-                                ),
+                                const SnackBar(content: Text('송장 정보가 입력되었습니다')),
                               );
                             }
                           }
-                          
+
                           // 송장 정보 다시 로드
                           await viewModel.refreshShippingInfo();
                         } catch (e) {
@@ -519,10 +503,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
                 children: const [
                   Text(
                     '송장 입력',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   SizedBox(width: 8),
                   Icon(Icons.arrow_forward, size: 20),
@@ -533,14 +514,18 @@ class _TradeStatusScreenContent extends StatelessWidget {
         ],
       );
     }
-    
+
     return const SizedBox.shrink();
   }
 
-
   Widget _buildTradeHistory(List<TradeHistoryEvent> historyEvents) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20), // 좌우 16dp, 상단 12dp, 하단 20dp
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        12,
+        16,
+        20,
+      ), // 좌우 16dp, 상단 12dp, 하단 20dp
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -558,10 +543,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
               padding: EdgeInsets.only(left: 12),
               child: Text(
                 '거래 기록이 없습니다.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF8A8D91),
-                ),
+                style: TextStyle(fontSize: 12, color: Color(0xFF8A8D91)),
               ),
             )
           else
@@ -572,7 +554,8 @@ class _TradeStatusScreenContent extends StatelessWidget {
 
               return Padding(
                 padding: EdgeInsets.only(
-                    bottom: index < historyEvents.length - 1 ? 16 : 0), // 아이템 간 간격: 16dp
+                  bottom: index < historyEvents.length - 1 ? 16 : 0,
+                ), // 아이템 간 간격: 16dp
                 child: _buildHistoryItem(event, isLast),
               );
             }),
@@ -584,10 +567,10 @@ class _TradeStatusScreenContent extends StatelessWidget {
   Widget _buildHistoryItem(TradeHistoryEvent event, bool isLast) {
     final dateFormat = DateFormat('MM.dd HH:mm');
     final timeText = dateFormat.format(event.timestamp);
-    
+
     // 거래 기록 영역에서는 색상 절제 - 모든 이벤트를 회색으로 표시
-    const dotColor = Color(0xFFDADCE0);  // 회색 점
-    const lineColor = Color(0xFFEDEFF2);  // 회색 선
+    const dotColor = Color(0xFFDADCE0); // 회색 점
+    const lineColor = Color(0xFFEDEFF2); // 회색 선
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -663,4 +646,3 @@ class _StepData {
 
   _StepData(this.label, this.step);
 }
-

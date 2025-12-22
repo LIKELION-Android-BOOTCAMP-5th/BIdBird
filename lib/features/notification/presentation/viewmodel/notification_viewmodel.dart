@@ -48,6 +48,9 @@ class NotificationViewmodel extends ChangeNotifier {
     "PURCHASE_CONFIRMED",
     "PURCHASE_REJECTED",
   ];
+
+  DateTime? _lastPausedAt;
+
   int get unCheckedCount =>
       notifyList.where((e) => e.is_checked == false).length;
   // int inputCount = 0;
@@ -77,8 +80,7 @@ class NotificationViewmodel extends ChangeNotifier {
        _deleteNotificationUseCase =
            deleteNotificationUseCase ??
            DeleteNotificationUseCase(NotificationRepositoryImpl()) {
-    fetchNotify();
-    setupRealtimeSubscription();
+    _bootstrap();
     _loginSubscription = eventBus.on<LoginEventBus>().listen((event) {
       if (SupabaseManager.shared.supabase.auth.currentUser?.id == null) {
         cancelRealtimeSubscription();
@@ -89,6 +91,41 @@ class NotificationViewmodel extends ChangeNotifier {
         setupRealtimeSubscription();
       }
     });
+  }
+
+  Future<void> _bootstrap() async {
+    final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await fetchNotify(); // ✅ 무조건 1회 보장
+    setupRealtimeSubscription(); // ✅ 이후 실시간
+  }
+
+  void onAppPaused() {
+    _lastPausedAt = DateTime.now();
+  }
+
+  Future<void> onAppResumed() async {
+    final now = DateTime.now();
+    final wasDisconnected =
+        !_notificationListRealtimeSubscriptionManager.isConnected;
+
+    if (wasDisconnected) {
+      debugPrint('🔄 Realtime was disconnected → full sync');
+      await fetchNotify();
+      setupRealtimeSubscription();
+      return;
+    }
+
+    // ⏱️ 오래 백그라운드였으면 보정
+    if (_lastPausedAt != null &&
+        now.difference(_lastPausedAt!) > const Duration(minutes: 2)) {
+      debugPrint('⏱️ Long background → full sync');
+      await fetchNotify();
+      return;
+    }
+
+    debugPrint('✅ Realtime alive → skip fetch');
   }
 
   void updateNotification(NotificationEntity notify) {

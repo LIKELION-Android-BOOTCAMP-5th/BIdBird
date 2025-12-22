@@ -1,18 +1,17 @@
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
+import 'package:bidbird/features/bid/presentation/widgets/item_detail_bid_history_entry.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
-
-import 'package:bidbird/features/report/presentation/screens/report_screen.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_bottom_action_bar.dart';
-import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
-import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_image_gallery.dart';
-import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_summary_section.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_description_section.dart';
+import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_image_gallery.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_seller_row.dart';
-import 'package:bidbird/features/bid/presentation/widgets/item_detail_bid_history_entry.dart';
+import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_summary_section.dart';
+import 'package:bidbird/features/report/presentation/screens/report_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ItemDetailScreen extends StatelessWidget {
   const ItemDetailScreen({super.key, required this.itemId});
@@ -22,8 +21,7 @@ class ItemDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ItemDetailViewModel>(
-      create: (_) => ItemDetailViewModel(itemId: itemId)
-        ..loadItemDetail(),
+      create: (_) => ItemDetailViewModel(itemId: itemId)..loadItemDetail(),
       child: const _ItemDetailScaffold(),
     );
   }
@@ -65,19 +63,18 @@ class _ItemDetailContentState extends State<_ItemDetailContent> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     // 에러 상태와 itemDetail, isMyItem을 함께 Selector로 분리
-    return Selector<ItemDetailViewModel, ({String? error, ItemDetail? itemDetail, bool isMyItem})>(
-      selector: (_, vm) => (error: vm.error, itemDetail: vm.itemDetail, isMyItem: vm.isMyItem),
+    return Selector<
+      ItemDetailViewModel,
+      ({String? error, ItemDetail? itemDetail, bool isMyItem})
+    >(
+      selector: (_, vm) =>
+          (error: vm.error, itemDetail: vm.itemDetail, isMyItem: vm.isMyItem),
       builder: (context, data, _) {
         if (data.itemDetail == null) {
-          return const Scaffold(
-            body: SafeArea(
-              child: SizedBox.shrink(),
-            ),
-          );
+          return const Scaffold(body: SafeArea(child: SizedBox.shrink()));
         }
 
         final ItemDetail item = data.itemDetail!;
@@ -91,9 +88,13 @@ class _ItemDetailContentState extends State<_ItemDetailContent> {
               Expanded(
                 child: TransparentRefreshIndicator(
                   onRefresh: () async {
-                    await context.read<ItemDetailViewModel>().loadItemDetail(forceRefresh: true);
+                    await context.read<ItemDetailViewModel>().loadItemDetail(
+                      forceRefresh: true,
+                    );
                   },
                   child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
                     child: Column(
@@ -119,7 +120,10 @@ class _ItemDetailContentState extends State<_ItemDetailContent> {
                               ),
                               child: Column(
                                 children: [
-                                  ItemDetailSummarySection(item: item, isMyItem: data.isMyItem),
+                                  ItemDetailSummarySection(
+                                    item: item,
+                                    isMyItem: data.isMyItem,
+                                  ),
                                   ItemDetailSellerRow(item: item),
                                 ],
                               ),
@@ -166,7 +170,7 @@ class _ItemDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
       builder: (context, viewModel, _) {
         final isMyItem = viewModel.isMyItem;
         final sellerProfile = viewModel.sellerProfile;
-        
+
         return AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -201,7 +205,8 @@ class _ItemDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: InkWell(
                 onTap: () async {
                   // 공유 기능 구현
-                  final shareText = '${item.itemTitle}\n현재 입찰가: ${item.currentPrice}원';
+                  final shareText =
+                      '${item.itemTitle}\n현재 입찰가: ${item.currentPrice}원';
                   try {
                     await Share.share(shareText);
                   } catch (e) {

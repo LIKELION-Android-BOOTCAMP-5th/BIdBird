@@ -38,6 +38,8 @@ class AuthSetProfileScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         child: Column(
                           children: [
                             const SizedBox(height: 24),
@@ -285,5 +287,3 @@ class _SaveButton extends StatelessWidget {
     );
   }
 }
-
-

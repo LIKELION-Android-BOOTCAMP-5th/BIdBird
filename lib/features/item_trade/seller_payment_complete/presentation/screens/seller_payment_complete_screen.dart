@@ -1,25 +1,23 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/presentation/widgets/item_bid_result_body.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/item_trade/seller_payment_complete/presentation/viewmodels/seller_payment_complete_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class SellerPaymentCompleteScreen extends StatelessWidget {
-  const SellerPaymentCompleteScreen({
-    super.key,
-    required this.item,
-  });
+  const SellerPaymentCompleteScreen({super.key, required this.item});
 
   final ItemBidWinEntity item;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<SellerPaymentCompleteViewModel>(
-      create: (_) => SellerPaymentCompleteViewModel(item: item)..loadShippingInfo(),
+      create: (_) =>
+          SellerPaymentCompleteViewModel(item: item)..loadShippingInfo(),
       child: Consumer<SellerPaymentCompleteViewModel>(
         builder: (context, viewModel, _) {
           return Scaffold(
@@ -28,11 +26,17 @@ class SellerPaymentCompleteScreen extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         minHeight: constraints.maxHeight,
                       ),
-                      child: IntrinsicHeight(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: ResponsiveConstants.spacingMedium(context),
+                          horizontal: ResponsiveConstants.screenPadding(context),
+                        ),
                         child: ItemBidResultBody(
                           item: item,
                           title: '결제가 완료되었습니다',
@@ -52,7 +56,9 @@ class SellerPaymentCompleteScreen extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => ChattingRoomScreen(itemId: item.itemId),
+                                      builder: (_) => ChattingRoomScreen(
+                                        itemId: item.itemId,
+                                      ),
                                     ),
                                   );
                                 },
@@ -66,18 +72,24 @@ class SellerPaymentCompleteScreen extends StatelessWidget {
                                 child: Text(
                                   '구매자 연락하기',
                                   style: TextStyle(
-                                    fontSize: ResponsiveConstants.buttonFontSize(context),
+                                    fontSize:
+                                        ResponsiveConstants.buttonFontSize(
+                                          context,
+                                        ),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
                             ),
-                            SizedBox(height: ResponsiveConstants.spacingSmall(context)),
+                            SizedBox(
+                              height: ResponsiveConstants.spacingSmall(context),
+                            ),
                             SizedBox(
                               width: double.infinity,
                               height: ResponsiveConstants.buttonHeight(context),
                               child: ElevatedButton(
-                                onPressed: () => viewModel.showShippingInfoDialog(context),
+                                onPressed: () =>
+                                    viewModel.showShippingInfoDialog(context),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: blueColor,
                                   shape: RoundedRectangleBorder(
@@ -89,14 +101,21 @@ class SellerPaymentCompleteScreen extends StatelessWidget {
                                       ? '배송 정보 확인하기'
                                       : '배송 정보 입력하기',
                                   style: TextStyle(
-                                    fontSize: ResponsiveConstants.buttonFontSize(context),
+                                    fontSize:
+                                        ResponsiveConstants.buttonFontSize(
+                                          context,
+                                        ),
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
                                   ),
                                 ),
                               ),
                             ),
-                            SizedBox(height: ResponsiveConstants.spacingMedium(context)),
+                            SizedBox(
+                              height: ResponsiveConstants.spacingMedium(
+                                context,
+                              ),
+                            ),
                           ],
                         ),
                       ),

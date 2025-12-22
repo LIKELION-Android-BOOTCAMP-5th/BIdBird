@@ -9,6 +9,3 @@ class BuyNowBidRequest {
   final int bidPrice;
   final bool isInstant;
 }
-
-
-

@@ -1,14 +1,14 @@
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:bidbird/core/utils/item/item_media_utils.dart';
+import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/utils/item/item_time_utils.dart';
+import 'package:bidbird/core/utils/payment/payment_error_messages.dart';
+import 'package:bidbird/core/utils/payment/payment_status_utils.dart';
+import 'package:bidbird/core/utils/payment/payment_texts.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/item/item_time_utils.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
-import 'package:bidbird/core/utils/item/item_media_utils.dart';
-import 'package:bidbird/core/utils/payment/payment_error_messages.dart';
-import 'package:bidbird/core/utils/payment/payment_texts.dart';
-import 'package:bidbird/core/utils/payment/payment_status_utils.dart';
 import 'package:bidbird/features/payment/payment_history/domain/entities/payment_history_entity.dart';
 import 'package:bidbird/features/payment/payment_history/presentation/viewmodels/payment_history_viewmodel.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -22,52 +22,45 @@ class PaymentHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final titleFontSize = context.fontSizeLarge;
-    
+
     return ChangeNotifierProvider(
       create: (_) => PaymentHistoryViewModel()..loadPayments(itemId: itemId),
-      child: Selector<PaymentHistoryViewModel, ({
-        bool loading,
-        String? error,
-        List<PaymentHistoryItem> payments,
-      })>(
-        selector: (_, vm) => (
-          loading: vm.loading,
-          error: vm.error,
-          payments: vm.payments,
-        ),
-        builder: (context, data, _) {
-          final viewModel = context.read<PaymentHistoryViewModel>();
-          return Scaffold(
-            backgroundColor: BackgroundColor,
-            appBar: AppBar(
-              elevation: 0,
-              backgroundColor: BackgroundColor,
-              foregroundColor: Colors.black,
-              title: Text(
-                itemId != null 
-                    ? PaymentTexts.historyDetailTitle 
-                    : PaymentTexts.historyTitle,
-                style: TextStyle(
-                  fontSize: titleFontSize,
-                  fontWeight: FontWeight.w700,
+      child:
+          Selector<
+            PaymentHistoryViewModel,
+            ({bool loading, String? error, List<PaymentHistoryItem> payments})
+          >(
+            selector: (_, vm) =>
+                (loading: vm.loading, error: vm.error, payments: vm.payments),
+            builder: (context, data, _) {
+              final viewModel = context.read<PaymentHistoryViewModel>();
+              return Scaffold(
+                backgroundColor: BackgroundColor,
+                appBar: AppBar(
+                  elevation: 0,
+                  backgroundColor: BackgroundColor,
+                  foregroundColor: Colors.black,
+                  title: Text(
+                    itemId != null
+                        ? PaymentTexts.historyDetailTitle
+                        : PaymentTexts.historyTitle,
+                    style: TextStyle(
+                      fontSize: titleFontSize,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            body: _buildBody(context, viewModel, data),
-          );
-        },
-      ),
+                body: _buildBody(context, viewModel, data),
+              );
+            },
+          ),
     );
   }
 
   Widget _buildBody(
     BuildContext context,
     PaymentHistoryViewModel viewModel,
-    ({
-      bool loading,
-      String? error,
-      List<PaymentHistoryItem> payments,
-    }) data,
+    ({bool loading, String? error, List<PaymentHistoryItem> payments}) data,
   ) {
     if (data.loading) {
       return const SizedBox.shrink();
@@ -76,7 +69,7 @@ class PaymentHistoryScreen extends StatelessWidget {
     if (data.error != null) {
       final fontSize = context.fontSizeMedium;
       final buttonFontSize = context.fontSizeMedium;
-      
+
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: context.hPadding),
@@ -116,7 +109,7 @@ class PaymentHistoryScreen extends StatelessWidget {
     final horizontalPadding = context.screenPadding;
     final verticalPadding = context.vPadding;
     final separatorHeight = context.spacingSmall;
-    
+
     return ListView.separated(
       padding: EdgeInsets.fromLTRB(
         horizontalPadding,
@@ -128,7 +121,8 @@ class PaymentHistoryScreen extends StatelessWidget {
         final PaymentHistoryItem item = data.payments[index];
         return _PaymentHistoryCard(item: item);
       },
-      separatorBuilder: (BuildContext context, int index) => SizedBox(height: separatorHeight),
+      separatorBuilder: (BuildContext context, int index) =>
+          SizedBox(height: separatorHeight),
       itemCount: data.payments.length,
     );
   }
@@ -146,14 +140,22 @@ class _PaymentDetailBody extends StatelessWidget {
       item.statusCode,
       isCompleted: isCompleted,
     );
-    
+
     // Responsive values
     final horizontalPadding = context.screenPadding;
     final verticalPadding = context.spacingMedium;
-    final imageSize = context.widthRatio(0.4, min: 120.0, max: 200.0); // 특수 케이스: 결제 상세 이미지 크기
+    final imageSize = context.widthRatio(
+      0.4,
+      min: 120.0,
+      max: 200.0,
+    ); // 특수 케이스: 결제 상세 이미지 크기
     final titleFontSize = context.fontSizeLarge;
     final amountFontSize = context.fontSizeXLarge;
-    final badgeFontSize = context.widthRatio(0.03, min: 10.0, max: 14.0); // 특수 케이스: 상태 배지 폰트
+    final badgeFontSize = context.widthRatio(
+      0.03,
+      min: 10.0,
+      max: 14.0,
+    ); // 특수 케이스: 상태 배지 폰트
     final spacing = context.spacingMedium;
     final buttonHeight = context.buttonHeight;
     final buttonFontSize = context.buttonFontSize;
@@ -162,6 +164,7 @@ class _PaymentDetailBody extends StatelessWidget {
       children: [
         Expanded(
           child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
               verticalPadding,
@@ -187,13 +190,15 @@ class _PaymentDetailBody extends StatelessWidget {
                     ],
                   ),
                   clipBehavior: Clip.hardEdge,
-                  child: item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
+                  child:
+                      item.thumbnailUrl != null && item.thumbnailUrl!.isNotEmpty
                       ? Builder(
                           builder: (context) {
-                            final String imageUrl = isVideoFile(item.thumbnailUrl!)
+                            final String imageUrl =
+                                isVideoFile(item.thumbnailUrl!)
                                 ? getVideoThumbnailUrl(item.thumbnailUrl!)
                                 : item.thumbnailUrl!;
-                            
+
                             return CachedNetworkImage(
                               imageUrl: imageUrl,
                               cacheManager: ItemImageCacheManager.instance,
@@ -280,7 +285,8 @@ class _PaymentDetailBody extends StatelessWidget {
                   value: formatDateTime(item.paidAt),
                 ),
                 SizedBox(height: context.labelBottomPadding),
-                if (item.paymentType != null && item.paymentType!.isNotEmpty) ...[
+                if (item.paymentType != null &&
+                    item.paymentType!.isNotEmpty) ...[
                   _DetailRow(
                     label: PaymentTexts.paymentMethod,
                     value: item.paymentType!,
@@ -295,10 +301,7 @@ class _PaymentDetailBody extends StatelessWidget {
                   SizedBox(height: context.labelBottomPadding),
                 ],
                 if (item.txId != null && item.txId!.isNotEmpty)
-                  _DetailRow(
-                    label: PaymentTexts.txId,
-                    value: item.txId!,
-                  ),
+                  _DetailRow(label: PaymentTexts.txId, value: item.txId!),
               ],
             ),
           ),
@@ -354,11 +357,15 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelWidth = context.widthRatio(0.2, min: 70.0, max: 100.0); // 특수 케이스: 상세 정보 라벨 너비
+    final labelWidth = context.widthRatio(
+      0.2,
+      min: 70.0,
+      max: 100.0,
+    ); // 특수 케이스: 상세 정보 라벨 너비
     final labelFontSize = context.fontSizeSmall;
     final valueFontSize = context.fontSizeMedium;
     final spacing = context.inputPadding;
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -366,10 +373,7 @@ class _DetailRow extends StatelessWidget {
           width: labelWidth,
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: labelFontSize,
-              color: iconColor,
-            ),
+            style: TextStyle(fontSize: labelFontSize, color: iconColor),
           ),
         ),
         SizedBox(width: spacing),
@@ -399,7 +403,7 @@ class _PaymentHistoryCard extends StatelessWidget {
       item.statusCode,
       isCompleted: isCompleted,
     );
-    
+
     // Responsive values
     final horizontalPadding = context.screenPadding;
     final verticalPadding = context.inputPadding;
@@ -407,10 +411,18 @@ class _PaymentHistoryCard extends StatelessWidget {
     final titleFontSize = context.fontSizeMedium;
     final dateFontSize = context.fontSizeSmall;
     final amountFontSize = context.fontSizeMedium;
-    final badgeFontSize = context.widthRatio(0.028, min: 9.0, max: 13.0); // 특수 케이스: 카드 배지 폰트
+    final badgeFontSize = context.widthRatio(
+      0.028,
+      min: 9.0,
+      max: 13.0,
+    ); // 특수 케이스: 카드 배지 폰트
     final spacing = context.inputPadding;
     final badgePadding = EdgeInsets.symmetric(
-      horizontal: context.widthRatio(0.025, min: 8.0, max: 14.0), // 특수 케이스: 배지 패딩
+      horizontal: context.widthRatio(
+        0.025,
+        min: 8.0,
+        max: 14.0,
+      ), // 특수 케이스: 배지 패딩
       vertical: context.spacingSmall * 0.5,
     );
 
@@ -419,11 +431,7 @@ class _PaymentHistoryCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: const [
-          BoxShadow(
-            color: shadowLow,
-            offset: Offset(0, 2),
-            blurRadius: 6,
-          ),
+          BoxShadow(color: shadowLow, offset: Offset(0, 2), blurRadius: 6),
         ],
       ),
       padding: EdgeInsets.symmetric(
@@ -448,10 +456,7 @@ class _PaymentHistoryCard extends StatelessWidget {
                 SizedBox(height: spacing * 0.33),
                 Text(
                   formatDate(item.paidAt),
-                  style: TextStyle(
-                    fontSize: dateFontSize,
-                    color: iconColor,
-                  ),
+                  style: TextStyle(fontSize: dateFontSize, color: iconColor),
                 ),
               ],
             ),
@@ -499,18 +504,14 @@ class _EmptyPaymentHistory extends StatelessWidget {
     final subtitleFontSize = context.fontSizeSmall;
     final spacing = context.screenPadding;
     final smallSpacing = context.spacingSmall * 0.5;
-    
+
     return Center(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: context.hPadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.receipt_long,
-              size: iconSize,
-              color: iconColor,
-            ),
+            Icon(Icons.receipt_long, size: iconSize, color: iconColor),
             SizedBox(height: spacing),
             Text(
               PaymentTexts.emptyHistory,
@@ -523,10 +524,7 @@ class _EmptyPaymentHistory extends StatelessWidget {
             SizedBox(height: smallSpacing),
             Text(
               PaymentTexts.emptyHistorySubtitle,
-              style: TextStyle(
-                fontSize: subtitleFontSize,
-                color: iconColor,
-              ),
+              style: TextStyle(fontSize: subtitleFontSize, color: iconColor),
               textAlign: TextAlign.center,
             ),
           ],
@@ -535,6 +533,3 @@ class _EmptyPaymentHistory extends StatelessWidget {
     );
   }
 }
-
-
-

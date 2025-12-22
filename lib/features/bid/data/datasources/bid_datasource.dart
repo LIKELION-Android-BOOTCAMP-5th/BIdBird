@@ -59,7 +59,7 @@ class BidDatasource {
 
     final response = await _supabase.rpc(
       rpcName,
-      params: <String, dynamic>{
+      params: {
         'p_item_id': request.itemId,
         'p_bidder_id': user.id,
         'p_bid_price': request.bidPrice,

@@ -66,6 +66,8 @@ class _ConfirmCheckCancelPopupState extends State<ConfirmCheckCancelPopup> {
                   if (isLongDescription)
                     Expanded(
                       child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         child: Text(
                           widget.description!,
                           textAlign: TextAlign.left,

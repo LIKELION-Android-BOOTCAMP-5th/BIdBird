@@ -1,11 +1,11 @@
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/core/utils/extension/money_extension.dart';
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/mypage/domain/entities/trade_history_entity.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -312,6 +312,7 @@ class _Filters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       scrollDirection: Axis.horizontal,
       child: Row(
         children: options.map((option) {

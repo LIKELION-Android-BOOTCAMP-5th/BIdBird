@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/models/user_entity.dart';
+import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
+import 'package:bidbird/main.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:bidbird/core/models/user_entity.dart';
 
 //사용자 상태 관리
 enum AuthStatus {
@@ -20,6 +21,7 @@ class AuthViewModel extends ChangeNotifier {
   AuthStatus get status => _status;
 
   bool get isLoggedIn => _status == AuthStatus.authenticated;
+  bool _loginEventFired = false;
 
   UserEntity? _user;
   UserEntity? get user => _user;
@@ -48,14 +50,22 @@ class AuthViewModel extends ChangeNotifier {
     // Supabase 인증 상태 구독
     _subscription = SupabaseManager.shared.supabase.auth.onAuthStateChange
         .listen((data) async {
+          print("============= Supabase 인증 상태 listen 작동 ===========");
           final session = data.session;
 
           if (session == null) {
             _user = null;
             _status = AuthStatus.unauthenticated;
+            _loginEventFired = false; // 👈 로그아웃 시 초기화
           } else {
             _status = AuthStatus.authenticated;
             notifyListeners();
+
+            // 🔥 여기서 딱 한 번만 fire
+            if (!_loginEventFired) {
+              _loginEventFired = true;
+              eventBus.fire(LoginEventBus(LoginEventType.login));
+            }
             unawaited(_loadUserAndSetupFCM(session.user.id));
             return;
           }
@@ -72,6 +82,7 @@ class AuthViewModel extends ChangeNotifier {
 
     onLoggedOut?.call();
     unawaited(_performLogoutTasks());
+    eventBus.fire(LoginEventBus(LoginEventType.logout));
   }
 
   Future<void> _performLogoutTasks() async {
@@ -182,4 +193,3 @@ class AuthViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

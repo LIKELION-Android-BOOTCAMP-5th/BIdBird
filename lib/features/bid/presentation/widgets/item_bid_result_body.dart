@@ -31,8 +31,7 @@ class ItemBidResultBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Responsive values
-    final iconSize = context.widthRatio(0.18, min: 56.0, max: 88.0); // 특수 케이스: 큰 아이콘
+    final iconSize = context.widthRatio(0.18, min: 56.0, max: 88.0);
     final titleFontSize = context.fontSizeXLarge;
     final subtitleFontSize = context.fontSizeSmall;
     final itemTitleFontSize = context.buttonFontSize;
@@ -42,124 +41,133 @@ class ItemBidResultBody extends StatelessWidget {
     final verticalPadding = context.spacingMedium;
     final spacing = context.spacingMedium;
     final smallSpacing = context.spacingSmall;
-    
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: IconButton(
-            icon: Icon(Icons.close),
-            onPressed: onClose,
-          ),
-        ),
-        SizedBox(height: smallSpacing),
-        Icon(
-          icon,
-          size: iconSize,
-          color: iconColor,
-        ),
-        SizedBox(height: spacing),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: titleFontSize,
-            fontWeight: FontWeight.w800,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: smallSpacing),
-        Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: subtitleFontSize,
-            color: iconColor,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: spacing),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: defaultBorder,
-              boxShadow: [
-                BoxShadow(
-                  color: shadowHigh,
-                  offset: Offset(0, 4),
-                  blurRadius: 12,
-                ),
-              ],
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxHeight < 700;
+        final contentPadding = isCompact ? horizontalPadding * 0.8 : horizontalPadding;
+        final contentSpacing = isCompact ? spacing * 0.75 : spacing;
+        final thumbnailAspect = isCompact ? 4 / 3 : 1.0;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: onClose,
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FixedRatioThumbnail(
-                  imageUrl: item.images.isNotEmpty && item.images.first.isNotEmpty
-                      ? item.images.first
-                      : null,
-                  aspectRatio: 1.0,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(defaultRadius),
-                    topRight: Radius.circular(defaultRadius),
-                  ),
+            SizedBox(height: smallSpacing),
+            Icon(icon, size: iconSize, color: iconColor),
+            SizedBox(height: contentSpacing),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: titleFontSize,
+                fontWeight: FontWeight.w800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: smallSpacing),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: subtitleFontSize,
+                color: iconColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: contentSpacing),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: contentPadding),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: isCompact ? 280 : 320,
                 ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    context.heightRatio(0.017, min: 12.0, max: 18.0), // 특수 케이스: 내부 패딩
-                    horizontalPadding,
-                    horizontalPadding,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: defaultBorder,
+                    boxShadow: [
+                      BoxShadow(
+                        color: shadowHigh,
+                        offset: const Offset(0, 4),
+                        blurRadius: 12,
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        item.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: itemTitleFontSize,
-                          fontWeight: FontWeight.w700,
+                      FixedRatioThumbnail(
+                        imageUrl: item.images.isNotEmpty && item.images.first.isNotEmpty
+                            ? item.images.first
+                            : null,
+                        aspectRatio: thumbnailAspect,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(defaultRadius),
+                          topRight: Radius.circular(defaultRadius),
                         ),
                       ),
-                      SizedBox(height: smallSpacing * 0.6),
-                      Text(
-                        priceLabel ?? '낙찰가',
-                        style: TextStyle(
-                          fontSize: priceLabelFontSize,
-                          color: iconColor,
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          contentPadding,
+                          smallSpacing,
+                          contentPadding,
+                          contentPadding,
                         ),
-                      ),
-                      SizedBox(height: smallSpacing * 0.2),
-                      Text(
-                        '${formatPrice(item.winPrice)}원',
-                        style: TextStyle(
-                          fontSize: priceFontSize,
-                          fontWeight: FontWeight.w800,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: itemTitleFontSize,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: smallSpacing * 0.6),
+                            Text(
+                              priceLabel ?? '낙찰가',
+                              style: TextStyle(
+                                fontSize: priceLabelFontSize,
+                                color: iconColor,
+                              ),
+                            ),
+                            SizedBox(height: smallSpacing * 0.2),
+                            Text(
+                              '${formatPrice(item.winPrice)}원',
+                              style: TextStyle(
+                                fontSize: priceFontSize,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-        SizedBox(height: spacing),
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            horizontalPadding,
-            0,
-            horizontalPadding,
-            verticalPadding,
-          ),
-          child: Column(
-            children: actions,
-          ),
-        ),
-      ],
+            SizedBox(height: contentSpacing),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                contentPadding,
+                0,
+                contentPadding,
+                verticalPadding,
+              ),
+              child: Column(children: actions),
+            ),
+          ],
+        );
+      },
     );
   }
 }
