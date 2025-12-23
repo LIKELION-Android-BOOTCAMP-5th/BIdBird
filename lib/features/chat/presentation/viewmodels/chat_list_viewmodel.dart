@@ -361,7 +361,7 @@ class ChatListViewmodel extends ChangeNotifier {
       Future.wait([
         _cacheManager.loadSellerIds([newRoom]),
         _cacheManager.loadTopBidders([newRoom]),
-      ], eagerError: false).catchError((_) {});
+      ], eagerError: false).catchError((_) => []);
 
       notifyListeners();
     } catch (e) {
@@ -406,6 +406,7 @@ class ChatListViewmodel extends ChangeNotifier {
     if (_instance == this) {
       _instance = null;
     }
+    _loginSubscription?.cancel();
     _fullReloadDebounceTimer?.cancel();
     _realtimeSubscriptionManager.dispose();
     super.dispose();

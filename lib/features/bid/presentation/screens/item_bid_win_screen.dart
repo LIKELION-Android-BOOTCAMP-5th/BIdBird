@@ -3,7 +3,6 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
 import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
@@ -65,7 +64,6 @@ class ItemBidWinScreen extends StatelessWidget {
             Builder(
               builder: (context) {
                 final buttonHeight = ResponsiveConstants.buttonHeight(context);
-                final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
                 final textButtonFontSize = ResponsiveConstants.fontSizeMedium(context);
                 final spacing = ResponsiveConstants.spacingSmall(context);
                 

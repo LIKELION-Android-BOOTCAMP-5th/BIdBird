@@ -13,16 +13,18 @@ class RealtimeChannelService {
     _channel?.unsubscribe();
     _channel = _supabase.channel('realtime-$table-$itemId');
 
-    _channel!.on(
-      RealtimeListenTypes.postgresChanges,
-      ChannelFilter(event: 'UPDATE', schema: 'public', table: table),
-      (payload, [ref]) {
-        final record = payload.newRecord;
-        if (record is Map<String, dynamic> && record['item_id'] == itemId) {
-          onChange(record);
-        }
-      },
-    );
+    _channel!
+      .onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: table,
+        callback: (payload) {
+          final record = payload.newRecord;
+          if (record is Map<String, dynamic> && record['item_id'] == itemId) {
+            onChange(record);
+          }
+        },
+      );
 
     _channel!.subscribe();
   }

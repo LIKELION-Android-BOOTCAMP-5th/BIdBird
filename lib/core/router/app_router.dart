@@ -11,7 +11,6 @@ import 'package:bidbird/features/chat/presentation/screens/chat_screen.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
 import 'package:bidbird/features/current_trade/presentation/screens/current_trade_screen.dart';
 import 'package:bidbird/features/current_trade/presentation/screens/filtered_trade_list_screen.dart';
-import 'package:bidbird/features/current_trade/presentation/viewmodels/current_trade_viewmodel.dart';
 import 'package:bidbird/features/home/presentation/screens/home_screen.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/screens/item_detail_screen.dart';
 import 'package:bidbird/features/item_detail/user_history/presentation/screens/user_profile_history_screen.dart';

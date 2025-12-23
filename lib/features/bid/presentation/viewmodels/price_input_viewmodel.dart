@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
-import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/errors/error_mapper.dart';
-import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
-import 'package:bidbird/features/bid/domain/usecases/place_bid_usecase.dart';
+import 'package:bidbird/features/bid/domain/usecases/orchestrations/place_bid_flow_usecase.dart';
+import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
 import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
 
 class PriceInputViewModel extends ChangeNotifier {
-  PriceInputViewModel({PlaceBidUseCase? placeBidUseCase})
-      : _placeBidUseCase =
-            placeBidUseCase ?? PlaceBidUseCase(BidRepositoryImpl());
+  PriceInputViewModel({PlaceBidFlowUseCase? placeBidFlowUseCase})
+    : _placeBidFlowUseCase =
+          placeBidFlowUseCase ??
+          PlaceBidFlowUseCase(
+            checkBidRestrictionUseCase: CheckBidRestrictionUseCase(
+              BidRepositoryImpl(),
+            ),
+            repository: BidRepositoryImpl(),
+          );
 
-  // ignore: unused_field
-  final PlaceBidUseCase _placeBidUseCase;
+  final PlaceBidFlowUseCase _placeBidFlowUseCase;
 
   bool isSubmitting = false;
 
@@ -55,32 +59,17 @@ class PriceInputViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final supabase = SupabaseManager.shared.supabase;
-      final user = supabase.auth.currentUser;
-
-      if (user == null) {
-        throw Exception(ItemRegistrationErrorMessages.loginRequired);
-      }
-
-      final response = await supabase.rpc(
-        'temporary_bid',
-        params: <String, dynamic>{
-          'p_item_id': itemId,
-          'p_bidder_id': user.id,
-          'p_bid_price': bidPrice,
-        },
+      final (result, error) = await _placeBidFlowUseCase.placeBid(
+        itemId: itemId,
+        bidPrice: bidPrice,
       );
 
-      if (response is! Map<String, dynamic>) {
-        throw Exception('입찰 처리 중 오류가 발생했습니다.');
+      if (error != null) {
+        throw Exception(ErrorMapper().map(error.message));
       }
 
-      final resultCode = response['result_code'] as String?;
-      final message =
-          response['message'] as String? ?? '입찰 처리 중 오류가 발생했습니다.';
-
-      if (resultCode != 'SUCCESS') {
-        throw Exception(message);
+      if (result == null || !result.success) {
+        throw Exception('입찰 처리 중 오류가 발생했습니다.');
       }
     } catch (e) {
       throw Exception(ErrorMapper().map(e));
@@ -90,6 +79,3 @@ class PriceInputViewModel extends ChangeNotifier {
     }
   }
 }
-
-
-
