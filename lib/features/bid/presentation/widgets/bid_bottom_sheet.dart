@@ -110,7 +110,6 @@ class _SheetBody extends StatelessWidget {
     required this.displayCurrentPrice,
     required this.bidUnitLabel,
     required this.statusMessage,
-    required this.detailMessage,
     required this.isValidStatus,
     required this.canSubmit,
     required this.isSubmitting,
@@ -123,7 +122,6 @@ class _SheetBody extends StatelessWidget {
   final int displayCurrentPrice;
   final String bidUnitLabel;
   final String statusMessage;
-  final String detailMessage;
   final bool isValidStatus;
   final bool canSubmit;
   final bool isSubmitting;
@@ -177,7 +175,6 @@ class _SheetBody extends StatelessWidget {
         _BidStatusMessage(
           isValid: isValidStatus,
           statusText: statusMessage,
-          detailText: detailMessage,
         ),
         const SizedBox(height: 20),
         SizedBox(
@@ -404,12 +401,10 @@ class _BidStatusMessage extends StatelessWidget {
   const _BidStatusMessage({
     required this.isValid,
     required this.statusText,
-    required this.detailText,
   });
 
   final bool isValid;
   final String statusText;
-  final String detailText;
 
   @override
   Widget build(BuildContext context) {
@@ -424,26 +419,13 @@ class _BidStatusMessage extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                statusText,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                detailText,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: textColor,
-                ),
-              ),
-            ],
+          child: Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ),
       ],
@@ -629,7 +611,6 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                   displayCurrentPrice: displayCurrentPrice,
                   bidUnitLabel: displayBidUnitLabel,
                   statusMessage: statusMessage,
-                  detailMessage: '${formatPrice(_bidAmount)}원에 입찰합니다',
                   isValidStatus: isValidBid,
                   canSubmit: canSubmit,
                   isSubmitting: isSubmitting,
