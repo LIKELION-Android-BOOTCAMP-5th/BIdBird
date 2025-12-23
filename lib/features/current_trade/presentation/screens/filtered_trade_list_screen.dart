@@ -315,15 +315,17 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
                           );
                           
                           // 섹션 아이템들
-                          for (final item in items) {
+                          for (var i = 0; i < items.length; i++) {
+                            final item = items[i];
                             final itemIsSeller = item is SaleHistoryItem;
                             final saleItem = itemIsSeller ? item : null;
                             final bidItem = itemIsSeller ? null : item as BidHistoryItem;
                             final itemActionType = saleItem?.actionType ?? bidItem?.actionType ?? TradeActionType.none;
+                            final bottomPadding = i == items.length - 1 ? 0.0 : spacing * 1.5;
                             
                             allSections.add(
                               Padding(
-                                padding: EdgeInsets.only(bottom: spacing * 1.5),
+                                padding: EdgeInsets.only(bottom: bottomPadding),
                                 child: TradeHistoryCard(
                                   title: saleItem?.title ?? bidItem?.title ?? '',
                                   thumbnailUrl: saleItem?.thumbnailUrl ?? bidItem?.thumbnailUrl,
@@ -333,7 +335,7 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
                                   isSeller: itemIsSeller,
                                   actionType: itemActionType,
                                   useResponsive: true,
-                                  onActionButtonPressed: () => _buildActionButton(
+                                  bottomSlot: _buildActionButton(
                                     context,
                                     item,
                                     itemActionType,
@@ -404,26 +406,7 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
 
     switch (actionType) {
       case TradeActionType.paymentRequired:
-        // TODO: 사업자 인증 후 아래 주석 해제
-        // 구매자: 결제하러 가기 버튼 표시
-        // return _buildActionButtonWidget(
-        //   context: context,
-        //   text: '결제하러 가기',
-        //   onPressed: () async {
-        //     await handlePayment(
-        //       context: context,
-        //       itemId: itemId,
-        //       itemTitle: title,
-        //       amount: price,
-        //     );
-        //   },
-        // );
-        
-        // 임시: 결제 기능 비활성화 - 버튼 숨김
-        // return _buildDisabledButtonWidget(
-        //   context: context,
-        //   text: '결제 기능 준비중입니다',
-        // );
+        // 현재 결제: 안내 버튼 숨김
         return const SizedBox.shrink();
 
       case TradeActionType.paymentWaiting:

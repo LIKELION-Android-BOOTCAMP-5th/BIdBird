@@ -1,3 +1,4 @@
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/bid/presentation/widgets/item_detail_bid_history_entry.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
@@ -133,9 +134,11 @@ class _ItemDetailContentState extends State<_ItemDetailContent> {
                         // Info Section - padding 24 (라인 없이 바로 연결)
                         ItemDetailDescriptionSection(item: item),
                         // Divider
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24),
-                          child: Divider(
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: context.screenPadding,
+                          ),
+                          child: const Divider(
                             height: 1,
                             thickness: 1,
                             color: Color(0xFFE5E7EB),

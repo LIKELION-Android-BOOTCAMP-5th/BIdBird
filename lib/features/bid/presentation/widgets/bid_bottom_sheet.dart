@@ -62,7 +62,7 @@ class _BidInfoSummary extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '현재 최고가',
+                      '현재가',
                       style: TextStyle(fontSize: 12, color: textColor),
                     ),
                     const SizedBox(height: 6),
@@ -110,7 +110,6 @@ class _SheetBody extends StatelessWidget {
     required this.displayCurrentPrice,
     required this.bidUnitLabel,
     required this.statusMessage,
-    required this.detailMessage,
     required this.isValidStatus,
     required this.canSubmit,
     required this.isSubmitting,
@@ -123,7 +122,6 @@ class _SheetBody extends StatelessWidget {
   final int displayCurrentPrice;
   final String bidUnitLabel;
   final String statusMessage;
-  final String detailMessage;
   final bool isValidStatus;
   final bool canSubmit;
   final bool isSubmitting;
@@ -177,7 +175,6 @@ class _SheetBody extends StatelessWidget {
         _BidStatusMessage(
           isValid: isValidStatus,
           statusText: statusMessage,
-          detailText: detailMessage,
         ),
         const SizedBox(height: 20),
         SizedBox(
@@ -241,6 +238,7 @@ class _BidStepperCard extends StatelessWidget {
     required this.onDecrease,
     required this.canDecrease,
     required this.canIncrease,
+    required this.amountFontSize,
   });
 
   final int bidAmount;
@@ -249,6 +247,7 @@ class _BidStepperCard extends StatelessWidget {
   final VoidCallback onDecrease;
   final bool canDecrease;
   final bool canIncrease;
+  final double amountFontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -294,8 +293,8 @@ class _BidStepperCard extends StatelessWidget {
                     Text(
                       '${formatPrice(bidAmount)}원',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 36,
+                      style: TextStyle(
+                        fontSize: amountFontSize,
                         fontWeight: FontWeight.w800,
                         color: blueColor,
                         letterSpacing: -0.5,
@@ -363,18 +362,22 @@ class _QuickPresetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final action in actions)
-          _buildChip(
-            action.label,
-            action.type == _PresetActionType.adjust
-                ? () => onAdjust(action.value)
-                : onResetMin,
-          ),
-      ],
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        runAlignment: WrapAlignment.center,
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final action in actions)
+            _buildChip(
+              action.label,
+              action.type == _PresetActionType.adjust
+                  ? () => onAdjust(action.value)
+                  : onResetMin,
+            ),
+        ],
+      ),
     );
   }
 
@@ -402,12 +405,10 @@ class _BidStatusMessage extends StatelessWidget {
   const _BidStatusMessage({
     required this.isValid,
     required this.statusText,
-    required this.detailText,
   });
 
   final bool isValid;
   final String statusText;
-  final String detailText;
 
   @override
   Widget build(BuildContext context) {
@@ -422,26 +423,13 @@ class _BidStatusMessage extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                statusText,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                detailText,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: textColor,
-                ),
-              ),
-            ],
+          child: Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ),
       ],
@@ -506,23 +494,8 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     // 현재 가격이 변경되었을 때만 업데이트
     if (newCurrentPrice != _currentPrice || newBidPrice != _bidUnit) {
       setState(() {
-        final oldCurrentPrice = _currentPrice;
         _currentPrice = newCurrentPrice;
         _bidUnit = newBidPrice;
-        
-        // 현재 가격이 올라갔을 때, 입찰 금액이 최소 입찰가보다 낮으면 조정
-        final minBid = _currentPrice + _bidUnit;
-        if (_bidAmount < minBid) {
-          _bidAmount = minBid;
-        }
-        // 현재 가격이 올라갔을 때, 기존 입찰 금액과의 차이를 유지하려면
-        // (기존 입찰 금액 - 기존 현재 가격)을 유지
-        else if (newCurrentPrice > oldCurrentPrice) {
-          final priceDiff = _bidAmount - oldCurrentPrice;
-          final newBidAmount = _currentPrice + priceDiff;
-          // 최소 입찰가보다는 높아야 함
-          _bidAmount = newBidAmount >= minBid ? newBidAmount : minBid;
-        }
       });
     }
   }
@@ -570,6 +543,15 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     return '${formatPrice(price)}원';
   }
 
+  /// 10만 원 이상이면 금액은 그대로 두고 폰트 크기만 축소
+  double _getBidAmountFontSize(int amount) {
+    const baseSize = 36.0;
+    if (amount >= 100000) {
+      return baseSize * 0.7;
+    }
+    return baseSize;
+  }
+
   @override
   Widget build(BuildContext context) {
     // isSubmitting만 watch하여 불필요한 리빌드 방지
@@ -588,6 +570,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             priceInfo?.currentPrice ?? _currentPrice;
         final displayBidUnit = priceInfo?.bidUnit ?? _bidUnit;
         final displayBidUnitLabel = _formatBidUnit(displayBidUnit);
+        final bidAmountFontSize = _getBidAmountFontSize(_bidAmount);
 
         final minBid = _minNextBid;
         final isBelowMinBid = _bidAmount < minBid;
@@ -603,7 +586,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
         //         ? '즉시 구매가를 초과할 수 없습니다'
         //         : '유효한 입찰입니다';
         final statusMessage = isBelowMinBid
-            ? '최소 ${formatPrice(minBid)}원부터 가능합니다'
+            ? '유효하지 않은 입찰입니다'
             : '유효한 입찰입니다';
 
         return ClipRRect(
@@ -617,7 +600,6 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                   displayCurrentPrice: displayCurrentPrice,
                   bidUnitLabel: displayBidUnitLabel,
                   statusMessage: statusMessage,
-                  detailMessage: '${formatPrice(_bidAmount)}원에 입찰합니다',
                   isValidStatus: isValidBid,
                   canSubmit: canSubmit,
                   isSubmitting: isSubmitting,
@@ -635,6 +617,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                     //     ? true
                     //     : _bidAmount < widget.buyNowPrice,
                     canIncrease: true,
+                    amountFontSize: bidAmountFontSize,
                   ),
                   quickPresetRow: _QuickPresetRow(
                     actions: _presetActions,

@@ -1,4 +1,4 @@
-import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
+import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart' show ItemDetail;
 
 class ItemBidWinEntity {
   ItemBidWinEntity({
