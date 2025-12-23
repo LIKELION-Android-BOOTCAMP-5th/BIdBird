@@ -1,11 +1,7 @@
-import 'dart:typed_data';
-
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/secondary_button.dart';
-import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
@@ -14,7 +10,6 @@ import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/bid/presentation/viewmodels/price_input_viewmodel.dart';
 import 'package:bidbird/features/bid/presentation/widgets/bid_bottom_sheet.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/identity_verification/presentation/utils/identity_verification_helper.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
 import 'package:bidbird/features/item_trade/payment_info/data/datasources/offline_payment_datasource.dart';
@@ -44,7 +39,7 @@ class ItemBottomActionBar extends StatefulWidget {
 }
 
 class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
-  int? _statusCode;
+  late int _statusCode;
   bool _isBidRestricted = false;
   bool _hasShownRelistPopup = false;
   bool _hasShownPaymentCompleteScreen = false;
@@ -68,7 +63,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   @override
   void initState() {
     super.initState();
-    _statusCode = widget.item.statusCode;
+    _statusCode = widget.item.statusCode ?? 0;
     _checkBidRestriction();
     _checkShippingInfo();
     _checkShippingInfoForSeller();
@@ -214,16 +209,16 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
         statusCode: vm?.itemDetail?.statusCode,
       ),
       builder: (context, data, _) {
-        // statusCode가 변경되면 _statusCode 업데이트 (didUpdateWidget에서 처리)
-        if (data.statusCode != null && _statusCode != data.statusCode) {
-          _statusCode = data.statusCode;
+        final newStatusCode = data.statusCode ?? _statusCode;
+        if (_statusCode != newStatusCode) {
+          _statusCode = newStatusCode;
         }
-        return _buildContent(context, data.isTopBidder, data.statusCode);
+        return _buildContent(context, data.isTopBidder);
       },
     );
   }
 
-  Widget _buildContent(BuildContext context, bool isTopBidder, int? currentStatusCode) {
+  Widget _buildContent(BuildContext context, bool isTopBidder) {
     final itemDetailViewModel = context.read<ItemDetailViewModel?>();
     final isMyItem = widget.isMyItem;
     final bool isBidRestricted = _isBidRestricted;
@@ -236,8 +231,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final int? tradeStatusCode = currentItem.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
     
-    // statusCode는 Selector에서 받은 값 또는 현재 값 사용
-    final int statusCode = _statusCode ?? currentStatusCode ?? currentItem.statusCode ?? 0;
+    final int statusCode = _statusCode;
 
     // const disabledStatusesForBuyNow = {
     //   AuctionStatusCode.ready,

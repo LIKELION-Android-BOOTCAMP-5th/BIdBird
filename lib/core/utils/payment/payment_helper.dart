@@ -1,11 +1,11 @@
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
-import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
-import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
-import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
-import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+// import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+// import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
+// import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
+// import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
+// import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
+// import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
+// import 'package:provider/provider.dart';
 
 // TODO: 사업자 인증 후 아래 주석 해제
 Future<void> handlePayment({
