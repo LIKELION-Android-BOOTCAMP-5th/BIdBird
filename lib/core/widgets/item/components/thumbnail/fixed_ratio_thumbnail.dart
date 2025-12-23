@@ -63,19 +63,35 @@ class FixedRatioThumbnail extends StatelessWidget {
               children: [
                 // 이미지
                 Positioned.fill(
-                  child: CachedNetworkImage(
-                    imageUrl: displayUrl,
-                    cacheManager: ItemImageCacheManager.instance,
-                    fit: BoxFit.cover, // center crop
-                    placeholder: (context, url) => Container(color: shadowHigh),
-                    errorWidget: (context, url, error) => Container(
-                      color: ImageBackgroundColor,
-                      child: const Icon(
-                        Icons.image_outlined,
-                        color: iconColor,
-                        size: 32,
-                      ),
-                    ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final dpr = MediaQuery.of(context).devicePixelRatio;
+                      final memWidth = (constraints.maxWidth.isFinite
+                              ? constraints.maxWidth * dpr
+                              : 0)
+                          .round();
+                      final memHeight = (constraints.maxHeight.isFinite
+                              ? constraints.maxHeight * dpr
+                              : 0)
+                          .round();
+
+                      return CachedNetworkImage(
+                        imageUrl: displayUrl,
+                        cacheManager: ItemImageCacheManager.instance,
+                        fit: BoxFit.cover, // center crop
+                        memCacheWidth: memWidth > 0 ? memWidth : null,
+                        memCacheHeight: memHeight > 0 ? memHeight : null,
+                        placeholder: (context, url) => Container(color: shadowHigh),
+                        errorWidget: (context, url, error) => Container(
+                          color: ImageBackgroundColor,
+                          child: const Icon(
+                            Icons.image_outlined,
+                            color: iconColor,
+                            size: 32,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 // 세로 이미지 하단 그라데이션 (선택적)

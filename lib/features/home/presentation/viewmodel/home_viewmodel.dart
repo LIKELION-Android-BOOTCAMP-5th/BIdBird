@@ -53,9 +53,12 @@ class HomeViewmodel extends ChangeNotifier {
   //스크롤 컨트롤러
   Timer? _debounce;
   ScrollController scrollController = ScrollController();
+  // 정렬/notify 배치 호출용
+  Timer? _sortDebounce;
 
   //실시간 검색
   Timer? _searchDebounce;
+  int _searchRequestId = 0; // 최신 검색 요청 식별자
 
   //ios fetch문제 잡기
   bool _isDisposed = false;
@@ -111,6 +114,7 @@ class HomeViewmodel extends ChangeNotifier {
     scrollController.dispose();
     _debounce?.cancel();
     _searchDebounce?.cancel();
+    _sortDebounce?.cancel();
     userInputController.dispose();
 
     if (_actionRealtime != null) {
@@ -148,6 +152,16 @@ class HomeViewmodel extends ChangeNotifier {
 
       // 둘 다 진행중이거나 둘 다 종료 → 기존 정렬 유지
       return 0;
+    });
+  }
+
+  void _scheduleResortAndNotify({Duration delay = const Duration(milliseconds: 150)}) {
+    if (_isDisposed) return;
+    _sortDebounce?.cancel();
+    _sortDebounce = Timer(delay, () {
+      if (_isDisposed) return;
+      sortItemsByFinishTime();
+      notifyListeners();
     });
   }
 
@@ -249,6 +263,7 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> search(String userInput) async {
+    final requestId = ++_searchRequestId; // 최신 요청 토큰
     isSearching = userInput.isNotEmpty;
     currentSearchText = userInput;
     _currentPage = 1;
@@ -264,6 +279,11 @@ class HomeViewmodel extends ChangeNotifier {
       keywordType: selectedKeywordId,
       userInputSearchText: userInput,
     );
+
+    // 늦게 도착한 응답은 폐기
+    if (requestId != _searchRequestId) {
+      return;
+    }
 
     sortItemsByFinishTime();
 
@@ -282,6 +302,9 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> searchNextItems() async {
+    if (_isFetching || !_hasMore) return;
+
+    _isFetching = true;
     _currentPage++;
 
     String orderBy = setOrderBy(type);
@@ -293,10 +316,15 @@ class HomeViewmodel extends ChangeNotifier {
       userInputSearchText: currentSearchText,
     );
 
-    _items.addAll(moreItems);
+    if (moreItems.isEmpty) {
+      _hasMore = false;
+    } else {
+      _items.addAll(moreItems);
+    }
 
     sortItemsByFinishTime();
 
+    _isFetching = false;
     notifyListeners();
   }
 
@@ -333,8 +361,7 @@ class HomeViewmodel extends ChangeNotifier {
               item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
             }
             if (_isDisposed) return;
-            sortItemsByFinishTime();
-            notifyListeners();
+            _scheduleResortAndNotify();
           },
         )
         .subscribe();

@@ -15,6 +15,7 @@ import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'core/services/time_ticker.dart';
 
 EventBus eventBus = EventBus();
 
@@ -31,6 +32,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        // 전역 1초 티커 (타이머 중앙화)
+        ChangeNotifierProvider(create: (_) => TimeTicker()),
         ChangeNotifierProvider(
           create: (context) {
             return AuthViewModel();
@@ -81,6 +84,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   GoRouter? _router;
   late final Future<void> _initFuture;
+  bool _authInitDone = false;
 
   @override
   void initState() {
@@ -150,6 +154,15 @@ class _MyAppState extends State<MyApp> {
         }
 
         _router ??= createAppRouter(context);
+
+        // 초기화 완료 시, Auth 초기화를 한 번만 수행
+        if (!_authInitDone) {
+          _authInitDone = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            context.read<AuthViewModel>().initialize();
+          });
+        }
 
         return GestureDetector(
           onTap: () {

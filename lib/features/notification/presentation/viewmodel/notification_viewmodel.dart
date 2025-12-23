@@ -51,6 +51,7 @@ class NotificationViewmodel extends ChangeNotifier {
   ];
 
   DateTime? _lastPausedAt;
+  bool _isFetching = false; // 중복 요청 방지 플래그
 
   int get unCheckedCount =>
       notifyList.where((e) => e.is_checked == false).length;
@@ -154,9 +155,13 @@ class NotificationViewmodel extends ChangeNotifier {
   }
 
   Future<void> fetchNotify() async {
+    if (_isFetching) return; // 중복 호출 방지
+
+    _isFetching = true;
     final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentUserId == null) {
       print("로그인 상태가 아닙니다.");
+      _isFetching = false;
       return;
     }
     try {
@@ -166,6 +171,7 @@ class NotificationViewmodel extends ChangeNotifier {
     }
     sortNotifyList();
     notifyListeners();
+    _isFetching = false;
   }
 
   Future<void> checkNotification(String id) async {

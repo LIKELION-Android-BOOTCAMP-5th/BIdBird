@@ -8,17 +8,18 @@ class ItemDetailDescriptionSection extends StatefulWidget {
   final ItemDetail item;
 
   @override
-  State<ItemDetailDescriptionSection> createState() => _ItemDetailDescriptionSectionState();
+  State<ItemDetailDescriptionSection> createState() =>
+      _ItemDetailDescriptionSectionState();
 }
 
-class _ItemDetailDescriptionSectionState extends State<ItemDetailDescriptionSection> {
+class _ItemDetailDescriptionSectionState
+    extends State<ItemDetailDescriptionSection> {
   bool _isExpanded = false;
-  static const int _maxLines = 3;
+  static const int _collapsedMaxLines = 1; // 접기 상태에서 1줄만 보여줌
 
   @override
   Widget build(BuildContext context) {
     final description = widget.item.itemContent;
-    final needsExpansion = description.length > 100; // 간단한 기준, 실제로는 TextPainter로 계산 가능
 
     final horizontalPadding = context.screenPadding;
     final titleFontSize = context.fontSizeMedium;
@@ -28,10 +29,36 @@ class _ItemDetailDescriptionSectionState extends State<ItemDetailDescriptionSect
     final isCompact = context.isSmallScreen(threshold: 360);
     final translateY = isCompact ? -30.0 : -40.0;
 
+    // 화면에 그려질 실제 가용 폭 계산
+    final maxContentWidth =
+        MediaQuery.of(context).size.width - (horizontalPadding * 2);
+
+    // 텍스트가 1줄을 초과하는지 정확히 계산
+    final baseTextStyle = TextStyle(
+      fontSize: bodyFontSize,
+      height: 1.6,
+      fontWeight: FontWeight.w400,
+      color: const Color(0xFF6B7684),
+    );
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: description, style: baseTextStyle),
+      maxLines: _collapsedMaxLines,
+      textDirection: Directionality.of(context),
+      ellipsis: '…',
+    )..layout(minWidth: 0, maxWidth: maxContentWidth);
+
+    final needsExpansion = textPainter.didExceedMaxLines;
+
     return Transform.translate(
       offset: Offset(0, translateY),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(horizontalPadding, spacingSmall, horizontalPadding, 0),
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          spacingSmall,
+          horizontalPadding,
+          0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -46,14 +73,11 @@ class _ItemDetailDescriptionSectionState extends State<ItemDetailDescriptionSect
             SizedBox(height: spacingSmall),
             Text(
               description,
-              style: TextStyle(
-                fontSize: bodyFontSize,
-                height: 1.6,
-                fontWeight: FontWeight.w400,
-                color: const Color(0xFF6B7684),
-              ),
-              maxLines: _isExpanded ? null : _maxLines,
-              overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+              style: baseTextStyle,
+              maxLines: _isExpanded ? null : _collapsedMaxLines,
+              overflow: _isExpanded
+                  ? TextOverflow.visible
+                  : TextOverflow.ellipsis,
             ),
             if (needsExpansion) ...[
               SizedBox(height: spacingSmall * 0.8),

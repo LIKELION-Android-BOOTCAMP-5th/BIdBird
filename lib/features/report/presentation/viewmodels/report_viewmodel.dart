@@ -110,6 +110,8 @@ class ReportViewModel extends ChangeNotifier {
 
   /// 신고 타입 목록 로드
   Future<void> loadReportTypes() async {
+    if (_isLoading) return; // 중복 호출 방지
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -219,6 +221,8 @@ class ReportViewModel extends ChangeNotifier {
     required String? itemId,
     required String targetUserId,
   }) async {
+    if (_isLoading) return false; // 중복 제출 방지
+
     if (!canSubmit) {
       _error = '모든 항목을 입력해주세요.';
       notifyListeners();

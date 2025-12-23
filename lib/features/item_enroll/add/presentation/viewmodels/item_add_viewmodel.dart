@@ -85,6 +85,8 @@ class ItemAddViewModel extends ItemBaseViewModel {
   }
 
   Future<void> fetchKeywordTypes() async {
+    if (_isLoadingKeywords) return; // 중복 호출 방지
+
     _isLoadingKeywords = true;
     notifyListeners();
 
