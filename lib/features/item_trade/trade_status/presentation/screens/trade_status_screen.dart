@@ -402,7 +402,97 @@ class _TradeStatusScreenContent extends StatelessWidget {
 
     // 배송 단계 UI 비활성화
     // if (currentStep == TradeStep.shipping) {
-    //   ...
+    //   final shippingInfoRepository = ShippingInfoRepositoryImpl();
+    //   final tradeStatus = viewModel.tradeStatus;
+    //   final shippingInfo = tradeStatus?.shippingInfo;
+    //
+    //   return Column(
+    //     children: [
+    //       SizedBox(
+    //         width: double.infinity,
+    //         child: ElevatedButton(
+    //           onPressed: () async {
+    //             // 송장 입력 팝업 표시
+    //             showDialog(
+    //               context: context,
+    //               barrierDismissible: true,
+    //               builder: (dialogContext) {
+    //                 return ShippingInfoInputPopup(
+    //                   initialCarrier: shippingInfo?['carrier'] as String?,
+    //                   initialTrackingNumber:
+    //                       shippingInfo?['tracking_number'] as String?,
+    //                   onConfirm: (carrier, trackingNumber) async {
+    //                     try {
+    //                       if (shippingInfo != null) {
+    //                         // 기존 정보가 있으면 택배사만 수정 (송장 번호는 수정 불가)
+    //                         final existingTrackingNumber =
+    //                             shippingInfo['tracking_number'] as String?;
+    //                         await shippingInfoRepository.updateShippingInfo(
+    //                           itemId: viewModel.itemId,
+    //                           carrier: carrier,
+    //                           trackingNumber:
+    //                               existingTrackingNumber ?? trackingNumber,
+    //                         );
+    //                         if (dialogContext.mounted) {
+    //                           ScaffoldMessenger.of(dialogContext).showSnackBar(
+    //                             const SnackBar(
+    //                               content: Text('택배사 정보가 수정되었습니다'),
+    //                             ),
+    //                           );
+    //                         }
+    //                       } else {
+    //                         // 기존 정보가 없으면 새로 저장
+    //                         await shippingInfoRepository.saveShippingInfo(
+    //                           itemId: viewModel.itemId,
+    //                           carrier: carrier,
+    //                           trackingNumber: trackingNumber,
+    //                         );
+    //                         if (dialogContext.mounted) {
+    //                           ScaffoldMessenger.of(dialogContext).showSnackBar(
+    //                             const SnackBar(content: Text('송장 정보가 입력되었습니다')),
+    //                           );
+    //                         }
+    //                       }
+    //
+    //                       // 송장 정보 다시 로드
+    //                       await viewModel.refreshShippingInfo();
+    //                     } catch (e) {
+    //                       if (dialogContext.mounted) {
+    //                         ScaffoldMessenger.of(dialogContext).showSnackBar(
+    //                           SnackBar(
+    //                             content: Text('송장 정보 저장 실패: ${e.toString()}'),
+    //                           ),
+    //                         );
+    //                       }
+    //                     }
+    //                   },
+    //                 );
+    //               },
+    //             );
+    //           },
+    //           style: ElevatedButton.styleFrom(
+    //             backgroundColor: blueColor,
+    //             foregroundColor: Colors.white,
+    //             padding: const EdgeInsets.symmetric(vertical: 14),
+    //             shape: RoundedRectangleBorder(
+    //               borderRadius: BorderRadius.circular(8),
+    //             ),
+    //           ),
+    //           child: Row(
+    //             mainAxisAlignment: MainAxisAlignment.center,
+    //             children: const [
+    //               Text(
+    //                 '송장 입력',
+    //                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    //               ),
+    //               SizedBox(width: 8),
+    //               Icon(Icons.arrow_forward, size: 20),
+    //             ],
+    //           ),
+    //         ),
+    //       ),
+    //     ],
+    //   );
     // }
 
     return const SizedBox.shrink();

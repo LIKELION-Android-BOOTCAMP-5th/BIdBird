@@ -347,11 +347,11 @@ class ChatSupabaseDatasource {
     }
   }
 
-  /// 거래 완료 API 호출
+  /// 거래 완료 API 호출 (임시)
   Future<void> completeTrade(String itemId) async {
     try {
       await SupabaseManager.shared.supabase.functions.invoke(
-        'completeTrade',
+        'temporary_completeTrade',
         method: HttpMethod.post,
         headers: NetworkApiManager.useThisHeaders(),
         body: {'itemId': itemId},
@@ -369,7 +369,7 @@ class ChatSupabaseDatasource {
   ) async {
     try {
       await SupabaseManager.shared.supabase.functions.invoke(
-        'cancelTrade',
+        'temporary_cancelTrade',
         method: HttpMethod.post,
         headers: NetworkApiManager.useThisHeaders(),
         body: {
