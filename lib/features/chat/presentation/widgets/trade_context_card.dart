@@ -38,7 +38,6 @@ class TradeContextCard extends StatelessWidget {
     if (tradeStatusCode == null) return false;
     if (tradeStatusCode == 550) return false; // 거래 완료 상태에서는 숨김
     if (tradeStatusCode == 540) return false; // 이미 취소된 거래에서는 숨김
-    if (!hasShippingInfo) return false; // 배송 정보가 없으면 숨김
     return onTradeComplete != null || onTradeCancel != null;
   }
 

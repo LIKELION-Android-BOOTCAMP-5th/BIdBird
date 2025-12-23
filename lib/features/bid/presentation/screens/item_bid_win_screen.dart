@@ -149,6 +149,7 @@ class ItemBidWinScreen extends StatelessWidget {
                       height: buttonHeight,
                       child: OutlinedButton(
                         onPressed: () {
+                          Navigator.of(context).pop();
                           Navigator.push(
                             context,
                             MaterialPageRoute(

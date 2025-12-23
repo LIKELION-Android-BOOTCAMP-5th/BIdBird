@@ -233,21 +233,20 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                 : null,
                             onTradeComplete:
                                 viewModel.tradeInfo != null &&
-                                    viewModel.tradeInfo!.tradeStatusCode !=
-                                        550 &&
-                                    viewModel.hasShippingInfo &&
-                                    viewModel
-                                        .isTopBidder // 구매자(낙찰자)만 가능
-                                ? () {
-                                    // 거래 완료 액션
-                                    _showTradeCompleteDialog(
-                                      context,
-                                      viewModel,
-                                    );
-                                  }
-                                : null,
+                                        viewModel
+                                                .tradeInfo!.tradeStatusCode !=
+                                            550 &&
+                                        viewModel.isTopBidder
+                                    ? () {
+                                        // 거래 완료 액션
+                                        _showTradeCompleteDialog(
+                                          context,
+                                          viewModel,
+                                        );
+                                      }
+                                    : null,
                             onTradeCancel:
-                                canShowTradeCancel && viewModel.hasShippingInfo
+                                canShowTradeCancel
                                 ? () {
                                     // 거래 취소 액션 (사유 선택 포함)
                                     _showTradeCancelWithReason(

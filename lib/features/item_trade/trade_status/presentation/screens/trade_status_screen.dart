@@ -81,21 +81,21 @@ class _TradeStatusScreenContent extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: _buildStepIndicator(currentStep),
           ),
-          // 결제 기한 info_box (판매자일 경우)
-          if (currentStep == TradeStep.payment && viewModel.isSeller)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                viewModel.shouldShowActionButton() ? 12 : 8,
-                16,
-                0,
-              ),
-              child: InfoBox(
-                paymentDeadline: viewModel.paymentDeadline,
-                centerAlign: true,
-                showIcon: false,
-              ),
-            ),
+          // 결제 기능 비활성화: 판매자용 결제 기한 안내 숨김
+          // if (currentStep == TradeStep.payment && viewModel.isSeller)
+          //   Padding(
+          //     padding: EdgeInsets.fromLTRB(
+          //       16,
+          //       viewModel.shouldShowActionButton() ? 12 : 8,
+          //       16,
+          //       0,
+          //     ),
+          //     child: InfoBox(
+          //       paymentDeadline: viewModel.paymentDeadline,
+          //       centerAlign: true,
+          //       showIcon: false,
+          //     ),
+          //   ),
           // 액션 버튼
           if (viewModel.shouldShowActionButton()) ...[
             const SizedBox(height: 24),
@@ -104,31 +104,31 @@ class _TradeStatusScreenContent extends StatelessWidget {
               child: _buildActionButton(context, viewModel, currentStep),
             ),
           ],
-          // 결제 기한 info_box (구매자일 경우 - 결제하기 버튼 밑)
-          if (currentStep == TradeStep.payment && !viewModel.isSeller)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: InfoBox(
-                paymentDeadline: viewModel.paymentDeadline,
-                centerAlign: false,
-                showIcon: true,
-              ),
-            ),
-          // 배송 대기 메시지 (구매자일 경우)
-          if (currentStep == TradeStep.shipping && !viewModel.isSeller)
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                viewModel.shouldShowActionButton() ? 12 : 8,
-                16,
-                0,
-              ),
-              child: InfoBox(
-                message: '판매자의 배송 정보 입력 대기중 입니다.',
-                centerAlign: false,
-                showIcon: true,
-              ),
-            ),
+          // 결제 기능 비활성화: 구매자용 결제 기한 안내 숨김
+          // if (currentStep == TradeStep.payment && !viewModel.isSeller)
+          //   Padding(
+          //     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          //     child: InfoBox(
+          //       paymentDeadline: viewModel.paymentDeadline,
+          //       centerAlign: false,
+          //       showIcon: true,
+          //     ),
+          //   ),
+          // 배송 단계 UI 비활성화
+          // if (currentStep == TradeStep.shipping && !viewModel.isSeller)
+          //   Padding(
+          //     padding: EdgeInsets.fromLTRB(
+          //       16,
+          //       viewModel.shouldShowActionButton() ? 12 : 8,
+          //       16,
+          //       0,
+          //     ),
+          //     child: InfoBox(
+          //       message: '판매자의 배송 정보 입력 대기중 입니다.',
+          //       centerAlign: false,
+          //       showIcon: true,
+          //     ),
+          //   ),
           // 거래 기록
           const SizedBox(height: 12), // 기록 상단 margin: 12dp
           _buildTradeHistory(tradeStatus.historyEvents),
@@ -165,7 +165,6 @@ class _TradeStatusScreenContent extends StatelessWidget {
       _StepData('입찰', TradeStep.bidding),
       _StepData('낙찰', TradeStep.won),
       _StepData('결제', TradeStep.payment),
-      _StepData('배송', TradeStep.shipping),
       _StepData('완료', TradeStep.completed),
     ];
 
@@ -291,9 +290,9 @@ class _TradeStatusScreenContent extends StatelessWidget {
       case TradeStep.payment:
         return 2;
       case TradeStep.shipping:
-        return 3;
+        return 3; // 배송 단계는 완료 단계와 동일한 위치로 표시
       case TradeStep.completed:
-        return 4;
+        return 3;
     }
   }
 
@@ -397,123 +396,14 @@ class _TradeStatusScreenContent extends StatelessWidget {
       //   ),
       // );
 
-      // 임시: 결제 기능 비활성화 안내
-      return SizedBox(
-        width: double.infinity,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE0E0E0)),
-          ),
-          child: const Center(
-            child: Text(
-              '결제 기능 준비중입니다',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF9E9E9E),
-              ),
-            ),
-          ),
-        ),
-      );
+      // 임시: 결제 기능 비활성화 안내 숨김
+      return const SizedBox.shrink();
     }
 
-    if (currentStep == TradeStep.shipping) {
-      final shippingInfoRepository = ShippingInfoRepositoryImpl();
-      final tradeStatus = viewModel.tradeStatus;
-      final shippingInfo = tradeStatus?.shippingInfo;
-
-      return Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () async {
-                // 송장 입력 팝업 표시
-                showDialog(
-                  context: context,
-                  barrierDismissible: true,
-                  builder: (dialogContext) {
-                    return ShippingInfoInputPopup(
-                      initialCarrier: shippingInfo?['carrier'] as String?,
-                      initialTrackingNumber:
-                          shippingInfo?['tracking_number'] as String?,
-                      onConfirm: (carrier, trackingNumber) async {
-                        try {
-                          if (shippingInfo != null) {
-                            // 기존 정보가 있으면 택배사만 수정 (송장 번호는 수정 불가)
-                            final existingTrackingNumber =
-                                shippingInfo['tracking_number'] as String?;
-                            await shippingInfoRepository.updateShippingInfo(
-                              itemId: viewModel.itemId,
-                              carrier: carrier,
-                              trackingNumber:
-                                  existingTrackingNumber ?? trackingNumber,
-                            );
-                            if (dialogContext.mounted) {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                const SnackBar(
-                                  content: Text('택배사 정보가 수정되었습니다'),
-                                ),
-                              );
-                            }
-                          } else {
-                            // 기존 정보가 없으면 새로 저장
-                            await shippingInfoRepository.saveShippingInfo(
-                              itemId: viewModel.itemId,
-                              carrier: carrier,
-                              trackingNumber: trackingNumber,
-                            );
-                            if (dialogContext.mounted) {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                const SnackBar(content: Text('송장 정보가 입력되었습니다')),
-                              );
-                            }
-                          }
-
-                          // 송장 정보 다시 로드
-                          await viewModel.refreshShippingInfo();
-                        } catch (e) {
-                          if (dialogContext.mounted) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              SnackBar(
-                                content: Text('송장 정보 저장 실패: ${e.toString()}'),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                    );
-                  },
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: blueColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Text(
-                    '송장 입력',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward, size: 20),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+    // 배송 단계 UI 비활성화
+    // if (currentStep == TradeStep.shipping) {
+    //   ...
+    // }
 
     return const SizedBox.shrink();
   }
