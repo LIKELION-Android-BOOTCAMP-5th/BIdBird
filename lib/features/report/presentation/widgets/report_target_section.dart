@@ -17,10 +17,10 @@ class ReportTargetSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color borderGray = Color(0xFFE6E8EB);
-    const Color textPrimary = Color(0xFF111111);
-    const Color textDisabled = Color(0xFF9CA3AF);
-    const Color backgroundGray = Color(0xFFF3F4F6);
+    const Color borderGray = LightBorderColor;
+    const Color textPrimary = TextPrimary;
+    // const Color textDisabled = chatTimeTextColor; // 미사용
+    const Color backgroundGray = chatItemSectionBackground;
 
     final labelFontSize = context.fontSizeMedium;
     final spacing = context.spacingMedium;

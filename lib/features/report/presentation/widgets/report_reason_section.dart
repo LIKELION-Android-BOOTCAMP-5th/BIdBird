@@ -16,11 +16,12 @@ class ReportReasonSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryBlue = Color(0xFF2F5BFF);
-    const Color cardBackground = Color(0xFFFFFFFF);
-    const Color borderGray = Color(0xFFE6E8EB);
-    const Color textSecondary = Color(0xFF6B7280);
-    const Color errorColor = Color(0xFFE5484D);
+    // 기존 하드코딩 색상 제거, 코어 팔레트 사용
+    const Color primaryBlue = PrimaryBlue;
+    const Color cardBackground = chatItemCardBackground;
+    const Color borderGray = LightBorderColor;
+    const Color textSecondary = TextSecondary;
+    const Color errorColor = RedColor;
 
     final vm = viewModel;
 
@@ -82,7 +83,7 @@ class ReportReasonSection extends StatelessWidget {
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(primaryBlue),
+                valueColor: AlwaysStoppedAnimation<Color>(PrimaryBlue),
               ),
             ),
             const SizedBox(width: 8),

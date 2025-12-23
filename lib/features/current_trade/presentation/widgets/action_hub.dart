@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -98,7 +99,7 @@ class ActionHub extends StatelessWidget {
             );
           },
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.spacingMedium),
             decoration: BoxDecoration(
               color: blueColor,
               borderRadius: defaultBorder,
@@ -112,53 +113,53 @@ class ActionHub extends StatelessWidget {
                     children: [
                       Text(
                         '지금 처리해야 할 거래 $totalCount건',
-                        style: const TextStyle(
-                          fontSize: 15,
+                        style: TextStyle(
+                          fontSize: context.fontSizeMedium,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: chatItemCardBackground,
                         ),
                       ),
                       if (combinedItems.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: context.spacingSmall * 0.5),
                         // 액션 타입들을 한 줄로 표시
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
+                          spacing: context.spacingSmall,
+                          runSpacing: context.spacingSmall * 0.5,
                           children: combinedItems.map((item) {
                             return Text(
                               '${item.label} ${item.count}건',
                               style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: context.fontSizeSmall,
+                                color: chatItemCardBackground.withValues(alpha: 0.9),
                               ),
                             );
                           }).toList(),
                         ),
                       ] else ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: context.spacingSmall * 0.5),
                         Text(
                           '처리할 거래가 없습니다',
                           style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: context.fontSizeSmall,
+                            color: chatItemCardBackground.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: context.spacingSmall * 1.5),
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: context.iconSizeMedium,
+                  height: context.iconSizeMedium,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: chatItemCardBackground.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.chevron_right,
-                    color: Colors.white,
-                    size: 24,
+                    color: chatItemCardBackground,
+                    size: context.iconSizeSmall,
                   ),
                 ),
               ],

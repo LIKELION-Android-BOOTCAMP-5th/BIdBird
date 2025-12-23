@@ -74,7 +74,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
                   color: iconColor.withValues(alpha: 0.8),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.close, color: Colors.white, size: 16),
+                child: const Icon(Icons.close, color: chatItemCardBackground, size: 16),
               ),
             ),
           ),
@@ -117,9 +117,9 @@ class _ReportImageCardState extends State<ReportImageCard> {
                 height: availableWidth, // 정사각형
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: chatItemCardBackground,
                     borderRadius: defaultBorder,
-                    border: Border.all(color: const Color(0xFFE6E8EB)),
+                    border: Border.all(color: LightBorderColor),
                   ),
                   child: Stack(
                     children: [
@@ -186,7 +186,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
                           child: Text(
                             '${widget.viewModel.selectedImages.length}/5',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: chatItemCardBackground,
                               fontSize: context.fontSizeSmall,
                               fontWeight: FontWeight.w600,
                             ),
@@ -212,7 +212,7 @@ class _ReportImageCardState extends State<ReportImageCard> {
                             ),
                             child: Icon(
                               Icons.add,
-                              color: Colors.white,
+                              color: chatItemCardBackground,
                               size: context.iconSizeSmall,
                             ),
                           ),

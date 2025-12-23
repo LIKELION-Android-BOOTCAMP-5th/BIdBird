@@ -1054,7 +1054,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
+            useSafeArea: true,
             backgroundColor: Colors.white,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(28),
@@ -1065,10 +1069,13 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               final latestItem = detailViewModel?.itemDetail ?? widget.item;
               final bottomSheet = ChangeNotifierProvider<PriceInputViewModel>(
                 create: (_) => PriceInputViewModel(),
-                child: BidBottomSheet(
-                  itemId: widget.item.itemId,
-                  currentPrice: latestItem.currentPrice,
-                  bidUnit: latestItem.bidPrice,
+                child: FractionallySizedBox(
+                  heightFactor: 0.9,
+                  child: BidBottomSheet(
+                    itemId: widget.item.itemId,
+                    currentPrice: latestItem.currentPrice,
+                    bidUnit: latestItem.bidPrice,
+                  ),
                 ),
               );
 

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 
 class ReportErrorBlock extends StatelessWidget {
   const ReportErrorBlock({
@@ -16,27 +18,27 @@ class ReportErrorBlock extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-          const SizedBox(height: 16),
+          Icon(Icons.error_outline, color: RedColor, size: context.iconSizeMedium),
+          SizedBox(height: context.spacingMedium),
           Text(
             message,
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: context.fontSizeMedium,
               fontWeight: FontWeight.w500,
-              color: Colors.red,
+              color: RedColor,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: context.spacingMedium),
           ElevatedButton(
             onPressed: onRetry,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: rolePurchasePrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text('다시 시도', style: TextStyle(color: Colors.white)),
+            child: const Text('다시 시도', style: TextStyle(color: chatItemCardBackground)),
           ),
         ],
       ),

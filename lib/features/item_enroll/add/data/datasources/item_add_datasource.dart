@@ -1,8 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
-import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/utils/item/item_security_utils.dart';
-import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_validator.dart' as validator;
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
@@ -39,7 +37,7 @@ class ItemAddDatasource {
 
     if (isEdit) {
       // 수정 모드
-      itemId = editingItemId!;
+      itemId = editingItemId;
       await _updateItem(
         itemId: itemId,
         entity: entity,
@@ -206,17 +204,7 @@ class ItemAddDatasource {
     await _supabase.from('item_images').insert(imageData);
   }
 
-  Future<String> _getLastInsertedItemId(String userId) async {
-    final response = await _supabase
-        .from('items_detail')
-        .select('item_id')
-        .eq('seller_id', userId)
-        .order('created_at', ascending: false)
-        .limit(1)
-        .single();
-
-    return getStringFromRow(response, 'item_id');
-  }
+  // Deprecated helper removed (unused)
 
   Future<Map<String, dynamic>> _fetchItemData(String itemId) async {
     final response = await _supabase
@@ -225,7 +213,7 @@ class ItemAddDatasource {
         .eq('item_id', itemId)
         .single();
 
-    return response as Map<String, dynamic>;
+    return response;
   }
 }
 

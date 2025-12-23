@@ -1,4 +1,3 @@
-import 'package:bidbird/core/utils/payment/payment_helper.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/ui_set/visible_item_calculator.dart';
@@ -465,46 +464,14 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
           style: TextStyle(
             fontSize: buttonFontSize,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: chatItemCardBackground,
           ),
         ),
       ),
     );
   }
 
-  // TODO: 사업자 인증 후 이 메서드 삭제
-  Widget _buildDisabledButtonWidget({
-    required BuildContext context,
-    required String text,
-  }) {
-    final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
-    final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14.0),
-      child: SizedBox(
-        width: double.infinity,
-        height: buttonHeight,
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
-            borderRadius: BorderRadius.circular(8.7),
-            border: Border.all(color: const Color(0xFFE0E0E0)),
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: buttonFontSize,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF9E9E9E),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // Disabled button helper removed (unused)
 
   Future<void> _handleShippingInfo(BuildContext context, String itemId) async {
     final shippingInfoRepository = ShippingInfoRepositoryImpl();

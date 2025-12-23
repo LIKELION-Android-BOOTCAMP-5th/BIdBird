@@ -1,4 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:flutter/material.dart';
 
 class RegistrationSummaryCard extends StatefulWidget {
@@ -31,12 +32,12 @@ class _RegistrationSummaryCardState extends State<RegistrationSummaryCard> {
   @override
   Widget build(BuildContext context) {
     final spacing = context.spacingSmall;
-    final hoverBg = const Color(0xFFF0F2F5);
+    final hoverBg = chatItemSectionBackground;
 
     final (badgeBg, badgeFg) = _statusColors(widget.statusText);
 
     return Material(
-      color: _hovered ? hoverBg : Colors.white,
+      color: _hovered ? hoverBg : chatItemCardBackground,
       elevation: 0,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
@@ -47,17 +48,17 @@ class _RegistrationSummaryCardState extends State<RegistrationSummaryCard> {
           onExit: (_) => setState(() => _hovered = false),
           child: Container(
             decoration: BoxDecoration(
-              color: _hovered ? hoverBg : Colors.white,
+              color: _hovered ? hoverBg : chatItemCardBackground,
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x14000000), // Opacity 8%
+                  color: shadowLow,
                   offset: Offset(0, 2),
                   blurRadius: 8,
                 )
               ],
             ),
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(context.spacingSmall * 1.5),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -76,7 +77,7 @@ class _RegistrationSummaryCardState extends State<RegistrationSummaryCard> {
                         right: 0,
                         top: 0,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: context.spacingSmall, vertical: context.spacingSmall * 0.5),
                           decoration: BoxDecoration(
                             color: badgeBg,
                             borderRadius: BorderRadius.circular(999),
@@ -105,13 +106,13 @@ class _RegistrationSummaryCardState extends State<RegistrationSummaryCard> {
   (Color, Color) _statusColors(String status) {
     switch (status) {
       case '등록 대기':
-        return (const Color(0xFFE9EEF5), const Color(0xFF4A6CF7));
+        return (rolePurchaseSub, rolePurchasePrimary);
       case '수정 필요':
-        return (const Color(0xFFFFF4E5), const Color(0xFFD97A00));
+        return (yellowColor.withValues(alpha: 0.12), yellowColor);
       case '오류 있음':
-        return (const Color(0xFFFFECEC), const Color(0xFFD14343));
+        return (RedColor.withValues(alpha: 0.12), RedColor);
       default:
-        return (const Color(0xFFE9EEF5), const Color(0xFF4A6CF7));
+        return (rolePurchaseSub, rolePurchasePrimary);
     }
   }
 }
@@ -131,7 +132,7 @@ class _Thumbnail extends StatelessWidget {
           width: size,
           height: size,
           child: url == null || url!.isEmpty
-              ? Container(color: const Color(0xFFE5E7EB))
+              ? Container(color: LightBorderColor)
               : Image.network(
                   url!,
                   fit: BoxFit.cover,
@@ -160,11 +161,11 @@ class _SummaryTexts extends StatelessWidget {
     final titleStyle = const TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w600,
-      color: Color(0xFF111111),
+      color: TextPrimary,
     );
     final metaStyle = const TextStyle(
       fontSize: 13,
-      color: Color(0xFF666666),
+      color: TextSecondary,
     );
 
     final parts = <String>[

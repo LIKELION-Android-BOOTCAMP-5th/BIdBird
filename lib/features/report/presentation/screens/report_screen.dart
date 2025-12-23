@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/report_viewmodel.dart';
@@ -36,7 +37,7 @@ class ReportScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('신고하기'),
           centerTitle: true,
-          backgroundColor: Colors.white,
+          backgroundColor: chatItemCardBackground,
         ),
         body: Consumer<ReportViewModel>(
           builder: (context, viewModel, _) {
@@ -44,26 +45,32 @@ class ReportScreen extends StatelessWidget {
             
             // Loading 상태
             if (viewModel.isLoading && viewModel.allReportTypes.isEmpty) {
-              return ReportLoadingBlock(
-                message: '신고 사유를 로드 중입니다...',
+              return const SafeArea(
+                child: ReportLoadingBlock(
+                  message: '신고 사유를 로드 중입니다...',
+                ),
               );
             }
 
             // Error 상태
             if (viewModel.error != null && viewModel.allReportTypes.isEmpty) {
-              return ReportErrorBlock(
-                message: viewModel.error!,
-                onRetry: () => viewModel.loadReportTypes(),
+              return SafeArea(
+                child: ReportErrorBlock(
+                  message: viewModel.error!,
+                  onRetry: () => viewModel.loadReportTypes(),
+                ),
               );
             }
 
             // Ready 상태: Form 조립
-            return ReportFormSection(
-              viewModel: viewModel,
-              itemId: itemId,
-              itemTitle: itemTitle,
-              targetUserId: targetUserId,
-              targetNickname: targetNickname,
+            return SafeArea(
+              child: ReportFormSection(
+                viewModel: viewModel,
+                itemId: itemId,
+                itemTitle: itemTitle,
+                targetUserId: targetUserId,
+                targetNickname: targetNickname,
+              ),
             );
           },
         ),

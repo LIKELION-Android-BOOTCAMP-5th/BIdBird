@@ -35,7 +35,7 @@ class StepIndicator extends StatelessWidget {
         vertical: context.spacingMedium,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: chatItemCardBackground,
         boxShadow: [
           BoxShadow(
             color: shadowLow,
@@ -91,14 +91,14 @@ class StepIndicator extends StatelessWidget {
                 child: isCompleted
                     ? const Icon(
                         Icons.check,
-                        color: Colors.white,
+                        color: chatItemCardBackground,
                         size: 18,
                       )
                     : Text(
                         '${index + 1}',
                         style: TextStyle(
                           color:
-                              (isActive || isCompleted) ? Colors.white : iconColor,
+                              (isActive || isCompleted) ? chatItemCardBackground : iconColor,
                           fontSize: context.fontSizeSmall,
                           fontWeight: FontWeight.w600,
                         ),

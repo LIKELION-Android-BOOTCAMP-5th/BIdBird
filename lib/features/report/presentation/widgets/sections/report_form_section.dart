@@ -1,4 +1,4 @@
-import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+// import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
@@ -128,19 +128,19 @@ class _ReportFormSectionState extends State<ReportFormSection> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => const Center(
+      builder: (dialogContext) => Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: const [
             CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2F5BFF)),
+              valueColor: AlwaysStoppedAnimation<Color>(PrimaryBlue),
             ),
             SizedBox(height: 16),
             Text(
               '로딩중',
               style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF111111),
+                color: TextPrimary,
               ),
             ),
           ],
@@ -190,7 +190,7 @@ class _ReportFormSectionState extends State<ReportFormSection> {
 
   @override
   Widget build(BuildContext context) {
-    final horizontalPadding = context.hPadding;
+    // final horizontalPadding = context.hPadding; // 미사용 변수 제거
     final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
@@ -282,7 +282,7 @@ class _ReportFormSectionState extends State<ReportFormSection> {
           vertical: 12,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: chatItemCardBackground,
           boxShadow: [
             BoxShadow(
               color: shadowLow,

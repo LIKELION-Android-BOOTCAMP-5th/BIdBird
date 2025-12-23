@@ -1,6 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/ui_set/visible_item_calculator.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
@@ -67,17 +66,6 @@ class _PaginationController {
   }
 }
 
-class _DisplayItem {
-  const _DisplayItem({
-    required this.item,
-    required this.isSeller,
-    required this.isHighlighted,
-  });
-
-  final dynamic item;
-  final bool isSeller;
-  final bool isHighlighted;
-}
 
 class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   final ScrollController _scrollController = ScrollController();
@@ -174,7 +162,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(state.error!, style: const TextStyle(color: Colors.red)),
+                      Text(state.error!, style: const TextStyle(color: RedColor)),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () =>
@@ -214,16 +202,16 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                   Text(
                     '현재 거래내역이 없습니다',
                     style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+                      fontSize: context.fontSizeMedium,
+                      color: TextSecondary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '새로운 상품을 등록하거나 입찰에 참여해보세요!',
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
+                      fontSize: context.fontSizeSmall,
+                      color: TextSecondary,
                     ),
                   ),
                 ],
@@ -264,7 +252,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                           const SizedBox(width: 4),
                           Icon(
                             Icons.chevron_right,
-                            size: 16,
+                            size: context.iconSizeSmall,
                             color: textColor,
                           ),
                         ],
