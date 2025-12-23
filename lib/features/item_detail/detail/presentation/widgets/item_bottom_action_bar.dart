@@ -1067,28 +1067,26 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     if (showBidButton) {
       return SecondaryButton(
         text: '입찰하기',
-        onPressed: () async {
-          final passed = await _ensureIdentityVerified();
-          if (!passed) return;
-          if (!mounted) return;
-
+        onPressed: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.white,
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(
-                top: Radius.circular(defaultRadius),
+                top: Radius.circular(28),
               ),
             ),
-            builder: (context) {
+            builder: (_) {
+              final detailViewModel = context.read<ItemDetailViewModel?>();
+              final latestItem = detailViewModel?.itemDetail ?? widget.item;
+
               return ChangeNotifierProvider<PriceInputViewModel>(
                 create: (_) => PriceInputViewModel(),
                 child: BidBottomSheet(
                   itemId: widget.item.itemId,
-                  currentPrice: widget.item.currentPrice,
-                  bidUnit: widget.item.bidPrice,
-                  // buyNowPrice: widget.item.buyNowPrice,
+                  currentPrice: latestItem.currentPrice,
+                  bidUnit: latestItem.bidPrice,
                 ),
               );
             },

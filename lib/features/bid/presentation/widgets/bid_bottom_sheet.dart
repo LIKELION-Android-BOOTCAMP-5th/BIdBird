@@ -241,6 +241,7 @@ class _BidStepperCard extends StatelessWidget {
     required this.onDecrease,
     required this.canDecrease,
     required this.canIncrease,
+    required this.amountFontSize,
   });
 
   final int bidAmount;
@@ -249,6 +250,7 @@ class _BidStepperCard extends StatelessWidget {
   final VoidCallback onDecrease;
   final bool canDecrease;
   final bool canIncrease;
+  final double amountFontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -294,8 +296,8 @@ class _BidStepperCard extends StatelessWidget {
                     Text(
                       '${formatPrice(bidAmount)}원',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 36,
+                      style: TextStyle(
+                        fontSize: amountFontSize,
                         fontWeight: FontWeight.w800,
                         color: blueColor,
                         letterSpacing: -0.5,
@@ -570,6 +572,15 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     return '${formatPrice(price)}원';
   }
 
+  /// 10만 원 이상이면 금액은 그대로 두고 폰트 크기만 축소
+  double _getBidAmountFontSize(int amount) {
+    const baseSize = 36.0;
+    if (amount >= 100000) {
+      return baseSize * 0.7;
+    }
+    return baseSize;
+  }
+
   @override
   Widget build(BuildContext context) {
     // isSubmitting만 watch하여 불필요한 리빌드 방지
@@ -588,6 +599,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             priceInfo?.currentPrice ?? _currentPrice;
         final displayBidUnit = priceInfo?.bidUnit ?? _bidUnit;
         final displayBidUnitLabel = _formatBidUnit(displayBidUnit);
+        final bidAmountFontSize = _getBidAmountFontSize(_bidAmount);
 
         final minBid = _minNextBid;
         final isBelowMinBid = _bidAmount < minBid;
@@ -635,6 +647,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
                     //     ? true
                     //     : _bidAmount < widget.buyNowPrice,
                     canIncrease: true,
+                    amountFontSize: bidAmountFontSize,
                   ),
                   quickPresetRow: _QuickPresetRow(
                     actions: _presetActions,
