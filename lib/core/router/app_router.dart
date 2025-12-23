@@ -205,10 +205,13 @@ GoRouter createAppRouter(BuildContext context) {
                     return buildPage(
                       context: context,
                       state: state,
-                      child: FilteredTradeListScreen(
-                        actionType: actionType,
-                        isSeller: isSeller,
-                        actionTypes: actionTypes,
+                      child: ChangeNotifierProvider<CurrentTradeViewModel>(
+                        create: (_) => CurrentTradeViewModel()..loadData(),
+                        child: FilteredTradeListScreen(
+                          actionType: actionType,
+                          isSeller: isSeller,
+                          actionTypes: actionTypes,
+                        ),
                       ),
                     );
                   }

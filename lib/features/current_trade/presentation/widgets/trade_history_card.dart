@@ -23,7 +23,7 @@ class TradeHistoryCard extends StatelessWidget {
     required this.isSeller,
     this.actionType,
     this.isHighlighted = false,
-    this.onActionButtonPressed,
+    this.bottomSlot,
     this.useResponsive = false,
   });
 
@@ -35,7 +35,7 @@ class TradeHistoryCard extends StatelessWidget {
   final bool isSeller;
   final TradeActionType? actionType;
   final bool isHighlighted;
-  final Widget? Function()? onActionButtonPressed;
+  final Widget? bottomSlot;
   final bool useResponsive;
 
   @override
@@ -201,10 +201,10 @@ class TradeHistoryCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (onActionButtonPressed != null)
+                      if (bottomSlot != null)
                         Padding(
                           padding: EdgeInsets.only(top: adaptiveSpacing),
-                          child: onActionButtonPressed!() ?? const SizedBox.shrink(),
+                          child: bottomSlot!,
                         ),
                       ],
                     ),

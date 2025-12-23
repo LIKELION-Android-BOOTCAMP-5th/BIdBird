@@ -62,7 +62,7 @@ class _BidInfoSummary extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      '현재 최고가',
+                      '현재가',
                       style: TextStyle(fontSize: 12, color: textColor),
                     ),
                     const SizedBox(height: 6),
@@ -363,6 +363,8 @@ class _QuickPresetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
+      alignment: WrapAlignment.center,
+      runAlignment: WrapAlignment.center,
       spacing: 8,
       runSpacing: 8,
       children: [
@@ -490,23 +492,8 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     // 현재 가격이 변경되었을 때만 업데이트
     if (newCurrentPrice != _currentPrice || newBidPrice != _bidUnit) {
       setState(() {
-        final oldCurrentPrice = _currentPrice;
         _currentPrice = newCurrentPrice;
         _bidUnit = newBidPrice;
-        
-        // 현재 가격이 올라갔을 때, 입찰 금액이 최소 입찰가보다 낮으면 조정
-        final minBid = _currentPrice + _bidUnit;
-        if (_bidAmount < minBid) {
-          _bidAmount = minBid;
-        }
-        // 현재 가격이 올라갔을 때, 기존 입찰 금액과의 차이를 유지하려면
-        // (기존 입찰 금액 - 기존 현재 가격)을 유지
-        else if (newCurrentPrice > oldCurrentPrice) {
-          final priceDiff = _bidAmount - oldCurrentPrice;
-          final newBidAmount = _currentPrice + priceDiff;
-          // 최소 입찰가보다는 높아야 함
-          _bidAmount = newBidAmount >= minBid ? newBidAmount : minBid;
-        }
       });
     }
   }
@@ -597,7 +584,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
         //         ? '즉시 구매가를 초과할 수 없습니다'
         //         : '유효한 입찰입니다';
         final statusMessage = isBelowMinBid
-            ? '최소 ${formatPrice(minBid)}원부터 가능합니다'
+            ? '유효하지 않은 입찰입니다'
             : '유효한 입찰입니다';
 
         return ClipRRect(

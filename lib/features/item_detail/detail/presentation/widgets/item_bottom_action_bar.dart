@@ -1080,14 +1080,22 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             builder: (_) {
               final detailViewModel = context.read<ItemDetailViewModel?>();
               final latestItem = detailViewModel?.itemDetail ?? widget.item;
-
-              return ChangeNotifierProvider<PriceInputViewModel>(
+              final bottomSheet = ChangeNotifierProvider<PriceInputViewModel>(
                 create: (_) => PriceInputViewModel(),
                 child: BidBottomSheet(
                   itemId: widget.item.itemId,
                   currentPrice: latestItem.currentPrice,
                   bidUnit: latestItem.bidPrice,
                 ),
+              );
+
+              if (detailViewModel == null) {
+                return bottomSheet;
+              }
+
+              return ChangeNotifierProvider<ItemDetailViewModel>.value(
+                value: detailViewModel,
+                child: bottomSheet,
               );
             },
           );
