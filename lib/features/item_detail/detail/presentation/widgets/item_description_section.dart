@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
+import 'package:bidbird/core/utils/formatters/price_formatter.dart';
 
 class ItemDescriptionSection extends StatefulWidget {
   const ItemDescriptionSection({required this.item, super.key});
@@ -186,7 +187,7 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
         final bid = limited[index];
-        final price = bid.price.toString();
+        final priceLabel = formatPrice(bid.price);
         final createdAtRaw = bid.createdAt;
         final relative = formatRelativeTime(createdAtRaw);
 
@@ -201,7 +202,7 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
           typeLabel = '즉시 입찰';
         } else if (code == 410 || code == 411 || code == 430) {
           typeLabel = '일반 입찰';
-        } else if (price.isNotEmpty) {
+        } else if (priceLabel.isNotEmpty) {
           // 그 외 코드는 가격이 들어와 있으면 즉시 입찰 실패로 간주
           typeLabel = '즉시 입찰';
           statusLabel = '실패';
@@ -218,7 +219,7 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${index + 1}. $price원$trailingLabel',
+              '${index + 1}. $priceLabel$trailingLabel',
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,

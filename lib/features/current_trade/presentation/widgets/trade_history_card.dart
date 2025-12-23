@@ -1,6 +1,7 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/item/item_trade_status_utils.dart';
+import 'package:bidbird/core/utils/formatters/price_formatter.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
@@ -186,7 +187,7 @@ class TradeHistoryCard extends StatelessWidget {
                                         ),
                                       ),
                                       Text(
-                                        _formatMoney(price),
+                                        formatPrice(price),
                                         style: TextStyle(
                                           fontSize: priceFontSize,
                                           color: textColor,
@@ -264,13 +265,6 @@ class TradeHistoryCard extends StatelessWidget {
     }
   }
 
-  String _formatMoney(int value) {
-    final s = value.toString();
-    final formatted = s.replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (m) => ',',
-    );
-    return '$formatted원';
-  }
+  // 가격 포맷은 공용 포맷터 사용으로 이동
 }
 
