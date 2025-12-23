@@ -307,7 +307,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
           child: Scaffold(
             backgroundColor: BackgroundColor,
             appBar: AppBar(
-              title: const Text('매물 등록'),
+              title: const Text('매물 작성'),
               centerTitle: true,
               backgroundColor: Colors.white,
             ),

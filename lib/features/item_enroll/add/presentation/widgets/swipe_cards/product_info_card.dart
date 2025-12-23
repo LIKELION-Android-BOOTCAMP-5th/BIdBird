@@ -27,7 +27,7 @@ class ProductInfoCard extends StatefulWidget {
 }
 
 class ProductInfoCardState extends State<ProductInfoCard>
-    with FormValidationMixin {
+  with FormValidationMixin, AutomaticKeepAliveClientMixin {
   static const String _imageLimitText =
       '최소 ${ItemImageLimits.minImageCount}장 최대 ${ItemImageLimits.maxImageCount}장';
 
@@ -77,6 +77,7 @@ class ProductInfoCardState extends State<ProductInfoCard>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // keep-alive
     final spacing = context.spacingMedium;
 
     return SingleChildScrollView(
@@ -165,4 +166,7 @@ class ProductInfoCardState extends State<ProductInfoCard>
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

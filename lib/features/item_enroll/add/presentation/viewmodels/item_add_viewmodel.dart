@@ -253,14 +253,16 @@ class ItemAddViewModel extends ItemBaseViewModel {
       final files = await _downloadImagesInParallel(dio, imageUrls);
 
       if (files.isEmpty) {
-        throw Exception('이미지를 불러올 수 없습니다.');
+        // 다운로드 실패 시에도 네트워크 URL을 직접 표시하도록 폴백
+        selectedImages = imageUrls.map((u) => XFile(u)).toList();
+      } else {
+        selectedImages = files;
       }
-
-      selectedImages = files;
       notifyListeners();
     } catch (e) {
-      // 이미지 로드 실패 시 에러 재발생
-      rethrow;
+      // 완전 실패 시에도 네트워크 URL로 폴백
+      selectedImages = imageUrls.map((u) => XFile(u)).toList();
+      notifyListeners();
     }
   }
 

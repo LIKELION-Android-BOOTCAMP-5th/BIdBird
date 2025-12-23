@@ -48,18 +48,24 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
     XFile image,
     bool isPrimary,
     int index,
+    double targetLogicalSize,
   ) {
     final bool isVideo = isVideoFile(image.path);
-    
+    // 기기 해상도에 맞춘 디코딩 크기 제한
+    final double dpr = MediaQuery.of(context).devicePixelRatio;
+    final int targetPx = (targetLogicalSize * dpr).round();
+
     return GestureDetector(
       onTap: () => widget.onImageTap(index),
-      child: Stack(
+      child: RepaintBoundary(
+        child: Stack(
         fit: StackFit.expand,
         children: [
           ClipRRect(
             borderRadius: defaultBorder,
             child: isVideo
                 ? VideoPlayerWidget(
+                    key: ValueKey('video_${image.path}'),
                     videoPath: image.path,
                     autoPlay: false,
                     showControls: true,
@@ -67,9 +73,13 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                   )
                 : Image.file(
                     File(image.path),
+                    key: ValueKey('img_${image.path}'),
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
+                    cacheWidth: targetPx,
+                    cacheHeight: targetPx,
+                    filterQuality: FilterQuality.low,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         color: BackgroundColor,
@@ -142,6 +152,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
               ),
             ),
         ],
+        ),
       ),
     );
   }
@@ -201,21 +212,28 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                         widget.images[0],
                         widget.primaryImageIndex == 0,
                         0,
+                        availableWidth,
                       )
                       : // 이미지가 여러 개일 때: 스와이프로 볼 수 있게
                       PageView.builder(
+                        key: const PageStorageKey('square_image_upload_pageview'),
                         controller: _pageController,
                         itemCount: widget.images.length,
+                        physics: const PageScrollPhysics(),
                         itemBuilder: (context, index) {
                           final image = widget.images[index];
                           final bool isPrimary = widget.primaryImageIndex != null && 
                                                 widget.primaryImageIndex == index;
                           
-                          return _buildSingleImage(
-                            context,
-                            image,
-                            isPrimary,
-                            index,
+                          return KeyedSubtree(
+                            key: ValueKey('page_${image.path}'),
+                            child: _buildSingleImage(
+                              context,
+                              image,
+                              isPrimary,
+                              index,
+                              availableWidth,
+                            ),
                           );
                         },
                       ),

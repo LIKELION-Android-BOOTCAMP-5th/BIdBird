@@ -67,9 +67,10 @@ class ItemAddDatasource {
       description: getStringFromRow(itemData, 'description'),
       startPrice: getIntFromRow(itemData, 'start_price'),
       instantPrice: getIntFromRow(itemData, 'buy_now_price'),
-      auctionDurationHours: getIntFromRow(itemData, 'auction_duration', 4),
+      auctionDurationHours: getIntFromRow(itemData, 'auction_duration_hours'),
       thumbnailUrl: getStringFromRow(itemData, 'thumbnail_image'),
       keywordTypeId: getIntFromRow(itemData, 'keyword_type'),
+      statusText: '등록 대기',
     );
   }
 
@@ -171,7 +172,7 @@ class ItemAddDatasource {
       'start_price': entity.startPrice,
       'buy_now_price': entity.instantPrice,
       'keyword_type': entity.keywordTypeId,
-      'auction_duration': entity.auctionDurationHours,
+      'auction_duration_hours': entity.auctionDurationHours,
       // auction_start_at과 auction_end_at은 auctions 테이블에 저장되므로 items_detail에는 포함하지 않음
     };
 
