@@ -1,5 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
+import 'package:bidbird/features/current_trade/presentation/viewmodels/current_trade_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -62,15 +63,11 @@ class BottomNavBar extends StatelessWidget {
           label: '홈',
         ),
         BottomNavigationBarItem(
-          icon: Image.asset(
-            'assets/icons/bid_icon.png',
-            width: iconSize.width,
-            height: iconSize.height,
+          icon: _TradeBadgeIcon(
+            assetPath: 'assets/icons/bid_icon.png',
           ),
-          activeIcon: Image.asset(
-            'assets/icons/bid_select_icon.png',
-            width: iconSize.width,
-            height: iconSize.height,
+          activeIcon: _TradeBadgeIcon(
+            assetPath: 'assets/icons/bid_select_icon.png',
           ),
           label: '현재 거래',
         ),
@@ -152,6 +149,33 @@ class BottomNavBar extends StatelessWidget {
           label: '마이페이지',
         ),
       ],
+    );
+  }
+}
+
+class _TradeBadgeIcon extends StatelessWidget {
+  const _TradeBadgeIcon({required this.assetPath});
+
+  final String assetPath;
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<CurrentTradeViewModel, bool>(
+      selector: (_, vm) => vm.hasPendingTradeAction,
+      builder: (_, hasPending, __) {
+        return Badge(
+          isLabelVisible: hasPending,
+          backgroundColor: Colors.red,
+          smallSize: 8,
+          alignment: const AlignmentDirectional(1.2, -1.2),
+          label: null,
+          child: Image.asset(
+            assetPath,
+            width: iconSize.width,
+            height: iconSize.height,
+          ),
+        );
+      },
     );
   }
 }

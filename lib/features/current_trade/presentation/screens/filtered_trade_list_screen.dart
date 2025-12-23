@@ -86,6 +86,13 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        context.read<CurrentTradeViewModel>().markPendingActionsAcknowledged();
+      } catch (_) {}
+    });
+
     // 기존 ViewModel이 있으면 재사용, 없으면 새로 생성
     return _buildWithViewModel(context);
   }

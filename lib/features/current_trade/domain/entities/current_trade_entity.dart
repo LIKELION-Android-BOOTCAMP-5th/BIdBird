@@ -137,7 +137,7 @@ class ActionHubItem {
   String get label {
     switch (actionType) {
       case TradeActionType.paymentRequired:
-        return '결제하러 가기';
+        return '결제 대기';
       case TradeActionType.paymentWaiting:
         return '결제 정보 입력';
       case TradeActionType.shippingInfoRequired:

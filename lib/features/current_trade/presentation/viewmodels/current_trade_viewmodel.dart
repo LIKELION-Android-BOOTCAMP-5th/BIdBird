@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
+import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/current_trade/data/repositories/current_trade_repository.dart';
 import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
 import 'package:bidbird/features/current_trade/domain/usecases/fetch_my_bid_history_usecase.dart';
@@ -28,6 +29,8 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
   List<ActionHubItem>? _cachedBidActionHubItems;
   List<ActionHubItem>? _cachedSaleActionHubItems;
   List<({bool isSeller, bool isHighlighted, dynamic item})>? _cachedAllItems;
+  int _pendingActionCount = 0;
+  int _acknowledgedPendingCount = 0;
 
   CurrentTradeViewModel({
     FetchMyBidHistoryUseCase? fetchMyBidHistoryUseCase,
@@ -75,6 +78,19 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     _cachedCompletedSaleItems ??= 
         _filterByStatus(_saleHistory, TradeItemStatus.completed);
     return _cachedCompletedSaleItems!;
+  }
+
+  /// 현재 처리해야 할 거래가 존재하는지 여부 (미확인 건 기준)
+  bool get hasPendingTradeAction {
+    return _pendingActionCount > _acknowledgedPendingCount;
+  }
+
+  void markPendingActionsAcknowledged() {
+    final changed = _pendingActionCount > _acknowledgedPendingCount;
+    _acknowledgedPendingCount = _pendingActionCount;
+    if (changed) {
+      notifyListeners();
+    }
   }
 
   /// 유찰 제외 필터링된 판매 내역 (캐싱 적용)
@@ -195,6 +211,10 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
       
       updateCacheTime();
 
+      _pendingActionCount = _calculatePendingActionCount();
+      if (_acknowledgedPendingCount > _pendingActionCount) {
+        _acknowledgedPendingCount = _pendingActionCount;
+      }
       notifyListeners();
     } catch (e) {
       stopLoadingWithError(e.toString());
@@ -222,5 +242,39 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     _cachedBidActionHubItems = null;
     _cachedSaleActionHubItems = null;
   }
-}
 
+  int _calculatePendingActionCount() {
+    int count = 0;
+
+    for (final item in _saleHistory) {
+      final statusCode = item.tradeStatusCode;
+      if (statusCode == TradeStatusCode.paymentRequired) {
+        count++;
+        continue;
+      }
+      if (statusCode == TradeStatusCode.shippingInfoRequired &&
+          !item.hasShippingInfo) {
+        count++;
+      }
+    }
+
+    for (final item in _bidHistory) {
+      final statusCode = item.tradeStatusCode;
+      if (statusCode == TradeStatusCode.paymentRequired) {
+        count++;
+        continue;
+      }
+      if (statusCode == TradeStatusCode.shippingInfoRequired &&
+          item.hasShippingInfo) {
+        count++;
+        continue;
+      }
+      if ((statusCode == null || statusCode == 0) &&
+          item.auctionStatusCode == AuctionStatusCode.bidWon) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+}

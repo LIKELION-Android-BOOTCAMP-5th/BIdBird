@@ -4,6 +4,7 @@ import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
+import 'package:bidbird/features/current_trade/presentation/viewmodels/current_trade_viewmodel.dart';
 import 'package:bidbird/features/home/data/repository/home_repository.dart';
 import 'package:bidbird/features/mypage/data/repositories/profile_repository_impl.dart';
 import 'package:bidbird/features/mypage/domain/usecases/get_profile.dart';
@@ -56,6 +57,11 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) {
             return ChatListViewmodel();
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (context) {
+            return CurrentTradeViewModel()..loadData();
           },
         ),
       ],
