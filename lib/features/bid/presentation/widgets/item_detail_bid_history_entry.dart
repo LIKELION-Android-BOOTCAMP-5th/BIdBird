@@ -1,4 +1,5 @@
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,8 +16,10 @@ class ItemDetailBidHistoryEntry extends StatelessWidget {
     return Selector<ItemDetailViewModel, List<BidHistoryItem>>(
       selector: (_, vm) => vm.bidHistory,
       builder: (context, bidHistory, _) {
+        final horizontalPadding = context.screenPadding;
+
         return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 15, 24, 16),
+          padding: EdgeInsets.fromLTRB(horizontalPadding, 15, horizontalPadding, 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
