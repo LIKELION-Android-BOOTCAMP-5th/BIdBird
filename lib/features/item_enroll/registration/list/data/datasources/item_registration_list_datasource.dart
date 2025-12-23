@@ -36,11 +36,18 @@ class ItemRegistrationListDatasource {
           auctionDurationHours: getIntFromRow(row, 'auction_duration_hours'),
           thumbnailUrl: getNullableStringFromRow(row, 'thumbnail_image'),
           keywordTypeId: getNullableIntFromRow(row, 'keyword_type'),
+          statusText: _deriveStatus(row['is_agreed']),
         );
       }).toList();
     } catch (e) {
       rethrow;
     }
+  }
+
+  String _deriveStatus(dynamic rawIsAgreed) {
+    if (rawIsAgreed == null) return '등록 대기';
+    if (rawIsAgreed is String && rawIsAgreed.trim().isEmpty) return '등록 대기';
+    return '승인 완료';
   }
 }
 
