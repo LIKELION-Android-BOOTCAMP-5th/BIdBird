@@ -1,37 +1,33 @@
+import 'dart:typed_data';
+
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/secondary_button.dart';
+import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
+import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
+import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
+import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
+import 'package:bidbird/features/bid/presentation/screens/item_bid_win_screen.dart';
+import 'package:bidbird/core/utils/item/trade_status_codes.dart';
+import 'package:bidbird/features/bid/presentation/viewmodels/price_input_viewmodel.dart';
+import 'package:bidbird/features/bid/presentation/widgets/bid_bottom_sheet.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
-import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
-import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
+import 'package:bidbird/features/identity_verification/presentation/utils/identity_verification_helper.dart';
+import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
+import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
+import 'package:bidbird/features/item_trade/payment_info/data/datasources/offline_payment_datasource.dart';
+import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_input_popup.dart';
+import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_view_popup.dart';
+import 'package:bidbird/features/item_trade/seller_payment_complete/presentation/screens/seller_payment_complete_screen.dart';
+import 'package:bidbird/features/item_trade/shipping/data/repositories/shipping_info_repository.dart';
+import 'package:bidbird/features/item_trade/shipping/domain/repositories/shipping_info_repository.dart' as domain;
+import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_input_popup.dart';
+import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_view_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-
-import 'package:bidbird/features/identity_verification/presentation/utils/identity_verification_helper.dart';
-import 'package:bidbird/features/bid/presentation/widgets/buy_now_input_bottom_sheet.dart';
-import 'package:bidbird/features/bid/presentation/widgets/bid_bottom_sheet.dart';
-import 'package:bidbird/features/bid/presentation/viewmodels/buy_now_input_viewmodel.dart';
-import 'package:bidbird/features/bid/presentation/viewmodels/price_input_viewmodel.dart';
-import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
-import 'package:bidbird/features/bid/presentation/screens/item_bid_win_screen.dart';
-import 'package:bidbird/features/item_trade/seller_payment_complete/presentation/screens/seller_payment_complete_screen.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_input_popup.dart';
-import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_view_popup.dart';
-import 'package:bidbird/features/item_trade/shipping/data/repositories/shipping_info_repository.dart';
-import 'package:bidbird/features/item_trade/shipping/domain/repositories/shipping_info_repository.dart' as domain;
-import 'package:bidbird/core/utils/item/trade_status_codes.dart';
-import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
-import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
-import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
-import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
-import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
-import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_input_popup.dart';
-import 'package:bidbird/features/item_trade/payment_info/data/datasources/offline_payment_datasource.dart';
-import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_view_popup.dart';
 
 class ItemBottomActionBar extends StatefulWidget {
   const ItemBottomActionBar({
@@ -974,22 +970,32 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
         );
       }
 
-      // 다른 사용자는 결제 대기 안내 문구만 표시
+      // 결제 정보 입력 버튼 표시
       return Container(
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: BackgroundColor,
+          color: blueColor, // 파란색 배경
           borderRadius: BorderRadius.circular(8.7),
-          border: Border.all(color: BorderColor),
         ),
-        child: const Center(
-          child: Text(
-            '즉시 구매 결제 대기중입니다',
+        child: TextButton(
+          onPressed: () {
+            // 결제 정보 입력 화면으로 이동하는 로직 추가
+            // Navigator.push(context, MaterialPageRoute(
+            //   builder: (_) => PaymentInfoInputScreen(itemId: widget.item.itemId)
+            // ));
+          },
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: const Text(
+            '결제 정보 입력하기',
             style: TextStyle(
+              color: Colors.white,
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: TopBidderTextColor,
             ),
           ),
         ),
@@ -1064,17 +1070,16 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     } else {
       // 3) 상태 코드별 상세 사유
       switch (statusCode) {
-        case AuctionStatusCode.ready:
+        case 300: // AuctionStatusCode.ready
           reason = '경매가 아직 시작되지 않았습니다';
           break;
-        case AuctionStatusCode.bidWon:
-        case AuctionStatusCode.failed:
+        case 321: // AuctionStatusCode.bidWon
+        case 323: // AuctionStatusCode.failed
           reason = '경매가 종료되었습니다.';
           break;
-        case AuctionStatusCode.instantBuyPaymentPending:
-          reason = '즉시 구매 결제 대기중입니다';
-          break;
-        case AuctionStatusCode.instantBuyCompleted:
+        case 311: // AuctionStatusCode.instantBuyPaymentPending
+          return _buildPaymentPendingWidget();
+        case 322: // AuctionStatusCode.instantBuyCompleted
           reason = '즉시 구매되었습니다';
           break;
         default:
@@ -1104,37 +1109,56 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     );
   }
 
-  Widget _buildBuyNowButton() {
-    return PrimaryButton(
-      text: '즉시 구매하기',
-      onPressed: () async {
-        final passed = await _ensureIdentityVerified();
-        if (!passed) return;
-        if (!mounted) return;
-
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(defaultRadius),
-            ),
+  Widget _buildPaymentPendingWidget() {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: blueColor, // 파란색 배경
+        borderRadius: BorderRadius.circular(8.7),
+      ),
+      child: TextButton(
+        onPressed: () {
+          // 결제 정보 입력 화면으로 이동하는 로직 추가
+          // Navigator.push(context, MaterialPageRoute(
+          //   builder: (_) => PaymentInfoInputScreen(itemId: widget.item.itemId)
+          // ));
+        },
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: const Text(
+          '결제 정보 입력하기',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
           ),
-          builder: (context) {
-            // 즉시 구매 기능 비활성화
-            // return ChangeNotifierProvider<BuyNowInputViewModel>(
-            //   create: (_) => BuyNowInputViewModel(),
-            //   child: BuyNowInputBottomSheet(
-            //     itemId: widget.item.itemId,
-            //     buyNowPrice: widget.item.buyNowPrice,
-            //   ),
-            // );
-            return Container(); // 빈 컨테이너 반환
-          },
-        );
-      },
-      width: double.infinity,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuyNowButton() {
+    return Container(
+      height: 40,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: BackgroundColor,
+        borderRadius: BorderRadius.circular(8.7),
+        border: Border.all(color: BorderColor),
+      ),
+      child: const Text(
+        '즉시 구매하기',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: TopBidderTextColor,
+        ),
+      ),
     );
   }
 }
