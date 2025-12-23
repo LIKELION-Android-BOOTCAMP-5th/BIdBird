@@ -362,20 +362,22 @@ class _QuickPresetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      runAlignment: WrapAlignment.center,
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final action in actions)
-          _buildChip(
-            action.label,
-            action.type == _PresetActionType.adjust
-                ? () => onAdjust(action.value)
-                : onResetMin,
-          ),
-      ],
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        runAlignment: WrapAlignment.center,
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final action in actions)
+            _buildChip(
+              action.label,
+              action.type == _PresetActionType.adjust
+                  ? () => onAdjust(action.value)
+                  : onResetMin,
+            ),
+        ],
+      ),
     );
   }
 
