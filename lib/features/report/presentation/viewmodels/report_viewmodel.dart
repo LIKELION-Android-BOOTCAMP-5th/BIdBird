@@ -3,6 +3,7 @@ import 'package:bidbird/features/report/domain/entities/report_type_entity.dart'
 import 'package:bidbird/features/report/domain/usecases/fetch_report_types_usecase.dart';
 import 'package:bidbird/features/report/domain/usecases/submit_report_usecase.dart';
 import 'package:bidbird/core/upload/usecases/upload_images_usecase.dart';
+import 'package:bidbird/core/errors/error_mapper.dart';
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -120,7 +121,7 @@ class ReportViewModel extends ChangeNotifier {
       _allReportTypes = await _fetchReportTypesUseCase();
       _error = null;
     } catch (e) {
-      _error = e.toString();
+      _error = ErrorMapper().map(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -154,7 +155,7 @@ class ReportViewModel extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      _error = '이미지 선택 실패: $e';
+      _error = ErrorMapper().map(e);
       notifyListeners();
     }
   }
@@ -177,7 +178,7 @@ class ReportViewModel extends ChangeNotifier {
       _selectedImages = <XFile>[..._selectedImages, image];
       notifyListeners();
     } catch (e) {
-      _error = '이미지 선택 실패: $e';
+      _error = ErrorMapper().map(e);
       notifyListeners();
     }
   }
@@ -208,7 +209,7 @@ class ReportViewModel extends ChangeNotifier {
         _error = '이미지 업로드에 실패했습니다.';
       }
     } catch (e) {
-      _error = '이미지 업로드 실패: $e';
+      _error = ErrorMapper().map(e);
       _uploadedImageUrls = [];
     } finally {
       _isUploadingImages = false;
@@ -255,13 +256,7 @@ class ReportViewModel extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      // 에러 메시지에서 사용자 친화적인 메시지 추출
-      final errorString = e.toString();
-      if (errorString.contains('Exception: ')) {
-        _error = errorString.replaceFirst('Exception: ', '');
-      } else {
-        _error = '신고 제출에 실패했습니다.\n잠시 후 다시 시도해주세요.';
-      }
+      _error = ErrorMapper().map(e);
       _isLoading = false;
       notifyListeners();
       return false;

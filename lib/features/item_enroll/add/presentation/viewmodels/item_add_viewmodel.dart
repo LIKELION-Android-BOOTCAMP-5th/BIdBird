@@ -14,7 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
-import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/item_add_repository.dart';
@@ -24,10 +23,10 @@ import 'package:bidbird/features/item_enroll/add/domain/usecases/add_item_usecas
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_edit_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_keyword_types_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
+import 'package:bidbird/features/item_enroll/add/services/upload_service.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
-import 'package:bidbird/core/upload/gateways/image_upload_gateway.dart';
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 
 class ItemAddViewModel extends ItemBaseViewModel {
@@ -43,6 +42,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
   final UploadItemImagesWithThumbnailUseCase _uploadItemImagesWithThumbnailUseCase;
+  late final UploadService _uploadService = UploadService(_uploadItemImagesWithThumbnailUseCase);
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController startPriceController = TextEditingController();
@@ -66,8 +66,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
   // 업로드 진행률
   final StreamController<double> _progressController = StreamController<double>.broadcast();
   Stream<double> get uploadProgressStream => _progressController.stream;
-  StreamSubscription? _uploadProgressSub;
-  final Map<String, double> _fileProgress = {};
+  // UploadService를 통해 진행률을 관리하므로 내부 상태는 최소화
 
   bool get isLoadingKeywords => _isLoadingKeywords;
   bool get isSubmitting => _isSubmitting;
@@ -84,7 +83,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
     disposeControllers();
     _dio?.close();
     _dio = null;
-    _uploadProgressSub?.cancel();
     _progressController.close();
     super.dispose();
   }
@@ -497,30 +495,13 @@ class ItemAddViewModel extends ItemBaseViewModel {
   ) async {
     try {
       // 진행률 구독 시작 (선택 이미지 기준)
-      _uploadProgressSub?.cancel();
-      _fileProgress.clear();
-      for (final f in selectedImages) {
-        _fileProgress[f.path] = 0.0;
-      }
-      _emitTotalProgress();
-      _uploadProgressSub = UploadProgressBus.instance.stream.listen((event) {
-        // 등록 과정에서 썸네일도 포함될 수 있어, 알 수 없는 파일도 평균에 포함
-        if (!_fileProgress.containsKey(event.filePath)) {
-          // 새 파일 등장 시 추적 추가
-          _fileProgress[event.filePath] = 0.0;
-        }
-        _fileProgress[event.filePath] = event.total > 0 ? event.sent / event.total : 0.0;
-        _emitTotalProgress();
-      });
-
-      // 유즈케이스를 사용하여 이미지 및 썸네일 업로드
-      final result = await _uploadItemImagesWithThumbnailUseCase(
+      final result = await _uploadService.uploadWithProgress(
         images: selectedImages,
         primaryImageIndex: primaryImageIndex,
+        onProgress: (p) {
+          _progressController.add(p);
+        },
       );
-      _uploadProgressSub?.cancel();
-      _fileProgress.clear();
-      _emitTotalProgress();
 
       return result;
     } catch (e) {
@@ -529,21 +510,8 @@ class ItemAddViewModel extends ItemBaseViewModel {
           SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
         );
       }
-      _uploadProgressSub?.cancel();
-      _fileProgress.clear();
-      _emitTotalProgress();
       return null;
     }
-  }
-
-  void _emitTotalProgress() {
-    if (_progressController.isClosed) return;
-    if (_fileProgress.isEmpty) {
-      _progressController.add(0.0);
-      return;
-    }
-    final avg = _fileProgress.values.fold<double>(0.0, (a, b) => a + b) / _fileProgress.length;
-    _progressController.add(avg.clamp(0.0, 1.0));
   }
 
   Future<void> _saveItem(

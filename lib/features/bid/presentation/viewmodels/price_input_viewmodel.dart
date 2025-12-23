@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/errors/error_mapper.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
-import 'package:bidbird/features/bid/domain/entities/bid_request_entity.dart';
 import 'package:bidbird/features/bid/domain/usecases/place_bid_usecase.dart';
 import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
 
@@ -11,6 +11,7 @@ class PriceInputViewModel extends ChangeNotifier {
       : _placeBidUseCase =
             placeBidUseCase ?? PlaceBidUseCase(BidRepositoryImpl());
 
+  // ignore: unused_field
   final PlaceBidUseCase _placeBidUseCase;
 
   bool isSubmitting = false;
@@ -35,7 +36,7 @@ class PriceInputViewModel extends ChangeNotifier {
       );
       await _placeBidUseCase(request);
     } catch (e) {
-      rethrow;
+      throw Exception(ErrorMapper().map(e));
     } finally {
       isSubmitting = false;
       notifyListeners();
@@ -82,7 +83,7 @@ class PriceInputViewModel extends ChangeNotifier {
         throw Exception(message);
       }
     } catch (e) {
-      rethrow;
+      throw Exception(ErrorMapper().map(e));
     } finally {
       isSubmitting = false;
       notifyListeners();
