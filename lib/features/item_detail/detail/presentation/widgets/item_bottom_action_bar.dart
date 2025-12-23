@@ -156,11 +156,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SellerPaymentCompleteScreen(item: bidWinEntity),
-            ),
+          context.push(
+            '/seller_payment_complete',
+            extra: bidWinEntity,
           );
         });
       }
@@ -176,11 +174,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ItemBidWinScreen(item: bidWinEntity),
-          ),
+        context.push(
+          '/item_bid_win',
+          extra: bidWinEntity,
         );
       });
     }

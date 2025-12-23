@@ -22,6 +22,7 @@ import 'package:bidbird/features/item_enroll/registration/detail/presentation/sc
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
 import 'package:bidbird/features/item_enroll/registration/list/presentation/screens/item_registration_list_screen.dart';
 import 'package:bidbird/features/item_enroll/relist/presentation/screens/item_relist_screen.dart';
+import 'package:bidbird/features/item_trade/seller_payment_complete/presentation/screens/seller_payment_complete_screen.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/screens/trade_status_screen.dart';
 import 'package:bidbird/features/mypage/data/repositories/blacklist_repository_impl.dart';
 import 'package:bidbird/features/mypage/data/repositories/favorites_repository_impl.dart';
@@ -147,20 +148,30 @@ GoRouter createAppRouter(BuildContext context) {
       // --- 메인 쉘 (바텀 네비게이션 포함) ---
       ShellRoute(
         builder: (context, state, child) {
+          final location = state.uri.toString();
+          const tabs = ['/home', '/bid', '/chat', '/mypage'];
+
+          int currentIndex = tabs.indexWhere(
+            (path) => location.startsWith(path),
+          );
+          if (currentIndex == -1) currentIndex = 0;
+
           return PopScope(
             canPop: false,
             onPopInvokedWithResult: (didPop, result) async {
               if (didPop) return;
-              final location = state.uri.toString();
               if (location != '/home') {
                 context.go('/home');
               } else {
                 await doubleBackHandler.onWillPop(context);
               }
             },
-            child: Scaffold(
-              body: child,
-              bottomNavigationBar: const BottomNavBar(),
+            child: _MainTabView(
+              currentIndex: currentIndex,
+              onIndexChanged: (index) {
+                if (index < 0 || index >= tabs.length) return;
+                context.go(tabs[index]);
+              },
             ),
           );
         },
@@ -278,7 +289,7 @@ GoRouter createAppRouter(BuildContext context) {
                         getTradeHistory: GetTradeHistory(repo),
                       )..loadPage(reset: true);
                     },
-                    child: const TradeHistoryScreen(),
+                    child: TradeHistoryScreen(),
                   ),
                 ),
               ),
@@ -428,6 +439,21 @@ GoRouter createAppRouter(BuildContext context) {
         },
       ),
       GoRoute(
+        path: '/seller_payment_complete',
+        pageBuilder: (context, state) {
+          final item = state.extra is ItemBidWinEntity
+              ? state.extra as ItemBidWinEntity
+              : null;
+          return buildPage(
+            context: context,
+            state: state,
+            child: item != null
+                ? SellerPaymentCompleteScreen(item: item)
+                : const HomeScreen(),
+          );
+        },
+      ),
+      GoRoute(
         path: '/add_item',
         pageBuilder: (context, state) {
           final editingItemId = state.extra is String
@@ -507,18 +533,183 @@ GoRouter createAppRouter(BuildContext context) {
 }
 
 /// 안드로이드 등에서 사용될 애니메이션 없는 페이지 클래스
-class NoTransitionPage<T> extends CustomTransitionPage<T> {
-  const NoTransitionPage({required super.child, super.key})
-    : super(
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
-        transitionsBuilder: _noTransitionBuilder,
-      );
+class NoTransitionPage<T> extends Page<T> {
+  const NoTransitionPage({
+    required this.child,
+    super.key,
+    super.name,
+  });
+
+  final Widget child;
+
+  @override
+  Route<T> createRoute(BuildContext context) => _NoTransitionRoute(child: child);
 }
 
-Widget _noTransitionBuilder(
-  BuildContext context,
-  Animation<double> a,
-  Animation<double> sa,
-  Widget child,
-) => child;
+class _NoTransitionRoute<T> extends PageRoute<T> {
+  _NoTransitionRoute({required this.child});
+
+  final Widget child;
+
+  @override
+  bool get maintainState => true;
+
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  String? get barrierLabel => null;
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) =>
+      child;
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) =>
+      child;
+}
+
+class _MainTabView extends StatefulWidget {
+  const _MainTabView({
+    required this.currentIndex,
+    required this.onIndexChanged,
+  });
+
+  final int currentIndex;
+  final ValueChanged<int> onIndexChanged;
+
+  @override
+  State<_MainTabView> createState() => _MainTabViewState();
+}
+
+class _MainTabViewState extends State<_MainTabView> {
+  late PageController _pageController;
+  bool _isProgrammaticPageChange = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: widget.currentIndex);
+  }
+
+  @override
+  void didUpdateWidget(_MainTabView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentIndex != widget.currentIndex) {
+      _pageController.jumpToPage(widget.currentIndex);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: PageView(
+        controller: _pageController,
+        physics: const PageScrollPhysics(
+          parent: ClampingScrollPhysics(),
+        ),
+        onPageChanged: (index) {
+          if (_isProgrammaticPageChange) return;
+          widget.onIndexChanged(index);
+        },
+        children: const [
+          _HomeTabPage(),
+          _BidTabPage(),
+          _ChatTabPage(),
+          _MyPageTabPage(),
+        ],
+      ),
+      bottomNavigationBar: BottomNavBar(
+        onItemTapped: (index) {
+          _handleBottomNavTap(index);
+        },
+      ),
+    );
+  }
+
+  Future<void> _handleBottomNavTap(int index) async {
+    if (!_pageController.hasClients) {
+      widget.onIndexChanged(index);
+      return;
+    }
+    if (_pageController.page?.round() == index) {
+      widget.onIndexChanged(index);
+      return;
+    }
+
+    setState(() {
+      _isProgrammaticPageChange = true;
+    });
+
+    try {
+      await _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutExpo,
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isProgrammaticPageChange = false;
+      });
+      widget.onIndexChanged(index);
+    }
+  }
+}
+
+class _HomeTabPage extends StatelessWidget {
+  const _HomeTabPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const HomeScreen();
+  }
+}
+
+class _BidTabPage extends StatelessWidget {
+  const _BidTabPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => CurrentTradeViewModel()..loadData(),
+      child: const CurrentTradeScreen(),
+    );
+  }
+}
+
+class _ChatTabPage extends StatelessWidget {
+  const _ChatTabPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ChatScreen();
+  }
+}
+
+class _MyPageTabPage extends StatelessWidget {
+  const _MyPageTabPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MypageScreen();
+  }
+}

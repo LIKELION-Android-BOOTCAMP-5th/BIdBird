@@ -7,7 +7,12 @@ import 'package:provider/provider.dart';
 import '../utils/ui_set/colors_style.dart';
 
 class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({super.key});
+  final Function(int)? onItemTapped;
+  
+  const BottomNavBar({
+    super.key, 
+    this.onItemTapped,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,19 +37,23 @@ class BottomNavBar extends StatelessWidget {
       selectedItemColor: Colors.black,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
-        switch (index) {
-          case 0:
-            context.go('/home');
-            break;
-          case 1:
-            context.go('/bid');
-            break;
-          case 2:
-            context.go('/chat');
-            break;
-          case 3:
-            context.go('/mypage');
-            break;
+        if (onItemTapped != null) {
+          onItemTapped!(index);
+        } else {
+          switch (index) {
+            case 0:
+              context.go('/home');
+              break;
+            case 1:
+              context.go('/bid');
+              break;
+            case 2:
+              context.go('/chat');
+              break;
+            case 3:
+              context.go('/mypage');
+              break;
+          }
         }
       },
       items: [
