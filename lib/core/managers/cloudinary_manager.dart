@@ -12,6 +12,15 @@ class CloudinaryManager {
   static final String videoUploadUrl =
       'https://api.cloudinary.com/v1_1/$cloudName/video/upload';
 
+  // 단일 Dio 인스턴스를 재사용하여 연결/핸드셰이크 오버헤드 감소
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      sendTimeout: const Duration(minutes: 2),
+      receiveTimeout: const Duration(minutes: 2),
+    ),
+  );
+
   Future<String?> uploadImageToCloudinary(XFile inputImage) async {
     try {
       final filePath = inputImage.path;
@@ -32,8 +41,7 @@ class CloudinaryManager {
         'upload_preset': uploadPreset,
       });
 
-      final dio = Dio();
-      final response = await dio.post(
+      final response = await _dio.post(
         imageUploadUrl,
         data: formData,
       ).timeout(
@@ -100,8 +108,7 @@ class CloudinaryManager {
         'resource_type': 'video',
       });
 
-      final dio = Dio();
-      final response = await dio.post(
+      final response = await _dio.post(
         videoUploadUrl,
         data: formData,
       ).timeout(

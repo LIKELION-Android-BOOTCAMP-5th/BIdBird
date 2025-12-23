@@ -54,12 +54,25 @@ class MediaResizer {
         return null;
       }
 
-      // 리사이징된 이미지 생성
-      final targetPath = await _getTempFilePath('resized_${DateTime.now().millisecondsSinceEpoch}.jpg');
-      
+      // 원본 이미지 크기 확인 (업스케일 방지)
+      final bytes = await file.readAsBytes();
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) {
+        return imageFile; // 디코드 실패 시 원본 반환
+      }
+
       final targetWidth = maxWidth ?? maxImageWidth;
       final targetHeight = maxHeight ?? maxImageHeight;
-      
+      final needsResize = decoded.width > targetWidth || decoded.height > targetHeight;
+
+      if (!needsResize) {
+        // 목표 크기 이하이면 업스케일/재압축 생략하여 성능 향상
+        return imageFile;
+      }
+
+      // 리사이징된 이미지 생성
+      final targetPath = await _getTempFilePath('resized_${DateTime.now().millisecondsSinceEpoch}.jpg');
+
       final result = await FlutterImageCompress.compressAndGetFile(
         imageFile.path,
         targetPath,

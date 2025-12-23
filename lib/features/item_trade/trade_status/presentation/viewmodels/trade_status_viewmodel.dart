@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 class TradeStatusViewModel extends ItemBaseViewModel {
   final String itemId;
   final FetchTradeStatusUseCase _fetchTradeStatusUseCase;
+  bool _isRefreshing = false; // 중복 요청 방지
 
   TradeStatusViewModel({
     required this.itemId,
@@ -119,6 +120,7 @@ class TradeStatusViewModel extends ItemBaseViewModel {
 
   /// 데이터 로드
   Future<void> loadData() async {
+    if (isLoading) return; // 중복 로드 방지
     startLoading();
 
     try {
@@ -138,11 +140,15 @@ class TradeStatusViewModel extends ItemBaseViewModel {
 
   /// 송장 정보 업데이트 후 재로드
   Future<void> refreshShippingInfo() async {
+    if (_isRefreshing) return; // 중복 요청 방지
+    _isRefreshing = true;
     try {
       _tradeStatus = await _fetchTradeStatusUseCase(itemId);
       notifyListeners();
     } catch (e) {
       debugPrint('송장 정보 재로드 에러: $e');
+    } finally {
+      _isRefreshing = false;
     }
   }
 }
