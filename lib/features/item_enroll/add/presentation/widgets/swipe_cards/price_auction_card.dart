@@ -30,7 +30,7 @@ class PriceAuctionCard extends StatefulWidget {
 }
 
 class PriceAuctionCardState extends State<PriceAuctionCard>
-    with FormValidationMixin {
+  with FormValidationMixin, AutomaticKeepAliveClientMixin {
   String? _startPriceError;
   // String? _instantPriceError;
   String? _categoryError;
@@ -118,6 +118,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // keep-alive
     final spacing = context.spacingMedium;
 
     return SingleChildScrollView(
@@ -267,4 +268,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

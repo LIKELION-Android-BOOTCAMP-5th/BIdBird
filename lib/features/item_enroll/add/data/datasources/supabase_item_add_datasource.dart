@@ -168,6 +168,7 @@ class SupabaseItemAddDatasource {
       auctionDurationHours: entity.auctionDurationHours,
       thumbnailUrl: finalThumbnailUrl,
       keywordTypeId: entity.keywordTypeId,
+      statusText: '등록 대기',
     );
   }
 }

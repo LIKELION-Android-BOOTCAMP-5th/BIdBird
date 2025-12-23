@@ -248,6 +248,7 @@ class TradeHistoryCard extends StatelessWidget {
         instantPrice: 0, // 기본값으로 0 설정
         auctionDurationHours: auctionDurationHours,
         thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+        statusText: '승인 완료',
       );
 
       if (!context.mounted) return;
