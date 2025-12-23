@@ -1,13 +1,9 @@
-import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
-import 'package:bidbird/features/bid/presentation/widgets/item_detail_bid_history_entry.dart';
+// responsive_constants not needed in this screen after blockization
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
-import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_bottom_action_bar.dart';
-import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_description_section.dart';
-import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_image_gallery.dart';
-import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_seller_row.dart';
-import 'package:bidbird/features/item_detail/detail/presentation/widgets/item_detail_summary_section.dart';
+import 'package:bidbird/features/item_detail/detail/presentation/widgets/blocks/item_detail_loading_block.dart';
+import 'package:bidbird/features/item_detail/detail/presentation/widgets/blocks/item_detail_error_block.dart';
+import 'package:bidbird/features/item_detail/detail/presentation/widgets/blocks/item_detail_content_block.dart';
 import 'package:bidbird/features/report/presentation/screens/report_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -42,6 +38,9 @@ class _ItemDetailScaffoldState extends State<_ItemDetailScaffold> {
     return Selector<ItemDetailViewModel, bool>(
       selector: (_, vm) => vm.isLoading,
       builder: (context, isLoading, _) {
+        if (isLoading) {
+          return const ItemDetailLoadingBlock();
+        }
         return const _ItemDetailContent();
       },
     );
@@ -71,91 +70,22 @@ class _ItemDetailContentState extends State<_ItemDetailContent> {
       ItemDetailViewModel,
       ({String? error, ItemDetail? itemDetail, bool isMyItem})
     >(
-      selector: (_, vm) =>
-          (error: vm.error, itemDetail: vm.itemDetail, isMyItem: vm.isMyItem),
+      selector: (_, vm) => (error: vm.error, itemDetail: vm.itemDetail, isMyItem: vm.isMyItem),
       builder: (context, data, _) {
         if (data.itemDetail == null) {
-          return const Scaffold(body: SafeArea(child: SizedBox.shrink()));
+          final msg = data.error ?? '상품을 찾을 수 없습니다.';
+          return ItemDetailErrorBlock(
+            message: msg,
+            onRetry: () => context.read<ItemDetailViewModel>().loadItemDetail(forceRefresh: true),
+          );
         }
 
-        final ItemDetail item = data.itemDetail!;
-
-        return Scaffold(
-          backgroundColor: Colors.white,
-          extendBodyBehindAppBar: true,
+        final item = data.itemDetail!;
+        return ItemDetailContentBlock(
+          item: item,
+          isMyItem: data.isMyItem,
+          onRefresh: () => context.read<ItemDetailViewModel>().loadItemDetail(forceRefresh: true),
           appBar: _ItemDetailAppBar(item: item),
-          body: Column(
-            children: [
-              Expanded(
-                child: TransparentRefreshIndicator(
-                  onRefresh: () async {
-                    await context.read<ItemDetailViewModel>().loadItemDetail(
-                      forceRefresh: true,
-                    );
-                  },
-                  child: SingleChildScrollView(
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Image Section - AppBar 아래까지 확장
-                        ItemDetailImageGallery(item: item),
-                        // Metric Section - 라운드 처리된 카드 (이미지 위로 올라가도록)
-                        Transform.translate(
-                          offset: const Offset(0, -30),
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              topRight: Radius.circular(20),
-                            ),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                ),
-                              ),
-                              child: Column(
-                                children: [
-                                  ItemDetailSummarySection(
-                                    item: item,
-                                    isMyItem: data.isMyItem,
-                                  ),
-                                  ItemDetailSellerRow(item: item),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Info Section - padding 24 (라인 없이 바로 연결)
-                        ItemDetailDescriptionSection(item: item),
-                        // Divider
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: context.screenPadding,
-                          ),
-                          child: const Divider(
-                            height: 1,
-                            thickness: 1,
-                            color: Color(0xFFE5E7EB),
-                          ),
-                        ),
-                        // Bid History Section - padding 0
-                        ItemDetailBidHistoryEntry(item: item),
-                        // Safe Area Spacer 48
-                        const SizedBox(height: 48),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              _ItemBottomActionBar(item: item),
-            ],
-          ),
         );
       },
     );
@@ -306,21 +236,4 @@ class _ItemDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-class _ItemBottomActionBar extends StatelessWidget {
-  const _ItemBottomActionBar({required this.item});
-
-  final ItemDetail item;
-
-  @override
-  Widget build(BuildContext context) {
-    // isMyItem과 isFavorite를 함께 Selector로 분리
-    return Selector<ItemDetailViewModel, ({bool isMyItem, bool isFavorite})>(
-      selector: (_, vm) => (isMyItem: vm.isMyItem, isFavorite: vm.isFavorite),
-      builder: (context, data, _) {
-        // ItemBottomActionBar는 내부에서 context.watch를 사용하므로
-        // ViewModel을 전달하지 않고 직접 사용하도록 함
-        return ItemBottomActionBar(item: item, isMyItem: data.isMyItem);
-      },
-    );
-  }
-}
+// Bottom action bar is integrated in ItemDetailContentBlock
