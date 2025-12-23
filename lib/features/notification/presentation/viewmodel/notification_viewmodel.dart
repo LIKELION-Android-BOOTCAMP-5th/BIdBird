@@ -47,6 +47,7 @@ class NotificationViewmodel extends ChangeNotifier {
     "PURCHASE_AUTO_CONFIRMED",
     "PURCHASE_CONFIRMED",
     "PURCHASE_REJECTED",
+    "BID_SUCCESS",
   ];
 
   DateTime? _lastPausedAt;
@@ -91,6 +92,11 @@ class NotificationViewmodel extends ChangeNotifier {
         setupRealtimeSubscription();
       }
     });
+  }
+
+  void removeNotificationLocally(String id) {
+    notifyList.removeWhere((e) => e.id == id);
+    notifyListeners();
   }
 
   Future<void> _bootstrap() async {

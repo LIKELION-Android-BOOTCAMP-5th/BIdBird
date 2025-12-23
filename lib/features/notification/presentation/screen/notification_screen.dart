@@ -1,3 +1,4 @@
+import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail_datasource.dart';
@@ -75,6 +76,15 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
+  Widget _buildDeleteBackground() {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(color: Colors.red, borderRadius: defaultBorder),
+      child: const Icon(Icons.delete, color: Colors.white, size: 28),
+    );
+  }
+
   Widget _buildBody(BuildContext context, NotificationViewmodel viewModel) {
     // if (viewModel.isLoading) {
     //   return const Center(child: CircularProgressIndicator());
@@ -100,40 +110,57 @@ class _NotificationScreenState extends State<NotificationScreen>
           itemBuilder: (context, index) {
             final notify = viewModel.notifyList[index];
             final type = notify.alarm_type;
-            return NotificationCard(
-              title: notify.title,
-              status: '',
-              body: notify.body,
-              date: notify.created_at,
-              is_checked: notify.is_checked,
-              onDelete: () {
+            return Dismissible(
+              key: ValueKey(notify.id), // 🔑 반드시 고유값
+              direction: DismissDirection.endToStart, // 👉 오른쪽 → 왼쪽만
+              background: _buildDeleteBackground(),
+              confirmDismiss: (_) async {
+                // (선택) 실수 방지
+                return true;
+              },
+              onDismissed: (_) {
+                // ✅ 1. UI에서 즉시 제거 (중요!!)
+                viewModel.removeNotificationLocally(notify.id);
+
                 viewModel.deleteNotification(notify.id);
               },
-              onTap: () async {
-                if (!notify.is_checked) {
-                  viewModel.checkNotification(notify.id);
-                }
-                if (viewModel.toItemDetail.contains(type)) {
-                  context.push('/item/${notify.item_id}');
-                }
 
-                if (type == "WIN") {
-                  ItemDetailDatasource _datasource = ItemDetailDatasource();
-                  final String? itemId = notify.item_id;
-                  if (itemId == null) return;
-                  final ItemDetail? item = await _datasource.fetchItemDetail(
-                    itemId,
-                  );
-                  if (item == null) {
-                    print("낙찰 화면으로 이동");
-                    context.push('/item_bid_win');
-                    return;
+              child: NotificationCard(
+                title: notify.title,
+                status: '',
+                body: notify.body,
+                date: notify.created_at,
+                is_checked: notify.is_checked,
+                onDelete: () {
+                  viewModel.deleteNotification(notify.id);
+                },
+                onTap: () async {
+                  if (!notify.is_checked) {
+                    viewModel.checkNotification(notify.id);
                   }
-                  ItemBidWinEntity itemBidWinEntity =
-                      ItemBidWinEntity.fromItemDetail(item);
-                  context.push('/item_bid_win', extra: itemBidWinEntity);
-                }
-              },
+                  if (viewModel.toItemDetail.contains(type)) {
+                    context.push('/item/${notify.item_id}');
+                  }
+
+                  if (type == "WIN") {
+                    ItemDetailDatasource _datasource = ItemDetailDatasource();
+                    final String? itemId = notify.item_id;
+                    if (itemId == null) return;
+                    final ItemDetail? item = await _datasource.fetchItemDetail(
+                      itemId,
+                    );
+                    if (item == null) {
+                      print("낙찰 화면으로 이동");
+                      context.push('/item_bid_win');
+                      return;
+                    }
+                    ItemBidWinEntity itemBidWinEntity =
+                        ItemBidWinEntity.fromItemDetail(item);
+                    context.push('/item_bid_win', extra: itemBidWinEntity);
+                  }
+                },
+                type: type,
+              ),
             );
           },
         ),
