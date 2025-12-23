@@ -96,5 +96,6 @@ class BidDatasource {
     if (data != null && data['room_id'] != null) {
       return data['room_id'] as String;
     }
+    return null;
   }
 }

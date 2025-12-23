@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart' show formatNumber, parseFormattedPrice;
+import 'package:bidbird/core/utils/item/item_price_utils.dart' show parseFormattedPrice, formatNumber;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_validator.dart';
@@ -13,7 +15,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:async';
 
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/item_add_repository.dart';
@@ -23,26 +24,27 @@ import 'package:bidbird/features/item_enroll/add/domain/usecases/add_item_usecas
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_edit_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_keyword_types_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
-import 'package:bidbird/features/item_enroll/add/services/upload_service.dart';
+import 'package:bidbird/features/item_enroll/add/domain/usecases/orchestrations/item_enroll_flow_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 
+/// ItemAdd ViewModel - Thin Pattern
+/// 책임: UI 상태 관리, Flow UseCase 호출
+/// 제외: 비즈니스 로직 (Flow UseCase에서 처리)
 class ItemAddViewModel extends ItemBaseViewModel {
   ItemAddViewModel()
-    : _addItemUseCase = AddItemUseCase(ItemAddRepositoryImpl()),
-      _getKeywordTypesUseCase =
+    : _getKeywordTypesUseCase =
           GetKeywordTypesUseCase(KeywordRepositoryImpl()),
       _getEditItemUseCase = GetEditItemUseCase(EditItemRepositoryImpl()),
-      _uploadItemImagesWithThumbnailUseCase =
-          UploadItemImagesWithThumbnailUseCase(ImageUploadGatewayImpl());
+      _itemEnrollFlowUseCase = ItemEnrollFlowUseCase(
+          uploadItemImagesUseCase: UploadItemImagesWithThumbnailUseCase(ImageUploadGatewayImpl()),
+          addItemUseCase: AddItemUseCase(ItemAddRepositoryImpl()),
+        );
 
-  final AddItemUseCase _addItemUseCase;
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
-  final UploadItemImagesWithThumbnailUseCase _uploadItemImagesWithThumbnailUseCase;
-  late final UploadService _uploadService = UploadService(_uploadItemImagesWithThumbnailUseCase);
+  final ItemEnrollFlowUseCase _itemEnrollFlowUseCase;
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController startPriceController = TextEditingController();
@@ -63,10 +65,9 @@ class ItemAddViewModel extends ItemBaseViewModel {
   bool _isSubmitting = false;
   bool useInstantPrice = false;
   int primaryImageIndex = 0;
-  // 업로드 진행률
+  
   final StreamController<double> _progressController = StreamController<double>.broadcast();
   Stream<double> get uploadProgressStream => _progressController.stream;
-  // UploadService를 통해 진행률을 관리하므로 내부 상태는 최소화
 
   bool get isLoadingKeywords => _isLoadingKeywords;
   bool get isSubmitting => _isSubmitting;
@@ -81,8 +82,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
   @override
   void dispose() {
     disposeControllers();
-    _dio?.close();
-    _dio = null;
     _progressController.close();
     super.dispose();
   }
@@ -358,16 +357,18 @@ class ItemAddViewModel extends ItemBaseViewModel {
     notifyListeners();
   }
 
+  // Methods: Submit (Delegate to Flow UseCase)
   Future<void> submit(BuildContext context) async {
-    // 중복 제출 방지
-    if (_isSubmitting) {
-      return;
-    }
+    if (_isSubmitting) return;
 
     final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    if (!_validateSubmission(context, scaffoldMessenger)) {
+    final String? validationError = validate();
+    if (validationError != null) {
+      if (context.mounted) {
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text(validationError)));
+      }
       return;
     }
 
@@ -384,12 +385,20 @@ class ItemAddViewModel extends ItemBaseViewModel {
         return;
       }
 
-      final uploadResult = await _uploadItemImagesWithThumbnail(context, scaffoldMessenger);
-      if (uploadResult == null) {
+      final (success, failure) = await _itemEnrollFlowUseCase.enroll(
+        itemData: itemData,
+        images: selectedImages,
+        primaryImageIndex: primaryImageIndex,
+        editingItemId: editingItemId,
+        onProgress: (progress) => _progressController.add(progress),
+      );
+
+      if (failure != null) {
+        if (context.mounted) {
+          _showError(context, scaffoldMessenger, failure.message);
+        }
         return;
       }
-
-      await _saveItem(itemData, uploadResult.imageUrls, uploadResult.thumbnailUrl);
 
       _closeLoadingDialog(navigator, loadingDialogOpen);
       loadingDialogOpen = false;
@@ -407,17 +416,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
     }
   }
 
-  bool _validateSubmission(BuildContext context, ScaffoldMessengerState scaffoldMessenger) {
-    final String? error = validate();
-    if (error != null) {
-      if (context.mounted) {
-        scaffoldMessenger.showSnackBar(SnackBar(content: Text(error)));
-      }
-      return false;
-    }
-    return true;
-  }
-
+  // UI Helpers
   void _showLoadingDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -486,58 +485,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
       auctionDurationHours: auctionHours,
       imageUrls: [], // 이미지 URL은 업로드 후 설정
       isAgree: agreed,
-    );
-  }
-
-  Future<ItemImageUploadResult?> _uploadItemImagesWithThumbnail(
-    BuildContext context,
-    ScaffoldMessengerState scaffoldMessenger,
-  ) async {
-    try {
-      // 진행률 구독 시작 (선택 이미지 기준)
-      final result = await _uploadService.uploadWithProgress(
-        images: selectedImages,
-        primaryImageIndex: primaryImageIndex,
-        onProgress: (p) {
-          _progressController.add(p);
-        },
-      );
-
-      return result;
-    } catch (e) {
-      if (context.mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
-        );
-      }
-      return null;
-    }
-  }
-
-  Future<void> _saveItem(
-    ItemAddEntity itemData,
-    List<String> imageUrls,
-    String? thumbnailUrl,
-  ) async {
-    final updatedData = ItemAddEntity(
-      title: itemData.title,
-      description: itemData.description,
-      startPrice: itemData.startPrice,
-      instantPrice: itemData.instantPrice,
-      keywordTypeId: itemData.keywordTypeId,
-      auctionStartAt: itemData.auctionStartAt,
-      auctionEndAt: itemData.auctionEndAt,
-      auctionDurationHours: itemData.auctionDurationHours,
-      imageUrls: imageUrls,
-      isAgree: itemData.isAgree,
-    );
-
-    await _addItemUseCase(
-      entity: updatedData,
-      imageUrls: imageUrls,
-      primaryImageIndex: primaryImageIndex,
-      editingItemId: editingItemId,
-      thumbnailUrl: thumbnailUrl,
     );
   }
 

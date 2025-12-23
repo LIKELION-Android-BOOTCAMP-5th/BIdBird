@@ -19,9 +19,7 @@ class ReportReasonSection extends StatelessWidget {
     const Color primaryBlue = Color(0xFF2F5BFF);
     const Color cardBackground = Color(0xFFFFFFFF);
     const Color borderGray = Color(0xFFE6E8EB);
-    const Color textPrimary = Color(0xFF111111);
     const Color textSecondary = Color(0xFF6B7280);
-    const Color textDisabled = Color(0xFF9CA3AF);
     const Color errorColor = Color(0xFFE5484D);
 
     final vm = viewModel;

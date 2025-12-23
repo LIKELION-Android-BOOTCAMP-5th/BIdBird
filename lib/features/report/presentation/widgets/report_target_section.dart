@@ -17,10 +17,8 @@ class ReportTargetSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color cardBackground = Color(0xFFFFFFFF);
     const Color borderGray = Color(0xFFE6E8EB);
     const Color textPrimary = Color(0xFF111111);
-    const Color textSecondary = Color(0xFF6B7280);
     const Color textDisabled = Color(0xFF9CA3AF);
     const Color backgroundGray = Color(0xFFF3F4F6);
 

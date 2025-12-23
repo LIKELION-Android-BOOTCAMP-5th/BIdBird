@@ -8,16 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// Report ViewModel - Thin Pattern
-/// 
-/// 책임:
-/// - UI 입력 상태 관리 (카테고리, 신고 사유, 이미지, 텍스트)
-/// - UseCase 호출 및 결과 매핑
-/// - 상태 변경 알림
-/// 
-/// 제외:
-/// - 비즈니스 로직 (UseCase에서 처리)
-/// - 직접 에러 처리 (Flow UseCase에서 처리)
-/// - 복잡한 유효성 검사
+/// 책임: UI 상태 관리, UseCase 호출
+/// 제외: 비즈니스 로직 (UseCase에서 처리)
 class ReportViewModel extends ChangeNotifier {
   final FetchReportTypesUseCase _fetchReportTypesUseCase;
   final ReportFlowUseCase _reportFlowUseCase;
@@ -34,17 +26,13 @@ class ReportViewModel extends ChangeNotifier {
            ReportFlowUseCase(
              submitReportUseCase: SubmitReportUseCase(ReportRepositoryImpl()),
            ) {
-    // 상세 내용 텍스트 변경 시 버튼 상태 업데이트
-    contentController.addListener(() {
-      notifyListeners();
-    });
+    contentController.addListener(notifyListeners);
   }
 
-  // State: Report 타입
+  // State: Report Types
   List<ReportTypeEntity> _allReportTypes = [];
   List<ReportTypeEntity> get allReportTypes => _allReportTypes;
 
-  // 대분류 목록 (한글명으로 정렬)
   List<String> get categories {
     if (_allReportTypes.isEmpty) return [];
     final categories = _allReportTypes.map((e) => e.category).toSet().toList();
@@ -64,15 +52,15 @@ class ReportViewModel extends ChangeNotifier {
     return categories;
   }
 
-  // 대분류 한글명 목록
   List<String> get categoryNames {
-    return categories.map((c) {
-      final firstType = _allReportTypes.firstWhere((e) => e.category == c);
-      return firstType.categoryName;
-    }).toList();
+    return categories
+        .map((c) => _allReportTypes
+            .firstWhere((e) => e.category == c)
+            .categoryName)
+        .toList();
   }
 
-  // State: 사용자 입력
+  // State: User Input
   String? _selectedCategory;
   String? get selectedCategory => _selectedCategory;
 
@@ -84,7 +72,7 @@ class ReportViewModel extends ChangeNotifier {
   List<XFile> _selectedImages = [];
   List<XFile> get selectedImages => _selectedImages;
 
-  // State: UI 상태
+  // State: UI Status
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -111,9 +99,7 @@ class ReportViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  // Methods: 데이터 로드
-  
-  /// 신고 타입 목록 로드 (초기 로드)
+  // Methods: Data Loading
   Future<void> loadReportTypes() async {
     if (_isLoading) return;
 
@@ -131,29 +117,24 @@ class ReportViewModel extends ChangeNotifier {
     }
   }
 
-  // Methods: 입력 상태 관리
-  
-  /// 대분류 선택
+  // Methods: Input State Management
   void selectCategory(String category) {
     _selectedCategory = category;
     _selectedReportCode = null;
     notifyListeners();
   }
 
-  /// 신고 사유 선택
   void selectReportCode(String reportCode) {
     _selectedReportCode = reportCode;
     notifyListeners();
   }
 
-  /// 이미지 선택 (갤러리)
   Future<void> pickImagesFromGallery() async {
     try {
       final List<XFile> images = await _picker.pickMultiImage(imageQuality: 80);
       if (images.isEmpty) return;
 
-      final List<XFile> all = <XFile>[..._selectedImages, ...images];
-      _selectedImages = all.length > 5 ? all.take(5).toList() : all;
+      _selectedImages = [..._selectedImages, ...images].take(5).toList();
       notifyListeners();
     } catch (e) {
       _error = ErrorMapper().map(e);
@@ -161,7 +142,6 @@ class ReportViewModel extends ChangeNotifier {
     }
   }
 
-  /// 이미지 선택 (카메라)
   Future<void> pickImageFromCamera() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -176,7 +156,7 @@ class ReportViewModel extends ChangeNotifier {
         return;
       }
 
-      _selectedImages = <XFile>[..._selectedImages, image];
+      _selectedImages = [..._selectedImages, image];
       notifyListeners();
     } catch (e) {
       _error = ErrorMapper().map(e);
@@ -184,7 +164,6 @@ class ReportViewModel extends ChangeNotifier {
     }
   }
 
-  /// 이미지 삭제
   void removeImageAt(int index) {
     if (index >= 0 && index < _selectedImages.length) {
       _selectedImages.removeAt(index);
@@ -192,9 +171,7 @@ class ReportViewModel extends ChangeNotifier {
     }
   }
 
-  // Methods: 제출 (Flow UseCase 위임)
-  
-  /// 신고 제출 (Flow UseCase로 오케스트레이션)
+  // Methods: Submit (Delegate to Flow UseCase)
   Future<bool> submitReport({
     required String? itemId,
     required String targetUserId,
@@ -211,7 +188,6 @@ class ReportViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Flow UseCase에 위임
       final (success, failure) = await _reportFlowUseCase.submit(
         itemId: itemId,
         targetUserId: targetUserId,
@@ -220,7 +196,6 @@ class ReportViewModel extends ChangeNotifier {
         images: _selectedImages,
       );
 
-      // 결과 매핑
       if (failure != null) {
         _error = failure.message;
         return false;
@@ -233,7 +208,6 @@ class ReportViewModel extends ChangeNotifier {
     }
   }
 
-  /// 초기화
   void reset() {
     _selectedCategory = null;
     _selectedReportCode = null;
