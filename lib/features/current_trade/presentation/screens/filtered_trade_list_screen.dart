@@ -329,21 +329,24 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
                             final bidItem = itemIsSeller ? null : item as BidHistoryItem;
                             final itemActionType = saleItem?.actionType ?? bidItem?.actionType ?? TradeActionType.none;
                             final bottomPadding = i == items.length - 1 ? 0.0 : spacing * 1.5;
-                            
+
                             allSections.add(
-                              TradeHistoryCard(
-                                title: saleItem?.title ?? bidItem?.title ?? '',
-                                thumbnailUrl: saleItem?.thumbnailUrl ?? bidItem?.thumbnailUrl,
-                                status: saleItem?.status ?? bidItem?.status ?? '',
-                                price: saleItem?.price ?? bidItem?.price ?? 0,
-                                itemId: saleItem?.itemId ?? bidItem?.itemId ?? '',
-                                isSeller: itemIsSeller,
-                                actionType: itemActionType,
-                                useResponsive: true,
-                                bottomSlot: _buildActionButton(
-                                  context,
-                                  item,
-                                  itemActionType,
+                              Padding(
+                                padding: EdgeInsets.only(bottom: bottomPadding),
+                                child: TradeHistoryCard(
+                                  title: saleItem?.title ?? bidItem?.title ?? '',
+                                  thumbnailUrl: saleItem?.thumbnailUrl ?? bidItem?.thumbnailUrl,
+                                  status: saleItem?.status ?? bidItem?.status ?? '',
+                                  price: saleItem?.price ?? bidItem?.price ?? 0,
+                                  itemId: saleItem?.itemId ?? bidItem?.itemId ?? '',
+                                  isSeller: itemIsSeller,
+                                  actionType: itemActionType,
+                                  useResponsive: true,
+                                  bottomSlot: _buildActionButton(
+                                    context,
+                                    item,
+                                    itemActionType,
+                                  ),
                                 ),
                               ),
                             );

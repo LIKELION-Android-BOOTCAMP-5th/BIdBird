@@ -881,48 +881,31 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       //   width: double.infinity,
       // );
       
-      // 임시: 결제 정보 확인 버튼 (결제 정보가 있으면 팝업 표시)
-      return GestureDetector(
-        onTap: () async {
-          final datasource = OfflinePaymentDatasource();
-          final paymentInfo = await datasource.getPaymentInfo(widget.item.itemId);
-          
-          if (!context.mounted) return;
-          
-          if (paymentInfo != null) {
-            // 결제 정보가 있으면 팝업 표시
-            showDialog(
-              context: context,
-              builder: (dialogContext) => PaymentInfoViewPopup(
-                paymentType: paymentInfo['payment_type'] as String? ?? '',
-                bankName: paymentInfo['bank_name'] as String?,
-                accountNumber: paymentInfo['account_number'] as String?,
-                accountHolder: paymentInfo['account_holder'] as String?,
+      // 임시: 판매자 연락 버튼 → 채팅방 이동
+      return SizedBox(
+        height: 40,
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChattingRoomScreen(itemId: widget.item.itemId),
               ),
             );
-          } else {
-            // 결제 정보가 없으면 안내 메시지
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('판매자가 아직 결제 정보를 입력하지 않았습니다.')),
-            );
-          }
-        },
-        child: Container(
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: BackgroundColor,
-            borderRadius: BorderRadius.circular(8.7),
-            border: Border.all(color: BorderColor),
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: blueColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.7),
+            ),
           ),
-          child: const Center(
-            child: Text(
-              '결제 정보 확인하기',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: TopBidderTextColor,
-              ),
+          child: const Text(
+            '판매자 연락',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
             ),
           ),
         ),
