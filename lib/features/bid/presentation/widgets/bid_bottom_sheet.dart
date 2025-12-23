@@ -1,3 +1,4 @@
+// ignore_for_file: unused_element
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
@@ -5,6 +6,8 @@ import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bidbird/features/bid/presentation/widgets/blocks/bid_content_block.dart';
+import 'package:bidbird/features/bid/presentation/widgets/blocks/bid_loading_block.dart';
 
 import 'package:bidbird/features/bid/presentation/viewmodels/price_input_viewmodel.dart';
 
@@ -171,10 +174,7 @@ class _SheetBody extends StatelessWidget {
         const SizedBox(height: 12),
         quickPresetRow,
         const SizedBox(height: 16),
-        _BidStatusMessage(
-          isValid: isValidStatus,
-          statusText: statusMessage,
-        ),
+        _BidStatusMessage(isValid: isValidStatus, statusText: statusMessage),
         const SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
@@ -386,14 +386,9 @@ class _QuickPresetRow extends StatelessWidget {
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         backgroundColor: const Color(0xFFF2F3F6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(999),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         foregroundColor: textColor,
-        textStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
       ),
       child: Text(label),
     );
@@ -401,10 +396,7 @@ class _QuickPresetRow extends StatelessWidget {
 }
 
 class _BidStatusMessage extends StatelessWidget {
-  const _BidStatusMessage({
-    required this.isValid,
-    required this.statusText,
-  });
+  const _BidStatusMessage({required this.isValid, required this.statusText});
 
   final bool isValid;
   final String statusText;
@@ -469,7 +461,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     } catch (e) {
       // Provider가 없으면 무시
     }
-    
+
     // ViewModel이 변경되었을 때만 리스너 재등록
     if (newViewModel != _itemDetailViewModel) {
       _itemDetailViewModel?.removeListener(_handlePriceUpdate);
@@ -486,10 +478,10 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
 
   void _handlePriceUpdate() {
     if (!mounted || _itemDetailViewModel?.itemDetail == null) return;
-    
+
     final newCurrentPrice = _itemDetailViewModel!.itemDetail!.currentPrice;
     final newBidPrice = _itemDetailViewModel!.itemDetail!.bidPrice;
-    
+
     // 현재 가격이 변경되었을 때만 업데이트
     if (newCurrentPrice != _currentPrice || newBidPrice != _bidUnit) {
       setState(() {
@@ -558,15 +550,15 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
       selector: (_, vm) => vm.isSubmitting,
       builder: (context, isSubmitting, _) {
         final viewModel = context.read<PriceInputViewModel>();
-        final priceInfo =
-            context.select<ItemDetailViewModel?, _PriceInfo?>((vm) {
+        final priceInfo = context.select<ItemDetailViewModel?, _PriceInfo?>((
+          vm,
+        ) {
           final detail = vm?.itemDetail;
           if (detail == null) return null;
           return _PriceInfo(detail.currentPrice, detail.bidPrice);
         });
 
-        final displayCurrentPrice =
-            priceInfo?.currentPrice ?? _currentPrice;
+        final displayCurrentPrice = priceInfo?.currentPrice ?? _currentPrice;
         final displayBidUnit = priceInfo?.bidUnit ?? _bidUnit;
         final displayBidUnitLabel = _formatBidUnit(displayBidUnit);
         final bidAmountFontSize = _getBidAmountFontSize(_bidAmount);
@@ -584,9 +576,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
         //     : exceedsBuyNow
         //         ? '즉시 구매가를 초과할 수 없습니다'
         //         : '유효한 입찰입니다';
-        final statusMessage = isBelowMinBid
-            ? '유효하지 않은 입찰입니다'
-            : '유효한 입찰입니다';
+        final statusMessage = isBelowMinBid ? '유효하지 않은 입찰입니다' : '유효한 입찰입니다';
 
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -595,35 +585,37 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                child: _SheetBody(
-                  displayCurrentPrice: displayCurrentPrice,
-                  bidUnitLabel: displayBidUnitLabel,
-                  statusMessage: statusMessage,
-                  isValidStatus: isValidBid,
-                  canSubmit: canSubmit,
-                  isSubmitting: isSubmitting,
-                  onClose: () => Navigator.pop(context),
-                  onSubmit: canSubmit
-                      ? () => _showConfirmDialog(context, viewModel)
-                      : null,
-                  buildBidStepper: () => _BidStepperCard(
-                    bidAmount: _bidAmount,
-                    bidUnitLabel: displayBidUnitLabel,
-                    onIncrease: _increaseBid,
-                    onDecrease: _decreaseBid,
-                    canDecrease: _bidAmount > minBid,
-                    // canIncrease: widget.buyNowPrice <= 0
-                    //     ? true
-                    //     : _bidAmount < widget.buyNowPrice,
-                    canIncrease: true,
-                    amountFontSize: bidAmountFontSize,
-                  ),
-                  quickPresetRow: _QuickPresetRow(
-                    actions: _presetActions,
-                    onAdjust: _adjustBidBySteps,
-                    onResetMin: _setBidToMinimum,
-                  ),
-                ),
+                child: isSubmitting
+                    ? BidLoadingBlock(onClose: () => Navigator.pop(context))
+                    : BidContentBlock(
+                        displayCurrentPrice: displayCurrentPrice,
+                        bidUnitLabel: displayBidUnitLabel,
+                        statusMessage: statusMessage,
+                        isValidStatus: isValidBid,
+                        canSubmit: canSubmit,
+                        isSubmitting: isSubmitting,
+                        onClose: () => Navigator.pop(context),
+                        onSubmit: canSubmit
+                            ? () => _showConfirmDialog(context, viewModel)
+                            : null,
+                        buildBidStepper: () => _BidStepperCard(
+                          bidAmount: _bidAmount,
+                          bidUnitLabel: displayBidUnitLabel,
+                          onIncrease: _increaseBid,
+                          onDecrease: _decreaseBid,
+                          canDecrease: _bidAmount > minBid,
+                          // canIncrease: widget.buyNowPrice <= 0
+                          //     ? true
+                          //     : _bidAmount < widget.buyNowPrice,
+                          canIncrease: true,
+                          amountFontSize: bidAmountFontSize,
+                        ),
+                        quickPresetRow: _QuickPresetRow(
+                          actions: _presetActions,
+                          onAdjust: _adjustBidBySteps,
+                          onResetMin: _setBidToMinimum,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -638,14 +630,9 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         side: BorderSide(color: Colors.grey.shade300),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(999),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         foregroundColor: textColor,
-        textStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
       ),
       child: Text(label),
     );
@@ -690,7 +677,10 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     );
 
     try {
-      await viewModel.Temporary_bid(itemId: widget.itemId, bidPrice: _bidAmount);
+      await viewModel.Temporary_bid(
+        itemId: widget.itemId,
+        bidPrice: _bidAmount,
+      );
 
       if (!parentContext.mounted) return;
       Navigator.pop(parentContext);
@@ -707,8 +697,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
             if (!parentContext.mounted) return;
 
             // 상세 화면 강제 새로고침 (캐시 무시)
-            final detailViewModel =
-                parentContext.read<ItemDetailViewModel?>();
+            final detailViewModel = parentContext.read<ItemDetailViewModel?>();
             if (detailViewModel != null) {
               // 입찰 성공 후 즉시 isTopBidder를 true로 설정 (실시간 업데이트로 최종 확인)
               // 이렇게 하면 UI가 즉시 업데이트되고, 실시간 업데이트로 정확한 값이 반영됨
@@ -739,4 +728,3 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     }
   }
 }
-
