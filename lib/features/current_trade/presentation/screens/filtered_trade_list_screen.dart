@@ -324,22 +324,19 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
                             final bottomPadding = i == items.length - 1 ? 0.0 : spacing * 1.5;
                             
                             allSections.add(
-                              Padding(
-                                padding: EdgeInsets.only(bottom: bottomPadding),
-                                child: TradeHistoryCard(
-                                  title: saleItem?.title ?? bidItem?.title ?? '',
-                                  thumbnailUrl: saleItem?.thumbnailUrl ?? bidItem?.thumbnailUrl,
-                                  status: saleItem?.status ?? bidItem?.status ?? '',
-                                  price: saleItem?.price ?? bidItem?.price ?? 0,
-                                  itemId: saleItem?.itemId ?? bidItem?.itemId ?? '',
-                                  isSeller: itemIsSeller,
-                                  actionType: itemActionType,
-                                  useResponsive: true,
-                                  bottomSlot: _buildActionButton(
-                                    context,
-                                    item,
-                                    itemActionType,
-                                  ),
+                              TradeHistoryCard(
+                                title: saleItem?.title ?? bidItem?.title ?? '',
+                                thumbnailUrl: saleItem?.thumbnailUrl ?? bidItem?.thumbnailUrl,
+                                status: saleItem?.status ?? bidItem?.status ?? '',
+                                price: saleItem?.price ?? bidItem?.price ?? 0,
+                                itemId: saleItem?.itemId ?? bidItem?.itemId ?? '',
+                                isSeller: itemIsSeller,
+                                actionType: itemActionType,
+                                useResponsive: true,
+                                bottomSlot: _buildActionButton(
+                                  context,
+                                  item,
+                                  itemActionType,
                                 ),
                               ),
                             );
@@ -401,40 +398,32 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
     final saleItem = isSeller ? item : null;
     final bidItem = isSeller ? null : item as BidHistoryItem;
     final itemId = saleItem?.itemId ?? bidItem?.itemId ?? '';
-    final title = saleItem?.title ?? bidItem?.title ?? '';
-    final price = saleItem?.price ?? bidItem?.price ?? 0;
 
     switch (actionType) {
       case TradeActionType.paymentRequired:
-        // 현재 결제: 안내 버튼 숨김
         return const SizedBox.shrink();
 
       case TradeActionType.paymentWaiting:
-        // 판매자: 결제 대기 상태 - 결제 정보 입력 버튼 표시
-        return _buildActionButtonWidget(
-          context: context,
-          text: '결제 정보 입력하기',
-          onPressed: () => _handlePaymentInfoInput(context, itemId),
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14.0),
+          child: _buildActionButtonWidget(
+            context: context,
+            text: '결제 정보 입력하기',
+            onPressed: () => _handlePaymentInfoInput(context, itemId),
+          ),
         );
 
       case TradeActionType.shippingInfoRequired:
-        return _buildActionButtonWidget(
-          context: context,
-          text: '배송 정보 입력하기',
-          onPressed: () => _handleShippingInfo(context, itemId),
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14.0),
+          child: _buildActionButtonWidget(
+            context: context,
+            text: '배송 정보 입력하기',
+            onPressed: () => _handleShippingInfo(context, itemId),
+          ),
         );
 
       case TradeActionType.purchaseConfirmRequired:
-        // TODO: 사업자 인증 후 아래 주석 해제
-        // return _buildActionButtonWidget(
-        //   context: context,
-        //   text: '구매 확정하기',
-        //   onPressed: () {
-        //     ScaffoldMessenger.of(context).showSnackBar(
-        //       const SnackBar(content: Text('구매 확정 기능은 준비 중입니다.')),
-        //     );
-        //   },
-        // );
         return const SizedBox.shrink();
 
       case TradeActionType.none:
@@ -447,36 +436,29 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
     required String text,
     required VoidCallback onPressed,
   }) {
-    return Builder(
-      builder: (context) {
-        final buttonPadding = ResponsiveConstants.screenPadding(context);
-        final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
-        final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
-        return Padding(
-          padding: EdgeInsets.fromLTRB(buttonPadding, 0, buttonPadding, buttonPadding),
-          child: SizedBox(
-            width: double.infinity,
-            height: buttonHeight,
-            child: ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: blueColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.7),
-                ),
-              ),
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontSize: buttonFontSize,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+    final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
+    final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
+    
+    return SizedBox(
+      width: double.infinity,
+      height: buttonHeight,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: blueColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.7),
           ),
-        );
-      },
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: buttonFontSize,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 
@@ -485,36 +467,32 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
     required BuildContext context,
     required String text,
   }) {
-    return Builder(
-      builder: (context) {
-        final buttonPadding = ResponsiveConstants.screenPadding(context);
-        final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
-        final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
-        return Padding(
-          padding: EdgeInsets.fromLTRB(buttonPadding, 0, buttonPadding, buttonPadding),
-          child: SizedBox(
-            width: double.infinity,
-            height: buttonHeight,
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(8.7),
-                border: Border.all(color: const Color(0xFFE0E0E0)),
-              ),
-              child: Center(
-                child: Text(
-                  text,
-                  style: TextStyle(
-                    fontSize: buttonFontSize,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF9E9E9E),
-                  ),
-                ),
+    final buttonHeight = ResponsiveConstants.buttonHeight(context) * 2 / 3;
+    final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14.0),
+      child: SizedBox(
+        width: double.infinity,
+        height: buttonHeight,
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(8.7),
+            border: Border.all(color: const Color(0xFFE0E0E0)),
+          ),
+          child: Center(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: buttonFontSize,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF9E9E9E),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
