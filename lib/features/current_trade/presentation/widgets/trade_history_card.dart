@@ -202,10 +202,7 @@ class TradeHistoryCard extends StatelessWidget {
                         ),
                       ),
                       if (bottomSlot != null)
-                        Padding(
-                          padding: EdgeInsets.only(top: adaptiveSpacing),
-                          child: bottomSlot!,
-                        ),
+                        bottomSlot!,
                       ],
                     ),
                   ),
