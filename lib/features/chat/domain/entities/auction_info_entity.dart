@@ -8,8 +8,8 @@ class AuctionInfoEntity {
   final int bidCount;
   final String? lastBidUserId;
   final String? lastBidAt;
-  final int? buyNowPrice;
-  final String? buyNowLock;
+  // final int? buyNowPrice;
+  // final String? buyNowLock;
   final int itemStatusCode;
   final int auctionStatusCode;
   final int? tradeStatusCode;
@@ -24,8 +24,8 @@ class AuctionInfoEntity {
     required this.bidCount,
     required this.lastBidUserId,
     required this.lastBidAt,
-    required this.buyNowPrice,
-    required this.buyNowLock,
+    // required this.buyNowPrice,
+    // required this.buyNowLock,
     required this.itemStatusCode,
     required this.auctionStatusCode,
     required this.tradeStatusCode,
@@ -42,8 +42,8 @@ class AuctionInfoEntity {
       bidCount: json['bid_count'] as int,
       lastBidUserId: json['last_bid_user_id'] as String?,
       lastBidAt: json['last_bid_at'] as String?,
-      buyNowPrice: json['buy_now_price'] as int?,
-      buyNowLock: json['buy_now_lock'] as String?,
+      // buyNowPrice: json['buy_now_price'] as int?,
+      // buyNowLock: json['buy_now_lock'] as String?,
       itemStatusCode: json['item_status_code'] as int,
       auctionStatusCode: json['auction_status_code'] as int,
       tradeStatusCode: json['trade_status_code'] as int?,

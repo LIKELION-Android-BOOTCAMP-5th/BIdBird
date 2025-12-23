@@ -8,7 +8,7 @@ enum TradeItemStatus {
 
 enum TradeActionType {
   paymentRequired, // 결제하러 가기 (구매자용)
-  paymentWaiting, // 결제 대기 (판매자용)
+  paymentWaiting, // 결제 정보 입력 (판매자용)
   shippingInfoRequired, // 배송지 입력 필요
   purchaseConfirmRequired, // 구매 확정
   none, // 액션 없음
@@ -139,7 +139,7 @@ class ActionHubItem {
       case TradeActionType.paymentRequired:
         return '결제하러 가기';
       case TradeActionType.paymentWaiting:
-        return '결제 대기';
+        return '결제 정보 입력';
       case TradeActionType.shippingInfoRequired:
         return '배송지 입력';
       case TradeActionType.purchaseConfirmRequired:
