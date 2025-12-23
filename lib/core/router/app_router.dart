@@ -188,10 +188,7 @@ GoRouter createAppRouter(BuildContext context) {
             pageBuilder: (context, state) => buildPage(
               context: context,
               state: state,
-              child: ChangeNotifierProvider<CurrentTradeViewModel>(
-                create: (_) => CurrentTradeViewModel()..loadData(),
-                child: const CurrentTradeScreen(),
-              ),
+              child: const CurrentTradeScreen(),
             ),
             routes: [
               GoRoute(
@@ -205,13 +202,10 @@ GoRouter createAppRouter(BuildContext context) {
                     return buildPage(
                       context: context,
                       state: state,
-                      child: ChangeNotifierProvider<CurrentTradeViewModel>(
-                        create: (_) => CurrentTradeViewModel()..loadData(),
-                        child: FilteredTradeListScreen(
-                          actionType: actionType,
-                          isSeller: isSeller,
-                          actionTypes: actionTypes,
-                        ),
+                      child: FilteredTradeListScreen(
+                        actionType: actionType,
+                        isSeller: isSeller,
+                        actionTypes: actionTypes,
                       ),
                     );
                   }
@@ -232,7 +226,7 @@ GoRouter createAppRouter(BuildContext context) {
               child: const ChatScreen(),
             ),
           ),
-          GoRoute(
+        GoRoute(
             path: '/mypage',
             pageBuilder: (context, state) => buildPage(
               context: context,
