@@ -421,62 +421,7 @@ class FirebaseManager {
   //   );
   // }
 
-  // TODO : 채널 타입 설정
-  static String? _getChannelFromNotificationType(String? type) {
-    if (type == null) return null;
 
-    const channelMap = {
-      'comment': 'comment_channel',
-      'like': 'like_channel',
-      'follow': 'follow_channel',
-      'message': 'message_channel',
-      'chat': 'message_channel',
-      'post': 'post_channel',
-      'announcement': 'announcement_channel',
-    };
-
-    return channelMap[type];
-  }
-
-  // TODO : 채널 이름 설정
-  static String _getChannelName(String channelId) {
-    const channelNames = {
-      'general_channel': '일반 알림',
-      'comment_channel': '댓글 알림',
-      'like_channel': '좋아요 알림',
-      'announcement_channel': '공지사항',
-      'follow_channel': '팔로우 알림',
-      'post_channel': '게시글 알림',
-      'message_channel': '메시지 알림',
-      'high_importance_channel': 'High Importance Notifications',
-    };
-
-    if (channelId.startsWith('chat_room_')) {
-      return '채팅 알림';
-    }
-
-    return channelNames[channelId] ?? '알림';
-  }
-
-  // 채널 관련 코드
-  static String _getChannelDescription(String channelId) {
-    // 동적 채널
-    if (channelId.startsWith('chat_room_')) {
-      return '채팅방 메시지 알림을 받습니다.';
-    }
-    // 정적 채널
-    const descriptions = {
-      'general_channel': '일반적인 알림을 위한 채널입니다.',
-      'comment_channel': '댓글이 달렸을 때 알림을 받습니다.',
-      'like_channel': '좋아요를 받았을 때 알림을 받습니다.',
-      'announcement_channel': '중요한 공지사항을 받습니다.',
-      'follow_channel': '새로운 팔로워 알림을 받습니다.',
-      'post_channel': '게시글 관련 알림을 받습니다.',
-      'message_channel': '메시지 알림을 받습니다.',
-    };
-    // 없을 시 알림을 받습니다.
-    return descriptions[channelId] ?? '알림을 받습니다.';
-  }
 
   static Future<void> _onNotificationTapped(
     NotificationResponse notificationResponse,

@@ -2,37 +2,45 @@ import 'package:bidbird/features/report/data/repositories/report_repository.dart
 import 'package:bidbird/features/report/domain/entities/report_type_entity.dart';
 import 'package:bidbird/features/report/domain/usecases/fetch_report_types_usecase.dart';
 import 'package:bidbird/features/report/domain/usecases/submit_report_usecase.dart';
-import 'package:bidbird/core/upload/usecases/upload_images_usecase.dart';
+import 'package:bidbird/features/report/domain/usecases/orchestrations/report_flow_usecase.dart';
 import 'package:bidbird/core/errors/error_mapper.dart';
-import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+/// Report ViewModel - Thin Pattern
+/// 
+/// 책임:
+/// - UI 입력 상태 관리 (카테고리, 신고 사유, 이미지, 텍스트)
+/// - UseCase 호출 및 결과 매핑
+/// - 상태 변경 알림
+/// 
+/// 제외:
+/// - 비즈니스 로직 (UseCase에서 처리)
+/// - 직접 에러 처리 (Flow UseCase에서 처리)
+/// - 복잡한 유효성 검사
 class ReportViewModel extends ChangeNotifier {
   final FetchReportTypesUseCase _fetchReportTypesUseCase;
-  final SubmitReportUseCase _submitReportUseCase;
-  final UploadImagesUseCase _uploadImagesUseCase;
+  final ReportFlowUseCase _reportFlowUseCase;
   final ImagePicker _picker = ImagePicker();
 
   ReportViewModel({
     FetchReportTypesUseCase? fetchReportTypesUseCase,
-    SubmitReportUseCase? submitReportUseCase,
-    UploadImagesUseCase? uploadImagesUseCase,
-  })  : _fetchReportTypesUseCase =
-            fetchReportTypesUseCase ?? FetchReportTypesUseCase(ReportRepositoryImpl()),
-        _submitReportUseCase =
-            submitReportUseCase ?? SubmitReportUseCase(ReportRepositoryImpl()),
-        _uploadImagesUseCase =
-            uploadImagesUseCase ?? UploadImagesUseCase(ImageUploadGatewayImpl()) {
-    // 생성 시 즉시 로드 시작
-    loadReportTypes();
-    
+    ReportFlowUseCase? reportFlowUseCase,
+  }) : _fetchReportTypesUseCase =
+           fetchReportTypesUseCase ??
+           FetchReportTypesUseCase(ReportRepositoryImpl()),
+       _reportFlowUseCase =
+           reportFlowUseCase ??
+           ReportFlowUseCase(
+             submitReportUseCase: SubmitReportUseCase(ReportRepositoryImpl()),
+           ) {
     // 상세 내용 텍스트 변경 시 버튼 상태 업데이트
     contentController.addListener(() {
       notifyListeners();
     });
   }
 
+  // State: Report 타입
   List<ReportTypeEntity> _allReportTypes = [];
   List<ReportTypeEntity> get allReportTypes => _allReportTypes;
 
@@ -40,11 +48,14 @@ class ReportViewModel extends ChangeNotifier {
   List<String> get categories {
     if (_allReportTypes.isEmpty) return [];
     final categories = _allReportTypes.map((e) => e.category).toSet().toList();
-    // 한글명 기준으로 정렬
     categories.sort((a, b) {
       try {
-        final aName = _allReportTypes.firstWhere((e) => e.category == a).categoryName;
-        final bName = _allReportTypes.firstWhere((e) => e.category == b).categoryName;
+        final aName = _allReportTypes
+            .firstWhere((e) => e.category == a)
+            .categoryName;
+        final bName = _allReportTypes
+            .firstWhere((e) => e.category == b)
+            .categoryName;
         return aName.compareTo(bName);
       } catch (e) {
         return 0;
@@ -61,34 +72,26 @@ class ReportViewModel extends ChangeNotifier {
     }).toList();
   }
 
-  // 선택된 대분류
+  // State: 사용자 입력
   String? _selectedCategory;
   String? get selectedCategory => _selectedCategory;
 
-  // 선택된 신고 사유
   String? _selectedReportCode;
   String? get selectedReportCode => _selectedReportCode;
 
-  // 상세 내용
   final TextEditingController contentController = TextEditingController();
 
-  // 이미지 관련
   List<XFile> _selectedImages = [];
   List<XFile> get selectedImages => _selectedImages;
-  
-  List<String> _uploadedImageUrls = [];
-  List<String> get uploadedImageUrls => _uploadedImageUrls;
-  
-  bool _isUploadingImages = false;
-  bool get isUploadingImages => _isUploadingImages;
 
+  // State: UI 상태
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   String? _error;
   String? get error => _error;
 
-  // 선택된 대분류에 해당하는 신고 사유 목록
+  // Computed
   List<ReportTypeEntity> get selectedCategoryReports {
     if (_selectedCategory == null) return [];
     return _allReportTypes
@@ -96,7 +99,6 @@ class ReportViewModel extends ChangeNotifier {
         .toList();
   }
 
-  // 제출 가능 여부
   bool get canSubmit {
     return _selectedCategory != null &&
         _selectedReportCode != null &&
@@ -109,9 +111,11 @@ class ReportViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  /// 신고 타입 목록 로드
+  // Methods: 데이터 로드
+  
+  /// 신고 타입 목록 로드 (초기 로드)
   Future<void> loadReportTypes() async {
-    if (_isLoading) return; // 중복 호출 방지
+    if (_isLoading) return;
 
     _isLoading = true;
     _error = null;
@@ -119,7 +123,6 @@ class ReportViewModel extends ChangeNotifier {
 
     try {
       _allReportTypes = await _fetchReportTypesUseCase();
-      _error = null;
     } catch (e) {
       _error = ErrorMapper().map(e);
     } finally {
@@ -128,10 +131,12 @@ class ReportViewModel extends ChangeNotifier {
     }
   }
 
+  // Methods: 입력 상태 관리
+  
   /// 대분류 선택
   void selectCategory(String category) {
     _selectedCategory = category;
-    _selectedReportCode = null; // 대분류 변경 시 하위 선택 초기화
+    _selectedReportCode = null;
     notifyListeners();
   }
 
@@ -148,11 +153,7 @@ class ReportViewModel extends ChangeNotifier {
       if (images.isEmpty) return;
 
       final List<XFile> all = <XFile>[..._selectedImages, ...images];
-      if (all.length > 5) {
-        _selectedImages = all.take(5).toList();
-      } else {
-        _selectedImages = all;
-      }
+      _selectedImages = all.length > 5 ? all.take(5).toList() : all;
       notifyListeners();
     } catch (e) {
       _error = ErrorMapper().map(e);
@@ -191,39 +192,14 @@ class ReportViewModel extends ChangeNotifier {
     }
   }
 
-  /// 이미지 업로드
-  Future<void> uploadImages() async {
-    if (_selectedImages.isEmpty) {
-      _uploadedImageUrls = [];
-      return;
-    }
-
-    _isUploadingImages = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      _uploadedImageUrls = await _uploadImagesUseCase(_selectedImages);
-      
-      if (_uploadedImageUrls.isEmpty && _selectedImages.isNotEmpty) {
-        _error = '이미지 업로드에 실패했습니다.';
-      }
-    } catch (e) {
-      _error = ErrorMapper().map(e);
-      _uploadedImageUrls = [];
-    } finally {
-      _isUploadingImages = false;
-      notifyListeners();
-    }
-  }
-
-  /// 신고 제출
+  // Methods: 제출 (Flow UseCase 위임)
+  
+  /// 신고 제출 (Flow UseCase로 오케스트레이션)
   Future<bool> submitReport({
     required String? itemId,
     required String targetUserId,
   }) async {
-    if (_isLoading) return false; // 중복 제출 방지
-
+    if (_isLoading) return false;
     if (!canSubmit) {
       _error = '모든 항목을 입력해주세요.';
       notifyListeners();
@@ -235,31 +211,25 @@ class ReportViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 이미지 업로드
-      await uploadImages();
-      
-      if (_selectedImages.isNotEmpty && _uploadedImageUrls.isEmpty) {
-        _isLoading = false;
-        notifyListeners();
+      // Flow UseCase에 위임
+      final (success, failure) = await _reportFlowUseCase.submit(
+        itemId: itemId,
+        targetUserId: targetUserId,
+        reportCode: _selectedReportCode ?? '',
+        reportContent: contentController.text.trim(),
+        images: _selectedImages,
+      );
+
+      // 결과 매핑
+      if (failure != null) {
+        _error = failure.message;
         return false;
       }
 
-      await _submitReportUseCase(
-        itemId: itemId,
-        targetUserId: targetUserId,
-        reportCode: _selectedReportCode!,
-        reportContent: contentController.text.trim(),
-        imageUrls: _uploadedImageUrls,
-      );
-
+      return success != null;
+    } finally {
       _isLoading = false;
       notifyListeners();
-      return true;
-    } catch (e) {
-      _error = ErrorMapper().map(e);
-      _isLoading = false;
-      notifyListeners();
-      return false;
     }
   }
 
@@ -269,11 +239,7 @@ class ReportViewModel extends ChangeNotifier {
     _selectedReportCode = null;
     contentController.clear();
     _selectedImages.clear();
-    _uploadedImageUrls.clear();
     _error = null;
     notifyListeners();
   }
 }
-
-
-
