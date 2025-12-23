@@ -6,6 +6,7 @@ class ItemRegistrationData {
     required this.startPrice,
     required this.instantPrice,
     required this.auctionDurationHours,
+    required this.statusText,
     this.thumbnailUrl,
     this.keywordTypeId,
   });
@@ -16,6 +17,7 @@ class ItemRegistrationData {
   final int startPrice;
   final int instantPrice;
   final int auctionDurationHours;
+  final String statusText;
   final String? thumbnailUrl;
   final int? keywordTypeId;
 }
