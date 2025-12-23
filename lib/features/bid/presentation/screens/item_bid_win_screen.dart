@@ -21,7 +21,6 @@ class ItemBidWinScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authVM = context.read<AuthViewModel>();
-    final String buyerTel = authVM.user?.phone_number ?? '';
     final bool isTradePaid = item.tradeStatusCode == 520;
 
     if (isTradePaid) {

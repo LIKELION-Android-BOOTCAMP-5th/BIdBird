@@ -7,6 +7,9 @@ import 'package:bidbird/features/current_trade/domain/entities/current_trade_ent
 import 'package:bidbird/features/current_trade/domain/usecases/fetch_my_bid_history_usecase.dart';
 import 'package:bidbird/features/current_trade/domain/usecases/fetch_my_sale_history_usecase.dart';
 
+/// CurrentTrade ViewModel - Thin Pattern
+/// 책임: 거래 내역 UI 상태 관리, 필터링/캠싱
+/// 제외: 복잡한 비즈니스 로직 (UseCase에서 처리)
 class CurrentTradeViewModel extends ItemBaseViewModel {
   final FetchMyBidHistoryUseCase _fetchMyBidHistoryUseCase;
   final FetchMySaleHistoryUseCase _fetchMySaleHistoryUseCase;
@@ -14,7 +17,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
   List<BidHistoryItem> _bidHistory = [];
   List<SaleHistoryItem> _saleHistory = [];
 
-  // 캐싱 관련
+  // State: Caching
   static const Duration _cacheValidDuration = Duration(minutes: 2);
 
   // 필터링 결과 캐시
@@ -29,6 +32,8 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
   List<ActionHubItem>? _cachedBidActionHubItems;
   List<ActionHubItem>? _cachedSaleActionHubItems;
   List<({bool isSeller, bool isHighlighted, dynamic item})>? _cachedAllItems;
+  
+  // State: UI Status
   int _pendingActionCount = 0;
   int _acknowledgedPendingCount = 0;
 
@@ -45,7 +50,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
   List<BidHistoryItem> get bidHistory => _bidHistory;
   List<SaleHistoryItem> get saleHistory => _saleHistory;
 
-  /// 상태별 그룹핑된 아이템 (구매 내역) - 캐싱 적용
+  // Computed: Filtered Items by Status
   List<BidHistoryItem> get todoBidItems {
     _cachedTodoBidItems ??= _filterByStatus(_bidHistory, TradeItemStatus.todo);
     return _cachedTodoBidItems!;
@@ -67,7 +72,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     return _cachedCompletedBidItems!;
   }
 
-  /// 상태별 그룹핑된 아이템 (판매 내역) - 캐싱 적용
+
   List<SaleHistoryItem> get todoSaleItems {
     _cachedTodoSaleItems ??= _filterByStatus(
       _saleHistory,
@@ -105,7 +110,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     }
   }
 
-  /// 유찰 제외 필터링된 판매 내역 (캐싱 적용)
+
   List<SaleHistoryItem> get filteredSaleItems {
     _cachedFilteredSaleItems ??= [
       ...todoSaleItems,
@@ -115,7 +120,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     return _cachedFilteredSaleItems!;
   }
 
-  /// 유찰 제외 필터링된 입찰 내역 (캐싱 적용)
+
   List<BidHistoryItem> get filteredBidItems {
     _cachedFilteredBidItems ??= [
       ...todoBidItems,
@@ -125,7 +130,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     return _cachedFilteredBidItems!;
   }
 
-  /// 통합된 거래 내역 리스트 (판매 + 입찰, 캐싱 적용)
+
   List<({bool isSeller, bool isHighlighted, dynamic item})> get allItems {
     _cachedAllItems ??= [
       // 판매 아이템 추가
@@ -146,7 +151,6 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     return _cachedAllItems!;
   }
 
-  /// 상태별로 아이템 필터링하는 제네릭 헬퍼 메서드
   List<T> _filterByStatus<T extends TradeHistoryItem>(
     List<T> items,
     TradeItemStatus status,
@@ -154,7 +158,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     return items.where((item) => item.itemStatus == status).toList();
   }
 
-  /// 액션 허브 아이템 (구매 내역, 최대 2개) - 캐싱 적용
+
   List<ActionHubItem> get bidActionHubItems {
     _cachedBidActionHubItems ??= _buildActionHubItems(_bidHistory, [
       TradeActionType.paymentRequired,
@@ -163,7 +167,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     return _cachedBidActionHubItems!;
   }
 
-  /// 액션 허브 아이템 (판매 내역, 최대 2개) - 캐싱 적용
+
   List<ActionHubItem> get saleActionHubItems {
     _cachedSaleActionHubItems ??= _buildActionHubItems(_saleHistory, [
       TradeActionType.paymentWaiting,
@@ -172,7 +176,6 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     return _cachedSaleActionHubItems!;
   }
 
-  /// 액션 허브 아이템 생성 헬퍼 메서드
   List<ActionHubItem> _buildActionHubItems(
     List<TradeHistoryItem> items,
     List<TradeActionType> targetActionTypes,
@@ -197,6 +200,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     return hubItems.take(2).toList();
   }
 
+  // Methods: Data Loading
   Future<void> loadData({bool forceRefresh = false}) async {
     if (isLoading) {
       return;
@@ -222,7 +226,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
       _bidHistory = results[0] as List<BidHistoryItem>;
       _saleHistory = results[1] as List<SaleHistoryItem>;
 
-      // 필터링 결과 캐시 무효화
+
       _invalidateFilterCache();
 
       updateCacheTime();
@@ -234,7 +238,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
       notifyListeners();
     } catch (e) {
       stopLoadingWithError(e.toString());
-      // 에러 발생 시에도 캐시된 데이터는 유지
+
     } finally {
       stopLoading();
     }
