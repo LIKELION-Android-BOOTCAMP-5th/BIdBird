@@ -201,8 +201,7 @@ class TradeHistoryCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (bottomSlot != null)
-                        bottomSlot!,
+                      if (bottomSlot != null) bottomSlot!,
                       ],
                     ),
                   ),
