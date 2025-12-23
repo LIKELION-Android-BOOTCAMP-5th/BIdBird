@@ -257,23 +257,28 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     //     !isTimeOver &&
     //     !isTradePaid;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(defaultRadius),
-          topRight: Radius.circular(defaultRadius),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x14000000),
-            offset: Offset(0, -2),
-            blurRadius: 4,
+    return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      bottom: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(defaultRadius),
+            topRight: Radius.circular(defaultRadius),
           ),
-        ],
-      ),
-      child: Row(
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x14000000),
+              offset: Offset(0, -2),
+              blurRadius: 4,
+            ),
+          ],
+        ),
+        child: Row(
         children: [
           // 결제 실패 3회 이상으로 입찰 제한된 경우: 안내 문구만 전체 폭으로 노출 (하트 없음)
           if (!isMyItem && isBidRestricted) ...[
@@ -620,6 +625,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               ),
           ],
         ],
+        ),
       ),
     );
   }
