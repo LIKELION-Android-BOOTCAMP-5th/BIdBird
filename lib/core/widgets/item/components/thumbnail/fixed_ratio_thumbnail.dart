@@ -47,8 +47,8 @@ class FixedRatioThumbnail extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isVideo = imageUrl != null && isVideoFile(imageUrl!);
     final String? displayUrl = isVideo && imageUrl != null
-        ? getVideoThumbnailUrl(imageUrl!)
-        : imageUrl;
+      ? getVideoThumbnailUrl(imageUrl!)
+      : imageUrl;
 
     final defaultBorderRadius = borderRadius ?? BorderRadius.circular(8);
 
@@ -75,8 +75,16 @@ class FixedRatioThumbnail extends StatelessWidget {
                               : 0)
                           .round();
 
+                      // 서버 사이즈 변환(Cloudinary) + 디코드 다운스케일 동시 적용
+                      final transformedUrl = resizeCloudinaryUrl(
+                        displayUrl,
+                        width: memWidth > 0 ? memWidth : null,
+                        height: memHeight > 0 ? memHeight : null,
+                        cropFill: true,
+                      );
+
                       return CachedNetworkImage(
-                        imageUrl: displayUrl,
+                        imageUrl: transformedUrl,
                         cacheManager: ItemImageCacheManager.instance,
                         fit: BoxFit.cover, // center crop
                         memCacheWidth: memWidth > 0 ? memWidth : null,

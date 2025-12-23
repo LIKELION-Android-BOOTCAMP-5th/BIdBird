@@ -13,6 +13,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:async';
+import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/item_add_repository.dart';
@@ -61,6 +63,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
   bool _isSubmitting = false;
   bool useInstantPrice = false;
   int primaryImageIndex = 0;
+  // 업로드 진행률
+  final StreamController<double> _progressController = StreamController<double>.broadcast();
+  Stream<double> get uploadProgressStream => _progressController.stream;
+  StreamSubscription? _uploadProgressSub;
+  final Map<String, double> _fileProgress = {};
 
   bool get isLoadingKeywords => _isLoadingKeywords;
   bool get isSubmitting => _isSubmitting;
@@ -77,6 +84,8 @@ class ItemAddViewModel extends ItemBaseViewModel {
     disposeControllers();
     _dio?.close();
     _dio = null;
+    _uploadProgressSub?.cancel();
+    _progressController.close();
     super.dispose();
   }
 
@@ -418,24 +427,33 @@ class ItemAddViewModel extends ItemBaseViewModel {
         final fontSize = dialogContext.fontSizeMedium;
 
         return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(blueColor),
-              ),
-              SizedBox(height: spacing),
-              Text(
-                '로딩중',
-                style: TextStyle(
-                  fontSize: fontSize,
-                  color: textColor,
-                  decoration: TextDecoration.none,
-                  decorationColor: Colors.transparent,
-                  decorationThickness: 0,
-                ),
-              ),
-            ],
+          child: StreamBuilder<double>(
+            stream: uploadProgressStream,
+            initialData: 0.0,
+            builder: (context, snapshot) {
+              final p = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    value: p > 0 && p < 0.995 ? p : null,
+                    valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+                  ),
+                  SizedBox(height: spacing),
+                  Text(
+                    p > 0 ? '업로드 중... ${ (p*100).toStringAsFixed(0)}%'
+                          : '로딩중',
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      color: Colors.white,
+                      decoration: TextDecoration.none,
+                      decorationColor: Colors.transparent,
+                      decorationThickness: 0,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         );
       },
@@ -476,11 +494,31 @@ class ItemAddViewModel extends ItemBaseViewModel {
     ScaffoldMessengerState scaffoldMessenger,
   ) async {
     try {
+      // 진행률 구독 시작 (선택 이미지 기준)
+      _uploadProgressSub?.cancel();
+      _fileProgress.clear();
+      for (final f in selectedImages) {
+        _fileProgress[f.path] = 0.0;
+      }
+      _emitTotalProgress();
+      _uploadProgressSub = UploadProgressBus.instance.stream.listen((event) {
+        // 등록 과정에서 썸네일도 포함될 수 있어, 알 수 없는 파일도 평균에 포함
+        if (!_fileProgress.containsKey(event.filePath)) {
+          // 새 파일 등장 시 추적 추가
+          _fileProgress[event.filePath] = 0.0;
+        }
+        _fileProgress[event.filePath] = event.total > 0 ? event.sent / event.total : 0.0;
+        _emitTotalProgress();
+      });
+
       // 유즈케이스를 사용하여 이미지 및 썸네일 업로드
       final result = await _uploadItemImagesWithThumbnailUseCase(
         images: selectedImages,
         primaryImageIndex: primaryImageIndex,
       );
+      _uploadProgressSub?.cancel();
+      _fileProgress.clear();
+      _emitTotalProgress();
 
       return result;
     } catch (e) {
@@ -489,8 +527,21 @@ class ItemAddViewModel extends ItemBaseViewModel {
           SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
         );
       }
+      _uploadProgressSub?.cancel();
+      _fileProgress.clear();
+      _emitTotalProgress();
       return null;
     }
+  }
+
+  void _emitTotalProgress() {
+    if (_progressController.isClosed) return;
+    if (_fileProgress.isEmpty) {
+      _progressController.add(0.0);
+      return;
+    }
+    final avg = _fileProgress.values.fold<double>(0.0, (a, b) => a + b) / _fileProgress.length;
+    _progressController.add(avg.clamp(0.0, 1.0));
   }
 
   Future<void> _saveItem(

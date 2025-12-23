@@ -29,12 +29,12 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Consumer<HomeViewmodel>(
           builder: (context, viewModel, child) {
             return Scaffold(
-              appBar: HomeAppBar(viewModel: viewModel),
+              appBar: const HomeAppBar(),
               body: SafeArea(
                 child: Stack(
                   children: [
                     TransparentRefreshIndicator(
-                      onRefresh: viewModel.handleRefresh,
+                      onRefresh: context.read<HomeViewmodel>().handleRefresh,
                       child: CustomScrollView(
                         keyboardDismissBehavior:
                             ScrollViewKeyboardDismissBehavior.onDrag,
@@ -42,10 +42,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         physics: const AlwaysScrollableScrollPhysics(),
                         slivers: [
                           // 키워드 영역
-                          KeywordWidget(viewModel: viewModel),
+                          const KeywordWidget(),
 
                           // 슬라이버 그리드 search 모드가 필요 없어짐 viewmodel에서 그냥 데이터만 뿌려주면 되기 때문
-                          ItemGrid(viewModel: viewModel),
+                          const ItemGrid(),
                         ],
                       ),
                     ),

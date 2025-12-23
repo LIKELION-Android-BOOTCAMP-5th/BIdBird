@@ -101,6 +101,45 @@ class ImageAttachmentBar extends StatelessWidget {
                         ),
                       ),
                     ),
+                    // 업로드 진행률 오버레이
+                    if (viewModel.uploadProgress.containsKey(image.path))
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    value: viewModel.uploadProgress[image.path]!
+                                        .clamp(0.0, 1.0),
+                                    valueColor: const AlwaysStoppedAnimation(
+                                      Colors.white,
+                                    ),
+                                    backgroundColor: Colors.white24,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${((viewModel.uploadProgress[image.path]! * 100).clamp(0, 100)).toStringAsFixed(0)}%',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     // 제거 버튼 (X) - 우상단 오버레이 (가려지지 않도록 개선)
                     Positioned(
                       top: -6,

@@ -1,23 +1,23 @@
 import 'package:bidbird/core/utils/ui_set/icons_style.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../viewmodel/home_viewmodel.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final HomeViewmodel viewModel; // ⭐ 필드로 선언
-
-  const HomeAppBar({super.key, required this.viewModel});
+  const HomeAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final bool searchMode = context.select<HomeViewmodel, bool>((vm) => vm.searchButton);
     return AppBar(
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          if (!viewModel.searchButton)
+          if (!searchMode)
             GestureDetector(
-              onTap: viewModel.handleRefresh,
+              onTap: () => context.read<HomeViewmodel>().handleRefresh(),
               child: Image.asset(
                 'assets/logos/bidbird_text_logo.png',
                 width: 100,
@@ -33,7 +33,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                 TextStyle(color: Colors.grey.shade400, fontSize: 14),
               ),
               autoFocus: true,
-              onChanged: viewModel.onSearchTextChanged,
+              onChanged: context.read<HomeViewmodel>().onSearchTextChanged,
             ),
 
           // 오른쪽 액션 메뉴
@@ -41,8 +41,9 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             children: [
               GestureDetector(
                 onTap: () {
-                  viewModel.workSearchBar();
-                  viewModel.search(viewModel.userInputController.text);
+                  final vm = context.read<HomeViewmodel>();
+                  vm.workSearchBar();
+                  vm.search(vm.userInputController.text);
                 },
                 child: Image.asset(
                   'assets/icons/search_icon.png',

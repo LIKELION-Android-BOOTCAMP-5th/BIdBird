@@ -31,12 +31,16 @@ import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmode
 import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 
 class ChattingRoomViewmodel extends ChangeNotifier {
   String? roomId;
   String itemId;
   bool isActive = false;
   List<XFile> images = []; // 여러 이미지 지원
+  // 업로드 진행률 (filePath -> 0.0~1.0)
+  final Map<String, double> uploadProgress = {};
+  StreamSubscription? _uploadProgressSub;
   RoomInfoEntity? roomInfo;
   ItemInfoEntity? itemInfo;
   AuctionInfoEntity? auctionInfo;
@@ -416,6 +420,19 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     final messageText = messageController.text;
     final imagesToSend = List<XFile>.from(images);
 
+    // 진행률 구독 시작 (선택된 파일만 추적)
+    _uploadProgressSub?.cancel();
+    uploadProgress.clear();
+    for (final f in imagesToSend) {
+      uploadProgress[f.path] = 0.0;
+    }
+    _uploadProgressSub = UploadProgressBus.instance.stream.listen((event) {
+      if (uploadProgress.containsKey(event.filePath)) {
+        uploadProgress[event.filePath] = event.progress;
+        notifyListeners();
+      }
+    });
+
     // 낙관적 업데이트: 메시지 전송 전에 임시 메시지 추가
     final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentRoomId != null && userId != null) {
@@ -443,6 +460,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       _removeOptimisticMessages(messageText, imagesToSend);
       _handleSendError(result.errorMessage ?? "메시지 전송 실패");
       isSending = false;
+      _uploadProgressSub?.cancel();
+      uploadProgress.clear();
       notifyListeners();
       return;
     }
@@ -454,6 +473,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       messageController.text = "";
       images.clear();
       type = MessageType.text;
+      _uploadProgressSub?.cancel();
+      uploadProgress.clear();
       notifyListeners();
       await _handleFirstMessageSent();
       
@@ -466,6 +487,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       images.clear();
       type = MessageType.text;
       isSending = false;
+      _uploadProgressSub?.cancel();
+      uploadProgress.clear();
       notifyListeners();
       scrollToBottom(force: true);
       
@@ -474,6 +497,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     } else {
       // 예상치 못한 경우
       isSending = false;
+      _uploadProgressSub?.cancel();
+      uploadProgress.clear();
       notifyListeners();
     }
   }
@@ -851,6 +876,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     }
 
     messageController.dispose();
+    _uploadProgressSub?.cancel();
     _roomInfoManager.dispose();
     _subscriptionManager.dispose();
     _scrollManager.dispose();
