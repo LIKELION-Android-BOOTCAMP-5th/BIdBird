@@ -309,8 +309,35 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             //   Expanded(child: _buildBuyNowButton()),
             // ],
           ] else ...[
+            // 내 매물이 유찰(323)된 경우: 재등록 버튼 노출
+            if (statusCode == 323) ...[
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.push(
+                      '/add_item',
+                      extra: widget.item.itemId,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: blueColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.7),
+                    ),
+                  ),
+                  child: const Text(
+                    '재등록하기',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ]
             // 판매자 입장: 낙찰(321) 상태이거나 경매 종료 후 아직 결제 전이면 결제 정보 입력 버튼 표시
-            if ((statusCode == 321 || isTimeOver) && !isTradePaid) ...[
+            else if ((statusCode == 321 || isTimeOver) && !isTradePaid) ...[
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
@@ -677,6 +704,19 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     // 경매가 완전히 끝난 상태(유찰/즉시구매 완료 등)
     if (isAuctionEnded && statusCode != 321) {
+      String statusText;
+      
+      // 상태 코드에 따라 다른 메시지 표시
+      if (statusCode == 323) {
+        statusText = '유찰된 상품입니다.';
+      } else if (statusCode == 322) {
+        statusText = '즉시 구매 완료된 상품입니다.';
+      } else if (isTimeOver && statusCode != 321) {
+        statusText = '경매 시간이 종료되었습니다.';
+      } else {
+        statusText = '경매가 종료되었습니다.';
+      }
+      
       return Container(
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -685,10 +725,10 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           borderRadius: BorderRadius.circular(8.7),
           border: Border.all(color: BorderColor),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            '경매가 종료되었습니다.',
-            style: TextStyle(
+            statusText,
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: TopBidderTextColor,
