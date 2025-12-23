@@ -444,9 +444,8 @@ class ItemAddViewModel extends ItemBaseViewModel {
                           : '로딩중',
                     style: TextStyle(
                       fontSize: fontSize,
-                      color: Colors.white,
+                      color: TextPrimary,
                       decoration: TextDecoration.none,
-                      decorationColor: Colors.transparent,
                       decorationThickness: 0,
                     ),
                   ),

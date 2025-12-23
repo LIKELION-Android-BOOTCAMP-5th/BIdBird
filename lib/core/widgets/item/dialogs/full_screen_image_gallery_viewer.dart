@@ -74,7 +74,8 @@ class _FullScreenImageGalleryViewerState
         onTap: _toggleControls,
         child: Stack(
           children: [
-            PageView.builder(
+            Positioned.fill(
+              child: PageView.builder(
               controller: _pageController,
               onPageChanged: (index) {
                 setState(() {
@@ -131,7 +132,7 @@ class _FullScreenImageGalleryViewerState
                   );
                 }
 
-                return Center(
+                  return Center(
                   child: InteractiveViewer(
                     minScale: 0.5,
                     maxScale: 4.0,
@@ -154,8 +155,9 @@ class _FullScreenImageGalleryViewerState
                       ),
                     ),
                   ),
-                );
+                  );
               },
+              ),
             ),
             if (_showControls)
               SafeArea(

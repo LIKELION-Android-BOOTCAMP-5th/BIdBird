@@ -103,7 +103,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: chatItemCardBackground,
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.hardEdge,
@@ -114,7 +114,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
             : const Center(
                 child: Text(
                   '이미지 없음',
-                  style: TextStyle(color: Colors.black, fontSize: 16),
+                  style: TextStyle(color: TextPrimary),
                 ),
               ),
       ),
@@ -128,7 +128,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: chatItemCardBackground,
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(16),
@@ -190,7 +190,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1, color: Color(0xFFE5E5E5)),
+          const Divider(height: 1, thickness: 1, color: LightBorderColor),
           const SizedBox(height: 12),
           const Text(
             '상품 설명',
@@ -325,7 +325,7 @@ class _ImageGalleryState extends State<_ImageGallery> {
                       errorWidget: (context, url, error) => const Center(
                         child: Text(
                           '이미지 없음',
-                          style: TextStyle(color: Colors.black, fontSize: 16),
+                          style: TextStyle(color: TextPrimary),
                         ),
                       ),
                     ),
@@ -333,11 +333,11 @@ class _ImageGalleryState extends State<_ImageGallery> {
                   if (isVideo)
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: TextPrimary.withValues(alpha: 0.3),
                         child: const Center(
                           child: Icon(
                             Icons.play_circle_filled,
-                            color: Colors.white,
+                            color: chatItemCardBackground,
                             size: 64,
                           ),
                         ),
@@ -355,13 +355,13 @@ class _ImageGalleryState extends State<_ImageGallery> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
+                color: TextPrimary.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 '${_currentPage + 1}/${widget.imageUrls.length}',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: chatItemCardBackground,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),

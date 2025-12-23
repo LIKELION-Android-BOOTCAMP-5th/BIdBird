@@ -1,6 +1,8 @@
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
 import 'package:bidbird/features/report/presentation/screens/report_screen.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -45,17 +47,17 @@ class ItemDetailAppBarSection extends StatelessWidget
         onTap: () => Navigator.of(context).pop(),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          margin: const EdgeInsets.all(8),
+          margin: EdgeInsets.all(context.spacingSmall),
           width: 40,
           height: 40,
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.5),
             shape: BoxShape.circle,
           ),
-          child: const Icon(
+          child: Icon(
             Icons.arrow_back,
-            color: Colors.white,
-            size: 20,
+            color: chatItemCardBackground,
+            size: context.iconSizeSmall,
           ),
         ),
       ),
@@ -69,7 +71,7 @@ class ItemDetailAppBarSection extends StatelessWidget
         onTap: () => _handleShare(context),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          margin: const EdgeInsets.only(right: 4, top: 8, bottom: 8),
+          margin: EdgeInsets.only(right: context.spacingSmall / 2, top: context.spacingSmall, bottom: context.spacingSmall),
           width: 40,
           height: 40,
           decoration: BoxDecoration(
@@ -77,10 +79,10 @@ class ItemDetailAppBarSection extends StatelessWidget
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: const Icon(
+          child: Icon(
             Icons.share_outlined,
-            color: Colors.white,
-            size: 20,
+            color: chatItemCardBackground,
+            size: context.iconSizeSmall,
           ),
         ),
       ),
@@ -98,7 +100,7 @@ class ItemDetailAppBarSection extends StatelessWidget
         onTap: () => _handleReport(context, isMyItem, sellerProfile),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+          margin: EdgeInsets.only(right: context.spacingSmall, top: context.spacingSmall, bottom: context.spacingSmall),
           width: 40,
           height: 40,
           decoration: BoxDecoration(
@@ -106,10 +108,10 @@ class ItemDetailAppBarSection extends StatelessWidget
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: const Icon(
+          child: Icon(
             Icons.warning,
-            color: Colors.white,
-            size: 20,
+            color: chatItemCardBackground,
+            size: context.iconSizeSmall,
           ),
         ),
       ),

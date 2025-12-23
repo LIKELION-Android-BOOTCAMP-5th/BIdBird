@@ -1,6 +1,5 @@
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import '../../domain/entities/item_registration_detail_entity.dart';
 import '../../data/repositories/item_registration_detail_repository.dart';
 import '../../domain/usecases/fetch_terms_text_usecase.dart';
 import '../../domain/usecases/confirm_registration_usecase.dart';

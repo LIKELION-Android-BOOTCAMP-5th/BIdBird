@@ -43,12 +43,6 @@ class TradeHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // 역할 색상 결정
     final roleColor = isSeller ? roleSalePrimary : rolePurchasePrimary;
-    final cardPaddingValue =
-        useResponsive ? ResponsiveConstants.screenPadding(context) : 14.0;
-    final thumbnailSize =
-        useResponsive ? context.widthRatio(0.16, min: 64.0, max: 80.0) : 64.0;
-    final mediaSpacing =
-        useResponsive ? ResponsiveConstants.spacingSmall(context) : 12.0;
     final tagFontSize = useResponsive
         ? ResponsiveConstants.fontSizeSmall(context)
         : 11.0;
@@ -75,7 +69,7 @@ class TradeHistoryCard extends StatelessWidget {
     
     return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: chatItemCardBackground,
             borderRadius: defaultBorder,
             border: Border.all(
               color: BorderColor.withValues(alpha: 0.25),
@@ -224,13 +218,7 @@ class TradeHistoryCard extends StatelessWidget {
           .eq('item_id', itemId)
           .single();
 
-      if (result == null) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('매물 정보를 불러올 수 없습니다.')),
-        );
-        return;
-      }
+      // Supabase .single()가 실패시 예외로 처리되므로 null 체크는 불필요
 
       final startPrice = getIntFromRow(result, 'start_price');
       final auctionDurationHours =

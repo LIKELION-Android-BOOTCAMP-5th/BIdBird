@@ -214,7 +214,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
           vertical: 12,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: chatItemCardBackground,
           boxShadow: [
             BoxShadow(
               color: shadowLow,
@@ -309,9 +309,10 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
             appBar: AppBar(
               title: const Text('매물 작성'),
               centerTitle: true,
-              backgroundColor: Colors.white,
+              backgroundColor: chatItemCardBackground,
             ),
-            body: Column(
+            body: SafeArea(
+              child: Column(
               children: [
                 // 스텝 인디케이터
                 StepIndicator(
@@ -350,6 +351,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                   ),
                 ),
               ],
+              ),
             ),
             bottomNavigationBar: _buildBottomNavigationBar(viewModel),
           ),
