@@ -1,4 +1,4 @@
-import 'package:bidbird/core/managers/network_api_manager.dart';
+// import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChattingRoomService {

@@ -1,18 +1,18 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
-import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
-import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
+// import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
+// import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
+// import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:bidbird/features/identity_verification/presentation/utils/identity_verification_helper.dart';
-import 'package:bidbird/features/bid/presentation/widgets/buy_now_input_bottom_sheet.dart';
-import 'package:bidbird/features/bid/presentation/widgets/bid_bottom_sheet.dart';
-import 'package:bidbird/features/bid/presentation/viewmodels/buy_now_input_viewmodel.dart';
+// import 'package:bidbird/features/bid/presentation/widgets/buy_now_input_bottom_sheet.dart';
+// import 'package:bidbird/features/bid/presentation/viewmodels/buy_now_input_viewmodel.dart';
 import 'package:bidbird/features/bid/presentation/viewmodels/price_input_viewmodel.dart';
+import 'package:bidbird/features/bid/presentation/widgets/bid_bottom_sheet.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/presentation/screens/item_bid_win_screen.dart';
 import 'package:bidbird/features/item_trade/seller_payment_complete/presentation/screens/seller_payment_complete_screen.dart';
@@ -24,7 +24,7 @@ import 'package:bidbird/features/item_trade/shipping/domain/repositories/shippin
 import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
-import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
+// import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
 import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
 
@@ -139,7 +139,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
     final isMyItem = widget.isMyItem;
     final bool isBidRestricted = _isBidRestricted;
-    final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
     final int? tradeStatusCode = widget.item.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
 
@@ -555,12 +554,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               onPressed: () async {
                 // 배송 정보 조회
                 final shippingInfoRepository = ShippingInfoRepositoryImpl();
+                final navigatorContext = context;
                 try {
                   final shippingInfo = await shippingInfoRepository.getShippingInfo(widget.item.itemId);
                   
                   if (!mounted) return;
                   
-                  final navigatorContext = context;
                   showDialog(
                     context: navigatorContext,
                     builder: (dialogContext) => ShippingInfoViewPopup(
