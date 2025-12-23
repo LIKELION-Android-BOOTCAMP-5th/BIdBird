@@ -1,7 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
-import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -691,7 +690,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     );
 
     try {
-      await viewModel.placeBid(itemId: widget.itemId, bidPrice: _bidAmount);
+      await viewModel.Temporary_bid(itemId: widget.itemId, bidPrice: _bidAmount);
 
       if (!parentContext.mounted) return;
       Navigator.pop(parentContext);

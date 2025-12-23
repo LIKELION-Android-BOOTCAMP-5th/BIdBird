@@ -72,7 +72,6 @@ class ItemBidWinScreen extends StatelessWidget {
                 return Column(
                   children: [
                     if (!isTradePaid) ...[
-                      // TODO: 사업자 인증 후 아래 주석 해제
                       // SizedBox(
                       //   width: double.infinity,
                       //   height: buttonHeight,
@@ -142,29 +141,7 @@ class ItemBidWinScreen extends StatelessWidget {
                       //     ),
                       //   ),
                       // ),
-                      
-                      // 임시: 판매자 결제정보 입력 대기 안내
-                      SizedBox(
-                        width: double.infinity,
-                        height: buttonHeight,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
-                            borderRadius: defaultBorder,
-                            border: Border.all(color: const Color(0xFFE0E0E0)),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '판매자가 결제정보 입력 중입니다',
-                              style: TextStyle(
-                                fontSize: buttonFontSize,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF9E9E9E),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // 임시: 결제 안내 박스 대신 간격만 유지
                       SizedBox(height: spacing),
                     ],
                     SizedBox(

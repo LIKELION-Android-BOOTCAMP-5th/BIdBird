@@ -11,6 +11,9 @@ abstract class BidRepository {
   
   /// 입찰 제한 여부 확인 (true면 제한됨)
   Future<bool> isBidRestricted();
+
+  /// 채팅방 생성
+  Future<String?> createChatRoom(String itemId, String sellerId, String buyerId);
 }
 
 
