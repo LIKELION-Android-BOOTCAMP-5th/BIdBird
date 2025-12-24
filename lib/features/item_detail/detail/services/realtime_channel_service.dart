@@ -20,7 +20,7 @@ class RealtimeChannelService {
         table: table,
         callback: (payload) {
           final record = payload.newRecord;
-          if (record is Map<String, dynamic> && record['item_id'] == itemId) {
+          if (record['item_id'] == itemId) {
             onChange(record);
           }
         },

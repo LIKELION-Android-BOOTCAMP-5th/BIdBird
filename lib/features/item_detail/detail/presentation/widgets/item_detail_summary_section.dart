@@ -32,7 +32,6 @@ class ItemDetailSummarySection extends StatelessWidget {
     final spacingMedium = context.spacingMedium;
     final priceFontSize = context.widthRatio(0.085, min: 26.0, max: 36.0);
     final labelFontSize = context.fontSizeSmall;
-    final subtitleFontSize = context.fontSizeSmall;
     final isCompact = context.isSmallScreen(threshold: 360);
 
     Widget buildContactButton() {

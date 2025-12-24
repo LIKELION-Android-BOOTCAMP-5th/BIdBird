@@ -1,7 +1,7 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/widgets/components/info_box.dart';
-import 'package:bidbird/features/item_trade/shipping/data/repositories/shipping_info_repository.dart';
-import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_input_popup.dart';
+
+
+
 import 'package:bidbird/features/item_trade/trade_status/domain/entities/trade_status_entity.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/viewmodels/trade_status_viewmodel.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/trade_status_item_card.dart';

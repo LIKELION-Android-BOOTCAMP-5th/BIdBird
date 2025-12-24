@@ -18,7 +18,6 @@ import 'package:bidbird/features/notification/domain/usecases/delete_notificatio
 import 'package:bidbird/features/notification/domain/usecases/fetch_notification_usecase.dart';
 import 'package:bidbird/main.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationViewmodel extends ChangeNotifier {
   // Manager 클래스들
@@ -33,7 +32,6 @@ class NotificationViewmodel extends ChangeNotifier {
   final DeleteAllNotificationUseCase _deleteAllNotificationUseCase;
   final DeleteNotificationUseCase _deleteNotificationUseCase;
 
-  RealtimeChannel? _notifyChannel;
   StreamSubscription? _loginSubscription;
   List<NotificationEntity> notifyList = [];
   final List<String> toItemDetail = [
@@ -241,6 +239,7 @@ class NotificationViewmodel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _loginSubscription?.cancel();
     _notificationListRealtimeSubscriptionManager.closeSubscription();
     print("알림 채널이 닫혔습니다");
     super.dispose();

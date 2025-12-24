@@ -86,7 +86,6 @@ class NotificationCard extends StatelessWidget {
         return Colors.green;
 
       case NotificationType.system:
-      default:
         return Colors.purple;
     }
   }
@@ -112,7 +111,6 @@ class NotificationCard extends StatelessWidget {
         return Icons.credit_card;
 
       case NotificationType.system:
-      default:
         return Icons.notifications;
     }
   }

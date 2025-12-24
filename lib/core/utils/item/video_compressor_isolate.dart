@@ -1,19 +1,7 @@
 import 'dart:io';
-import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_compress/video_compress.dart';
-
-/// 비디오 압축을 위한 Isolate 매개변수
-class _VideoCompressParams {
-  final String videoPath;
-  final SendPort sendPort;
-
-  _VideoCompressParams({
-    required this.videoPath,
-    required this.sendPort,
-  });
-}
 
 /// 비디오 압축 결과
 class VideoCompressResult {

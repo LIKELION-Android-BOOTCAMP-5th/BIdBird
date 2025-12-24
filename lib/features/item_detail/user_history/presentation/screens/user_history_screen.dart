@@ -1,6 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/trade_status_item_card.dart';
-import 'package:bidbird/features/item_detail/user_history/domain/entities/user_history_entity.dart';
+
 import 'package:bidbird/features/item_detail/user_history/presentation/viewmodels/user_history_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';

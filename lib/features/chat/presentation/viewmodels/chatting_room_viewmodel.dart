@@ -347,10 +347,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           // 초기 로드가 아닐 때는 스크롤 위치 초기화하지 않고, 저장된 위치로 복원
           _scrollManager.resetInitialLoad();
           if (savedScrollOffset != null) {
+            final scrollOffset = savedScrollOffset;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (scrollController.hasClients) {
                 final maxScroll = scrollController.position.maxScrollExtent;
-                final targetOffset = savedScrollOffset! > maxScroll ? maxScroll : savedScrollOffset!;
+                final targetOffset = scrollOffset > maxScroll ? maxScroll : scrollOffset;
                 scrollController.jumpTo(targetOffset);
               }
             });
@@ -972,8 +973,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
             previousMaxScrollExtent != null && 
             previousScrollOffset > 10.0) {
           _scrollManager.maintainScrollPosition(
-            previousScrollOffset!,
-            previousMaxScrollExtent!,
+            previousScrollOffset,
+            previousMaxScrollExtent,
             olderMessages.length,
           );
         }
