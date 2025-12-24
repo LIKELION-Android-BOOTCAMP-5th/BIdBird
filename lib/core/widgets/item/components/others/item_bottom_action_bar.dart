@@ -27,6 +27,7 @@ import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item
 // import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
 import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 
 class ItemBottomActionBar extends StatefulWidget {
   const ItemBottomActionBar({
@@ -224,9 +225,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     //     !isTradePaid;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.hPadding,
+        vertical: context.spacingSmall,
+      ),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: chatItemCardBackground,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(defaultRadius),
           topRight: Radius.circular(defaultRadius),
@@ -245,20 +249,20 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           if (!isMyItem && isBidRestricted) ...[
             Expanded(
               child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+                padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
                 decoration: BoxDecoration(
                   color: BackgroundColor,
                   borderRadius: BorderRadius.circular(8.7),
                   border: Border.all(color: BorderColor),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
                     '결제 3회 이상 실패하여 입찰이 제한되었습니다.',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: context.fontSizeSmall,
                       fontWeight: FontWeight.w600,
-                      color: Colors.red,
+                      color: RedColor,
                     ),
                   ),
                 ),
@@ -268,7 +272,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           // 일반 사용자: 하트 + 입찰/즉시구매 버튼
           else if (!isMyItem) ...[
             _buildFavoriteButton(itemDetailViewModel),
-            const SizedBox(width: 12),
+            SizedBox(width: context.spacingSmall * 1.5),
             Expanded(child: _buildBidButton(isTopBidder)),
             // if (showBuyNow) ...[
             //   const SizedBox(width: 8),
@@ -305,7 +309,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: context.spacingSmall),
               Expanded(
                 child: ElevatedButton(
                   onPressed: () async {
@@ -408,10 +412,10 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                   ),
                   child: Text(
                     _hasShippingInfoForSeller == true ? '배송 정보 확인하기' : '배송 정보 입력하기',
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: context.fontSizeSmall,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: chatItemCardBackground,
                     ),
                   ),
                 ),
@@ -419,18 +423,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             ] else
               Expanded(
                 child: Container(
-                  height: 40,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+                  padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
                   decoration: BoxDecoration(
                     color: BackgroundColor,
                     borderRadius: BorderRadius.circular(8.7),
                     border: Border.all(color: BorderColor),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
                       '내 매물은 입찰이 불가능합니다',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: context.fontSizeSmall,
                         fontWeight: FontWeight.w600,
                         color: TopBidderTextColor,
                       ),
@@ -458,16 +462,16 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             itemDetailViewModel.toggleFavorite();
           },
           child: Container(
-            width: 40,
-            height: 40,
+            width: context.iconSizeMedium,
+            height: context.iconSizeMedium,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: BorderColor),
             ),
             child: Icon(
               isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : iconColor,
-              size: 22,
+              color: isFavorite ? RedColor : iconColor,
+              size: context.iconSizeSmall,
             ),
           ),
         );
@@ -500,18 +504,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 경매가 완전히 끝난 상태(유찰/즉시구매 완료 등)
     if (isAuctionEnded && statusCode != 321) {
       return Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+        padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
         decoration: BoxDecoration(
           color: BackgroundColor,
           borderRadius: BorderRadius.circular(8.7),
           border: Border.all(color: BorderColor),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             '경매가 종료되었습니다.',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: context.fontSizeSmall,
               fontWeight: FontWeight.w600,
               color: TopBidderTextColor,
             ),
@@ -548,7 +552,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: context.spacingSmall),
           Expanded(
             child: ElevatedButton(
               onPressed: () async {
@@ -591,12 +595,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                   borderRadius: BorderRadius.circular(8.7),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 '배송 정보 확인',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: context.fontSizeSmall,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: chatItemCardBackground,
                 ),
               ),
             ),
@@ -750,18 +754,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
       // 다른 사용자는 결제 대기 안내 문구만 표시
       return Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+        padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
         decoration: BoxDecoration(
           color: BackgroundColor,
           borderRadius: BorderRadius.circular(8.7),
           border: Border.all(color: BorderColor),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             '즉시 구매 결제 대기중입니다',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: context.fontSizeSmall,
               fontWeight: FontWeight.w600,
               color: TopBidderTextColor,
             ),
@@ -772,18 +776,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     if (isBuyNowCompleted) {
       return Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+        padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
         decoration: BoxDecoration(
           color: BackgroundColor,
           borderRadius: BorderRadius.circular(8.7),
           border: Border.all(color: BorderColor),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             '즉시 구매되었습니다',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: context.fontSizeSmall,
               fontWeight: FontWeight.w600,
               color: TopBidderTextColor,
             ),
@@ -803,9 +807,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             context: context,
             isScrollControlled: true,
             useSafeArea: true,
-            backgroundColor: Colors.white,
+            backgroundColor: chatItemCardBackground,
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
             ),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(
@@ -815,14 +819,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             builder: (context) {
               return ChangeNotifierProvider<PriceInputViewModel>(
                 create: (_) => PriceInputViewModel(),
-                child: FractionallySizedBox(
-                  heightFactor: 0.9,
-                  child: BidBottomSheet(
-                    itemId: widget.item.itemId,
-                    currentPrice: widget.item.currentPrice,
-                    bidUnit: widget.item.bidPrice,
-                    // buyNowPrice: widget.item.buyNowPrice,
-                  ),
+                child: BidBottomSheet(
+                  itemId: widget.item.itemId,
+                  currentPrice: widget.item.currentPrice,
+                  bidUnit: widget.item.bidPrice,
+                  // buyNowPrice: widget.item.buyNowPrice,
                 ),
               );
             },
@@ -837,7 +838,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
         child: Text(
           '입찰하기',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: context.fontSizeSmall,
             fontWeight: FontWeight.w600,
             color: blueColor,
           ),
@@ -876,9 +877,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       }
     }
 
-    return Container(
+      return Container(
       height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
       decoration: BoxDecoration(
         color: BackgroundColor,
         borderRadius: BorderRadius.circular(8.7),
@@ -887,8 +888,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       child: Center(
         child: Text(
           reason,
-          style: const TextStyle(
-            fontSize: 13,
+            style: TextStyle(
+              fontSize: context.fontSizeSmall,
             fontWeight: FontWeight.w600,
             color: TopBidderTextColor,
           ),

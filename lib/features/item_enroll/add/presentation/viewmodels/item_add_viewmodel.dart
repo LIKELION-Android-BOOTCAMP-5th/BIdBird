@@ -28,6 +28,7 @@ import 'package:bidbird/features/item_enroll/add/domain/usecases/orchestrations/
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
+import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 
 /// ItemAdd ViewModel - Thin Pattern
 /// 책임: UI 상태 관리, Flow UseCase 호출
@@ -375,6 +376,22 @@ class ItemAddViewModel extends ItemBaseViewModel {
     _isSubmitting = true;
     notifyListeners();
 
+    // 업로드 진행률: Cloudinary ProgressBus -> UI Progress
+    final int uploadFileCount = selectedImages.where((x) {
+      final uri = Uri.tryParse(x.path);
+      return !(uri != null && (uri.scheme == 'http' || uri.scheme == 'https'));
+    }).length;
+
+    final Map<String, double> _fileProgress = {};
+    late final StreamSubscription _progressSub;
+    _progressSub = UploadProgressBus.instance.stream.listen((event) {
+      if (uploadFileCount == 0) return;
+      _fileProgress[event.filePath] = event.progress.clamp(0.0, 1.0);
+      final double sum = _fileProgress.values.fold(0.0, (a, b) => a + b);
+      final double overall = (sum / uploadFileCount).clamp(0.0, 1.0);
+      _progressController.add(overall * 0.7); // 업로드 단계는 0~70%
+    });
+
     bool loadingDialogOpen = true;
     _showLoadingDialog(context);
 
@@ -412,6 +429,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
     } finally {
       _isSubmitting = false;
       notifyListeners();
+      await _progressSub.cancel();
       _closeLoadingDialog(navigator, loadingDialogOpen);
     }
   }
@@ -430,21 +448,20 @@ class ItemAddViewModel extends ItemBaseViewModel {
             stream: uploadProgressStream,
             initialData: 0.0,
             builder: (context, snapshot) {
-              final p = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
+                final p = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CircularProgressIndicator(
-                    value: p > 0 && p < 0.995 ? p : null,
+                      value: p,
                     valueColor: AlwaysStoppedAnimation<Color>(blueColor),
                   ),
                   SizedBox(height: spacing),
                   Text(
-                    p > 0 ? '업로드 중... ${ (p*100).toStringAsFixed(0)}%'
-                          : '로딩중',
+                      '업로드 중 ${ (p*100).toStringAsFixed(0)}%',
                     style: TextStyle(
                       fontSize: fontSize,
-                      color: TextPrimary,
+                        color: Colors.white,
                       decoration: TextDecoration.none,
                       decorationThickness: 0,
                     ),

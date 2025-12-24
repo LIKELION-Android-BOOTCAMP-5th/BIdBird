@@ -44,6 +44,7 @@ class ItemAddDatasource {
         imageUrls: imageUrls,
         primaryImageIndex: primaryImageIndex,
         thumbnailUrl: thumbnailUrl,
+        userId: userId,
       );
     } else {
       // 신규 등록 모드 - 엣지 펑션 사용
@@ -110,6 +111,11 @@ class ItemAddDatasource {
         },
       );
 
+      final status = response.status;
+      if (status == null || status < 200 || status >= 300) {
+        throw Exception('Failed to create item (HTTP $status): ${response.data}');
+      }
+
       final data = response.data;
       if (data == null) {
         throw Exception('Failed to create item: No response data');
@@ -159,7 +165,25 @@ class ItemAddDatasource {
     required List<String> imageUrls,
     required int primaryImageIndex,
     String? thumbnailUrl,
+    required String userId,
   }) async {
+    // 소유자 확인 (클라이언트 방어막, 최종 권한은 RLS/서버)
+    final ownerRow = await _supabase
+        .from('items_detail')
+        .select('seller_id')
+        .eq('item_id', itemId)
+        .single();
+
+    final sellerId = ownerRow['seller_id'] as String?;
+    if (sellerId == null || sellerId != userId) {
+      throw Exception('권한 없음: 해당 아이템을 수정할 수 없습니다.');
+    }
+
+    final validImageUrls = imageUrls.where((url) => url.isNotEmpty).toList();
+    if (validImageUrls.isEmpty) {
+      throw Exception('최소 1장의 이미지가 필요합니다.');
+    }
+
     // 기존 이미지 삭제
     await _supabase.from('item_images').delete().eq('item_id', itemId);
 
@@ -181,7 +205,7 @@ class ItemAddDatasource {
     await _supabase.from('items_detail').update(updateData).eq('item_id', itemId);
 
     // 새 이미지 등록
-    await _insertImages(itemId, imageUrls, primaryImageIndex);
+    await _insertImages(itemId, validImageUrls, primaryImageIndex);
   }
 
   Future<void> _insertImages(

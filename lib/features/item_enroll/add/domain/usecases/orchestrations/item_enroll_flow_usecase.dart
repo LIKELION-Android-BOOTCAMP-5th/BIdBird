@@ -44,6 +44,8 @@ class ItemEnrollFlowUseCase {
     required Function(double) onProgress,
   }) async {
     try {
+      onProgress(0.05);
+
       // Step 1: 이미지 업로드
       final ItemImageUploadResult? uploadResult = await _uploadImages(
         images: images,
@@ -59,6 +61,7 @@ class ItemEnrollFlowUseCase {
       }
 
       // Step 2: 상품 정보 저장
+      onProgress(0.75);
       final String? itemId = await _saveItem(
         itemData: itemData,
         imageUrls: uploadResult.imageUrls,
@@ -73,6 +76,8 @@ class ItemEnrollFlowUseCase {
           ItemEnrollFlowFailure(message: '상품 등록에 실패했습니다.')
         );
       }
+
+      onProgress(1.0);
 
       return (ItemEnrollFlowSuccess(itemId: itemId), null);
     } catch (e) {
@@ -89,6 +94,7 @@ class ItemEnrollFlowUseCase {
     required Function(double) onProgress,
   }) async {
     try {
+      onProgress(0.1);
       return await _uploadItemImagesUseCase(
         images: images,
         primaryImageIndex: primaryImageIndex,

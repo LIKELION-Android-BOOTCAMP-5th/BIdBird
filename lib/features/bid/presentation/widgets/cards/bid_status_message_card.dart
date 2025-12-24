@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 
 /// 입찰 상태 메시지 카드
 class BidStatusMessageCard extends StatelessWidget {
@@ -13,7 +14,7 @@ class BidStatusMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isValid ? Colors.green : Colors.red;
+    final color = isValid ? tradeSaleDoneColor : RedColor;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

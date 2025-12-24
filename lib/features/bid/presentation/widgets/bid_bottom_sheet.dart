@@ -11,6 +11,7 @@ import 'package:bidbird/features/bid/presentation/widgets/sections/bid_quick_pre
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 
 class BidBottomSheet extends StatefulWidget {
   final String itemId;
@@ -33,6 +34,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   late int _currentPrice;
   late int _bidUnit;
   ItemDetailViewModel? _itemDetailViewModel;
+  final ScrollController _scrollController = ScrollController();
 
   static const List<BidPresetAction> _presetActions = [
     BidPresetAction('+1호가', 1, BidPresetActionType.adjust),
@@ -71,6 +73,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   @override
   void dispose() {
     _itemDetailViewModel?.removeListener(_handlePriceUpdate);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -157,23 +160,31 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
         return ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           child: Container(
-            color: Colors.white,
+            color: chatItemCardBackground,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                padding: EdgeInsets.fromLTRB(
+                  context.hPadding,
+                  context.spacingSmall,
+                  context.hPadding,
+                  context.spacingMedium * 0.5,
+                ),
                 child: isSubmitting
                     ? BidLoadingBlock(onClose: () => Navigator.pop(context))
-                    : _buildContentView(
-                        context,
-                        viewModel,
-                        displayCurrentPrice,
-                        displayBidUnitLabel,
-                        statusMessage,
-                        isValidBid,
-                        canSubmit,
-                        isSubmitting,
-                        minBid,
-                        bidAmountFontSize,
+                    : SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                        child: _buildContentView(
+                          context,
+                          viewModel,
+                          displayCurrentPrice,
+                          displayBidUnitLabel,
+                          statusMessage,
+                          isValidBid,
+                          canSubmit,
+                          isSubmitting,
+                          minBid,
+                          bidAmountFontSize,
+                        ),
                       ),
               ),
             ),
@@ -195,62 +206,70 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     int minBid,
     double bidAmountFontSize,
   ) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '입찰하기',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close, size: 20),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: ListView(
+            controller: _scrollController,
+            primary: false,
+            physics: const ClampingScrollPhysics(),
+            padding: EdgeInsets.zero,
             children: [
-              const Text(
-                '입찰하기',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              BidInfoSummaryCard(
+                currentPrice: displayCurrentPrice,
+                bidUnitLabel: displayBidUnitLabel,
               ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close, size: 20),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+              const SizedBox(height: 20),
+              BidPriceStepperSection(
+                bidAmount: _bidAmount,
+                bidUnitLabel: displayBidUnitLabel,
+                onIncrease: _increaseBid,
+                onDecrease: _decreaseBid,
+                canDecrease: _bidAmount > minBid,
+                canIncrease: true,
+                amountFontSize: bidAmountFontSize,
+              ),
+              const SizedBox(height: 12),
+              BidQuickPresetSection(
+                actions: _presetActions,
+                onAdjust: _adjustBidBySteps,
+                onResetMin: _setBidToMinimum,
+              ),
+              const SizedBox(height: 16),
+              BidStatusMessageCard(
+                isValid: isValidBid,
+                statusText: statusMessage,
+              ),
+              const SizedBox(height: 20),
+              BidButtonSection(
+                canSubmit: canSubmit,
+                isSubmitting: isSubmitting,
+                onClose: () => Navigator.pop(context),
+                onSubmit: canSubmit
+                    ? () => _showConfirmDialog(context, viewModel)
+                    : null,
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          BidInfoSummaryCard(
-            currentPrice: displayCurrentPrice,
-            bidUnitLabel: displayBidUnitLabel,
-          ),
-          const SizedBox(height: 20),
-          BidPriceStepperSection(
-            bidAmount: _bidAmount,
-            bidUnitLabel: displayBidUnitLabel,
-            onIncrease: _increaseBid,
-            onDecrease: _decreaseBid,
-            canDecrease: _bidAmount > minBid,
-            canIncrease: true,
-            amountFontSize: bidAmountFontSize,
-          ),
-          const SizedBox(height: 12),
-          BidQuickPresetSection(
-            actions: _presetActions,
-            onAdjust: _adjustBidBySteps,
-            onResetMin: _setBidToMinimum,
-          ),
-          const SizedBox(height: 16),
-          BidStatusMessageCard(
-            isValid: isValidBid,
-            statusText: statusMessage,
-          ),
-          const SizedBox(height: 20),
-          BidButtonSection(
-            canSubmit: canSubmit,
-            isSubmitting: isSubmitting,
-            onClose: () => Navigator.pop(context),
-            onSubmit:
-                canSubmit ? () => _showConfirmDialog(context, viewModel) : null,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
