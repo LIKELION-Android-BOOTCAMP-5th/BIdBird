@@ -111,55 +111,49 @@ class AuctionItemCard extends StatelessWidget {
                       SizedBox(width: gapBetweenMediaAndText),
                       // 정보 영역
                       Expanded(
-                        child: SizedBox(
-                          height: thumbnailSize,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // 제목
-                              Text(
-                                title,
-                                style: TextStyle(
-                                  fontSize: useResponsive
-                                      ? context.fontSizeLarge
-                                      : 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              title,
+                              style: TextStyle(
+                                fontSize: useResponsive
+                                    ? context.fontSizeLarge + 2
+                                    : 18,
+                                fontWeight: FontWeight.w700,
+                                height: 1.2,
                               ),
-                              // 경매 기간 + 가격 한 줄 배치 (카드 하단 정렬)
-                              Padding(
-                                padding: EdgeInsets.only(top: metaSpacing),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: _buildAuctionDurationRow(
-                                        context,
-                                        fontSize: useResponsive
-                                            ? context.fontSizeMedium
-                                            : 13,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      formatPrice(price),
-                                      style: TextStyle(
-                                        fontSize: useResponsive
-                                            ? context.fontSizeMedium
-                                            : 13,
-                                        color: textColor,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: metaSpacing * 0.6 + 11),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildAuctionDurationRow(
+                                    context,
+                                    fontSize: useResponsive
+                                        ? context.fontSizeMedium
+                                        : 13,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  formatPrice(price),
+                                  style: TextStyle(
+                                    fontSize: useResponsive
+                                        ? context.fontSizeMedium
+                                        : 13,
+                                    color: textColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
