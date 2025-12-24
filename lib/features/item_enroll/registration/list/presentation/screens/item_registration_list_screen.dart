@@ -53,8 +53,22 @@ class ItemRegistrationListScreen extends StatelessWidget {
     }
 
     if (data.items.isEmpty) {
-      // 빈 상태에서는 별도 문구 없이 배경만 보여줌
-      return Container(color: BackgroundColor);
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inventory_2_outlined, size: 64, color: iconColor),
+            SizedBox(height: context.spacingMedium),
+            Text(
+              '등록할 매물이 없습니다.',
+              style: TextStyle(
+                fontSize: context.fontSizeMedium,
+                color: TextSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return ListView.separated(

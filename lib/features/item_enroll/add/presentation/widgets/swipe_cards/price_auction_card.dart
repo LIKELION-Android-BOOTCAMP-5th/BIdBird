@@ -30,7 +30,7 @@ class PriceAuctionCard extends StatefulWidget {
 }
 
 class PriceAuctionCardState extends State<PriceAuctionCard>
-    with FormValidationMixin, AutomaticKeepAliveClientMixin {
+    with FormValidationMixin {
   String? _startPriceError;
   // String? _instantPriceError;
   String? _categoryError;
@@ -97,47 +97,49 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // keep-alive
+    // 반응형 값 캐싱
     final spacing = context.spacingMedium;
+    final hPadding = context.hPadding;
+    final vPadding = context.vPadding;
 
     return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.symmetric(
-        horizontal: context.hPadding,
-        vertical: context.vPadding,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 시작가 입력
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FormLabel(text: '시작가 (원)'),
-              TextField(
-                controller: widget.viewModel.startPriceController,
-                keyboardType: TextInputType.number,
-                decoration: widget
-                    .inputDecoration('시작 가격 입력')
-                    .copyWith(
-                      errorText: shouldShowErrors ? _startPriceError : null,
-                    ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  PriceInputFormatter(),
-                ],
-                onChanged: (value) {
-                  // 에러가 있을 때만 검증하여 에러 제거
-                  if (shouldShowErrors && _startPriceError != null) {
-                    final startPrice = parseFormattedPrice(value);
-                    if (startPrice > 0 &&
-                        startPrice >= ItemPriceLimits.minPrice) {
-                      clearError(() => _startPriceError = null);
+          RepaintBoundary(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FormLabel(text: '시작가 (원)'),
+                TextField(
+                  controller: widget.viewModel.startPriceController,
+                  keyboardType: TextInputType.number,
+                  decoration: widget
+                      .inputDecoration('시작 가격 입력')
+                      .copyWith(
+                        errorText: shouldShowErrors ? _startPriceError : null,
+                      ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    PriceInputFormatter(),
+                  ],
+                  onChanged: (value) {
+                    // 에러가 있을 때만 검증하여 에러 제거
+                    if (shouldShowErrors && _startPriceError != null) {
+                      final startPrice = parseFormattedPrice(value);
+                      if (startPrice > 0 &&
+                          startPrice >= ItemPriceLimits.minPrice) {
+                        clearError(() => _startPriceError = null);
+                      }
                     }
-                  }
-                },
-              ),
-            ],
+                  },
+                ),
+              ],
+            ),
           ),
           // SizedBox(height: spacing),
           // // 즉시 구매가 체크박스 - 주석 처리됨
@@ -247,7 +249,4 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
       ),
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

@@ -27,7 +27,7 @@ class ProductInfoCard extends StatefulWidget {
 }
 
 class ProductInfoCardState extends State<ProductInfoCard>
-    with FormValidationMixin, AutomaticKeepAliveClientMixin {
+    with FormValidationMixin {
   static const String _imageLimitText =
       '최소 ${ItemImageLimits.minImageCount}장 최대 ${ItemImageLimits.maxImageCount}장';
 
@@ -77,15 +77,17 @@ class ProductInfoCardState extends State<ProductInfoCard>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // keep-alive
+    // 반응형 값 캐싱
     final spacing = context.spacingMedium;
+    final hPadding = context.hPadding;
+    final vPadding = context.vPadding;
+    final spacingSmall = context.spacingSmall;
+    final fontSizeSmall = context.fontSizeSmall;
 
     return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.symmetric(
-        horizontal: context.hPadding,
-        vertical: context.vPadding,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -102,65 +104,58 @@ class ProductInfoCardState extends State<ProductInfoCard>
             ErrorText(text: _imageError!),
           // 안내 문구
           Padding(
-            padding: EdgeInsets.only(
-              top: context.spacingSmall,
-              bottom: spacing,
-            ),
+            padding: EdgeInsets.only(top: spacingSmall, bottom: spacing),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 _imageLimitText,
-                style: TextStyle(
-                  fontSize: context.fontSizeSmall,
-                  color: TextSecondary,
-                ),
+                style: TextStyle(fontSize: fontSizeSmall, color: TextSecondary),
               ),
             ),
           ),
           SizedBox(height: spacing),
           // 제목 입력
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FormLabel(text: '제목'),
-              TextField(
-                controller: widget.viewModel.titleController,
-                maxLength: ItemTextLimits.maxTitleLength,
-                decoration: widget
-                    .inputDecoration('상품 제목을 입력하세요')
-                    .copyWith(
-                      errorText: shouldShowErrors ? _titleError : null,
-                      counterText: '', // 기본 카운터 숨기기
+          RepaintBoundary(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FormLabel(text: '제목'),
+                TextField(
+                  controller: widget.viewModel.titleController,
+                  maxLength: ItemTextLimits.maxTitleLength,
+                  decoration: widget
+                      .inputDecoration('상품 제목을 입력하세요')
+                      .copyWith(
+                        errorText: shouldShowErrors ? _titleError : null,
+                        counterText: '', // 기본 카운터 숨기기
+                      ),
+                  onChanged: (value) {
+                    // 입력 시 에러가 있으면 제거
+                    if (shouldShowErrors &&
+                        _titleError != null &&
+                        value.trim().isNotEmpty) {
+                      clearError(() => _titleError = null);
+                    }
+                  },
+                ),
+                // 글자수 표시
+                Padding(
+                  padding: EdgeInsets.only(top: context.spacingSmall),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: _CharacterCounter(
+                      controller: widget.viewModel.titleController,
+                      maxLength: ItemTextLimits.maxTitleLength,
                     ),
-                onChanged: (value) {
-                  // 입력 시 에러가 있으면 제거
-                  if (shouldShowErrors &&
-                      _titleError != null &&
-                      value.trim().isNotEmpty) {
-                    clearError(() => _titleError = null);
-                  }
-                },
-              ),
-              // 글자수 표시
-              Padding(
-                padding: EdgeInsets.only(top: context.spacingSmall),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: _CharacterCounter(
-                    controller: widget.viewModel.titleController,
-                    maxLength: ItemTextLimits.maxTitleLength,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }
 
 /// 글자수 카운터 위젯 - 불필요한 재빌드 최소화
@@ -201,9 +196,10 @@ class _CharacterCounterState extends State<_CharacterCounter> {
 
   @override
   Widget build(BuildContext context) {
+    final fontSizeSmall = context.fontSizeSmall;
     return Text(
       '$_length/${widget.maxLength}',
-      style: TextStyle(fontSize: context.fontSizeSmall, color: TextSecondary),
+      style: TextStyle(fontSize: fontSizeSmall, color: TextSecondary),
     );
   }
 }

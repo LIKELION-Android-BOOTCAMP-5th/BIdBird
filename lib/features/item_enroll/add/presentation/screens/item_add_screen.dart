@@ -28,16 +28,18 @@ class ItemAddScreen extends StatefulWidget {
 
 class _ItemAddScreenState extends State<ItemAddScreen> {
   final PageController _pageController = PageController();
-  final GlobalKey<PriceAuctionCardState> _priceAuctionCardKey =
-      GlobalKey<PriceAuctionCardState>();
-  final GlobalKey<ProductInfoCardState> _productInfoCardKey =
-      GlobalKey<ProductInfoCardState>();
   int _currentStep = 0;
 
   static const List<String> _stepLabels = ['상품 정보', '가격·경매', '상세·확인'];
 
+  // InputDecoration 캐시
+  late final Map<String, InputDecoration> _decorationCache;
+
   InputDecoration _inputDecoration(String hint) {
-    return createStandardInputDecoration(context, hint: hint);
+    return _decorationCache.putIfAbsent(
+      hint,
+      () => createStandardInputDecoration(context, hint: hint),
+    );
   }
 
   void _showImageSourceSheet(BuildContext context, ItemAddViewModel viewModel) {
@@ -119,10 +121,9 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     bool validationPassed = false;
 
     if (_currentStep == 0) {
-      _productInfoCardKey.currentState?.validateFields();
+      // GlobalKey 사용 제거 - 버튼으로만 이동하므로 불필요
       validationPassed = _canGoToNextStep(viewModel);
     } else if (_currentStep == 1) {
-      _priceAuctionCardKey.currentState?.validatePrices();
       validationPassed = _canGoToNextStep(viewModel);
     }
 
@@ -144,7 +145,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   void _handleNextButtonPress(ItemAddViewModel viewModel) {
     // 가격·경매 카드에서 다음 버튼을 눌렀을 때 검증
     if (_currentStep == 1) {
-      _priceAuctionCardKey.currentState?.validatePrices();
+      // GlobalKey 사용 제거 - 버튼 클릭시에만 필요하므로 불필요
       if (!_canGoToNextStep(viewModel)) {
         return;
       }
@@ -238,6 +239,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   void initState() {
     super.initState();
     _viewModel = context.read<ItemAddViewModel>();
+    _decorationCache = {};
   }
 
   @override
@@ -248,25 +250,10 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 필요한 속성만 watch하여 불필요한 리빌드 방지
-    return Selector<
-      ItemAddViewModel,
-      ({
-        int selectedImagesLength,
-        String? selectedDuration,
-        int? selectedKeywordTypeId,
-        bool useInstantPrice,
-        bool isSubmitting,
-      })
-    >(
-      selector: (_, vm) => (
-        selectedImagesLength: vm.selectedImages.length,
-        selectedDuration: vm.selectedDuration,
-        selectedKeywordTypeId: vm.selectedKeywordTypeId,
-        useInstantPrice: vm.useInstantPrice,
-        isSubmitting: vm.isSubmitting,
-      ),
-      builder: (context, data, _) {
+    // isSubmitting만 감지 - 나머지는 각 카드에서 개별 처리
+    return Selector<ItemAddViewModel, bool>(
+      selector: (_, vm) => vm.isSubmitting,
+      builder: (context, isSubmitting, _) {
         final viewModel = _viewModel;
 
         return PopScope(
@@ -302,7 +289,6 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                       children: [
                         // 카드 1: 상품 정보
                         ProductInfoCard(
-                          key: _productInfoCardKey,
                           viewModel: viewModel,
                           onImageSourceTap: () =>
                               _showImageSourceSheet(context, viewModel),
@@ -310,7 +296,6 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                         ),
                         // 카드 2: 가격·경매
                         PriceAuctionCard(
-                          key: _priceAuctionCardKey,
                           viewModel: viewModel,
                           inputDecoration: (hint) => _inputDecoration(hint),
                         ),
