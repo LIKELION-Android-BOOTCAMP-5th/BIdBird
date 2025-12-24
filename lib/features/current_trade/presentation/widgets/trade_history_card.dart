@@ -43,6 +43,15 @@ class TradeHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // 역할 색상 결정
     final roleColor = isSeller ? roleSalePrimary : rolePurchasePrimary;
+    final cardPadding = useResponsive
+      ? ResponsiveConstants.spacingMedium(context) * 0.65
+      : 7.0;
+    final thumbnailSize = useResponsive
+      ? context.widthRatio(0.18, min: 50.0, max: 65.0)
+      : 50.0;
+    final gapBetweenMediaAndText = useResponsive
+      ? ResponsiveConstants.spacingSmall(context) * 0.8
+      : 10.0;
     final tagFontSize = useResponsive
         ? ResponsiveConstants.fontSizeSmall(context)
         : 11.0;
@@ -62,11 +71,6 @@ class TradeHistoryCard extends StatelessWidget {
         ? ResponsiveConstants.fontSizeMedium(context)
         : 15.0;
 
-    // 단순한 고정 값 사용으로 레이아웃 오류 방지
-    const adaptivePadding = 10.8;
-    const adaptiveSpacing = 12.0;
-    const adaptiveThumbnail = 60.0;
-    
     return Container(
           decoration: BoxDecoration(
             color: chatItemCardBackground,
@@ -88,24 +92,23 @@ class TradeHistoryCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 4,
-                constraints: const BoxConstraints(minHeight: 80),
-                decoration: BoxDecoration(
-                  color: roleColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(defaultRadius),
-                    bottomLeft: Radius.circular(defaultRadius),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: roleColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(defaultRadius),
+                      bottomLeft: Radius.circular(defaultRadius),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(adaptivePadding),
-                  child: IntrinsicHeight(
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.all(cardPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
@@ -124,12 +127,12 @@ class TradeHistoryCard extends StatelessWidget {
                           children: [
                             FixedRatioThumbnail(
                               imageUrl: thumbnailUrl,
-                              width: adaptiveThumbnail,
-                              height: adaptiveThumbnail,
+                              width: thumbnailSize,
+                              height: thumbnailSize,
                               aspectRatio: 1.0,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            SizedBox(width: adaptiveSpacing),
+                            SizedBox(width: gapBetweenMediaAndText),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,12 +200,12 @@ class TradeHistoryCard extends StatelessWidget {
                         ),
                       ),
                       if (bottomSlot != null) bottomSlot!,
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ),
             ],
+          ),
           ),
         );
   }

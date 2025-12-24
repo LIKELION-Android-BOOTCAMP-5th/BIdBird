@@ -1057,7 +1057,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             useSafeArea: true,
             backgroundColor: Colors.white,
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
             ),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(
@@ -1069,13 +1069,10 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               final latestItem = detailViewModel?.itemDetail ?? widget.item;
               final bottomSheet = ChangeNotifierProvider<PriceInputViewModel>(
                 create: (_) => PriceInputViewModel(),
-                child: FractionallySizedBox(
-                  heightFactor: 0.9,
-                  child: BidBottomSheet(
-                    itemId: widget.item.itemId,
-                    currentPrice: latestItem.currentPrice,
-                    bidUnit: latestItem.bidPrice,
-                  ),
+                child: BidBottomSheet(
+                  itemId: widget.item.itemId,
+                  currentPrice: latestItem.currentPrice,
+                  bidUnit: latestItem.bidPrice,
                 ),
               );
 
