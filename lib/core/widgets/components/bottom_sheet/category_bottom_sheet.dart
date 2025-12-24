@@ -33,11 +33,13 @@ class CategoryBottomSheet extends StatelessWidget {
             child: ListView.builder(
               shrinkWrap: true,
               physics: const ClampingScrollPhysics(),
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: false,
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
                 final isSelected = selectedCategoryId == category.id;
-                
+
                 return _CategoryItem(
                   label: category.title,
                   isSelected: isSelected,
@@ -67,9 +69,7 @@ class CategoryBottomSheet extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: const Color(0xFFFAFAFB),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => ConstrainedBox(
         constraints: BoxConstraints(
@@ -85,7 +85,7 @@ class CategoryBottomSheet extends StatelessWidget {
   }
 }
 
-class _CategoryItem extends StatefulWidget {
+class _CategoryItem extends StatelessWidget {
   const _CategoryItem({
     required this.label,
     required this.isSelected,
@@ -97,37 +97,29 @@ class _CategoryItem extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_CategoryItem> createState() => _CategoryItemState();
-}
-
-class _CategoryItemState extends State<_CategoryItem> {
-
-  @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        widget.onTap();
-      },
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.only(left: 20),
-        color: widget.isSelected 
-            ? const Color(0xFFF3F4F6) 
-            : const Color(0xFFFAFAFB),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                widget.label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF111827),
-                  letterSpacing: -0.15,
+    return RepaintBoundary(
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 56,
+          padding: const EdgeInsets.only(left: 20),
+          color: isSelected ? const Color(0xFFF3F4F6) : const Color(0xFFFAFAFB),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF111827),
+                    letterSpacing: -0.15,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

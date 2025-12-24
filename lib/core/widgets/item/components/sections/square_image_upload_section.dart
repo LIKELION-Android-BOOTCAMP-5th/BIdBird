@@ -163,6 +163,11 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    // context 값 캐싱
+    final iconSizeMedium = context.iconSizeMedium;
+    final spacingSmall = context.spacingSmall;
+    final fontSizeSmall = context.fontSizeSmall;
+    
     return GestureDetector(
       onTap: widget.onImageSourceTap,
       behavior: HitTestBehavior.opaque,
@@ -173,15 +178,12 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
             Icon(
               Icons.file_upload_outlined,
               color: iconColor,
-              size: context.iconSizeMedium,
+              size: iconSizeMedium,
             ),
-            SizedBox(height: context.spacingSmall),
+            SizedBox(height: spacingSmall),
             Text(
               '이미지를 업로드하세요',
-              style: TextStyle(
-                fontSize: context.fontSizeSmall,
-                color: iconColor,
-              ),
+              style: TextStyle(fontSize: fontSizeSmall, color: iconColor),
             ),
           ],
         ),

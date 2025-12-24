@@ -80,27 +80,29 @@ class _ContentInputSectionState extends State<ContentInputSection> {
     }
   }
 
-  Widget _buildTextField() {
+  Widget _buildTextField(double fontSizeSmall) {
     final isExpandable = widget.minLines == null && widget.maxLines == null;
 
-    final textField = TextField(
-      controller: widget.controller,
-      maxLines: isExpandable ? null : widget.maxLines,
-      minLines: isExpandable ? null : widget.minLines,
-      maxLength: widget.maxLength,
-      cursorColor: PrimaryBlue,
-      style: const TextStyle(color: TextPrimary),
-      decoration: InputDecoration(
-        hintText: widget.hintText,
-        hintStyle: TextStyle(
-          color: chatTimeTextColor,
-          fontSize: context.fontSizeSmall,
+    final textField = RepaintBoundary(
+      child: TextField(
+        controller: widget.controller,
+        maxLines: isExpandable ? null : widget.maxLines,
+        minLines: isExpandable ? null : widget.minLines,
+        maxLength: widget.maxLength,
+        cursorColor: PrimaryBlue,
+        style: const TextStyle(color: TextPrimary),
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: TextStyle(
+            color: chatTimeTextColor,
+            fontSize: fontSizeSmall,
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+          counterText: '',
+          focusedBorder: InputBorder.none,
+          enabledBorder: InputBorder.none,
         ),
-        border: InputBorder.none,
-        contentPadding: EdgeInsets.zero,
-        counterText: '',
-        focusedBorder: InputBorder.none,
-        enabledBorder: InputBorder.none,
       ),
     );
 
@@ -109,6 +111,9 @@ class _ContentInputSectionState extends State<ContentInputSection> {
 
   @override
   Widget build(BuildContext context) {
+    // context 값 캐싱
+    final fontSizeSmall = context.fontSizeSmall;
+
     final showValidation = widget.minLength != null;
     final isValid =
         widget.minLength == null || _textLength >= widget.minLength!;
@@ -128,7 +133,7 @@ class _ContentInputSectionState extends State<ContentInputSection> {
           children: [
             FormLabel(text: widget.label),
             SizedBox(height: _labelBottomSpacing),
-            _buildTextField(),
+            _buildTextField(fontSizeSmall),
             SizedBox(height: _counterTopSpacing),
             Row(
               mainAxisAlignment:
@@ -140,14 +145,14 @@ class _ContentInputSectionState extends State<ContentInputSection> {
                   Text(
                     widget.successMessage!,
                     style: TextStyle(
-                      fontSize: context.fontSizeSmall,
+                      fontSize: fontSizeSmall,
                       color: TextSecondary,
                     ),
                   ),
                 Text(
                   '$_textLength/${widget.maxLength}',
                   style: TextStyle(
-                    fontSize: context.fontSizeSmall,
+                    fontSize: fontSizeSmall,
                     color: chatTimeTextColor,
                   ),
                 ),
