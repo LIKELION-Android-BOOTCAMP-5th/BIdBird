@@ -60,6 +60,11 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
     // 미리보기용 고정 크기로 디코딩 (성능 최적화)
     const int targetPx = 600;
 
+    // context 값 캐싱
+    final inputPadding = context.inputPadding;
+    final iconSizeMedium = context.iconSizeMedium;
+    final fontSizeSmall = context.fontSizeSmall;
+
     return GestureDetector(
       onTap: () => widget.onImageTap(index),
       child: RepaintBoundary(
@@ -95,8 +100,8 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
             ),
             // 삭제 버튼
             Positioned(
-              top: context.inputPadding * SpacingRatios.imageOverlayPadding,
-              right: context.inputPadding * SpacingRatios.imageOverlayPadding,
+              top: inputPadding * SpacingRatios.imageOverlayPadding,
+              right: inputPadding * SpacingRatios.imageOverlayPadding,
               child: GestureDetector(
                 onTap: () => widget.onRemoveImage(index),
                 child: Container(
@@ -112,23 +117,21 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
             // 대표 이미지 라벨
             if (isPrimary)
               Positioned(
-                bottom:
-                    context.inputPadding * SpacingRatios.imageOverlayPadding,
+                bottom: inputPadding * SpacingRatios.imageOverlayPadding,
                 left: 0,
                 right: 0,
                 child: Center(
                   child: IntrinsicWidth(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        minWidth: context.iconSizeMedium,
-                        minHeight: context.iconSizeMedium,
+                        minWidth: iconSizeMedium,
+                        minHeight: iconSizeMedium,
                       ),
                       child: Container(
-                        height: context.iconSizeMedium,
+                        height: iconSizeMedium,
                         padding: EdgeInsets.symmetric(
                           horizontal:
-                              context.inputPadding *
-                              SpacingRatios.imageOverlayPadding,
+                              inputPadding * SpacingRatios.imageOverlayPadding,
                         ),
                         decoration: BoxDecoration(
                           color: blueColor,
@@ -143,8 +146,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                             style: TextStyle(
                               color: Colors.white,
                               fontSize:
-                                  context.fontSizeSmall *
-                                  SpacingRatios.smallFontSize,
+                                  fontSizeSmall * SpacingRatios.smallFontSize,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -193,6 +195,12 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
       builder: (context, constraints) {
         final availableWidth = widget.width ?? constraints.maxWidth;
         final canAddMore = widget.images.length < ItemImageLimits.maxImageCount;
+
+        // context 값 캐싱
+        final inputPadding = context.inputPadding;
+        final iconSizeMedium = context.iconSizeMedium;
+        final iconSizeSmall = context.iconSizeSmall;
+        final fontSizeSmall = context.fontSizeSmall;
 
         return SizedBox(
           width: availableWidth,
@@ -247,22 +255,19 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                         ),
                 // 왼쪽 하단: 이미지 개수 표시
                 Positioned(
-                  left:
-                      context.inputPadding * SpacingRatios.imageOverlayPadding,
-                  bottom:
-                      context.inputPadding * SpacingRatios.imageOverlayPadding,
+                  left: inputPadding * SpacingRatios.imageOverlayPadding,
+                  bottom: inputPadding * SpacingRatios.imageOverlayPadding,
                   child: IntrinsicWidth(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        minWidth: context.iconSizeMedium,
-                        minHeight: context.iconSizeMedium,
+                        minWidth: iconSizeMedium,
+                        minHeight: iconSizeMedium,
                       ),
                       child: Container(
-                        height: context.iconSizeMedium,
+                        height: iconSizeMedium,
                         padding: EdgeInsets.symmetric(
                           horizontal:
-                              context.inputPadding *
-                              SpacingRatios.imageOverlayPadding,
+                              inputPadding * SpacingRatios.imageOverlayPadding,
                         ),
                         decoration: BoxDecoration(
                           color: blueColor,
@@ -275,7 +280,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                             '${widget.images.length}/${ItemImageLimits.maxImageCount}',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: context.fontSizeSmall,
+                              fontSize: fontSizeSmall,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -286,15 +291,13 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                 ),
                 // 오른쪽 하단: 이미지 추가 버튼
                 Positioned(
-                  right:
-                      context.inputPadding * SpacingRatios.imageOverlayPadding,
-                  bottom:
-                      context.inputPadding * SpacingRatios.imageOverlayPadding,
+                  right: inputPadding * SpacingRatios.imageOverlayPadding,
+                  bottom: inputPadding * SpacingRatios.imageOverlayPadding,
                   child: GestureDetector(
                     onTap: canAddMore ? widget.onImageSourceTap : null,
                     child: Container(
-                      width: context.iconSizeMedium,
-                      height: context.iconSizeMedium,
+                      width: iconSizeMedium,
+                      height: iconSizeMedium,
                       decoration: BoxDecoration(
                         color: canAddMore
                             ? blueColor
@@ -304,7 +307,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                       child: Icon(
                         Icons.add,
                         color: Colors.white,
-                        size: context.iconSizeSmall,
+                        size: iconSizeSmall,
                       ),
                     ),
                   ),
