@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
+import 'package:bidbird/core/services/datasource_manager.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
-import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail_datasource.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -459,10 +459,9 @@ class FirebaseManager {
         final String targetRoute = _generateRoute(alarmType, fcmData);
 
         if (alarmType == "WIN") {
-          ItemDetailDatasource _datasource = ItemDetailDatasource();
           final String? itemId = fcmData['item_id'] as String;
           if (itemId == null) return;
-          final ItemDetail? item = await _datasource.fetchItemDetail(itemId);
+          final ItemDetail? item = await DatasourceManager().itemDetail.fetchItemDetail(itemId);
           if (item == null) {
             rootNavigatorKey.currentContext?.push(targetRoute);
             return;
@@ -495,10 +494,9 @@ class FirebaseManager {
     // _generateRoute 함수를 사용하여 알림 타입과 데이터에 맞는 라우팅 경로 생성
     final String targetRoute = _generateRoute(alarmType, fcmData);
     if (alarmType == "WIN") {
-      ItemDetailDatasource _datasource = ItemDetailDatasource();
       final String? itemId = fcmData['item_id'] as String;
       if (itemId == null) return;
-      final ItemDetail? item = await _datasource.fetchItemDetail(itemId);
+      final ItemDetail? item = await DatasourceManager().itemDetail.fetchItemDetail(itemId);
       if (item == null) {
         rootNavigatorKey.currentContext?.push(targetRoute);
         return;
