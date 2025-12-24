@@ -37,6 +37,11 @@ class ItemDetailRepositoryImpl implements domain.ItemDetailRepository {
   }
 
   @override
+  Future<String?> fetchSellerProfileImage(String sellerId) {
+    return _datasource.fetchSellerProfileImage(sellerId);
+  }
+
+  @override
   Future<List<BidHistoryItem>> fetchBidHistory(String itemId) {
     return _datasource.fetchBidHistory(itemId);
   }
