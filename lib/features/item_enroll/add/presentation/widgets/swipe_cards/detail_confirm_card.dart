@@ -5,20 +5,18 @@ import 'package:flutter/material.dart';
 
 /// 카드 3: 상세·확인
 class DetailConfirmCard extends StatelessWidget {
-  const DetailConfirmCard({
-    super.key,
-    required this.viewModel,
-  });
+  const DetailConfirmCard({super.key, required this.viewModel});
 
   final ItemAddViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
+    // 반응형 값 캐싱
+    final hPadding = context.hPadding;
+    final vPadding = context.vPadding;
+
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.hPadding,
-        vertical: context.vPadding,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -38,4 +36,3 @@ class DetailConfirmCard extends StatelessWidget {
     );
   }
 }
-

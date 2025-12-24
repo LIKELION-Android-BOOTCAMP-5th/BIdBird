@@ -31,11 +31,27 @@ class SquareImageUploadSection extends StatefulWidget {
   final double? width;
 
   @override
-  State<SquareImageUploadSection> createState() => _SquareImageUploadSectionState();
+  State<SquareImageUploadSection> createState() =>
+      _SquareImageUploadSectionState();
 }
 
 class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
   final PageController _pageController = PageController();
+  late final double _dpr;
+
+  @override
+  void initState() {
+    super.initState();
+    // devicePixelRatio는 변하지 않으므로 한 번만 계산
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _dpr = MediaQuery.of(context).devicePixelRatio;
+        });
+      }
+    });
+    _dpr = 2.0; // 기본값
+  }
 
   @override
   void dispose() {
@@ -51,98 +67,96 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
     double targetLogicalSize,
   ) {
     final bool isVideo = isVideoFile(image.path);
-    // 기기 해상도에 맞춘 디코딩 크기 제한
-    final double dpr = MediaQuery.of(context).devicePixelRatio;
-    final int targetPx = (targetLogicalSize * dpr).round();
+    // 기기 해상도에 맞춘 디코딩 크기 제한 (캐싱된 값 사용)
+    final int targetPx = (targetLogicalSize * _dpr).round();
 
     return GestureDetector(
       onTap: () => widget.onImageTap(index),
       child: RepaintBoundary(
         child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ClipRRect(
-            borderRadius: defaultBorder,
-            child: isVideo
-                ? VideoPlayerWidget(
-                    key: ValueKey('video_${image.path}'),
-                    videoPath: image.path,
-                    autoPlay: false,
-                    showControls: true,
-                    fit: BoxFit.cover,
-                  )
-                : Image.file(
-                    File(image.path),
-                    key: ValueKey('img_${image.path}'),
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    cacheWidth: targetPx,
-                    cacheHeight: targetPx,
-                    filterQuality: FilterQuality.low,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: BackgroundColor,
-                        child: Icon(
-                          Icons.broken_image,
-                          color: iconColor,
-                        ),
-                      );
-                    },
+          fit: StackFit.expand,
+          children: [
+            ClipRRect(
+              borderRadius: defaultBorder,
+              child: isVideo
+                  ? VideoPlayerWidget(
+                      key: ValueKey('video_${image.path}'),
+                      videoPath: image.path,
+                      autoPlay: false,
+                      showControls: true,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.file(
+                      File(image.path),
+                      key: ValueKey('img_${image.path}'),
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      cacheWidth: targetPx,
+                      cacheHeight: targetPx,
+                      filterQuality: FilterQuality.low,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: BackgroundColor,
+                          child: Icon(Icons.broken_image, color: iconColor),
+                        );
+                      },
+                    ),
+            ),
+            // 삭제 버튼
+            Positioned(
+              top: context.inputPadding * SpacingRatios.imageOverlayPadding,
+              right: context.inputPadding * SpacingRatios.imageOverlayPadding,
+              child: GestureDetector(
+                onTap: () => widget.onRemoveImage(index),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.8),
+                    shape: BoxShape.circle,
                   ),
-          ),
-          // 삭제 버튼
-          Positioned(
-            top: context.inputPadding * SpacingRatios.imageOverlayPadding,
-            right: context.inputPadding * SpacingRatios.imageOverlayPadding,
-            child: GestureDetector(
-              onTap: () => widget.onRemoveImage(index),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.8),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 16,
+                  child: const Icon(Icons.close, color: Colors.white, size: 16),
                 ),
               ),
             ),
-          ),
-          // 대표 이미지 라벨
-          if (isPrimary)
-            Positioned(
-              bottom: context.inputPadding * SpacingRatios.imageOverlayPadding,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: IntrinsicWidth(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minWidth: context.iconSizeMedium,
-                      minHeight: context.iconSizeMedium,
-                    ),
-                    child: Container(
-                      height: context.iconSizeMedium,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: context.inputPadding * SpacingRatios.imageOverlayPadding,
+            // 대표 이미지 라벨
+            if (isPrimary)
+              Positioned(
+                bottom:
+                    context.inputPadding * SpacingRatios.imageOverlayPadding,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: IntrinsicWidth(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: context.iconSizeMedium,
+                        minHeight: context.iconSizeMedium,
                       ),
-                      decoration: BoxDecoration(
-                        color: blueColor,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      alignment: Alignment.center,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          '대표 이미지',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: context.fontSizeSmall * SpacingRatios.smallFontSize,
-                            fontWeight: FontWeight.w600,
+                      child: Container(
+                        height: context.iconSizeMedium,
+                        padding: EdgeInsets.symmetric(
+                          horizontal:
+                              context.inputPadding *
+                              SpacingRatios.imageOverlayPadding,
+                        ),
+                        decoration: BoxDecoration(
+                          color: blueColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        alignment: Alignment.center,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            '대표 이미지',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize:
+                                  context.fontSizeSmall *
+                                  SpacingRatios.smallFontSize,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -150,8 +164,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
         ),
       ),
     );
@@ -170,10 +183,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
           SizedBox(height: context.spacingSmall),
           Text(
             '이미지를 업로드하세요',
-            style: TextStyle(
-              fontSize: context.fontSizeSmall,
-              color: iconColor,
-            ),
+            style: TextStyle(fontSize: context.fontSizeSmall, color: iconColor),
           ),
         ],
       ),
@@ -186,7 +196,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
       builder: (context, constraints) {
         final availableWidth = widget.width ?? constraints.maxWidth;
         final canAddMore = widget.images.length < ItemImageLimits.maxImageCount;
-        
+
         return SizedBox(
           width: availableWidth,
           height: availableWidth, // 정사각형
@@ -194,9 +204,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: defaultBorder,
-              border: Border.all(
-                color: LightBorderColor,
-              ),
+              border: Border.all(color: LightBorderColor),
             ),
             child: Stack(
               children: [
@@ -207,40 +215,45 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                 else
                   widget.images.length == 1
                       ? // 이미지가 1개일 때: 전체 영역을 꽉 채움
-                      _buildSingleImage(
-                        context,
-                        widget.images[0],
-                        widget.primaryImageIndex == 0,
-                        0,
-                        availableWidth,
-                      )
+                        _buildSingleImage(
+                          context,
+                          widget.images[0],
+                          widget.primaryImageIndex == 0,
+                          0,
+                          availableWidth,
+                        )
                       : // 이미지가 여러 개일 때: 스와이프로 볼 수 있게
-                      PageView.builder(
-                        key: const PageStorageKey('square_image_upload_pageview'),
-                        controller: _pageController,
-                        itemCount: widget.images.length,
-                        physics: const PageScrollPhysics(),
-                        itemBuilder: (context, index) {
-                          final image = widget.images[index];
-                          final bool isPrimary = widget.primaryImageIndex != null && 
-                                                widget.primaryImageIndex == index;
-                          
-                          return KeyedSubtree(
-                            key: ValueKey('page_${image.path}'),
-                            child: _buildSingleImage(
-                              context,
-                              image,
-                              isPrimary,
-                              index,
-                              availableWidth,
-                            ),
-                          );
-                        },
-                      ),
+                        PageView.builder(
+                          key: const PageStorageKey(
+                            'square_image_upload_pageview',
+                          ),
+                          controller: _pageController,
+                          itemCount: widget.images.length,
+                          physics: const PageScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final image = widget.images[index];
+                            final bool isPrimary =
+                                widget.primaryImageIndex != null &&
+                                widget.primaryImageIndex == index;
+
+                            return KeyedSubtree(
+                              key: ValueKey('page_${image.path}'),
+                              child: _buildSingleImage(
+                                context,
+                                image,
+                                isPrimary,
+                                index,
+                                availableWidth,
+                              ),
+                            );
+                          },
+                        ),
                 // 왼쪽 하단: 이미지 개수 표시
                 Positioned(
-                  left: context.inputPadding * SpacingRatios.imageOverlayPadding,
-                  bottom: context.inputPadding * SpacingRatios.imageOverlayPadding,
+                  left:
+                      context.inputPadding * SpacingRatios.imageOverlayPadding,
+                  bottom:
+                      context.inputPadding * SpacingRatios.imageOverlayPadding,
                   child: IntrinsicWidth(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
@@ -250,7 +263,9 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                       child: Container(
                         height: context.iconSizeMedium,
                         padding: EdgeInsets.symmetric(
-                          horizontal: context.inputPadding * SpacingRatios.imageOverlayPadding,
+                          horizontal:
+                              context.inputPadding *
+                              SpacingRatios.imageOverlayPadding,
                         ),
                         decoration: BoxDecoration(
                           color: blueColor,
@@ -274,8 +289,10 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                 ),
                 // 오른쪽 하단: 이미지 추가 버튼
                 Positioned(
-                  right: context.inputPadding * SpacingRatios.imageOverlayPadding,
-                  bottom: context.inputPadding * SpacingRatios.imageOverlayPadding,
+                  right:
+                      context.inputPadding * SpacingRatios.imageOverlayPadding,
+                  bottom:
+                      context.inputPadding * SpacingRatios.imageOverlayPadding,
                   child: GestureDetector(
                     onTap: canAddMore ? widget.onImageSourceTap : null,
                     child: Container(
@@ -303,6 +320,3 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
     );
   }
 }
-
-
-

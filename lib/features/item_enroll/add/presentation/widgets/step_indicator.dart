@@ -29,10 +29,14 @@ class StepIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 반응형 값 캐싱
+    final hPadding = context.hPadding;
+    final spacingMedium = context.spacingMedium;
+
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: context.hPadding,
-        vertical: context.spacingMedium,
+        horizontal: hPadding,
+        vertical: spacingMedium,
       ),
       decoration: BoxDecoration(
         color: chatItemCardBackground,
@@ -71,8 +75,8 @@ class StepIndicator extends StatelessWidget {
       final Color labelColor = isActive
           ? blueColor
           : isCompleted
-              ? textColor
-              : iconColor;
+          ? textColor
+          : iconColor;
 
       // 스텝(원 + 라벨) - Flexible로 공간 균등 분배
       children.add(
@@ -97,8 +101,9 @@ class StepIndicator extends StatelessWidget {
                     : Text(
                         '${index + 1}',
                         style: TextStyle(
-                          color:
-                              (isActive || isCompleted) ? chatItemCardBackground : iconColor,
+                          color: (isActive || isCompleted)
+                              ? chatItemCardBackground
+                              : iconColor,
                           fontSize: context.fontSizeSmall,
                           fontWeight: FontWeight.w600,
                         ),
@@ -112,7 +117,8 @@ class StepIndicator extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: context.fontSizeSmall * SpacingRatios.mediumFontSize,
+                  fontSize:
+                      context.fontSizeSmall * SpacingRatios.mediumFontSize,
                   color: labelColor,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 ),
@@ -146,4 +152,3 @@ class StepIndicator extends StatelessWidget {
     return children;
   }
 }
-
