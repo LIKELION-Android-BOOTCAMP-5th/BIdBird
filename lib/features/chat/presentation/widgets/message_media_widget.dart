@@ -65,6 +65,9 @@ class MessageMediaWidget extends StatelessWidget {
                 cacheManager: ItemImageCacheManager.instance,
                 fit: BoxFit.contain,
                 width: maxWidth,
+                // 메모리 최적화
+                memCacheWidth: (maxWidth * MediaQuery.of(context).devicePixelRatio).round(),
+                memCacheHeight: (maxHeight * MediaQuery.of(context).devicePixelRatio).round(),
                 placeholder: (context, url) => Container(
                   width: maxWidth,
                   height: 200,

@@ -1,6 +1,7 @@
 import 'package:bidbird/core/mixins/form_validation_mixin.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
+import 'package:bidbird/core/utils/item/price_input_formatter.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/fields/category_selector_field.dart';
 import 'package:bidbird/core/widgets/item/components/fields/duration_chip_selector.dart';
@@ -10,6 +11,7 @@ import 'package:bidbird/features/item_enroll/add/domain/entities/item_registrati
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 /// 카드 2: 가격·경매
@@ -28,7 +30,7 @@ class PriceAuctionCard extends StatefulWidget {
 }
 
 class PriceAuctionCardState extends State<PriceAuctionCard>
-  with FormValidationMixin, AutomaticKeepAliveClientMixin {
+    with FormValidationMixin, AutomaticKeepAliveClientMixin {
   String? _startPriceError;
   // String? _instantPriceError;
   String? _categoryError;
@@ -93,27 +95,6 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
     _durationError = null;
   }
 
-  void _handlePriceInput(
-    String value,
-    TextEditingController controller,
-    ValueChanged<int>? onValidated,
-  ) {
-    final formatted = formatNumber(value);
-    if (formatted != value) {
-      controller.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
-
-    // 검증 콜백이 있으면 실행
-    if (onValidated != null) {
-      final price = parseFormattedPrice(formatted);
-      onValidated(price);
-    }
-    // notifyListeners 제거: item_add_screen에서 직접 체크하므로 불필요
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context); // keep-alive
@@ -141,19 +122,19 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
                     .copyWith(
                       errorText: shouldShowErrors ? _startPriceError : null,
                     ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  PriceInputFormatter(),
+                ],
                 onChanged: (value) {
-                  _handlePriceInput(
-                    value,
-                    widget.viewModel.startPriceController,
-                    shouldShowErrors && _startPriceError != null
-                        ? (startPrice) {
-                            if (startPrice > 0 &&
-                                startPrice >= ItemPriceLimits.minPrice) {
-                              clearError(() => _startPriceError = null);
-                            }
-                          }
-                        : null,
-                  );
+                  // 에러가 있을 때만 검증하여 에러 제거
+                  if (shouldShowErrors && _startPriceError != null) {
+                    final startPrice = parseFormattedPrice(value);
+                    if (startPrice > 0 &&
+                        startPrice >= ItemPriceLimits.minPrice) {
+                      clearError(() => _startPriceError = null);
+                    }
+                  }
                 },
               ),
             ],

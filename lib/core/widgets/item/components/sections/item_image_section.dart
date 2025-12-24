@@ -94,6 +94,11 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                                 imageUrl: thumbnailUrl,
                                 cacheManager: ItemImageCacheManager.instance,
                                 fit: BoxFit.cover,
+                                // 이미지 디코딩 최적화: 화면 크기에 맞게 리사이징
+                                maxWidthDiskCache: 1080,
+                                maxHeightDiskCache: 1080,
+                                memCacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round(),
+                                memCacheHeight: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round(),
                                 placeholder: (context, url) => const Center(
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 ),

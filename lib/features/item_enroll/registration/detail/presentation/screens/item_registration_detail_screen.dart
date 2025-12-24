@@ -37,8 +37,8 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
       create: (_) => ItemRegistrationDetailViewModel(item: item)
         ..loadTerms()
         ..loadImage(),
-      child: Consumer<ItemRegistrationDetailViewModel>(
-        builder: (context, viewModel, _) {
+      child: Builder(
+        builder: (context) {
           final double horizontalPadding = context.screenPadding;
           final double verticalPadding = context.spacingSmall;
           return Scaffold(
@@ -50,7 +50,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: blueColor),
                   onPressed: () {
-                    viewModel.deleteItem(context);
+                    context.read<ItemRegistrationDetailViewModel>().deleteItem(context);
                   },
                 ),
                 IconButton(
@@ -78,9 +78,10 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Consumer<ItemRegistrationDetailViewModel>(
-                            builder: (context, viewModel, _) {
-                              return _buildImageSection(context, viewModel);
+                          Selector<ItemRegistrationDetailViewModel, List<String>>(
+                            selector: (_, vm) => vm.imageUrls,
+                            builder: (context, imageUrls, _) {
+                              return _buildImageSection(context, imageUrls);
                             },
                           ),
                           SizedBox(height: context.spacingSmall),
@@ -93,7 +94,12 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  _buildBottomButton(context, viewModel),
+                  Selector<ItemRegistrationDetailViewModel, bool>(
+                    selector: (_, vm) => vm.isSubmitting,
+                    builder: (context, isSubmitting, _) {
+                      return _buildBottomButton(context, isSubmitting);
+                    },
+                  ),
                 ],
               ),
             ),
@@ -105,9 +111,8 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
 
   Widget _buildImageSection(
     BuildContext context,
-    ItemRegistrationDetailViewModel viewModel,
+    List<String> imageUrls,
   ) {
-    final imageUrls = viewModel.imageUrls;
     final hasImages = imageUrls.isNotEmpty;
 
     return Container(
@@ -241,7 +246,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
 
   Widget _buildBottomButton(
     BuildContext context,
-    ItemRegistrationDetailViewModel viewModel,
+    bool isSubmitting,
   ) {
     return SafeArea(
       child: Padding(
@@ -266,14 +271,14 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                   cancelText: '취소',
                   onConfirm: (checked) async {
                     if (!checked) return;
-                    await viewModel.confirmRegistration(context);
+                    await context.read<ItemRegistrationDetailViewModel>().confirmRegistration(context);
                   },
                   onCancel: () {},
                 );
               },
             );
           },
-          isEnabled: !viewModel.isSubmitting,
+          isEnabled: !isSubmitting,
           height: 52,
           fontSize: 16,
           width: double.infinity,
@@ -353,6 +358,11 @@ class _ImageGalleryState extends State<_ImageGallery> {
                       imageUrl: displayUrl,
                       cacheManager: ItemImageCacheManager.instance,
                       fit: BoxFit.contain,
+                      // 이미지 디코딩 최적화: 화면 크기에 맞게 리사이징하여 메모리 사용량 감소
+                      maxWidthDiskCache: 1080,
+                      maxHeightDiskCache: 1440,
+                      memCacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round(),
+                      memCacheHeight: ((MediaQuery.of(context).size.width * 4 / 3) * MediaQuery.of(context).devicePixelRatio).round(),
                       placeholder: (context, url) => Container(
                         color: Colors.grey.shade200,
                       ),

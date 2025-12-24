@@ -50,7 +50,8 @@ class AppInitializer {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    unawaited(_initFcmWithRetry());
+    // FCM 초기화는 한 번만 시도 (재시도 로직 제거로 부팅 속도 개선)
+    unawaited(_initFcmOnce());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(
@@ -79,37 +80,16 @@ class AppInitializer {
     });
   }
 
-  static Future<void> _initFcmWithRetry() async {
+  static Future<void> _initFcmOnce() async {
     try {
       await _firebaseInitFuture;
-    } catch (e) {
-      debugPrint('Firebase initialization failed: $e');
-      return;
-    }
-
-    const delays = <Duration>[
-      Duration.zero,
-      Duration(milliseconds: 300),
-      Duration(milliseconds: 700),
-    ];
-
-    for (final delay in delays) {
-      if (delay != Duration.zero) {
-        await Future<void>.delayed(delay);
-      }
-
-      try {
-        final fcmToken = await FirebaseManager.shared.getFcmToken();
-        if (fcmToken == null || fcmToken.isEmpty) {
-          continue;
-        }
-
+      final fcmToken = await FirebaseManager.shared.getFcmToken();
+      if (fcmToken != null && fcmToken.isNotEmpty) {
         debugPrint('fcm 토큰 : $fcmToken');
         await FirebaseManager.initialize();
-        return;
-      } catch (e) {
-        debugPrint('푸시 알림 서비스 초기화 실패: $e');
       }
+    } catch (e) {
+      debugPrint('푸시 알림 서비스 초기화 실패: $e');
     }
   }
 }

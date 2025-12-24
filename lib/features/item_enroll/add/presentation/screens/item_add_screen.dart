@@ -1,7 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart' show parseFormattedPrice;
+import 'package:bidbird/core/utils/item/item_price_utils.dart'
+    show parseFormattedPrice;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
@@ -27,21 +28,16 @@ class ItemAddScreen extends StatefulWidget {
 
 class _ItemAddScreenState extends State<ItemAddScreen> {
   final PageController _pageController = PageController();
-  final GlobalKey<PriceAuctionCardState> _priceAuctionCardKey = GlobalKey<PriceAuctionCardState>();
-  final GlobalKey<ProductInfoCardState> _productInfoCardKey = GlobalKey<ProductInfoCardState>();
+  final GlobalKey<PriceAuctionCardState> _priceAuctionCardKey =
+      GlobalKey<PriceAuctionCardState>();
+  final GlobalKey<ProductInfoCardState> _productInfoCardKey =
+      GlobalKey<ProductInfoCardState>();
   int _currentStep = 0;
 
-  static const List<String> _stepLabels = [
-    '상품 정보',
-    '가격·경매',
-    '상세·확인',
-  ];
+  static const List<String> _stepLabels = ['상품 정보', '가격·경매', '상세·확인'];
 
   InputDecoration _inputDecoration(String hint) {
-    return createStandardInputDecoration(
-      context,
-      hint: hint,
-    );
+    return createStandardInputDecoration(context, hint: hint);
   }
 
   void _showImageSourceSheet(BuildContext context, ItemAddViewModel viewModel) {
@@ -77,21 +73,27 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
             viewModel.titleController.text.trim().isNotEmpty;
       case 1:
         // 카드 2: 시작가, 경매기간, 카테고리 필수
-        final startPrice = parseFormattedPrice(viewModel.startPriceController.text);
-        final hasValidStartPrice = startPrice > 0 && startPrice >= ItemPriceLimits.minPrice;
+        final startPrice = parseFormattedPrice(
+          viewModel.startPriceController.text,
+        );
+        final hasValidStartPrice =
+            startPrice > 0 && startPrice >= ItemPriceLimits.minPrice;
         final hasDuration = viewModel.selectedDuration != null;
         final hasCategory = viewModel.selectedKeywordTypeId != null;
-        
+
         // 즉시 구매가가 체크되어 있으면 그것도 유효해야 함
         bool hasValidInstantPrice = true;
         // if (viewModel.useInstantPrice) {
         //   final instantPrice = parseFormattedPrice(viewModel.instantPriceController.text);
-        //   hasValidInstantPrice = instantPrice > 0 && 
-        //       instantPrice >= ItemPriceLimits.minPrice && 
+        //   hasValidInstantPrice = instantPrice > 0 &&
+        //       instantPrice >= ItemPriceLimits.minPrice &&
         //       instantPrice > startPrice;
         // }
-        
-        return hasValidStartPrice && hasDuration && hasCategory && hasValidInstantPrice;
+
+        return hasValidStartPrice &&
+            hasDuration &&
+            hasCategory &&
+            hasValidInstantPrice;
       case 2:
         // 카드 3: 모든 검증 통과
         return viewModel.validate() == null;
@@ -231,45 +233,15 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   }
 
   late final ItemAddViewModel _viewModel;
-  late final ValueNotifier<int> _titleLengthNotifier;
-  late final ValueNotifier<int> _startPriceLengthNotifier;
-  late final ValueNotifier<int> _instantPriceLengthNotifier;
 
   @override
   void initState() {
     super.initState();
     _viewModel = context.read<ItemAddViewModel>();
-    _titleLengthNotifier = ValueNotifier<int>(_viewModel.titleController.text.length);
-    _startPriceLengthNotifier =
-        ValueNotifier<int>(_viewModel.startPriceController.text.length);
-    _instantPriceLengthNotifier =
-        ValueNotifier<int>(_viewModel.instantPriceController.text.length);
-
-    _viewModel.titleController.addListener(_onTitleChanged);
-    _viewModel.startPriceController.addListener(_onStartPriceChanged);
-    _viewModel.instantPriceController.addListener(_onInstantPriceChanged);
-  }
-
-  void _onTitleChanged() {
-    _titleLengthNotifier.value = _viewModel.titleController.text.length;
-  }
-
-  void _onStartPriceChanged() {
-    _startPriceLengthNotifier.value = _viewModel.startPriceController.text.length;
-  }
-
-  void _onInstantPriceChanged() {
-    _instantPriceLengthNotifier.value = _viewModel.instantPriceController.text.length;
   }
 
   @override
   void dispose() {
-    _viewModel.titleController.removeListener(_onTitleChanged);
-    _viewModel.startPriceController.removeListener(_onStartPriceChanged);
-    _viewModel.instantPriceController.removeListener(_onInstantPriceChanged);
-    _titleLengthNotifier.dispose();
-    _startPriceLengthNotifier.dispose();
-    _instantPriceLengthNotifier.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -277,13 +249,16 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   @override
   Widget build(BuildContext context) {
     // 필요한 속성만 watch하여 불필요한 리빌드 방지
-    return Selector<ItemAddViewModel, ({
-      int selectedImagesLength,
-      String? selectedDuration,
-      int? selectedKeywordTypeId,
-      bool useInstantPrice,
-      bool isSubmitting,
-    })>(
+    return Selector<
+      ItemAddViewModel,
+      ({
+        int selectedImagesLength,
+        String? selectedDuration,
+        int? selectedKeywordTypeId,
+        bool useInstantPrice,
+        bool isSubmitting,
+      })
+    >(
       selector: (_, vm) => (
         selectedImagesLength: vm.selectedImages.length,
         selectedDuration: vm.selectedDuration,
@@ -293,7 +268,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
       ),
       builder: (context, data, _) {
         final viewModel = _viewModel;
-        
+
         // 키보드 감지 - MediaQuery를 직접 사용하여 setState 없이 처리
         final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
 
@@ -313,44 +288,43 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
             ),
             body: SafeArea(
               child: Column(
-              children: [
-                // 스텝 인디케이터
-                StepIndicator(
-                  currentStep: _currentStep,
-                  totalSteps: 3,
-                  stepLabels: _stepLabels,
-                ),
-                // 카드 영역
-                Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: isKeyboardVisible || !_canGoToNextStep(viewModel)
-                        ? const NeverScrollableScrollPhysics()
-                        : const PageScrollPhysics(),
-                    onPageChanged: (index) => _handlePageChange(index, viewModel),
-                    children: [
-                      // 카드 1: 상품 정보
-                      ProductInfoCard(
-                        key: _productInfoCardKey,
-                        viewModel: viewModel,
-                        onImageSourceTap: () =>
-                            _showImageSourceSheet(context, viewModel),
-                        inputDecoration: (hint) => _inputDecoration(hint),
-                      ),
-                      // 카드 2: 가격·경매
-                      PriceAuctionCard(
-                        key: _priceAuctionCardKey,
-                        viewModel: viewModel,
-                        inputDecoration: (hint) => _inputDecoration(hint),
-                      ),
-                      // 카드 3: 상세·확인
-                      DetailConfirmCard(
-                        viewModel: viewModel,
-                      ),
-                    ],
+                children: [
+                  // 스텝 인디케이터
+                  StepIndicator(
+                    currentStep: _currentStep,
+                    totalSteps: 3,
+                    stepLabels: _stepLabels,
                   ),
-                ),
-              ],
+                  // 카드 영역
+                  Expanded(
+                    child: PageView(
+                      controller: _pageController,
+                      physics: isKeyboardVisible || !_canGoToNextStep(viewModel)
+                          ? const NeverScrollableScrollPhysics()
+                          : const PageScrollPhysics(),
+                      onPageChanged: (index) =>
+                          _handlePageChange(index, viewModel),
+                      children: [
+                        // 카드 1: 상품 정보
+                        ProductInfoCard(
+                          key: _productInfoCardKey,
+                          viewModel: viewModel,
+                          onImageSourceTap: () =>
+                              _showImageSourceSheet(context, viewModel),
+                          inputDecoration: (hint) => _inputDecoration(hint),
+                        ),
+                        // 카드 2: 가격·경매
+                        PriceAuctionCard(
+                          key: _priceAuctionCardKey,
+                          viewModel: viewModel,
+                          inputDecoration: (hint) => _inputDecoration(hint),
+                        ),
+                        // 카드 3: 상세·확인
+                        DetailConfirmCard(viewModel: viewModel),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
             bottomNavigationBar: _buildBottomNavigationBar(viewModel),
