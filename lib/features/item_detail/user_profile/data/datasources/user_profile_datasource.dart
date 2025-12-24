@@ -8,8 +8,53 @@ class UserProfileDatasource {
     : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   final SupabaseClient _supabase;
+  
+  // 프로필 캐시 (userId -> {profile, timestamp})
+  static final Map<String, Map<String, dynamic>> _profileCache = {};
+  static const Duration _cacheDuration = Duration(minutes: 5);
+  
+  // 캐시 유효성 확인
+  bool _isCacheValid(String userId) {
+    if (!_profileCache.containsKey(userId)) return false;
+    final cacheEntry = _profileCache[userId];
+    if (cacheEntry == null) return false;
+    
+    final timestamp = cacheEntry['timestamp'] as DateTime?;
+    if (timestamp == null) return false;
+    
+    return DateTime.now().difference(timestamp) < _cacheDuration;
+  }
+  
+  // 캐시에서 프로필 반환
+  UserProfile? _getCachedProfile(String userId) {
+    if (!_isCacheValid(userId)) return null;
+    return _profileCache[userId]?['profile'] as UserProfile?;
+  }
+  
+  // 캐시에 프로필 저장
+  void _setCachedProfile(String userId, UserProfile profile) {
+    _profileCache[userId] = {
+      'profile': profile,
+      'timestamp': DateTime.now(),
+    };
+  }
+  
+  // 캐시 무효화
+  static void invalidateCache(String? userId) {
+    if (userId == null) {
+      _profileCache.clear();
+    } else {
+      _profileCache.remove(userId);
+    }
+  }
 
   Future<UserProfile> fetchUserProfile(String userId) async {
+    // 캐시 확인: 유효한 캐시가 있으면 즉시 반환
+    final cachedProfile = _getCachedProfile(userId);
+    if (cachedProfile != null) {
+      return cachedProfile;
+    }
+    
     // 1) 기본 유저 정보 조회 (닉네임, 아바타 등)
     Map<String, dynamic>? userRow;
     try {
@@ -123,7 +168,7 @@ class UserProfileDatasource {
       reviewsList = [];
     }
 
-    return UserProfile(
+    final profile = UserProfile(
       userId: userId,
       nickname: nickname,
       rating: rating,
@@ -131,6 +176,11 @@ class UserProfileDatasource {
       avatarUrl: avatarUrl,
       reviews: reviewsList,
     );
+    
+    // 캐시에 저장
+    _setCachedProfile(userId, profile);
+    
+    return profile;
   }
 }
 

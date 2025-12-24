@@ -86,6 +86,15 @@ class ItemDetailViewModel extends ItemBaseViewModel {
 
   List<BidHistoryItem> _bidHistory = [];
   List<BidHistoryItem> get bidHistory => _bidHistory;
+  
+  // 입찰 히스토리 캐시
+  DateTime? _bidHistoryCacheTime;
+  static const Duration _bidHistoryCacheDuration = Duration(minutes: 1);
+  
+  bool _isBidHistoryCacheValid() {
+    if (_bidHistoryCacheTime == null) return false;
+    return DateTime.now().difference(_bidHistoryCacheTime!) < _bidHistoryCacheDuration;
+  }
 
   final ItemDetailRealtimeManager _realtimeManager =
       ItemDetailRealtimeManager();
@@ -275,12 +284,17 @@ class ItemDetailViewModel extends ItemBaseViewModel {
   Future<void> loadBidHistory() async {
     // 중복 호출 방지
     if (_isLoadingBidHistory) return;
+    
+    // 캐시가 유효하면 재로드하지 않음
+    if (_isBidHistoryCacheValid()) return;
+    
     // 이미 로드된 데이터가 있으면 재로드하지 않음
-    if (_bidHistory.isNotEmpty) return;
+    if (_bidHistory.isNotEmpty && _isBidHistoryCacheValid()) return;
 
     _isLoadingBidHistory = true;
     try {
       _bidHistory = await _fetchBidHistoryUseCase(itemId);
+      _bidHistoryCacheTime = DateTime.now(); // 캐시 시간 업데이트
       notifyListeners();
     } catch (e) {
       // 입찰 내역 로드 실패 시 빈 리스트 유지
@@ -341,7 +355,9 @@ class ItemDetailViewModel extends ItemBaseViewModel {
         if (_isRefreshingFromRealtime || _isLoadingDetail) return;
 
         // 디바운싱: 짧은 시간 내 여러 업데이트가 오면 마지막 것만 처리
-        // 상태 업데이트는 중요한 변경이므로 전체 새로고침 필요
+        // 상태 변경(예: 경매 종료)은 중요한 변경이므로 전체 새로고침 필요
+        // TODO: 최적화 가능 - 백엔드에서 상태변경과 함께 finish_time, winner_id 등을 함께 제공하면
+        // 부분 업데이트로 처리 가능. 현재는 전체 재조회 필요
         _statusUpdateDebounceTimer?.cancel();
         _statusUpdateDebounceTimer = Timer(
           const Duration(milliseconds: 1000),

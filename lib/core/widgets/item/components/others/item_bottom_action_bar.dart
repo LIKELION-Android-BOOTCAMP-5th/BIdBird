@@ -49,7 +49,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   bool _hasShownRelistPopup = false;
   bool _hasShownPaymentCompleteScreen = false;
   bool? _hasShippingInfo;
-  bool? _hasShippingInfoForSeller;
 
   final CheckBidRestrictionUseCase _checkBidRestrictionUseCase =
       CheckBidRestrictionUseCase(BidRepositoryImpl());
@@ -69,7 +68,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     _statusCode = widget.item.statusCode;
     _checkBidRestriction();
     _checkShippingInfo();
-    _checkShippingInfoForSeller();
   }
 
   Future<void> _checkShippingInfo() async {
@@ -86,25 +84,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       if (mounted) {
         setState(() {
           _hasShippingInfo = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _checkShippingInfoForSeller() async {
-    try {
-      final shippingInfo = await _shippingInfoRepository.getShippingInfo(widget.item.itemId);
-      if (mounted) {
-        setState(() {
-          _hasShippingInfoForSeller = shippingInfo != null && 
-                                     shippingInfo['tracking_number'] != null &&
-                                     (shippingInfo['tracking_number'] as String).isNotEmpty;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _hasShippingInfoForSeller = false;
         });
       }
     }
@@ -314,9 +293,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                 child: ElevatedButton(
                   onPressed: () async {
                     // 배송 정보 조회
-                    final shippingInfoRepository = ShippingInfoRepositoryImpl();
                     try {
-                      final shippingInfo = await shippingInfoRepository.getShippingInfo(widget.item.itemId);
+                      final shippingInfo = await _shippingInfoRepository.getShippingInfo(widget.item.itemId);
                       
                       if (!context.mounted) return;
                       
@@ -411,7 +389,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                     ),
                   ),
                   child: Text(
-                    _hasShippingInfoForSeller == true ? '배송 정보 확인하기' : '배송 정보 입력하기',
+                    _hasShippingInfo == true ? '배송 정보 확인하기' : '배송 정보 입력하기',
                     style: TextStyle(
                       fontSize: context.fontSizeSmall,
                       fontWeight: FontWeight.w600,
@@ -557,10 +535,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             child: ElevatedButton(
               onPressed: () async {
                 // 배송 정보 조회
-                final shippingInfoRepository = ShippingInfoRepositoryImpl();
                 final navigatorContext = context;
                 try {
-                  final shippingInfo = await shippingInfoRepository.getShippingInfo(widget.item.itemId);
+                  final shippingInfo = await _shippingInfoRepository.getShippingInfo(widget.item.itemId);
                   
                   if (!mounted) return;
                   

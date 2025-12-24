@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -20,6 +21,10 @@ class FirebaseManager {
   FirebaseMessaging get fcm => _fcm;
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  
+  // FCM 토큰 변경 감지용
+  static String? _lastSavedToken;
+  static StreamSubscription? _tokenRefreshSubscription;
 
   static String? _webVapidKey() {
     final vapidKey = dotenv.env['FIREBASE_WEB_VAPID_KEY'];
@@ -258,11 +263,16 @@ class FirebaseManager {
         vapidKey: _webVapidKey(),
       );
       if (token != null) {
-        // fcm 토큰 supabase에 저장하기
+        // 이전 토큰과 다를 때만 저장
         await saveTokenToSupabase(token);
       }
-      // 토큰이 갱신될 시 토큰 값을 다시 업데이트하기
-      _fcm.onTokenRefresh.listen((newToken) {
+      
+      // 기존 리스너 취소 (중복 등록 방지)
+      await _tokenRefreshSubscription?.cancel();
+      _tokenRefreshSubscription = null;
+      
+      // 토큰이 갱신될 시에만 업데이트
+      _tokenRefreshSubscription = _fcm.onTokenRefresh.listen((newToken) {
         saveTokenToSupabase(newToken);
       });
     } catch (e) {
@@ -270,9 +280,14 @@ class FirebaseManager {
     }
   }
 
-  // fcm 토큰 supabase에 저장하기
+  // fcm 토큰 supabase에 저장하기 (토큰 변경 시에만)
   static Future<void> saveTokenToSupabase(String token) async {
     try {
+      // 토큰이 변경되지 않았으면 저장하지 않음
+      if (token == _lastSavedToken) {
+        return;
+      }
+
       final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
       if (userId == null) {
         return;
@@ -295,6 +310,9 @@ class FirebaseManager {
           .from('users')
           .update({'device_token': token, 'device_type': platform})
           .eq('id', userId);
+      
+      // 저장 성공 시 이전 토큰 업데이트
+      _lastSavedToken = token;
     } catch (e) {
       debugPrint('FCM 토큰 저장 실패: $e');
     }
