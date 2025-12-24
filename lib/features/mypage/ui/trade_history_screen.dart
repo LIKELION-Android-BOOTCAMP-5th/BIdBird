@@ -417,7 +417,7 @@ class _HistoryItem extends StatelessWidget {
                           borderRadius: defaultBorder,
                         ),
                         child: Text(
-                          statusInfo!.label,
+                          statusInfo.label,
                           style: TextStyle(color: statusInfo.color),
                         ),
                       ),

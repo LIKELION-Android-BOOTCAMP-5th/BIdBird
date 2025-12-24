@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/utils/ui_set/colors_style.dart';
-import '../../../identity_verification/presentation/utils/identity_verification_helper.dart';
+
 import 'floating_item.dart';
 
 class FloatingMenu extends StatefulWidget {

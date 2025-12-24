@@ -5,7 +5,7 @@ import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
 import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
-import 'package:bidbird/core/utils/item/trade_status_codes.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 

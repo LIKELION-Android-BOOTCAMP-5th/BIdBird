@@ -147,11 +147,17 @@ class HomeViewmodel extends ChangeNotifier {
       final bool bActive = b.finishTime.isAfter(now); // b가 아직 종료 안됐는가?
 
       // 진행 중(finishTime > now) 먼저
-      if (aActive && !bActive) return -1; // a 먼저
-      if (!aActive && bActive) return 1; // b 먼저
+      if (aActive != bActive) {
+        return aActive ? -1 : 1;
+      }
 
-      // 둘 다 진행중이거나 둘 다 종료 → 기존 정렬 유지
-      return 0;
+      // 둘 다 진행 중이면 종료 임박 순으로, 둘 다 종료면 종료 시간 늦은 순으로
+      final int finishCompare = a.finishTime.compareTo(b.finishTime);
+      if (aActive && bActive) {
+        return finishCompare; // 더 빨리 끝나는 것 우선
+      }
+      // 둘 다 종료 상태면 최신 종료를 아래로 보내기 위해 역순 정렬
+      return -finishCompare;
     });
   }
 
@@ -169,6 +175,7 @@ class HomeViewmodel extends ChangeNotifier {
 
   Future<void> fetchItems() async {
     String orderBy = setOrderBy(type);
+    _hasMore = true;
     _items = await _homeRepository.fetchItems(
       orderBy,
       currentIndex: _currentPage,
@@ -183,10 +190,13 @@ class HomeViewmodel extends ChangeNotifier {
     String orderBy = setOrderBy(type);
     _currentPage = 1;
     _items = [];
+    _hasMore = true;
+    _isFetching = false; // 캐시된 fetch 플래그 초기화
     notifyListeners();
     _items = await _homeRepository.fetchItems(
       orderBy,
       currentIndex: _currentPage,
+      keywordType: selectedKeywordId,
     );
     sortItemsByFinishTime();
     notifyListeners();
@@ -233,6 +243,7 @@ class HomeViewmodel extends ChangeNotifier {
     selectKeyword = keyword;
     _currentPage = 1;
     _items = [];
+    _hasMore = true;
     notifyListeners();
 
     String orderBy = setOrderBy(type);
@@ -337,36 +348,36 @@ class HomeViewmodel extends ChangeNotifier {
 
     _actionRealtime!
         .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'auctions',
-          callback: (payload) {
-            final newData = payload.newRecord;
+      event: PostgresChangeEvent.update,
+      schema: 'public',
+      table: 'auctions',
+      callback: (payload) {
+        final newData = payload.newRecord;
 
-            final itemId = newData['item_id'];
-            final index = _items.indexWhere((e) => e.item_id == itemId);
-            if (index == -1) return;
+        final itemId = newData['item_id'];
+        final index = _items.indexWhere((e) => e.item_id == itemId);
+        if (index == -1) return;
 
-            final item = _items[index];
+        final item = _items[index];
 
-            // 1) bid_count 업데이트
-            item.auctions.bid_count =
-                newData['bid_count'] ?? item.auctions.bid_count;
+        // 1) bid_count 업데이트
+        item.auctions.bid_count =
+            newData['bid_count'] ?? item.auctions.bid_count;
 
-            // 2) current_price 업데이트
-            item.auctions.current_price =
-                newData['current_price'] ?? item.auctions.current_price;
+        // 2) current_price 업데이트
+        item.auctions.current_price =
+            newData['current_price'] ?? item.auctions.current_price;
 
-            // 3) finishTime 업데이트
-            final endAt = newData['auction_end_at']?.toString();
-            if (endAt != null && endAt.isNotEmpty) {
-              item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
-            }
-            if (_isDisposed) return;
-            // 배치 처리: 200ms 내의 여러 업데이트를 한 번에 처리
-            _scheduleResortAndNotify(delay: const Duration(milliseconds: 200));
-          },
-        )
+        // 3) finishTime 업데이트
+        final endAt = newData['auction_end_at']?.toString();
+        if (endAt != null && endAt.isNotEmpty) {
+          item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
+        }
+        if (_isDisposed) return;
+        // 배치 처리: 200ms 내의 여러 업데이트를 한 번에 처리
+        _scheduleResortAndNotify(delay: const Duration(milliseconds: 200));
+      },
+    )
         .subscribe();
   }
 
@@ -376,3 +387,4 @@ class HomeViewmodel extends ChangeNotifier {
     super.notifyListeners();
   }
 }
+

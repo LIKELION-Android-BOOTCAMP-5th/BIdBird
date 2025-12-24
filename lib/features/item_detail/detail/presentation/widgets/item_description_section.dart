@@ -25,7 +25,7 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
         .select<ItemDetailViewModel, Map<String, dynamic>?>(
           (vm) => vm.sellerProfile,
         );
-    final bids = context.select<ItemDetailViewModel, List<dynamic>>(
+    final bids = context.select<ItemDetailViewModel, List<BidHistoryItem>>(
       (vm) => vm.bidHistory,
     );
 

@@ -430,7 +430,7 @@ class ChatListViewmodel extends ChangeNotifier {
         chattingRoomList[index].lastMessage = newLastMessage;
       if (newLastMessageSendAt != null)
         chattingRoomList[index].lastMessageSendAt =
-            data['last_message_send_at'] as String ?? "";
+            data['last_message_send_at'] as String;
       if (chattingRoomList[index].count != newUnreadCount) {
         chattingRoomList[index].count = newUnreadCount;
       }

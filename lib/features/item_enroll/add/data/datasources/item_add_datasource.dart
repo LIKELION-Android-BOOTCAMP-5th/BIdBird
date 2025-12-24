@@ -112,7 +112,7 @@ class ItemAddDatasource {
       );
 
       final status = response.status;
-      if (status == null || status < 200 || status >= 300) {
+      if (status < 200 || status >= 300) {
         throw Exception('Failed to create item (HTTP $status): ${response.data}');
       }
 

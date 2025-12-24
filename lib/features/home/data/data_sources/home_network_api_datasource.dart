@@ -38,22 +38,25 @@ class HomeNetworkApiManager {
       perPage: perPage,
     );
 
-    String filterQuery = "";
-    //110 이 전체 카테고리 코드
+    // 쿼리 조건 정리
+    String keywordFilter = "";
     if (keywordType != null && keywordType != 110) {
-      filterQuery += "&keyword_type=eq.$keywordType";
+      keywordFilter = "&keyword_type=eq.$keywordType";
     }
 
+    // 통합 쿼리: visibility_status=true, auction_start_at이 존재하는 모든 매물
     final response = await dio.get(
-      // 최신순이 기본 설정 + visibility true 필터
-      '${NetworkApiManager.supabaseUrl}/items_detail?select=*,auctions!inner(current_price,bid_count,auction_start_at,auction_end_at,last_bid_user_id,auction_status_code,trade_status_code)'
-      '&visibility_status=eq.true'
-      '&order=$orderBy&auctions.auction_start_at=not.is.null'
-      '$filterQuery',
+      '${NetworkApiManager.supabaseUrl}/items_detail?'
+      'select=*,auctions!inner(current_price,bid_count,auction_start_at,auction_end_at,last_bid_user_id,auction_status_code,trade_status_code)'
+      '&visibility_status=is.true'
+      '&auctions.auction_start_at=not.is.null'
+      '$keywordFilter'
+      '&order=$orderBy',
       options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
     );
+    
     final List<dynamic> data = response.data;
-    print("data 데이터 타입: ${data.runtimeType}");
+    print("getItems 응답 개수: ${data.length}");
     final List<ItemsEntity> results = data.map((json) {
       return ItemsEntity.fromJson(json);
     }).toList();
@@ -73,29 +76,31 @@ class HomeNetworkApiManager {
       perPage: perPage,
     );
 
-    String filterQuery = "";
-    //110 이 전체 카테고리 코드
+    // 쿼리 조건 정리
+    String keywordFilter = "";
     if (keywordType != null && keywordType != 110) {
-      filterQuery = "&keyword_type=eq.$keywordType";
+      keywordFilter = "&keyword_type=eq.$keywordType";
     }
 
-    String filterSearchText = "";
+    String searchFilter = "";
     if (userInputSearchText != null && userInputSearchText.isNotEmpty) {
-      filterSearchText =
-          "&or=(title.ilike.*$userInputSearchText*,description.ilike.*$userInputSearchText*)";
+      searchFilter = "&or=(title.ilike.*$userInputSearchText*,description.ilike.*$userInputSearchText*)";
     }
 
+    // 통합 쿼리: visibility_status=true, auction_start_at이 존재하는 모든 매물
     final response = await dio.get(
-      // 최신순이 기본 설정 + visibility true 필터
-      '${NetworkApiManager.supabaseUrl}/items_detail?select=*,auctions!inner(bid_count,auction_start_at,auction_end_at,last_bid_user_id,auction_status_code,trade_status_code)'
-      '&visibility_status=eq.true'
-      '&order=$orderBy&auctions.auction_start_at=not.is.null'
-      '$filterSearchText'
-      '$filterQuery',
+      '${NetworkApiManager.supabaseUrl}/items_detail?'
+      'select=*,auctions!inner(current_price,bid_count,auction_start_at,auction_end_at,last_bid_user_id,auction_status_code,trade_status_code)'
+      '&visibility_status=is.true'
+      '&auctions.auction_start_at=not.is.null'
+      '$searchFilter'
+      '$keywordFilter'
+      '&order=$orderBy',
       options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
     );
+    
     final List<dynamic> data = response.data;
-    print("data 데이터 타입: ${data.runtimeType}");
+    print("getSearchResults 응답 개수: ${data.length}");
     final List<ItemsEntity> results = data.map((json) {
       return ItemsEntity.fromJson(json);
     }).toList();

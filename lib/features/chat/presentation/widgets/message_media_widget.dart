@@ -33,7 +33,7 @@ class MessageMediaWidget extends StatelessWidget {
     // 동영상 URL인지 확인
     final bool isVideo = originalUrl != null && isVideoFile(originalUrl);
 
-    if (isVideo && originalUrl != null) {
+    if (isVideo) {
       return _buildVideoWidget(context, originalUrl, imageUrlForMessage);
     } else {
       return _buildImageWidget(context, imageUrlForMessage);

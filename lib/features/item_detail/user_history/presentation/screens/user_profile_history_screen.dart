@@ -1,6 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/features/item_detail/user_history/domain/entities/user_history_entity.dart';
+
 import 'package:bidbird/features/item_detail/user_history/presentation/viewmodels/user_history_viewmodel.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/trade_status_chip.dart';
 import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';

@@ -3,8 +3,6 @@ import 'package:bidbird/features/notification/domain/entities/notification_entit
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationListRealtimeSubscriptionManager {
-  final _supabase = SupabaseManager.shared.supabase;
-
   RealtimeChannel? _notifyChannel;
 
   bool _isSubscribed = false;

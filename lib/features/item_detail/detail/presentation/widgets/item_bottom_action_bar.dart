@@ -6,7 +6,7 @@ import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
 import 'package:bidbird/features/bid/presentation/screens/item_bid_win_screen.dart';
-import 'package:bidbird/core/utils/item/trade_status_codes.dart';
+
 import 'package:bidbird/features/bid/presentation/viewmodels/price_input_viewmodel.dart';
 import 'package:bidbird/features/bid/presentation/widgets/bid_bottom_sheet.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
@@ -14,7 +14,7 @@ import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
 import 'package:bidbird/features/item_trade/payment_info/data/datasources/offline_payment_datasource.dart';
 import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_input_popup.dart';
-import 'package:bidbird/features/item_trade/payment_info/presentation/widgets/payment_info_view_popup.dart';
+
 import 'package:bidbird/features/item_trade/seller_payment_complete/presentation/screens/seller_payment_complete_screen.dart';
 import 'package:bidbird/features/item_trade/shipping/data/repositories/shipping_info_repository.dart';
 import 'package:bidbird/features/item_trade/shipping/domain/repositories/shipping_info_repository.dart' as domain;
@@ -49,20 +49,10 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       CheckBidRestrictionUseCase(BidRepositoryImpl());
   final domain.ShippingInfoRepository _shippingInfoRepository = ShippingInfoRepositoryImpl();
 
-  Future<bool> _ensureIdentityVerified() async {
-    if (!mounted) return false;
-    // TODO: 사업자 인증 후 아래 주석 해제
-    // return await ensureIdentityVerified(
-    //   context,
-    //   message: '입찰 및 즉시 구매를 위해서는 본인 인증이 필요합니다.\n지금 본인 인증을 진행하시겠습니까?',
-    // );
-    return true; // 임시: 인증 없이 통과
-  }
-
   @override
   void initState() {
     super.initState();
-    _statusCode = widget.item.statusCode ?? 0;
+    _statusCode = widget.item.statusCode;
     _checkBidRestriction();
     _checkShippingInfo();
   }
@@ -148,7 +138,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 구매자 입장: 낙찰(321) 상태이고 아직 결제하지 않은 경우 자동으로 낙찰 성공 화면 표시
     final itemDetailViewModel = context.read<ItemDetailViewModel?>();
     final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
-    final int statusCode = _statusCode ?? 0;
+    final int statusCode = _statusCode;
     final bool hasShownBidWinScreen = itemDetailViewModel?.hasShownBidWinScreen ?? false;
     if (!widget.isMyItem && statusCode == 321 && isTopBidder && !isTradePaid && !hasShownBidWinScreen) {
       itemDetailViewModel?.markBidWinScreenAsShown();
@@ -638,7 +628,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     final itemDetailViewModel = context.read<ItemDetailViewModel?>();
     final currentItem = itemDetailViewModel?.itemDetail ?? widget.item;
     
-    final int statusCode = _statusCode ?? currentItem.statusCode ?? 0;
+    final int statusCode = _statusCode;
     final int? tradeStatusCode = currentItem.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
 
@@ -1147,27 +1137,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBuyNowButton() {
-    return Container(
-      height: 40,
-      alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: BackgroundColor,
-        borderRadius: BorderRadius.circular(8.7),
-        border: Border.all(color: BorderColor),
-      ),
-      child: const Text(
-        '즉시 구매하기',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: TopBidderTextColor,
         ),
       ),
     );
