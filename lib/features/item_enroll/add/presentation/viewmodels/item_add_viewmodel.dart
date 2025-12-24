@@ -43,9 +43,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
           ImageUploadGatewayImpl(),
         ),
         addItemUseCase: AddItemUseCase(ItemAddRepositoryImpl()),
-      ) {
-    _initControllerListeners();
-  }
+      );
 
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
@@ -58,12 +56,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
   final ImagePicker _picker = ImagePicker();
 
-  // titleController 리스너 초기화
-  void _initControllerListeners() {
-    titleController.addListener(() {
-      notifyListeners(); // 제목 변경 시 UI 업데이트
-    });
-  }
+
 
   List<XFile> selectedImages = <XFile>[];
   final List<KeywordTypeEntity> keywordTypes = <KeywordTypeEntity>[];

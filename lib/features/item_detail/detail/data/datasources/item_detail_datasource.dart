@@ -1,5 +1,4 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,7 +14,7 @@ class ItemDetailDatasource {
   Future<ItemDetail?> fetchItemDetail(String itemId) async {
     try {
       final user = _supabase.auth.currentUser;
-      
+
       // 직접 RPC 호출 (엣지 함수 제거)
       final coreData = await _supabase.rpc(
         'get_item_detail_core',
@@ -45,7 +44,7 @@ class ItemDetailDatasource {
       // finishTime 파싱
       String? finishTimeRaw = coreData['auction_end_at'] as String?;
       DateTime effectiveFinishTime;
-      
+
       if (finishTimeRaw != null && finishTimeRaw.isNotEmpty) {
         effectiveFinishTime = DateTime.tryParse(finishTimeRaw) ?? DateTime.now();
       } else {
@@ -158,6 +157,33 @@ class ItemDetailDatasource {
 
       if (responseData['success'] == true && responseData['data'] != null) {
         return responseData['data'] as Map<String, dynamic>;
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<String?> fetchSellerProfileImage(String sellerId) async {
+    if (sellerId.isEmpty) return null;
+
+    try {
+      final response = await _supabase.functions.invoke(
+        'get-seller-profile',
+        body: {'sellerId': sellerId},
+      );
+
+      final responseData = response.data;
+      if (responseData is! Map<String, dynamic>) {
+        return null;
+      }
+
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final profileData = responseData['data'] as Map<String, dynamic>;
+        final profileImageUrl = profileData['profile_image_url'] as String?;
+        _lastSellerProfileImage = profileImageUrl;
+        return profileImageUrl;
       }
 
       return null;

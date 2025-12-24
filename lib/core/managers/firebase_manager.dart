@@ -21,7 +21,7 @@ class FirebaseManager {
   FirebaseMessaging get fcm => _fcm;
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
-  
+
   // FCM 토큰 변경 감지용
   static String? _lastSavedToken;
   static StreamSubscription? _tokenRefreshSubscription;
@@ -266,11 +266,11 @@ class FirebaseManager {
         // 이전 토큰과 다를 때만 저장
         await saveTokenToSupabase(token);
       }
-      
+
       // 기존 리스너 취소 (중복 등록 방지)
       await _tokenRefreshSubscription?.cancel();
       _tokenRefreshSubscription = null;
-      
+
       // 토큰이 갱신될 시에만 업데이트
       _tokenRefreshSubscription = _fcm.onTokenRefresh.listen((newToken) {
         saveTokenToSupabase(newToken);
@@ -310,7 +310,7 @@ class FirebaseManager {
           .from('users')
           .update({'device_token': token, 'device_type': platform})
           .eq('id', userId);
-      
+
       // 저장 성공 시 이전 토큰 업데이트
       _lastSavedToken = token;
     } catch (e) {

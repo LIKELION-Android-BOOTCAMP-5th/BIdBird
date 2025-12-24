@@ -175,36 +175,72 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   }
 
   Widget _buildSingleButtonBar(ItemAddViewModel viewModel) {
-    return PrimaryButton(
-      text: _getNextButtonText(),
-      onPressed: () => _goToStep(_currentStep + 1),
-      isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
-      width: double.infinity,
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: viewModel.titleController,
+      builder: (context, titleValue, _) {
+        return PrimaryButton(
+          text: _getNextButtonText(),
+          onPressed: () => _goToStep(_currentStep + 1),
+          isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+          width: double.infinity,
+        );
+      },
     );
   }
 
   Widget _buildDualButtonBar(ItemAddViewModel viewModel) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: SecondaryButton(
-            text: '이전',
-            onPressed: () => _goToStep(_currentStep - 1),
-            width: null,
+    if (_currentStep == 0) {
+      // 첫 번째 단계에서는 제목 변경을 감지
+      return ValueListenableBuilder<TextEditingValue>(
+        valueListenable: viewModel.titleController,
+        builder: (context, titleValue, _) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: SecondaryButton(
+                  text: '이전',
+                  onPressed: () => _goToStep(_currentStep - 1),
+                  width: null,
+                ),
+              ),
+              SizedBox(width: context.spacingSmall),
+              Expanded(
+                child: PrimaryButton(
+                  text: _getNextButtonText(),
+                  onPressed: () => _handleNextButtonPress(viewModel),
+                  isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+                  width: null,
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      // 다른 단계에서는 제목 감지하지 않음
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: SecondaryButton(
+              text: '이전',
+              onPressed: () => _goToStep(_currentStep - 1),
+              width: null,
+            ),
           ),
-        ),
-        SizedBox(width: context.spacingSmall),
-        Expanded(
-          child: PrimaryButton(
-            text: _getNextButtonText(),
-            onPressed: () => _handleNextButtonPress(viewModel),
-            isEnabled: !viewModel.isSubmitting,
-            width: null,
+          SizedBox(width: context.spacingSmall),
+          Expanded(
+            child: PrimaryButton(
+              text: _getNextButtonText(),
+              onPressed: () => _handleNextButtonPress(viewModel),
+              isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+              width: null,
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    }
   }
 
   Widget _buildBottomNavigationBar(ItemAddViewModel viewModel) {
@@ -250,14 +286,14 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 이미지 개수, 제목, 제출 상태를 감지하여 버튼 활성화 상태 즉시 업데이트
+    // 이미지 개수, 제출 상태를 감지하여 버튼 활성화 상태 업데이트
+    // 제목은 별도로 감지하여 불필요한 재빌드 방지
     return Selector<
       ItemAddViewModel,
-      ({int imageCount, String title, bool isSubmitting})
+      ({int imageCount, bool isSubmitting})
     >(
       selector: (_, vm) => (
         imageCount: vm.selectedImages.length,
-        title: vm.titleController.text,
         isSubmitting: vm.isSubmitting,
       ),
       builder: (context, data, _) {

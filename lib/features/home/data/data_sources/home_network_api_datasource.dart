@@ -1,4 +1,3 @@
-import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
 

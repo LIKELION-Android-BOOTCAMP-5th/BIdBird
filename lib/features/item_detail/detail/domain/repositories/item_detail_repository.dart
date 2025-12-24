@@ -7,6 +7,7 @@ abstract class ItemDetailRepository {
   Future<bool> checkIsFavorite(String itemId);
   Future<void> toggleFavorite(String itemId, bool currentState);
   Future<Map<String, dynamic>?> fetchSellerProfile(String sellerId);
+  Future<String?> fetchSellerProfileImage(String sellerId);
   Future<List<BidHistoryItem>> fetchBidHistory(String itemId);
   Future<bool> checkIsMyItem(String itemId, String sellerId);
   Future<bool> isCurrentUserTopBidder(String itemId);
