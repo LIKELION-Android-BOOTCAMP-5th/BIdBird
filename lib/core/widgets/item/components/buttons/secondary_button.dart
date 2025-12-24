@@ -34,11 +34,11 @@ class SecondaryButton extends StatelessWidget {
     return SizedBox(
       height: height,
       width: width ?? double.infinity,
-      child: OutlinedButton(
+      child: ElevatedButton(
         onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: blueColor,
           padding: EdgeInsets.zero,
-          side: BorderSide(color: blueColor),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(defaultRadius),
           ),
@@ -46,7 +46,7 @@ class SecondaryButton extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: blueColor,
+            color: Colors.white,
             fontSize: fontSize,
             fontWeight: FontWeight.w600,
           ),

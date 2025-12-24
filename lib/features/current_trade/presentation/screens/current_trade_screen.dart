@@ -7,7 +7,6 @@ import 'package:bidbird/features/current_trade/presentation/viewmodels/current_t
 import 'package:bidbird/features/current_trade/presentation/widgets/action_hub.dart';
 import 'package:bidbird/features/current_trade/presentation/widgets/trade_history_card.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
@@ -34,7 +33,8 @@ class _PaginationController {
     required int initialVisibleCount,
   }) {
     final totalsChanged =
-        _totalCount != totalCount || _initialVisibleCount != initialVisibleCount;
+        _totalCount != totalCount ||
+        _initialVisibleCount != initialVisibleCount;
     _totalCount = totalCount;
     _initialVisibleCount = initialVisibleCount;
 
@@ -65,7 +65,6 @@ class _PaginationController {
     return true;
   }
 }
-
 
 class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   final ScrollController _scrollController = ScrollController();
@@ -148,7 +147,7 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
         if (state.isLoading) {
           return Container();
         }
-        
+
         // 에러가 있을 때
         if (state.error != null) {
           return TransparentRefreshIndicator(
@@ -162,7 +161,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(state.error!, style: const TextStyle(color: RedColor)),
+                      Text(
+                        state.error!,
+                        style: const TextStyle(color: RedColor),
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () =>
@@ -176,23 +178,25 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             ),
           );
         }
-        
+
         return _buildUnifiedHistoryList();
       },
     );
   }
 
-
   Widget _buildUnifiedHistoryList() {
-    return Selector<CurrentTradeViewModel, List<({bool isSeller, bool isHighlighted, dynamic item})>>(
-      selector: (_, vm) => vm.allItems,
-      builder: (context, allItems, _) {
+    return Selector<
+      CurrentTradeViewModel,
+      (List<({bool isSeller, bool isHighlighted, dynamic item})>, bool)
+    >(
+      selector: (_, vm) => (vm.allItemsPaginated, vm.canLoadMore),
+      builder: (context, data, _) {
+        final (displayedItems, canLoadMore) = data;
         final horizontalPadding = context.hPadding;
         final verticalPadding = context.vPadding;
-        final spacing = context.spacingSmall;
-        
+
         // 빈 상태일 때
-        if (allItems.isEmpty) {
+        if (displayedItems.isEmpty) {
           return TransparentRefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
             child: Center(
@@ -219,8 +223,8 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
             ),
           );
         }
-        
-        // 데이터가 있을 때
+
+        // 데이터가 있을 때 (무한 스크롤)
         return TransparentRefreshIndicator(
           onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
           child: ListView.builder(
@@ -230,42 +234,34 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               horizontal: horizontalPadding,
               vertical: verticalPadding,
             ),
-            itemCount: allItems.length + 1, // +1 for "전체 보기"
+            itemCount: displayedItems.length + (canLoadMore ? 1 : 0),
+            addAutomaticKeepAlives: false,
+            addRepaintBoundaries: true,
             itemBuilder: (context, index) {
-              // "전체 보기" 링크
-              if (index == allItems.length) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 16, bottom: 24),
+              // 로딩 인디케이터 (자동으로 더 불러옴)
+              if (index == displayedItems.length) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  final vm = context.read<CurrentTradeViewModel>();
+                  if (vm.canLoadMore) {
+                    vm.loadMoreItems();
+                  }
+                });
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   child: Center(
-                    child: GestureDetector(
-                      onTap: () => context.push('/mypage/trade'),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '전체 보기',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: textColor,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.chevron_right,
-                            size: context.iconSizeSmall,
-                            color: textColor,
-                          ),
-                        ],
-                      ),
+                    child: SizedBox(
+                      height: 40,
+                      width: 40,
+                      child: CircularProgressIndicator(),
                     ),
                   ),
                 );
               }
-              
+
               // 일반 아이템
-              final item = allItems[index];
+              final item = displayedItems[index];
               final useResponsive = MediaQuery.of(context).size.width >= 360;
-              
+
               Widget card;
               if (item.isSeller) {
                 final saleItem = item.item as SaleHistoryItem;
@@ -292,11 +288,11 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
                   useResponsive: useResponsive,
                 );
               }
-              
+
               // 간격을 Container로 감싸서 안전하게 처리
               return Container(
                 margin: EdgeInsets.only(
-                  bottom: index < allItems.length - 1 ? spacing : 0,
+                  bottom: index < displayedItems.length - 1 ? 12 : 0,
                 ),
                 child: card,
               );

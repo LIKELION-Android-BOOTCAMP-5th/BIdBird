@@ -12,9 +12,8 @@ abstract class ChatRepository {
   });
   Future<ChattingRoomEntity?> fetchNewChattingRoom(String roomId);
   Future<List<ChatMessageEntity>> getMessages(
-    String chattingRoomId, {
-    bool forceRefresh = false,
-  });
+    String chattingRoomId,
+  );
   Future<List<ChatMessageEntity>> getOlderMessages(
     String chattingRoomId,
     String beforeCreatedAtIso, {

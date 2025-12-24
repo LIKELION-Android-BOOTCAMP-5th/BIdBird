@@ -7,8 +7,7 @@ class GetMessagesUseCase {
 
   final ChatRepository _repository;
 
-  Future<List<ChatMessageEntity>> call(String chattingRoomId, {bool forceRefresh = false}) {
-    return _repository.getMessages(chattingRoomId, forceRefresh: forceRefresh);
+  Future<List<ChatMessageEntity>> call(String chattingRoomId) {
+    return _repository.getMessages(chattingRoomId);
   }
 }
-

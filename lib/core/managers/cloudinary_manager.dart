@@ -30,7 +30,7 @@ class CloudinaryManager {
       // 파일 존재 확인
       final file = await inputImage.length();
       if (file == 0) {
-        print('이미지 업로드 실패: 파일이 비어있습니다');
+        // 이미지 업로드 실패: 파일이 비어있습니다
         return null;
       }
       
@@ -63,16 +63,15 @@ class CloudinaryManager {
         if (secureUrl != null) {
           return secureUrl;
         } else {
-          print('이미지 업로드 실패: secure_url이 null입니다');
+          // 이미지 업로드 실패: secure_url이 null입니다
           return null;
         }
       } else {
-        print('이미지 업로드 실패: statusCode=${response.statusCode}');
+        // 이미지 업로드 실패: statusCode=${response.statusCode}
         return null;
       }
-    } catch (e, stackTrace) {
-      print('이미지 업로드 에러: $e');
-      print('스택 트레이스: $stackTrace');
+    } catch (e) {
+      // 이미지 업로드 에러: $e
       return null;
     }
   }

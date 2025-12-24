@@ -7,8 +7,7 @@ class FetchMySaleHistoryUseCase {
 
   final CurrentTradeRepository _repository;
 
-  Future<List<SaleHistoryItem>> call() {
-    return _repository.fetchMySaleHistory();
+  Future<List<SaleHistoryItem>> call({int page = 1, int limit = 20}) {
+    return _repository.fetchMySaleHistory(page: page, limit: limit);
   }
 }
-

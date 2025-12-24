@@ -380,7 +380,7 @@ class _HistoryItem extends StatelessWidget {
           borderRadius: defaultBorder,
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
               borderRadius: defaultBorder,

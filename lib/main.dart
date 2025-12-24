@@ -6,6 +6,7 @@ import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.da
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'package:bidbird/features/current_trade/presentation/viewmodels/current_trade_viewmodel.dart';
 import 'package:bidbird/features/home/data/repository/home_repository.dart';
+import 'package:bidbird/features/home/presentation/viewmodel/home_viewmodel.dart';
 import 'package:bidbird/features/mypage/data/repositories/profile_repository_impl.dart';
 import 'package:bidbird/features/mypage/domain/usecases/get_profile.dart';
 import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
@@ -52,6 +53,12 @@ void main() async {
         // final nickName = profile?.nickName ?? '';
         // final profileImageUrl = profile?.profileImageUrl;
         Provider(create: (context) => HomeRepositoryImpl()),
+        // HomeViewModel을 전역으로 등록하여 탭 전환 시 재생성 방지
+        ChangeNotifierProvider(
+          create: (context) {
+            return HomeViewmodel(HomeRepositoryImpl());
+          },
+        ),
         ChangeNotifierProvider(
           create: (context) {
             return NotificationViewmodel(context);

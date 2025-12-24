@@ -21,27 +21,20 @@ class ItemDescriptionSection extends StatefulWidget {
 class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
   @override
   Widget build(BuildContext context) {
-    final sellerProfile = context
-        .select<ItemDetailViewModel, Map<String, dynamic>?>(
-          (vm) => vm.sellerProfile,
-        );
+    final sellerProfileImage = context.select<ItemDetailViewModel, String?>(
+      (vm) => vm.sellerProfileImage,
+    );
     final bids = context.select<ItemDetailViewModel, List<BidHistoryItem>>(
       (vm) => vm.bidHistory,
     );
 
-    final String avatarUrl =
-        (sellerProfile?['profile_image_url'] as String?) ?? '';
-    final String rawNickname =
-        (sellerProfile?['nick_name'] as String?)?.trim() ?? '';
+    final String avatarUrl = sellerProfileImage ?? '';
+    final String rawNickname = widget.item.sellerTitle.trim();
     final String sellerNickname = rawNickname.isNotEmpty
         ? rawNickname
         : '닉네임 없음';
-    final double sellerRating =
-        (sellerProfile?['rating'] as num?)?.toDouble() ??
-        widget.item.sellerRating;
-    final int sellerReviewCount =
-        (sellerProfile?['review_count'] as int?) ??
-        widget.item.sellerReviewCount;
+    final double sellerRating = widget.item.sellerRating;
+    final int sellerReviewCount = widget.item.sellerReviewCount;
 
     return Column(
       children: [

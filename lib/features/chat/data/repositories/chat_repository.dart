@@ -26,12 +26,10 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<List<ChatMessageEntity>> getMessages(
-    String chattingRoomId, {
-    bool forceRefresh = false,
-  }) async {
+    String chattingRoomId,
+  ) async {
     return await _chatDatasource.getMessages(
       chattingRoomId,
-      forceRefresh: forceRefresh,
     );
   }
 

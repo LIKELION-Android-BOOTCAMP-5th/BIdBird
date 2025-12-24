@@ -9,31 +9,40 @@ class ItemGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 길이만 구독해서 페이징(addAll) 같은 동일 리스트 참조 변경도 감지
-    final itemsLength = context.select<HomeViewmodel, int>(
-      (vm) => vm.items.length,
-    );
-    final items = context.read<HomeViewmodel>().items;
     return SliverPadding(
       padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 15),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.85,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final item = items[index];
-            final title = item.title;
+      sliver: Consumer<HomeViewmodel>(
+        builder: (context, viewModel, _) {
+          final items = viewModel.items;
+          final itemsLength = items.length;
 
-            return ItemCard(item: item, title: title);
-          },
-          childCount: itemsLength,
-          addAutomaticKeepAlives: false,
-          addRepaintBoundaries: true,
-        ),
+          return SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.85,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                // 마지막 아이템에 도달하면 다음 페이지 불러오기
+                if (index == itemsLength - 1) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    viewModel.fetchNextItems();
+                  });
+                }
+
+                final item = items[index];
+                final title = item.title;
+
+                return ItemCard(item: item, title: title);
+              },
+              childCount: itemsLength,
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: true,
+            ),
+          );
+        },
       ),
     );
   }

@@ -271,7 +271,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             // 판매자 입장: trade_status_code가 520이면 구매자 연락하기, 배송 정보 입력하기 버튼 표시
             if (isTradePaid) ...[
               Expanded(
-                child: OutlinedButton(
+                child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -281,8 +281,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                       ),
                     );
                   },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: blueColor),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: blueColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.7),
                     ),
@@ -292,7 +292,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: blueColor,
+                      color: Colors.white,
                     ),
                   ),
                 ),

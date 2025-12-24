@@ -20,7 +20,7 @@ class ChatMessageList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
-      opacity: viewModel.isScrollPositionReady ? 1.0 : 0.0,
+      opacity: 1.0,
       duration: const Duration(milliseconds: 0), // 즉시 표시 (애니메이션 없음)
       child: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
@@ -68,7 +68,7 @@ class ChatMessageList extends StatelessWidget {
     } else {
       final prevMessage = viewModel.messages[index - 1];
       final bool isDifferentSender = prevMessage.senderId != message.senderId;
-      
+
       // 날짜가 바뀌었는지 확인
       bool isDifferentDate = false;
       try {
@@ -78,7 +78,7 @@ class ChatMessageList extends StatelessWidget {
       } catch (_) {
         isDifferentDate = false;
       }
-      
+
       // 발신자가 다르거나 날짜가 바뀌면 프로필 이미지 표시
       isFirstFromSameSender = isDifferentSender || isDifferentDate;
     }
@@ -281,4 +281,3 @@ class _ChatDateSeparator extends StatelessWidget {
     );
   }
 }
-

@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
+import 'package:bidbird/main.dart';
 import 'package:flutter/material.dart';
 
 import '../domain/entities/profile_entity.dart';
@@ -5,6 +9,7 @@ import '../domain/usecases/get_profile.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final GetProfile _getProfile;
+  StreamSubscription? _loginSubscription;
 
   ProfileEntity? profile;
   bool isLoading = false;
@@ -13,6 +18,13 @@ class ProfileViewModel extends ChangeNotifier {
 
   ProfileViewModel(this._getProfile) {
     loadProfile(); //생성자에서 쵸기로딩 // main에서 ..loadProfile()하지 않아도 됨
+    _loginSubscription = eventBus.on<LoginEventBus>().listen((event) {
+      if (event.type == LoginEventType.logout) {
+        profile = null;
+        errorMessage = null;
+        notifyListeners();
+      }
+    });
   }
 
   Future<void> loadProfile() async {
@@ -30,5 +42,11 @@ class ProfileViewModel extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _loginSubscription?.cancel();
+    super.dispose();
   }
 }
