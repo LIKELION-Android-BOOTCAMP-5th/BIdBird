@@ -62,9 +62,11 @@ void main() async {
             return ChatListViewmodel();
           },
         ),
+        // CurrentTradeViewModel은 즉시 loadData()를 호출하지 않고
+        // 해당 탭이나 화면에서 필요할 때 로드하도록 변경
         ChangeNotifierProvider(
           create: (context) {
-            return CurrentTradeViewModel()..loadData();
+            return CurrentTradeViewModel();
           },
         ),
       ],

@@ -4,7 +4,8 @@ import 'dart:typed_data';
 
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart' show parseFormattedPrice, formatNumber;
+import 'package:bidbird/core/utils/item/item_price_utils.dart'
+    show parseFormattedPrice, formatNumber;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_validator.dart';
@@ -35,13 +36,14 @@ import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 /// 제외: 비즈니스 로직 (Flow UseCase에서 처리)
 class ItemAddViewModel extends ItemBaseViewModel {
   ItemAddViewModel()
-    : _getKeywordTypesUseCase =
-          GetKeywordTypesUseCase(KeywordRepositoryImpl()),
+    : _getKeywordTypesUseCase = GetKeywordTypesUseCase(KeywordRepositoryImpl()),
       _getEditItemUseCase = GetEditItemUseCase(EditItemRepositoryImpl()),
       _itemEnrollFlowUseCase = ItemEnrollFlowUseCase(
-          uploadItemImagesUseCase: UploadItemImagesWithThumbnailUseCase(ImageUploadGatewayImpl()),
-          addItemUseCase: AddItemUseCase(ItemAddRepositoryImpl()),
-        );
+        uploadItemImagesUseCase: UploadItemImagesWithThumbnailUseCase(
+          ImageUploadGatewayImpl(),
+        ),
+        addItemUseCase: AddItemUseCase(ItemAddRepositoryImpl()),
+      );
 
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
@@ -66,8 +68,9 @@ class ItemAddViewModel extends ItemBaseViewModel {
   bool _isSubmitting = false;
   bool useInstantPrice = false;
   int primaryImageIndex = 0;
-  
-  final StreamController<double> _progressController = StreamController<double>.broadcast();
+
+  final StreamController<double> _progressController =
+      StreamController<double>.broadcast();
   Stream<double> get uploadProgressStream => _progressController.stream;
 
   bool get isLoadingKeywords => _isLoadingKeywords;
@@ -95,7 +98,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
     if (_isLoadingKeywords) return; // 중복 호출 방지
 
     _isLoadingKeywords = true;
-    notifyListeners();
+    notifyListeners(); // 로딩 상태만 알림
 
     try {
       final types = await _getKeywordTypesUseCase();
@@ -110,11 +113,13 @@ class ItemAddViewModel extends ItemBaseViewModel {
           !validIds.contains(selectedKeywordTypeId)) {
         selectedKeywordTypeId = null;
       }
-    } catch (e) {
-      throw Exception(ItemRegistrationErrorMessages.categoryLoadError(e));
-    } finally {
+
       _isLoadingKeywords = false;
-      notifyListeners();
+      notifyListeners(); // 완료 상태만 알림
+    } catch (e) {
+      _isLoadingKeywords = false;
+      notifyListeners(); // 에러 상태 알림
+      throw Exception(ItemRegistrationErrorMessages.categoryLoadError(e));
     }
   }
 
@@ -131,7 +136,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
     } else {
       selectedImages = all;
     }
-    notifyListeners();
+    notifyListeners(); // 이미지 추가 시 UI 업데이트 필요
   }
 
   Future<void> pickImageFromCamera() async {
@@ -147,13 +152,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
     // 리사이징은 upload datasource에서 처리
     selectedImages = <XFile>[...selectedImages, image];
-    notifyListeners();
+    notifyListeners(); // 이미지 추가 시 UI 업데이트 필요
   }
 
   Future<void> pickVideoFromGallery() async {
-    final XFile? video = await _picker.pickVideo(
-      source: ImageSource.gallery,
-    );
+    final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
     if (video == null) {
       return;
     }
@@ -164,7 +167,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
     // 리사이징은 upload datasource에서 처리
     selectedImages = <XFile>[...selectedImages, video];
-    notifyListeners();
+    notifyListeners(); // 비디오 추가 시 UI 업데이트 필요
   }
 
   void removeImageAt(int index) {
@@ -182,19 +185,18 @@ class ItemAddViewModel extends ItemBaseViewModel {
         primaryImageIndex = primaryImageIndex - 1;
       }
     }
-    notifyListeners();
+    notifyListeners(); // 이미지 제거 시 UI 업데이트 필요
   }
 
   void setPrimaryImage(int index) {
     if (index < 0 || index >= selectedImages.length) return;
     primaryImageIndex = index;
-    notifyListeners();
+    notifyListeners(); // 기본 이미지 변경 시 UI 업데이트 필요
   }
 
   Future<void> startEdit(String itemId) async {
     editingItemId = itemId;
     try {
-
       if (keywordTypes.isEmpty) {
         await fetchKeywordTypes();
       }
@@ -256,11 +258,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
       } else {
         selectedImages = files;
       }
-      notifyListeners();
+      notifyListeners(); // 이미지 로드 시 UI 업데이트 필요
     } catch (e) {
       // 완전 실패 시에도 네트워크 URL로 폴백
       selectedImages = imageUrls.map((u) => XFile(u)).toList();
-      notifyListeners();
+      notifyListeners(); // 실패 시에도 UI 업데이트 필요
     }
   }
 
@@ -284,12 +286,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
       // 캐시에서 먼저 확인
       final cacheManager = ItemImageCacheManager.instance;
       final cachedFile = await cacheManager.getSingleFile(url);
-      
+
       if (await cachedFile.exists()) {
         // 캐시된 파일이 있으면 사용
         return XFile(cachedFile.path);
       }
-      
+
       // 캐시에 없으면 다운로드
       final response = await dio.get<List<int>>(
         url,
@@ -342,12 +344,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
   void setSelectedKeywordTypeId(int? id) {
     selectedKeywordTypeId = id;
-    notifyListeners();
+    notifyListeners(); // 카테고리 선택 UI 업데이트 필요
   }
 
   void setSelectedDuration(String value) {
     selectedDuration = value;
-    notifyListeners();
+    notifyListeners(); // 기간 선택 UI 업데이트 필요
   }
 
   void setUseInstantPrice(bool value) {
@@ -355,7 +357,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
     if (!value) {
       instantPriceController.clear();
     }
-    notifyListeners();
+    notifyListeners(); // 즉시가 체크박스 UI 업데이트 필요
   }
 
   // Methods: Submit (Delegate to Flow UseCase)
@@ -368,13 +370,15 @@ class ItemAddViewModel extends ItemBaseViewModel {
     final String? validationError = validate();
     if (validationError != null) {
       if (context.mounted) {
-        scaffoldMessenger.showSnackBar(SnackBar(content: Text(validationError)));
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(validationError)),
+        );
       }
       return;
     }
 
     _isSubmitting = true;
-    notifyListeners();
+    notifyListeners(); // 제출 시작 상태 UI 업데이트 필요
 
     // 업로드 진행률: Cloudinary ProgressBus -> UI Progress
     final int uploadFileCount = selectedImages.where((x) {
@@ -424,11 +428,15 @@ class ItemAddViewModel extends ItemBaseViewModel {
       await _showSuccessDialog(context, navigator);
     } catch (e) {
       if (context.mounted) {
-        _showError(context, scaffoldMessenger, ItemRegistrationErrorMessages.registrationError(e));
+        _showError(
+          context,
+          scaffoldMessenger,
+          ItemRegistrationErrorMessages.registrationError(e),
+        );
       }
     } finally {
       _isSubmitting = false;
-      notifyListeners();
+      notifyListeners(); // 제출 완료 상태 UI 업데이트 필요
       await _progressSub.cancel();
       _closeLoadingDialog(navigator, loadingDialogOpen);
     }
@@ -448,20 +456,20 @@ class ItemAddViewModel extends ItemBaseViewModel {
             stream: uploadProgressStream,
             initialData: 0.0,
             builder: (context, snapshot) {
-                final p = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
+              final p = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CircularProgressIndicator(
-                      value: p,
+                    value: p,
                     valueColor: AlwaysStoppedAnimation<Color>(blueColor),
                   ),
                   SizedBox(height: spacing),
                   Text(
-                      '업로드 중 ${ (p*100).toStringAsFixed(0)}%',
+                    '업로드 중 ${(p * 100).toStringAsFixed(0)}%',
                     style: TextStyle(
                       fontSize: fontSize,
-                        color: Colors.white,
+                      color: Colors.white,
                       decoration: TextDecoration.none,
                       decorationThickness: 0,
                     ),
@@ -504,7 +512,10 @@ class ItemAddViewModel extends ItemBaseViewModel {
     );
   }
 
-  Future<void> _showSuccessDialog(BuildContext context, NavigatorState navigator) async {
+  Future<void> _showSuccessDialog(
+    BuildContext context,
+    NavigatorState navigator,
+  ) async {
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -545,4 +556,3 @@ class ItemAddViewModel extends ItemBaseViewModel {
     }
   }
 }
-

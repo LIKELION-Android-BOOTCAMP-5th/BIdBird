@@ -1,7 +1,8 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart';
+import 'package:bidbird/core/utils/item/price_input_formatter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 
@@ -20,7 +21,7 @@ class ItemAddPriceSection extends StatelessWidget {
     // Responsive values
     final labelFontSize = context.fontSizeMedium;
     final spacing = context.inputPadding;
-    
+
     final startPriceField = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -39,21 +40,14 @@ class ItemAddPriceSection extends StatelessWidget {
           controller: viewModel.startPriceController,
           keyboardType: TextInputType.number,
           decoration: inputDecoration('시작 가격 입력'),
-          onChanged: (value) {
-            final formatted = formatNumber(value);
-            if (formatted != value) {
-              viewModel.startPriceController.value = TextEditingValue(
-                text: formatted,
-                selection: TextSelection.collapsed(
-                  offset: formatted.length,
-                ),
-              );
-            }
-          },
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            PriceInputFormatter(),
+          ],
         ),
       ],
     );
-    
+
     // final instantPriceField = Column(
     //   crossAxisAlignment: CrossAxisAlignment.start,
     //   children: [
@@ -116,7 +110,7 @@ class ItemAddPriceSection extends StatelessWidget {
     //     ),
     //   ],
     // );
-    
+
     if (context.isSmallScreen()) {
       return Column(
         children: [
@@ -126,7 +120,7 @@ class ItemAddPriceSection extends StatelessWidget {
         ],
       );
     }
-    
+
     return Row(
       children: [
         Expanded(child: startPriceField),
