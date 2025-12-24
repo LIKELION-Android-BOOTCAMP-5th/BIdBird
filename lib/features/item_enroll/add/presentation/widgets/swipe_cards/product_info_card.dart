@@ -61,22 +61,6 @@ class ProductInfoCardState extends State<ProductInfoCard>
   }
 
   @override
-  void didUpdateWidget(ProductInfoCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 이미지가 추가되었을 때만 체크하여 에러 제거
-    if (widget.viewModel.selectedImages.length >
-        oldWidget.viewModel.selectedImages.length) {
-      if (shouldShowErrors && _imageError != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            clearError(() => _imageError = null);
-          }
-        });
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     // 반응형 값 캐싱
     final spacing = context.spacingMedium;
@@ -145,7 +129,7 @@ class ProductInfoCardState extends State<ProductInfoCard>
               ),
               // 글자수 표시
               Padding(
-                padding: EdgeInsets.only(top: context.spacingSmall),
+                padding: EdgeInsets.only(top: spacingSmall),
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: _CharacterCounter(
