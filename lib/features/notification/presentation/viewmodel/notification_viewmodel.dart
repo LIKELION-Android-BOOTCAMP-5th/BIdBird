@@ -99,12 +99,18 @@ class NotificationViewmodel extends ChangeNotifier {
     notifyList.removeWhere((e) => e.id == id);
     notifyListeners();
   }
+  
+  // 중복 fetch 방지를 위한 래퍼 메서드
+  Future<void> _safelyFetchNotify() async {
+    if (_isFetching) return;
+    await fetchNotify();
+  }
 
   Future<void> _bootstrap() async {
     final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (userId == null) return;
 
-    await fetchNotify(); // ✅ 무조건 1회 보장
+    await _safelyFetchNotify(); // ✅ 중복 방지하며 1회 보장
     setupRealtimeSubscription(); // ✅ 이후 실시간
   }
 
@@ -119,7 +125,7 @@ class NotificationViewmodel extends ChangeNotifier {
 
     if (wasDisconnected) {
       debugPrint('🔄 Realtime was disconnected → full sync');
-      await fetchNotify();
+      await _safelyFetchNotify(); // 중복 fetch 방지
       setupRealtimeSubscription();
       return;
     }
@@ -128,7 +134,7 @@ class NotificationViewmodel extends ChangeNotifier {
     if (_lastPausedAt != null &&
         now.difference(_lastPausedAt!) > const Duration(minutes: 2)) {
       debugPrint('⏱️ Long background → full sync');
-      await fetchNotify();
+      await _safelyFetchNotify(); // 중복 fetch 방지
       return;
     }
 
