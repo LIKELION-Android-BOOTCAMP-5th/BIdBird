@@ -27,7 +27,7 @@ class ProductInfoCard extends StatefulWidget {
 }
 
 class ProductInfoCardState extends State<ProductInfoCard>
-  with FormValidationMixin, AutomaticKeepAliveClientMixin {
+    with FormValidationMixin, AutomaticKeepAliveClientMixin {
   static const String _imageLimitText =
       '최소 ${ItemImageLimits.minImageCount}장 최대 ${ItemImageLimits.maxImageCount}장';
 
@@ -146,17 +146,9 @@ class ProductInfoCardState extends State<ProductInfoCard>
                 padding: EdgeInsets.only(top: context.spacingSmall),
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: widget.viewModel.titleController,
-                    builder: (_, value, __) {
-                      return Text(
-                        '${value.text.length}/${ItemTextLimits.maxTitleLength}',
-                        style: TextStyle(
-                          fontSize: context.fontSizeSmall,
-                          color: TextSecondary,
-                        ),
-                      );
-                    },
+                  child: _CharacterCounter(
+                    controller: widget.viewModel.titleController,
+                    maxLength: ItemTextLimits.maxTitleLength,
                   ),
                 ),
               ),
@@ -169,4 +161,49 @@ class ProductInfoCardState extends State<ProductInfoCard>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+/// 글자수 카운터 위젯 - 불필요한 재빌드 최소화
+class _CharacterCounter extends StatefulWidget {
+  final TextEditingController controller;
+  final int maxLength;
+
+  const _CharacterCounter({required this.controller, required this.maxLength});
+
+  @override
+  State<_CharacterCounter> createState() => _CharacterCounterState();
+}
+
+class _CharacterCounterState extends State<_CharacterCounter> {
+  late int _length;
+
+  @override
+  void initState() {
+    super.initState();
+    _length = widget.controller.text.length;
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final newLength = widget.controller.text.length;
+    if (_length != newLength) {
+      setState(() {
+        _length = newLength;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '$_length/${widget.maxLength}',
+      style: TextStyle(fontSize: context.fontSizeSmall, color: TextSecondary),
+    );
+  }
 }
