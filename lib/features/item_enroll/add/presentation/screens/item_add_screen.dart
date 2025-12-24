@@ -269,9 +269,6 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
       builder: (context, data, _) {
         final viewModel = _viewModel;
 
-        // 키보드 감지 - MediaQuery를 직접 사용하여 setState 없이 처리
-        final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
@@ -299,9 +296,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                   Expanded(
                     child: PageView(
                       controller: _pageController,
-                      physics: isKeyboardVisible || !_canGoToNextStep(viewModel)
-                          ? const NeverScrollableScrollPhysics()
-                          : const PageScrollPhysics(),
+                      physics: const NeverScrollableScrollPhysics(),
                       onPageChanged: (index) =>
                           _handlePageChange(index, viewModel),
                       children: [
