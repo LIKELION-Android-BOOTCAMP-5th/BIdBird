@@ -124,7 +124,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
   }
 
   Future<void> pickImagesFromGallery() async {
-    final List<XFile> images = await _picker.pickMultiImage(imageQuality: 80);
+    final List<XFile> images = await _picker.pickMultiImage();
     if (images.isEmpty) {
       return;
     }
@@ -140,10 +140,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
   }
 
   Future<void> pickImageFromCamera() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-    );
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
     if (image == null) return;
 
     if (selectedImages.length >= ItemImageLimits.maxImageCount) {

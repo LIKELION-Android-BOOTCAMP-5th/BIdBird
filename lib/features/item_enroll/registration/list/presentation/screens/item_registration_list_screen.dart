@@ -48,6 +48,11 @@ class ItemRegistrationListScreen extends StatelessWidget {
     ItemRegistrationListViewModel viewModel,
     ({bool isLoading, String? error, List<ItemRegistrationData> items}) data,
   ) {
+    // 로딩 중: 배경색만 표시
+    if (data.isLoading) {
+      return Container(color: BackgroundColor);
+    }
+
     if (data.error != null) {
       return Center(child: ErrorText(text: data.error!));
     }

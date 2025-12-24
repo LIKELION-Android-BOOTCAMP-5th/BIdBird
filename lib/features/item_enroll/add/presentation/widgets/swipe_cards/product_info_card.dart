@@ -8,6 +8,7 @@ import 'package:bidbird/core/widgets/item/components/sections/square_image_uploa
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// 카드 1: 상품 정보
 class ProductInfoCard extends StatefulWidget {
@@ -86,19 +87,22 @@ class ProductInfoCardState extends State<ProductInfoCard>
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 이미지 업로드 섹션
           FormLabel(text: '상품 이미지'),
-          SquareImageUploadSection(
-            images: widget.viewModel.selectedImages,
-            onImageSourceTap: widget.onImageSourceTap,
-            onImageTap: (index) => widget.viewModel.setPrimaryImage(index),
-            onRemoveImage: (index) => widget.viewModel.removeImageAt(index),
-            primaryImageIndex: widget.viewModel.primaryImageIndex,
+          Consumer<ItemAddViewModel>(
+            builder: (context, vm, _) {
+              return SquareImageUploadSection(
+                images: vm.selectedImages,
+                onImageSourceTap: widget.onImageSourceTap,
+                onImageTap: (index) => vm.setPrimaryImage(index),
+                onRemoveImage: (index) => vm.removeImageAt(index),
+                primaryImageIndex: vm.primaryImageIndex,
+              );
+            },
           ),
           if (shouldShowErrors && _imageError != null)
             ErrorText(text: _imageError!),
@@ -115,12 +119,12 @@ class ProductInfoCardState extends State<ProductInfoCard>
           ),
           SizedBox(height: spacing),
           // 제목 입력
-          RepaintBoundary(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FormLabel(text: '제목'),
-                TextField(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FormLabel(text: '제목'),
+              RepaintBoundary(
+                child: TextField(
                   controller: widget.viewModel.titleController,
                   maxLength: ItemTextLimits.maxTitleLength,
                   decoration: widget
@@ -138,19 +142,19 @@ class ProductInfoCardState extends State<ProductInfoCard>
                     }
                   },
                 ),
-                // 글자수 표시
-                Padding(
-                  padding: EdgeInsets.only(top: context.spacingSmall),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: _CharacterCounter(
-                      controller: widget.viewModel.titleController,
-                      maxLength: ItemTextLimits.maxTitleLength,
-                    ),
+              ),
+              // 글자수 표시
+              Padding(
+                padding: EdgeInsets.only(top: context.spacingSmall),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _CharacterCounter(
+                    controller: widget.viewModel.titleController,
+                    maxLength: ItemTextLimits.maxTitleLength,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
