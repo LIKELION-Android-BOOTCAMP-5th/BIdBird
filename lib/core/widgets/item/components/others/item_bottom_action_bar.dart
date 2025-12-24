@@ -326,7 +326,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                                   if (shippingInfo != null) {
                                     // 기존 정보가 있으면 택배사만 수정 (송장 번호는 수정 불가)
                                     final existingTrackingNumber = shippingInfo['tracking_number'] as String?;
-                                    await shippingInfoRepository.updateShippingInfo(
+                                    await _shippingInfoRepository.updateShippingInfo(
                                       itemId: widget.item.itemId,
                                       carrier: carrier,
                                       trackingNumber: existingTrackingNumber ?? trackingNumber,
@@ -340,7 +340,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                                     }
                                   } else {
                                     // 기존 정보가 없으면 새로 저장
-                                    await shippingInfoRepository.saveShippingInfo(
+                                    await _shippingInfoRepository.saveShippingInfo(
                                       itemId: widget.item.itemId,
                                       carrier: carrier,
                                       trackingNumber: trackingNumber,

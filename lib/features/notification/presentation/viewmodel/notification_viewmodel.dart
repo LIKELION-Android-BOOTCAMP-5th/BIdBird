@@ -235,6 +235,7 @@ class NotificationViewmodel extends ChangeNotifier {
 
   void cancelRealtimeSubscription() {
     _notificationListRealtimeSubscriptionManager.closeSubscription();
+    notifyList.clear(); // 로그아웃 시 이전 사용자의 알림 캐시 삭제
     print("로그아웃으로 알림 채널이 닫혔습니다");
   }
 
