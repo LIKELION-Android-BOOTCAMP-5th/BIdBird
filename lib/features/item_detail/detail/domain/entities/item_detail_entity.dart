@@ -137,7 +137,7 @@ class BidHistoryItem {
 
     return BidHistoryItem(
       price: price,
-      userName: map['user_name']?.toString() ?? '익명 참여자',
+      userName: map['user_name']?.toString() ?? '',
       userId: map['user_id']?.toString() ?? '',
       createdAt: map['created_at']?.toString() ?? '',
       profileImageUrl: map['profile_image_url']?.toString(),
