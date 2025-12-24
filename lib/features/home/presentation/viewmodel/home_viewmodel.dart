@@ -155,7 +155,9 @@ class HomeViewmodel extends ChangeNotifier {
     });
   }
 
-  void _scheduleResortAndNotify({Duration delay = const Duration(milliseconds: 150)}) {
+  void _scheduleResortAndNotify({
+    Duration delay = const Duration(milliseconds: 150),
+  }) {
     if (_isDisposed) return;
     _sortDebounce?.cancel();
     _sortDebounce = Timer(delay, () {
@@ -361,7 +363,8 @@ class HomeViewmodel extends ChangeNotifier {
               item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
             }
             if (_isDisposed) return;
-            _scheduleResortAndNotify();
+            // 배치 처리: 200ms 내의 여러 업데이트를 한 번에 처리
+            _scheduleResortAndNotify(delay: const Duration(milliseconds: 200));
           },
         )
         .subscribe();

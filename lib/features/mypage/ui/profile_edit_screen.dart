@@ -35,10 +35,13 @@ class ProfileEditScreen extends StatelessWidget {
       },
       child: Builder(
         builder: (context) {
-          final vm = context.watch<ProfileEditViewModel>();
+          final vm = context.read<ProfileEditViewModel>();
+          final hasChanges = context.select<ProfileEditViewModel, bool>(
+            (vm) => vm.hasChanges,
+          );
 
           Future<bool> _handlePop() async {
-            if (!vm.hasChanges) {
+            if (!hasChanges) {
               return true;
             }
 
@@ -68,7 +71,7 @@ class ProfileEditScreen extends StatelessWidget {
           }
 
           return PopScope(
-            canPop: vm.hasChanges ? false : true,
+            canPop: hasChanges ? false : true,
             onPopInvokedWithResult: (didPop, result) {
               if (didPop) return;
               confirmAndPop();

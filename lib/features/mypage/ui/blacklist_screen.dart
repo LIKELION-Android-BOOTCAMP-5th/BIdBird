@@ -12,7 +12,8 @@ class BlacklistScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<BlacklistViewModel>();
+    final vm = context.read<BlacklistViewModel>();
+    // 필요한 속성만 선택적으로 구독하여 불필요한 리빌드 방지
 
     return Scaffold(
       backgroundColor: BackgroundColor,
@@ -42,7 +43,15 @@ class _Blacklist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (vm.isLoading) {
+    final isLoading = context.select<BlacklistViewModel, bool>(
+      (vm) => vm.isLoading,
+    );
+    final errorMessage = context.select<BlacklistViewModel, String?>(
+      (vm) => vm.errorMessage,
+    );
+    final users = context.select<BlacklistViewModel, List>((vm) => vm.users);
+
+    if (isLoading) {
       return const Center(
         child: SizedBox(
           width: 32,
@@ -52,11 +61,11 @@ class _Blacklist extends StatelessWidget {
       );
     }
 
-    if (vm.errorMessage != null) {
+    if (errorMessage != null) {
       //나중에팝업띄울거임
     }
 
-    if (vm.users.isEmpty) {
+    if (users.isEmpty) {
       return const Center(child: Text('차단한 사용자가 없습니다.'));
     }
 

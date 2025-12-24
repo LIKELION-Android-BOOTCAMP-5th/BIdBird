@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ItemRegistrationDetailDatasource {
   ItemRegistrationDetailDatasource({SupabaseClient? supabase})
-      : _supabase = supabase ?? SupabaseManager.shared.supabase;
+    : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   final SupabaseClient _supabase;
 
@@ -20,7 +20,8 @@ class ItemRegistrationDetailDatasource {
       throw Exception('잘못된 응답 형식입니다.');
     }
 
-    final images = (data['images'] as List?)
+    final images =
+        (data['images'] as List?)
             ?.whereType<String>()
             .where((e) => e.isNotEmpty)
             .toList() ??
@@ -39,7 +40,8 @@ class ItemRegistrationDetailDatasource {
 
       return getStringFromRow(row, 'terms');
     } catch (e) {
-      if (e.toString().contains('PGRST116') || e.toString().contains('No rows')) {
+      if (e.toString().contains('PGRST116') ||
+          e.toString().contains('No rows')) {
         throw Exception('약관 정보를 불러올 수 없습니다.');
       }
       rethrow;
@@ -52,10 +54,7 @@ class ItemRegistrationDetailDatasource {
 
       await _supabase.functions.invoke(
         'register-item-v2',
-        body: <String, dynamic>{
-          'itemId': itemId,
-          'userId': userId,
-        },
+        body: <String, dynamic>{'itemId': itemId, 'userId': userId},
       );
     } catch (e) {
       rethrow;
@@ -85,23 +84,13 @@ class ItemRegistrationDetailDatasource {
 
   Future<void> deleteItem(String itemId) async {
     try {
-      await ItemSecurityUtils.requireAuthAndVerifyOwnership(
-        _supabase,
-        itemId,
-      );
-
+      await ItemSecurityUtils.requireAuthAndVerifyOwnership(_supabase, itemId);
 
       // 1. item_images 삭제
-      await _supabase
-          .from('item_images')
-          .delete()
-          .eq('item_id', itemId);
+      await _supabase.from('item_images').delete().eq('item_id', itemId);
 
       // 2. items_detail 삭제
-      await _supabase
-          .from('items_detail')
-          .delete()
-          .eq('item_id', itemId);
+      await _supabase.from('items_detail').delete().eq('item_id', itemId);
     } catch (e) {
       // 에러 발생 시 상위로 전파하여 롤백 유도
       rethrow;
@@ -114,6 +103,3 @@ class _RegisterItemPayload {
 
   final List<String> images;
 }
-
-
-

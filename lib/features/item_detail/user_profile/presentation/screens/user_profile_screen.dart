@@ -16,8 +16,9 @@ class UserProfileScreen extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => UserProfileViewModel()..loadProfile(userId),
       builder: (context, _) {
-        final vm = context.watch<UserProfileViewModel>();
-        final profile = vm.profile;
+        final profile = context.select<UserProfileViewModel, dynamic>(
+          (vm) => vm.profile,
+        );
 
         return Scaffold(
           appBar: AppBar(title: const Text('프로필'), centerTitle: true),
@@ -263,6 +264,3 @@ class _UserReviewSection extends StatelessWidget {
     );
   }
 }
-
-
-
