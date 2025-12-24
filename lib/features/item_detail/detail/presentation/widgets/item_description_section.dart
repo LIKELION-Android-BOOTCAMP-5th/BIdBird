@@ -21,19 +21,27 @@ class ItemDescriptionSection extends StatefulWidget {
 class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ItemDetailViewModel>();
-    final sellerProfile = vm.sellerProfile;
-    final bids = vm.bidHistory;
+    final sellerProfile = context
+        .select<ItemDetailViewModel, Map<String, dynamic>?>(
+          (vm) => vm.sellerProfile,
+        );
+    final bids = context.select<ItemDetailViewModel, List<dynamic>>(
+      (vm) => vm.bidHistory,
+    );
 
-    final String avatarUrl = (sellerProfile?['profile_image_url'] as String?) ?? '';
+    final String avatarUrl =
+        (sellerProfile?['profile_image_url'] as String?) ?? '';
     final String rawNickname =
         (sellerProfile?['nick_name'] as String?)?.trim() ?? '';
-    final String sellerNickname =
-        rawNickname.isNotEmpty ? rawNickname : '닉네임 없음';
+    final String sellerNickname = rawNickname.isNotEmpty
+        ? rawNickname
+        : '닉네임 없음';
     final double sellerRating =
-        (sellerProfile?['rating'] as num?)?.toDouble() ?? widget.item.sellerRating;
+        (sellerProfile?['rating'] as num?)?.toDouble() ??
+        widget.item.sellerRating;
     final int sellerReviewCount =
-        (sellerProfile?['review_count'] as int?) ?? widget.item.sellerReviewCount;
+        (sellerProfile?['review_count'] as int?) ??
+        widget.item.sellerReviewCount;
 
     return Column(
       children: [
@@ -54,8 +62,9 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
                     CircleAvatar(
                       radius: 20,
                       backgroundColor: BorderColor,
-                      backgroundImage:
-                          avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      backgroundImage: avatarUrl.isNotEmpty
+                          ? NetworkImage(avatarUrl)
+                          : null,
                       child: avatarUrl.isNotEmpty
                           ? null
                           : const Icon(Icons.person, color: BackgroundColor),
@@ -220,17 +229,11 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
           children: [
             Text(
               '${index + 1}. $priceLabel$trailingLabel',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
             Text(
               relative,
-              style: const TextStyle(
-                fontSize: 11,
-                color: iconColor,
-              ),
+              style: const TextStyle(fontSize: 11, color: iconColor),
             ),
           ],
         );

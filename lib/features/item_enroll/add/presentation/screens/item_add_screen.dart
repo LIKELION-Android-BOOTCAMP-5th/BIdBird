@@ -250,10 +250,17 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // isSubmitting만 감지 - 나머지는 각 카드에서 개별 처리
-    return Selector<ItemAddViewModel, bool>(
-      selector: (_, vm) => vm.isSubmitting,
-      builder: (context, isSubmitting, _) {
+    // 이미지 개수, 제목, 제출 상태를 감지하여 버튼 활성화 상태 즉시 업데이트
+    return Selector<
+      ItemAddViewModel,
+      ({int imageCount, String title, bool isSubmitting})
+    >(
+      selector: (_, vm) => (
+        imageCount: vm.selectedImages.length,
+        title: vm.titleController.text,
+        isSubmitting: vm.isSubmitting,
+      ),
+      builder: (context, data, _) {
         final viewModel = _viewModel;
 
         return PopScope(

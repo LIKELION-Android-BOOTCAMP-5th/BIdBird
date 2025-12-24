@@ -16,9 +16,14 @@ class FavoritesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<FavoritesViewModel>();
+    final vm = context.read<FavoritesViewModel>();
+    final isLoading = context.select<FavoritesViewModel, bool>(
+      (vm) => vm.isLoading,
+    );
+    final items = context.select<FavoritesViewModel, List>((vm) => vm.items);
+
     Widget body;
-    if (vm.isLoading) {
+    if (isLoading) {
       body = const Center(
         child: SizedBox(
           width: 32,
@@ -26,14 +31,14 @@ class FavoritesScreen extends StatelessWidget {
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
       );
-    } else if (vm.items.isEmpty) {
+    } else if (items.isEmpty) {
       body = const Center(child: Text('관심 등록한 상품이 없습니다.'));
     } else {
       body = TransparentRefreshIndicator(
         onRefresh: vm.loadFavorites,
         child: ListView.separated(
           itemBuilder: (context, index) {
-            final item = vm.items[index];
+            final item = items[index];
             final bool isProcessing = vm.isProcessing(item.itemId);
             return _Item(
               item: item,
@@ -42,7 +47,7 @@ class FavoritesScreen extends StatelessWidget {
             );
           },
           separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemCount: vm.items.length,
+          itemCount: items.length,
         ),
       );
     }

@@ -16,15 +16,19 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     ConfirmRegistrationUseCase? confirmRegistrationUseCase,
     DeleteItemUseCase? deleteItemUseCase,
     FetchAllImageUrlsUseCase? fetchAllImageUrlsUseCase,
-  })  : _item = item,
-        _fetchTermsTextUseCase =
-            fetchTermsTextUseCase ?? FetchTermsTextUseCase(ItemRegistrationDetailRepositoryImpl()),
-        _confirmRegistrationUseCase = confirmRegistrationUseCase ??
-            ConfirmRegistrationUseCase(ItemRegistrationDetailRepositoryImpl()),
-        _deleteItemUseCase =
-            deleteItemUseCase ?? DeleteItemUseCase(ItemRegistrationDetailRepositoryImpl()),
-        _fetchAllImageUrlsUseCase = fetchAllImageUrlsUseCase ??
-            FetchAllImageUrlsUseCase(ItemRegistrationDetailRepositoryImpl());
+  }) : _item = item,
+       _fetchTermsTextUseCase =
+           fetchTermsTextUseCase ??
+           FetchTermsTextUseCase(ItemRegistrationDetailRepositoryImpl()),
+       _confirmRegistrationUseCase =
+           confirmRegistrationUseCase ??
+           ConfirmRegistrationUseCase(ItemRegistrationDetailRepositoryImpl()),
+       _deleteItemUseCase =
+           deleteItemUseCase ??
+           DeleteItemUseCase(ItemRegistrationDetailRepositoryImpl()),
+       _fetchAllImageUrlsUseCase =
+           fetchAllImageUrlsUseCase ??
+           FetchAllImageUrlsUseCase(ItemRegistrationDetailRepositoryImpl());
 
   final FetchTermsTextUseCase _fetchTermsTextUseCase;
   final ConfirmRegistrationUseCase _confirmRegistrationUseCase;
@@ -64,9 +68,9 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     try {
       // 모든 이미지 URL 가져오기
       final imageUrls = await _fetchAllImageUrlsUseCase(_item.id);
-      
+
       if (imageUrls.isNotEmpty) {
-        _imageUrls = imageUrls;
+        _imageUrls = List<String>.from(imageUrls); // 새로운 List 인스턴스 생성
         _imageUrl = imageUrls.first;
       } else {
         // 이미지가 없으면 thumbnailUrl 사용
@@ -124,7 +128,9 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     } catch (e) {
       if (context.mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text(ItemRegistrationErrorMessages.registrationError(e))),
+          SnackBar(
+            content: Text(ItemRegistrationErrorMessages.registrationError(e)),
+          ),
         );
       }
     } finally {
@@ -161,10 +167,11 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     } catch (e) {
       if (context.mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text(ItemRegistrationErrorMessages.deletionError(e))),
+          SnackBar(
+            content: Text(ItemRegistrationErrorMessages.deletionError(e)),
+          ),
         );
       }
     }
   }
 }
-

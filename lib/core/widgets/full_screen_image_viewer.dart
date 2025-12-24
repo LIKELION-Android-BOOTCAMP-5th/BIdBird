@@ -6,10 +6,7 @@ import 'package:flutter/material.dart';
 class FullScreenImageViewer extends StatelessWidget {
   final String imageUrl;
 
-  const FullScreenImageViewer({
-    super.key,
-    required this.imageUrl,
-  });
+  const FullScreenImageViewer({super.key, required this.imageUrl});
 
   static void show(BuildContext context, String imageUrl) {
     Navigator.of(context).push(
@@ -40,6 +37,8 @@ class FullScreenImageViewer extends StatelessWidget {
             imageUrl: imageUrl,
             cacheManager: ItemImageCacheManager.instance,
             fit: BoxFit.contain,
+            memCacheWidth: 1200,
+            memCacheHeight: 1200,
             placeholder: (context, url) => const Center(
               child: CircularProgressIndicator(
                 color: Colors.white,

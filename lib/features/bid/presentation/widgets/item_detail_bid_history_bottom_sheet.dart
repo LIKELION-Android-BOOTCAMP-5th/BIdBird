@@ -6,26 +6,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ItemDetailBidHistoryBottomSheet extends StatefulWidget {
-  const ItemDetailBidHistoryBottomSheet({
-    required this.itemId,
-    super.key,
-  });
+  const ItemDetailBidHistoryBottomSheet({required this.itemId, super.key});
 
   final String itemId;
 
   @override
-  State<ItemDetailBidHistoryBottomSheet> createState() => _ItemDetailBidHistoryBottomSheetState();
+  State<ItemDetailBidHistoryBottomSheet> createState() =>
+      _ItemDetailBidHistoryBottomSheetState();
 }
 
-enum _BidHistoryState {
-  initial,
-  loading,
-  loaded,
-  error,
-  empty,
-}
+enum _BidHistoryState { initial, loading, loaded, error, empty }
 
-class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBottomSheet> {
+class _ItemDetailBidHistoryBottomSheetState
+    extends State<ItemDetailBidHistoryBottomSheet> {
   _BidHistoryState _state = _BidHistoryState.initial;
   List<BidHistoryItem> _bidHistory = [];
   final bool _isLoadingMore = false;
@@ -45,7 +38,7 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
     if (_state == _BidHistoryState.loading) return;
 
     if (!mounted) return;
-    
+
     setState(() {
       _state = _BidHistoryState.loading;
     });
@@ -54,7 +47,7 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
       // ViewModel에서 입찰 내역 가져오기 (ViewModel은 항상 제공됨)
       final viewModel = context.read<ItemDetailViewModel>();
       List<BidHistoryItem> bids = [];
-      
+
       if (viewModel.bidHistory.isNotEmpty) {
         bids = viewModel.bidHistory;
       } else {
@@ -62,9 +55,9 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
         await viewModel.loadBidHistory();
         bids = viewModel.bidHistory;
       }
-      
+
       if (!mounted) return;
-      
+
       // 가격이 0원인 입찰은 필터링
       final filteredBids = bids.where((bid) => bid.price != 0).toList();
 
@@ -97,38 +90,36 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 28,
-              height: 3,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(1.5),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Title
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                '입찰 내역',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF191F28), // Primary Text
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                width: 28,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(1.5),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            // Content
-            Flexible(
-              child: _buildContent(),
-            ),
-            const SizedBox(height: 8),
-          ],
+              const SizedBox(height: 16),
+              // Title
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  '입찰 내역',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF191F28), // Primary Text
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Content
+              Flexible(child: _buildContent()),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -155,6 +146,7 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
       itemCount: 5,
       itemBuilder: (context, index) {
         return Padding(
+          key: ValueKey('skeleton_$index'),
           padding: const EdgeInsets.only(bottom: 16),
           child: Row(
             children: [
@@ -228,7 +220,10 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3182F6), // Primary Blue
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                 ),
                 child: const Text('재시도'),
               ),
@@ -266,9 +261,7 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
         if (index >= _bidHistory.length) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(
-              child: CircularProgressIndicator(),
-            ),
+            child: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -285,16 +278,16 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isWinner 
-                ? const Color(0xFFFFF9E6) // 낙찰자: 연한 금색 배경
-                : const Color(0xFFF2F4F6), // 일반: Subtle Gray Fill
+              color: isWinner
+                  ? const Color(0xFFFFF9E6) // 낙찰자: 연한 금색 배경
+                  : const Color(0xFFF2F4F6), // 일반: Subtle Gray Fill
               borderRadius: BorderRadius.circular(12),
-              border: isWinner 
-                ? Border.all(
-                    color: const Color(0xFFFFD700), // 금색 테두리
-                    width: 1.5,
-                  )
-                : null,
+              border: isWinner
+                  ? Border.all(
+                      color: const Color(0xFFFFD700), // 금색 테두리
+                      width: 1.5,
+                    )
+                  : null,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,32 +297,32 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isWinner 
-                      ? const Color(0xFFFFD700) // 낙찰자: 금색
-                      : Colors.white,
+                    color: isWinner
+                        ? const Color(0xFFFFD700) // 낙찰자: 금색
+                        : Colors.white,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isWinner 
-                        ? const Color(0xFFFFA500) // 낙찰자: 진한 금색 테두리
-                        : const Color(0xFFE5E7EB),
+                      color: isWinner
+                          ? const Color(0xFFFFA500) // 낙찰자: 진한 금색 테두리
+                          : const Color(0xFFE5E7EB),
                       width: 1,
                     ),
                   ),
                   child: Center(
-                    child: isWinner 
-                      ? const Icon(
-                          Icons.emoji_events, // 트로피 아이콘
-                          size: 18,
-                          color: Colors.white,
-                        )
-                      : Text(
-                          '$bidIndex',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF3182F6), // Primary Blue
+                    child: isWinner
+                        ? const Icon(
+                            Icons.emoji_events, // 트로피 아이콘
+                            size: 18,
+                            color: Colors.white,
+                          )
+                        : Text(
+                            '$bidIndex',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF3182F6), // Primary Blue
+                            ),
                           ),
-                        ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -346,9 +339,9 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: isWinner 
-                                ? const Color(0xFFF59E0B) // 낙찰자: 금색
-                                : const Color(0xFF191F28), // Primary Text
+                              color: isWinner
+                                  ? const Color(0xFFF59E0B) // 낙찰자: 금색
+                                  : const Color(0xFF191F28), // Primary Text
                             ),
                           ),
                           if (isWinner) ...[
@@ -380,11 +373,13 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
                         userName.isNotEmpty ? userName : '닉네임 정보 없음',
                         style: TextStyle(
                           fontSize: 13,
-                          color: userName.isNotEmpty 
-                            ? (isWinner 
-                                ? const Color(0xFF92400E) // 낙찰자: 진한 금색
-                                : const Color(0xFF6B7684)) // 일반: Secondary Text
-                            : const Color(0xFFB0B8C0), // Light Gray (정보 없음)
+                          color: userName.isNotEmpty
+                              ? (isWinner
+                                    ? const Color(0xFF92400E) // 낙찰자: 진한 금색
+                                    : const Color(
+                                        0xFF6B7684,
+                                      )) // 일반: Secondary Text
+                              : const Color(0xFFB0B8C0), // Light Gray (정보 없음)
                         ),
                       ),
                     ],
@@ -395,9 +390,9 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
                   relative,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isWinner 
-                      ? const Color(0xFF92400E) // 낙찰자: 진한 금색
-                      : const Color(0xFF6B7684), // Secondary Text
+                    color: isWinner
+                        ? const Color(0xFF92400E) // 낙찰자: 진한 금색
+                        : const Color(0xFF6B7684), // Secondary Text
                   ),
                 ),
               ],
@@ -408,4 +403,3 @@ class _ItemDetailBidHistoryBottomSheetState extends State<ItemDetailBidHistoryBo
     );
   }
 }
-

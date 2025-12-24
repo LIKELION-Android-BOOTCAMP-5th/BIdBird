@@ -50,7 +50,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: blueColor),
                   onPressed: () {
-                    context.read<ItemRegistrationDetailViewModel>().deleteItem(context);
+                    context.read<ItemRegistrationDetailViewModel>().deleteItem(
+                      context,
+                    );
                   },
                 ),
                 IconButton(
@@ -78,7 +80,10 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Selector<ItemRegistrationDetailViewModel, List<String>>(
+                          Selector<
+                            ItemRegistrationDetailViewModel,
+                            List<String>
+                          >(
                             selector: (_, vm) => vm.imageUrls,
                             builder: (context, imageUrls, _) {
                               return _buildImageSection(context, imageUrls);
@@ -109,10 +114,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection(
-    BuildContext context,
-    List<String> imageUrls,
-  ) {
+  Widget _buildImageSection(BuildContext context, List<String> imageUrls) {
     final hasImages = imageUrls.isNotEmpty;
 
     return Container(
@@ -244,10 +246,7 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomButton(
-    BuildContext context,
-    bool isSubmitting,
-  ) {
+  Widget _buildBottomButton(BuildContext context, bool isSubmitting) {
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -271,7 +270,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                   cancelText: '취소',
                   onConfirm: (checked) async {
                     if (!checked) return;
-                    await context.read<ItemRegistrationDetailViewModel>().confirmRegistration(context);
+                    await context
+                        .read<ItemRegistrationDetailViewModel>()
+                        .confirmRegistration(context);
                   },
                   onCancel: () {},
                 );
@@ -358,16 +359,22 @@ class _ImageGalleryState extends State<_ImageGallery> {
                       imageUrl: displayUrl,
                       cacheManager: ItemImageCacheManager.instance,
                       fit: BoxFit.contain,
-                      // 이미지 디코딩 최적화: 화면 크기에 맞게 리사이징하여 메모리 사용량 감소
-                      maxWidthDiskCache: 1080,
-                      maxHeightDiskCache: 1440,
-                      memCacheWidth: (MediaQuery.of(context).size.width * MediaQuery.of(context).devicePixelRatio).round(),
-                      memCacheHeight: ((MediaQuery.of(context).size.width * 4 / 3) * MediaQuery.of(context).devicePixelRatio).round(),
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.shade200,
-                      ),
+                      // 메모리 캐시 최적화: 화면 크기에 맞게 리사이징하여 메모리 사용량 감소
+                      memCacheWidth:
+                          (MediaQuery.of(context).size.width *
+                                  MediaQuery.of(context).devicePixelRatio)
+                              .round(),
+                      memCacheHeight:
+                          ((MediaQuery.of(context).size.width * 4 / 3) *
+                                  MediaQuery.of(context).devicePixelRatio)
+                              .round(),
+                      placeholder: (context, url) =>
+                          Container(color: Colors.grey.shade200),
                       errorWidget: (context, url, error) => Container(
                         color: Colors.grey.shade200,
+                        child: const Center(
+                          child: Icon(Icons.error_outline, size: 48),
+                        ),
                       ),
                     ),
                   ),

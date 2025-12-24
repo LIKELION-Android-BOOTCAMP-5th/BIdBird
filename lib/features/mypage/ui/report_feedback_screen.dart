@@ -15,6 +15,7 @@ class ReportFeedbackScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // VM 전체를 사용: _ReportItemList에 전달하기 위해 필요
     final vm = context.watch<ReportFeedbackViewModel>();
 
     return Scaffold(
@@ -149,8 +150,9 @@ class _ReportCode extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: ReportFeedbackUiHelper.getReportCodeColor(reportCode)
-            .withValues(alpha: 0.1),
+        color: ReportFeedbackUiHelper.getReportCodeColor(
+          reportCode,
+        ).withValues(alpha: 0.1),
         borderRadius: defaultBorder,
       ),
       child: Text(

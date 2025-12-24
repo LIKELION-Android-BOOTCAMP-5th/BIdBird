@@ -203,6 +203,8 @@ class _PaymentDetailBody extends StatelessWidget {
                               imageUrl: imageUrl,
                               cacheManager: ItemImageCacheManager.instance,
                               fit: BoxFit.cover,
+                              memCacheWidth: 600,
+                              memCacheHeight: 600,
                               placeholder: (context, url) => Container(
                                 color: ImageBackgroundColor,
                                 alignment: Alignment.center,

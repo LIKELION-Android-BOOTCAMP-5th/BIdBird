@@ -31,15 +31,21 @@ class _TradeStatusScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<TradeStatusViewModel>();
+    final viewModel = context.read<TradeStatusViewModel>();
+    final isLoading = context.select<TradeStatusViewModel, bool>(
+      (vm) => vm.isLoading,
+    );
+    final error = context.select<TradeStatusViewModel, String?>(
+      (vm) => vm.error,
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('거래 현황'), centerTitle: true),
       backgroundColor: BackgroundColor,
       body: SafeArea(
-        child: viewModel.isLoading
+        child: isLoading
             ? const SizedBox.shrink()
-            : viewModel.error != null
+            : error != null
             ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
