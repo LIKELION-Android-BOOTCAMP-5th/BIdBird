@@ -31,9 +31,12 @@ class DurationChipSelector extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
+        // context 값 캐싱 - 모든 duration chip에서 사용
         final spacing = context.spacingSmall;
+        final inputPadding = context.inputPadding;
+        final fontSizeSmall = context.fontSizeSmall;
         final chipWidth = (availableWidth - (spacing * 3)) / 4; // 4개 배치: 간격 3개
-        
+
         return Wrap(
           spacing: spacing,
           runSpacing: spacing,
@@ -48,8 +51,8 @@ class DurationChipSelector extends StatelessWidget {
                 },
                 child: Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: context.inputPadding,
-                    vertical: context.spacingSmall,
+                    horizontal: inputPadding,
+                    vertical: spacing,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
@@ -67,7 +70,7 @@ class DurationChipSelector extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: context.fontSizeSmall,
+                      fontSize: fontSizeSmall,
                       color: isSelected ? blueColor : textColor,
                       fontWeight: isSelected
                           ? FontWeight.w600
@@ -83,6 +86,3 @@ class DurationChipSelector extends StatelessWidget {
     );
   }
 }
-
-
-
