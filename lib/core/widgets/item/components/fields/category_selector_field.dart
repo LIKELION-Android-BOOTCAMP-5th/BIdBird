@@ -44,19 +44,20 @@ class CategorySelectorField extends StatelessWidget {
       if (categories.isEmpty) {
         return '카테고리 선택';
       }
-      
+
       KeywordTypeEntity? foundCategory;
       for (final category in categories) {
-        if (category is KeywordTypeEntity && category.id == selectedCategoryId) {
+        if (category is KeywordTypeEntity &&
+            category.id == selectedCategoryId) {
           foundCategory = category;
           break;
         }
       }
-      
+
       if (foundCategory == null) {
         return '카테고리 선택';
       }
-      
+
       return foundCategory.title;
     } catch (e) {
       return '카테고리 선택';
@@ -65,23 +66,23 @@ class CategorySelectorField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inputPadding = context.inputPadding;
+    final iconSizeSmall = context.iconSizeSmall;
+    final fontSizeSmall = context.fontSizeSmall;
+
     if (isLoading) {
       return Container(
         height: 48,
         alignment: Alignment.centerLeft,
-        padding: EdgeInsets.symmetric(
-          horizontal: context.inputPadding,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: inputPadding),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(defaultRadius),
-          border: Border.all(
-            color: hasError ? RedColor : BackgroundColor,
-          ),
+          border: Border.all(color: hasError ? RedColor : BackgroundColor),
         ),
         child: SizedBox(
-          height: context.iconSizeSmall,
-          width: context.iconSizeSmall,
+          height: iconSizeSmall,
+          width: iconSizeSmall,
           child: const CircularProgressIndicator(strokeWidth: 2),
         ),
       );
@@ -104,9 +105,7 @@ class CategorySelectorField extends StatelessWidget {
       },
       child: Container(
         height: 48,
-        padding: EdgeInsets.symmetric(
-          horizontal: context.inputPadding,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: inputPadding),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(defaultRadius),
@@ -114,8 +113,8 @@ class CategorySelectorField extends StatelessWidget {
             color: hasError
                 ? RedColor
                 : selectedCategoryId != null
-                    ? blueColor
-                    : BackgroundColor,
+                ? blueColor
+                : BackgroundColor,
           ),
         ),
         child: Row(
@@ -126,19 +125,15 @@ class CategorySelectorField extends StatelessWidget {
                 child: Text(
                   _getSelectedCategoryTitle(),
                   style: TextStyle(
-                    fontSize: context.fontSizeSmall,
-                    color: selectedCategoryId != null
-                        ? textColor
-                        : iconColor,
+                    fontSize: fontSizeSmall,
+                    color: selectedCategoryId != null ? textColor : iconColor,
                   ),
                 ),
               ),
             ),
             Icon(
               Icons.keyboard_arrow_down,
-              color: selectedCategoryId != null
-                  ? blueColor
-                  : iconColor,
+              color: selectedCategoryId != null ? blueColor : iconColor,
             ),
           ],
         ),
@@ -146,4 +141,3 @@ class CategorySelectorField extends StatelessWidget {
     );
   }
 }
-

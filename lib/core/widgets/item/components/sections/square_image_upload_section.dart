@@ -37,20 +37,10 @@ class SquareImageUploadSection extends StatefulWidget {
 
 class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
   final PageController _pageController = PageController();
-  late final double _dpr;
 
   @override
   void initState() {
     super.initState();
-    // devicePixelRatio는 변하지 않으므로 한 번만 계산
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {
-          _dpr = MediaQuery.of(context).devicePixelRatio;
-        });
-      }
-    });
-    _dpr = 2.0; // 기본값
   }
 
   @override
@@ -67,8 +57,8 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
     double targetLogicalSize,
   ) {
     final bool isVideo = isVideoFile(image.path);
-    // 기기 해상도에 맞춘 디코딩 크기 제한 (캐싱된 값 사용)
-    final int targetPx = (targetLogicalSize * _dpr).round();
+    // 미리보기용 고정 크기로 디코딩 (성능 최적화)
+    const int targetPx = 600;
 
     return GestureDetector(
       onTap: () => widget.onImageTap(index),
@@ -94,7 +84,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                       fit: BoxFit.cover,
                       cacheWidth: targetPx,
                       cacheHeight: targetPx,
-                      filterQuality: FilterQuality.low,
+                      gaplessPlayback: true,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
                           color: BackgroundColor,
@@ -171,21 +161,28 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.file_upload_outlined,
-            color: iconColor,
-            size: context.iconSizeMedium,
-          ),
-          SizedBox(height: context.spacingSmall),
-          Text(
-            '이미지를 업로드하세요',
-            style: TextStyle(fontSize: context.fontSizeSmall, color: iconColor),
-          ),
-        ],
+    return GestureDetector(
+      onTap: widget.onImageSourceTap,
+      behavior: HitTestBehavior.opaque,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.file_upload_outlined,
+              color: iconColor,
+              size: context.iconSizeMedium,
+            ),
+            SizedBox(height: context.spacingSmall),
+            Text(
+              '이미지를 업로드하세요',
+              style: TextStyle(
+                fontSize: context.fontSizeSmall,
+                color: iconColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

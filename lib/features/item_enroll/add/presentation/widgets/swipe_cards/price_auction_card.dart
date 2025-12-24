@@ -104,18 +104,17 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
 
     return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 시작가 입력
-          RepaintBoundary(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                FormLabel(text: '시작가 (원)'),
-                TextField(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FormLabel(text: '시작가 (원)'),
+              RepaintBoundary(
+                child: TextField(
                   controller: widget.viewModel.startPriceController,
                   keyboardType: TextInputType.number,
                   decoration: widget
@@ -138,8 +137,8 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
                     }
                   },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           // SizedBox(height: spacing),
           // // 즉시 구매가 체크박스 - 주석 처리됨
@@ -193,15 +192,20 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               FormLabel(text: '경매 기간'),
-              DurationChipSelector(
-                durations: widget.viewModel.durations,
-                selectedDuration: widget.viewModel.selectedDuration,
-                onDurationSelected: (duration) {
-                  widget.viewModel.setSelectedDuration(duration);
+              Selector<ItemAddViewModel, String?>(
+                selector: (_, vm) => vm.selectedDuration,
+                builder: (context, selectedDuration, _) {
+                  return DurationChipSelector(
+                    durations: widget.viewModel.durations,
+                    selectedDuration: selectedDuration,
+                    onDurationSelected: (duration) {
+                      widget.viewModel.setSelectedDuration(duration);
+                    },
+                    onErrorCleared: shouldShowErrors && _durationError != null
+                        ? () => clearError(() => _durationError = null)
+                        : null,
+                  );
                 },
-                onErrorCleared: shouldShowErrors && _durationError != null
-                    ? () => clearError(() => _durationError = null)
-                    : null,
               ),
               if (shouldShowErrors && _durationError != null)
                 ErrorText(text: _durationError!),
