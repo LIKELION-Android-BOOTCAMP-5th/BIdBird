@@ -9,6 +9,26 @@ class ItemRegistrationDetailDatasource {
 
   final SupabaseClient _supabase;
 
+  Future<_RegisterItemPayload> _fetchRegisterItem(String itemId) async {
+    final response = await _supabase.functions.invoke(
+      'get-register-item',
+      body: <String, dynamic>{'itemId': itemId},
+    );
+
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw Exception('잘못된 응답 형식입니다.');
+    }
+
+    final images = (data['images'] as List?)
+            ?.whereType<String>()
+            .where((e) => e.isNotEmpty)
+            .toList() ??
+        <String>[];
+
+    return _RegisterItemPayload(images: images);
+  }
+
   Future<String> fetchTermsText() async {
     try {
       final Map<String, dynamic> row = await _supabase
@@ -44,50 +64,21 @@ class ItemRegistrationDetailDatasource {
 
   Future<String?> fetchFirstImageUrl(String itemId) async {
     try {
-      final List<dynamic> imageRows = await _supabase
-          .from('item_images')
-          .select('image_url')
-          .eq('item_id', itemId)
-          .order('sort_order', ascending: true)
-          .limit(1);
-
-      if (imageRows.isEmpty) {
-        return null;
+      final payload = await _fetchRegisterItem(itemId);
+      if (payload.images.isNotEmpty) {
+        return payload.images.first;
       }
-
-      final firstRow = imageRows.first;
-      if (firstRow is Map<String, dynamic>) {
-        final imageUrl = getNullableStringFromRow(firstRow, 'image_url');
-        if (imageUrl != null && imageUrl.isNotEmpty) {
-          return imageUrl;
-        }
-      }
-
       return null;
     } catch (e) {
-      // 이미지 조회 실패 시 null 반환
       return null;
     }
   }
 
   Future<List<String>> fetchAllImageUrls(String itemId) async {
     try {
-      final List<dynamic> imageRows = await _supabase
-          .from('item_images')
-          .select('image_url')
-          .eq('item_id', itemId)
-          .order('sort_order', ascending: true);
-
-      final List<String> imageUrls = imageRows
-          .whereType<Map<String, dynamic>>()
-          .map((row) => getNullableStringFromRow(row, 'image_url'))
-          .whereType<String>()
-          .where((url) => url.isNotEmpty)
-          .toList();
-
-      return imageUrls;
+      final payload = await _fetchRegisterItem(itemId);
+      return payload.images;
     } catch (e) {
-      // 이미지 조회 실패 시 빈 리스트 반환
       return [];
     }
   }
@@ -116,6 +107,12 @@ class ItemRegistrationDetailDatasource {
       rethrow;
     }
   }
+}
+
+class _RegisterItemPayload {
+  _RegisterItemPayload({required this.images});
+
+  final List<String> images;
 }
 
 
