@@ -4,92 +4,119 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CurrentTradeDatasource {
   CurrentTradeDatasource({SupabaseClient? supabase})
-      : _supabase = supabase ?? SupabaseManager.shared.supabase;
+    : _supabase = supabase ?? SupabaseManager.shared.supabase;
 
   final SupabaseClient _supabase;
 
-  Future<List<BidHistoryItem>> fetchMyBidHistory() async {
+  /// 입찰 내역 + 판매 내역을 한 번에 불러오기 (직접 RPC 호출)
+  Future<
+    ({
+      List<BidHistoryItem> bidHistory,
+      List<SaleHistoryItem> saleHistory,
+      Map<String, dynamic> pagination,
+    })
+  >
+  fetchMyCurrentTrades({int page = 1, int limit = 20}) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return [];
+    if (user == null) {
+      return (
+        bidHistory: <BidHistoryItem>[],
+        saleHistory: <SaleHistoryItem>[],
+        pagination: <String, dynamic>{},
+      );
+    }
 
     try {
-      final response = await _supabase.functions.invoke(
-        'get-my-current-bid',
+      // 직접 RPC 호출 (엣지 함수 제거)
+      final result = await _supabase.rpc(
+        'get_my_current_trades',
+        params: {'p_page': page, 'p_limit': limit},
       );
 
-      if (response.data == null) {
-        return [];
+      if (result == null) {
+        return (
+          bidHistory: <BidHistoryItem>[],
+          saleHistory: <SaleHistoryItem>[],
+          pagination: <String, dynamic>{},
+        );
       }
 
-      final responseData = response.data as Map<String, dynamic>;
-      
-      if (responseData['success'] == true && responseData['data'] != null) {
-        final List<dynamic> bidHistoryList = responseData['data'] as List<dynamic>;
-        return bidHistoryList
-            .map((item) {
-              final map = item as Map<String, dynamic>;
-              return BidHistoryItem(
-                itemId: map['itemId']?.toString() ?? '',
-                title: map['title']?.toString() ?? '',
-                price: (map['price'] as num?)?.toInt() ?? 0,
-                thumbnailUrl: map['thumbnailUrl']?.toString(),
-                status: map['status']?.toString() ?? '',
-                tradeStatusCode: map['tradeStatusCode'] as int?,
-                auctionStatusCode: map['auctionStatusCode'] as int?,
-                hasShippingInfo: map['hasShippingInfo'] as bool? ?? false,
-              );
-            })
-            .toList();
+      final resultData = result as Map<String, dynamic>;
+
+      if (resultData['error'] != null) {
+        return (
+          bidHistory: <BidHistoryItem>[],
+          saleHistory: <SaleHistoryItem>[],
+          pagination: <String, dynamic>{},
+        );
       }
 
-      return [];
+      final bidHistoryList = (resultData['bidHistory'] as List<dynamic>?) ?? [];
+      final saleHistoryList =
+          (resultData['saleHistory'] as List<dynamic>?) ?? [];
+      final pagination =
+          (resultData['pagination'] as Map<String, dynamic>?) ??
+          <String, dynamic>{};
+
+      // 입찰 내역 파싱
+      final List<BidHistoryItem> bidHistory = bidHistoryList.map((item) {
+        final map = item as Map<String, dynamic>;
+        return BidHistoryItem(
+          itemId: map['itemId']?.toString() ?? '',
+          title: map['title']?.toString() ?? '',
+          price: (map['price'] as num?)?.toInt() ?? 0,
+          thumbnailUrl: map['thumbnailUrl']?.toString(),
+          status: map['status']?.toString() ?? '',
+          tradeStatusCode: map['tradeStatusCode'] as int?,
+          auctionStatusCode: map['auctionStatusCode'] as int?,
+          hasShippingInfo: map['hasShippingInfo'] as bool? ?? false,
+        );
+      }).toList();
+
+      // 판매 내역 파싱
+      final List<SaleHistoryItem> saleHistory = saleHistoryList.map((item) {
+        final map = item as Map<String, dynamic>;
+        return SaleHistoryItem(
+          itemId: map['itemId']?.toString() ?? '',
+          title: map['title']?.toString() ?? '',
+          price: (map['price'] as num?)?.toInt() ?? 0,
+          thumbnailUrl: map['thumbnailUrl']?.toString(),
+          status: map['status']?.toString() ?? '',
+          date: map['date']?.toString() ?? '',
+          tradeStatusCode: map['tradeStatusCode'] as int?,
+          auctionStatusCode: map['auctionStatusCode'] as int?,
+          hasShippingInfo: map['hasShippingInfo'] as bool? ?? false,
+        );
+      }).toList();
+
+      return (
+        bidHistory: bidHistory,
+        saleHistory: saleHistory,
+        pagination: pagination,
+      );
     } catch (e) {
-      rethrow;
+      return (
+        bidHistory: <BidHistoryItem>[],
+        saleHistory: <SaleHistoryItem>[],
+        pagination: <String, dynamic>{},
+      );
     }
   }
 
-  Future<List<SaleHistoryItem>> fetchMySaleHistory() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return [];
+  /// 이전 메서드들 (호환성 유지)
+  Future<List<BidHistoryItem>> fetchMyBidHistory({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final result = await fetchMyCurrentTrades(page: page, limit: limit);
+    return result.bidHistory;
+  }
 
-    try {
-      final response = await _supabase.functions.invoke(
-        'get-my-current-sale',
-      );
-
-      if (response.data == null) {
-        return [];
-      }
-
-      final responseData = response.data as Map<String, dynamic>;
-      
-      if (responseData['success'] == true && responseData['data'] != null) {
-        final List<dynamic> saleHistoryList = responseData['data'] as List<dynamic>;
-        return saleHistoryList
-            .map((item) {
-              final map = item as Map<String, dynamic>;
-              return SaleHistoryItem(
-                itemId: map['itemId']?.toString() ?? '',
-                title: map['title']?.toString() ?? '',
-                price: (map['price'] as num?)?.toInt() ?? 0,
-                thumbnailUrl: map['thumbnailUrl']?.toString(),
-                status: map['status']?.toString() ?? '',
-                date: map['date']?.toString() ?? '',
-                tradeStatusCode: map['tradeStatusCode'] as int?,
-                auctionStatusCode: map['auctionStatusCode'] as int?,
-                hasShippingInfo: map['hasShippingInfo'] as bool? ?? false,
-              );
-            })
-            .toList();
-      }
-
-      return [];
-    } catch (e) {
-      rethrow;
-    }
+  Future<List<SaleHistoryItem>> fetchMySaleHistory({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final result = await fetchMyCurrentTrades(page: page, limit: limit);
+    return result.saleHistory;
   }
 }
-
-
-
-

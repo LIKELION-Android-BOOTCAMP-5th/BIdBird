@@ -75,7 +75,17 @@ class ActionHub extends StatelessWidget {
         .map((e) => ActionHubItem(actionType: e.key, count: e.value))
         .toList();
     
-    combinedItems.sort((a, b) => b.count.compareTo(a.count));
+    // 액션 타입 순서 정렬: paymentWaiting (낙찰받은 물품) → shippingInfoRequired (판매물품)
+    combinedItems.sort((a, b) {
+      const typeOrder = {
+        TradeActionType.paymentWaiting: 0,
+        TradeActionType.shippingInfoRequired: 1,
+        TradeActionType.purchaseConfirmRequired: 2,
+        TradeActionType.paymentRequired: 3,
+        TradeActionType.none: 4,
+      };
+      return (typeOrder[a.actionType] ?? 999).compareTo(typeOrder[b.actionType] ?? 999);
+    });
     
     // 전체 건수 계산 (0건이어도 표시)
     final totalCount = combinedItems.fold<int>(0, (sum, item) => sum + item.count);

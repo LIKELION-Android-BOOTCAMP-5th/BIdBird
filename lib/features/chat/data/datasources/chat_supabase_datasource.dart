@@ -1,6 +1,5 @@
 import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/features/chat/data/managers/chat_message_cache_manager.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
@@ -16,84 +15,35 @@ class ChatSupabaseDatasource {
   static const String _roomUserTable = 'chatting_room_users';
 
   final SupabaseClient _supabase;
-  final _cacheManager = ChatMessageCacheManager();
 
   Future<List<ChatMessageEntity>> getMessages(
-    String chattingRoomId, {
-    bool forceRefresh = false,
-  }) async {
-    // 먼저 캐시에서 불러오기
-    final cachedMessages = await _cacheManager.getCachedMessages(
-      chattingRoomId,
-    );
-
-    // 강제 새로고침이 아니고 캐시가 있으면 마지막 메시지 시간 확인
-    if (!forceRefresh && cachedMessages.isNotEmpty) {
-      final cachedLastTime = await _cacheManager.getLastMessageTime(
-        chattingRoomId,
-      );
-      if (cachedLastTime != null) {
-        // 캐시된 마지막 메시지 시간과 현재 캐시의 마지막 메시지 시간 비교
-        final cachedLastMessage = cachedMessages.isNotEmpty
-            ? cachedMessages.first.createdAt
-            : null;
-
-        // 캐시된 시간과 일치하면 네트워크 호출 생략
-        if (cachedLastMessage == cachedLastTime) {
-          return cachedMessages;
-        }
-      }
-    }
-
+    String chattingRoomId,
+  ) async {
     try {
-      // Edge Function 호출
-      final response = await _supabase.functions.invoke(
-        'get-messages',
-        body: {'roomId': chattingRoomId, 'page': 1, 'limit': 20},
+      final response = await _supabase.rpc(
+        'get_messages_v2',
+        params: {
+          '_room_id': chattingRoomId,
+          '_page': 1,
+          '_limit': 20,
+        },
       );
 
-      final data = response.data;
-      if (data != null) {
-        if (data is Map && data.containsKey('error')) {
-          // 에러 발생 시 캐시 반환
-          if (cachedMessages.isNotEmpty) {
-            return cachedMessages;
-          }
-          return List.empty();
-        }
-
-        if (data is List) {
-          final List<ChatMessageEntity> results = data.map((json) {
-            return ChatMessageEntity.fromJson(json);
-          }).toList();
-
-          // 네트워크에서 가져온 메시지를 캐시에 저장
-          await _cacheManager.saveMessagesToCache(chattingRoomId, results);
-
-          // 마지막 메시지 시간 저장 (변경 감지용)
-          if (results.isNotEmpty) {
-            await _cacheManager.saveLastMessageTime(
-              chattingRoomId,
-              results.first.createdAt,
-            );
-          }
-
-          return results;
-        }
+      if (response is Map && response.containsKey('error')) {
+        return List.empty();
       }
 
-      // 네트워크에서 메시지가 없으면 캐시 반환
-      if (cachedMessages.isNotEmpty) {
-        return cachedMessages;
+      if (response is List) {
+        final List<ChatMessageEntity> results = response.map((json) {
+          return ChatMessageEntity.fromJson(json as Map<String, dynamic>);
+        }).toList();
+        return results;
       }
+
+      return List.empty();
     } catch (e) {
-      // 네트워크 오류 시 캐시 반환
-      if (cachedMessages.isNotEmpty) {
-        return cachedMessages;
-      }
       return List.empty();
     }
-    return List.empty();
   }
 
   Future<List<ChatMessageEntity>> getOlderMessages({
@@ -102,27 +52,24 @@ class ChatSupabaseDatasource {
     int limit = 50,
   }) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'get-older-messages',
-        body: {
-          'roomId': roomId,
-          'beforeCreatedAt': beforeCreatedAtIso,
-          'limit': limit,
+      final response = await _supabase.rpc(
+        'get_older_messages_v2',
+        params: {
+          '_room_id': roomId,
+          '_before_created_at': beforeCreatedAtIso,
+          '_limit': limit,
         },
       );
 
-      final data = response.data;
-      if (data != null) {
-        if (data is Map && data.containsKey('error')) {
-          return List.empty();
-        }
+      if (response is Map && response.containsKey('error')) {
+        return List.empty();
+      }
 
-        if (data is List) {
-          final List<ChatMessageEntity> results = data.map((json) {
-            return ChatMessageEntity.fromJson(json);
-          }).toList();
-          return results;
-        }
+      if (response is List) {
+        final List<ChatMessageEntity> results = response.map((json) {
+          return ChatMessageEntity.fromJson(json as Map<String, dynamic>);
+        }).toList();
+        return results;
       }
 
       return List.empty();
@@ -246,19 +193,21 @@ class ChatSupabaseDatasource {
     int limit = 20,
   }) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'get-chat-list',
-        body: {'page': page, 'limit': limit},
+      final response = await _supabase.rpc(
+        'get_chat_list_v2',
+        params: {
+          '_page': page,
+          '_limit': limit,
+        },
       );
 
-      final data = response.data;
-      if (data == null) {
+      if (response is Map && response.containsKey('error')) {
         return List.empty();
       }
 
-      if (data is List) {
-        final List<ChattingRoomEntity> results = data.map((json) {
-          return ChattingRoomEntity.fromJson(json);
+      if (response is List) {
+        final List<ChattingRoomEntity> results = response.map((json) {
+          return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
         }).toList();
         return results;
       }
@@ -271,13 +220,16 @@ class ChatSupabaseDatasource {
 
   Future<ChattingRoomEntity?> fetchNewChattingRoom(String roomId) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'get-new-chat-room',
-        body: {'room_id': roomId},
+      final response = await _supabase.rpc(
+        'get_new_chat_room_v2',
+        params: {'_room_id': roomId},
       );
-      final data = response.data;
-      if (data == null) return null;
-      final result = ChattingRoomEntity.fromJson(data);
+
+      if (response is Map && response.containsKey('error')) {
+        return null;
+      }
+
+      final result = ChattingRoomEntity.fromJson(response as Map<String, dynamic>);
       return result;
     } catch (e) {
       return null;
@@ -286,12 +238,16 @@ class ChatSupabaseDatasource {
 
   Future<RoomInfoEntity?> fetchRoomInfo(String itemId) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'get-room-info',
-        body: {'itemId': itemId},
+      final response = await _supabase.rpc(
+        'get_room_info_v2',
+        params: {'_item_id': itemId},
       );
-      final data = response.data;
-      final result = RoomInfoEntity.fromJson(data);
+
+      if (response is Map && response.containsKey('error')) {
+        return null;
+      }
+
+      final result = RoomInfoEntity.fromJson(response as Map<String, dynamic>);
       return result;
     } catch (e) {
       return null;
@@ -300,12 +256,16 @@ class ChatSupabaseDatasource {
 
   Future<RoomInfoEntity?> fetchRoomInfoWithRoomId(String roomId) async {
     try {
-      final response = await _supabase.functions.invoke(
-        'get-room-info',
-        body: {'roomId': roomId},
+      final response = await _supabase.rpc(
+        'get_room_info_v2',
+        params: {'_room_id': roomId},
       );
-      final data = response.data;
-      final result = RoomInfoEntity.fromJson(data);
+
+      if (response is Map && response.containsKey('error')) {
+        return null;
+      }
+
+      final result = RoomInfoEntity.fromJson(response as Map<String, dynamic>);
       return result;
     } catch (e) {
       return null;
@@ -323,27 +283,44 @@ class ChatSupabaseDatasource {
     }
 
     try {
-      final body = <String, dynamic>{
-        'itemId': itemId,
-        'message_type': messageType,
+      final params = <String, dynamic>{
+        '_item_id': itemId,
+        '_message_type': messageType,
       };
 
       if (messageType == "text" && message != null) {
-        body['message'] = message;
+        params['_message'] = message;
       } else if (messageType == "image" && imageUrl != null) {
-        body['imageUrl'] = imageUrl;
+        params['_image_url'] = imageUrl;
       }
 
-      final response = await _supabase.functions.invoke(
-        'create-chat-room',
-        body: body,
+      final response = await _supabase.rpc(
+        'create_chat_room_v2',
+        params: params,
       );
 
-      if (response.data == null) return null;
-      final data = response.data['room_id'] as String;
-      return data;
+      if (response is Map && response.containsKey('error')) {
+        return null;
+      }
+
+      if (response is Map && response.containsKey('room_id')) {
+        return response['room_id'] as String;
+      }
+
+      return null;
     } catch (e) {
       return null;
+    }
+  }
+
+  Future<void> leaveChatRoom(String roomId) async {
+    try {
+      await _supabase.rpc(
+        'leave_chat_room_v2',
+        params: {'_room_id': roomId},
+      );
+    } catch (e) {
+      // 채팅방 나가기 실패 시 무시
     }
   }
 

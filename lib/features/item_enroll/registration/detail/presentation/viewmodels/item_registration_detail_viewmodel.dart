@@ -51,6 +51,15 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
   bool _isLoadingImage = false;
   bool get isLoadingImage => _isLoadingImage;
 
+  // 이미지 URL 캐시 추가
+  Map<String, List<String>>? _imageUrlCache;
+  DateTime? _imageUrlCacheTime;
+  static const Duration _imageUrlCacheDuration = Duration(seconds: 30);
+
+  // 이미지 로드 에러 상태 추가
+  String? _imageLoadError;
+  String? get imageLoadError => _imageLoadError;
+
   Future<void> loadTerms() async {
     try {
       _termsText = await _fetchTermsTextUseCase();
@@ -63,33 +72,60 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
 
   Future<void> loadImage() async {
     _isLoadingImage = true;
+    _imageLoadError = null; // 에러 초기화
     notifyListeners();
 
     try {
+      // 캐시 검증 추가
+      if (_imageUrlCache != null &&
+          _imageUrlCacheTime != null &&
+          DateTime.now().difference(_imageUrlCacheTime!) <
+              _imageUrlCacheDuration) {
+        _imageUrls = _imageUrlCache![_item.id] ?? [];
+        if (_imageUrls.isNotEmpty) {
+          _imageUrl = _imageUrls.first;
+          _imageLoadError = null;
+        }
+        _isLoadingImage = false;
+        notifyListeners();
+        return; // 캐시 사용하고 반환
+      }
+
       // 모든 이미지 URL 가져오기
       final imageUrls = await _fetchAllImageUrlsUseCase(_item.id);
 
       if (imageUrls.isNotEmpty) {
-        _imageUrls = List<String>.from(imageUrls); // 새로운 List 인스턴스 생성
+        _imageUrls = List<String>.from(imageUrls);
         _imageUrl = imageUrls.first;
+
+        // 캐시 저장
+        _imageUrlCache = {_item.id: _imageUrls};
+        _imageUrlCacheTime = DateTime.now();
+        _imageLoadError = null;
+      } else if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
+        // 폴백: thumbnailUrl 사용
+        _imageUrl = _item.thumbnailUrl;
+        _imageUrls = [_item.thumbnailUrl!];
+
+        // 폴백도 캐시
+        _imageUrlCache = {_item.id: _imageUrls};
+        _imageUrlCacheTime = DateTime.now();
+        _imageLoadError = null;
       } else {
-        // 이미지가 없으면 thumbnailUrl 사용
-        if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
-          _imageUrl = _item.thumbnailUrl;
-          _imageUrls = [_item.thumbnailUrl!];
-        } else {
-          _imageUrl = null;
-          _imageUrls = [];
-        }
+        _imageUrl = null;
+        _imageUrls = [];
+        _imageLoadError = '등록된 이미지가 없습니다';
       }
     } catch (e) {
       // 이미지 로드 실패 시 thumbnailUrl 사용
       if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
         _imageUrl = _item.thumbnailUrl;
         _imageUrls = [_item.thumbnailUrl!];
+        _imageLoadError = null;
       } else {
         _imageUrl = null;
         _imageUrls = [];
+        _imageLoadError = '이미지 로드 실패';
       }
     } finally {
       _isLoadingImage = false;

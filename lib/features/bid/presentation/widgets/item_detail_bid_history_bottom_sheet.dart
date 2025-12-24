@@ -144,6 +144,8 @@ class _ItemDetailBidHistoryBottomSheetState
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       itemCount: 5,
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
       itemBuilder: (context, index) {
         return Padding(
           key: ValueKey('skeleton_$index'),
@@ -257,6 +259,8 @@ class _ItemDetailBidHistoryBottomSheetState
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 24),
       itemCount: _bidHistory.length + (_isLoadingMore ? 1 : 0),
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
       itemBuilder: (context, index) {
         if (index >= _bidHistory.length) {
           return const Padding(

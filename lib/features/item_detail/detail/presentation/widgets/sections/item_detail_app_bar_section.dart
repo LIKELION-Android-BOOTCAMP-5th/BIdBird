@@ -10,10 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 class ItemDetailAppBarSection extends StatelessWidget
     implements PreferredSizeWidget {
-  const ItemDetailAppBarSection({
-    super.key,
-    required this.item,
-  });
+  const ItemDetailAppBarSection({super.key, required this.item});
 
   final ItemDetail item;
 
@@ -22,7 +19,7 @@ class ItemDetailAppBarSection extends StatelessWidget
     return Consumer<ItemDetailViewModel>(
       builder: (context, viewModel, _) {
         final isMyItem = viewModel.isMyItem;
-        final sellerProfile = viewModel.sellerProfile;
+        // sellerProfile은 더 이상 사용되지 않음 - itemDetail에 이미 정보 포함
 
         return AppBar(
           backgroundColor: Colors.transparent,
@@ -33,7 +30,7 @@ class ItemDetailAppBarSection extends StatelessWidget
           centerTitle: false,
           actions: [
             _buildShareButton(context),
-            _buildReportButton(context, isMyItem, sellerProfile),
+            _buildReportButton(context, isMyItem),
           ],
         );
       },
@@ -71,7 +68,11 @@ class ItemDetailAppBarSection extends StatelessWidget
         onTap: () => _handleShare(context),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          margin: EdgeInsets.only(right: context.spacingSmall / 2, top: context.spacingSmall, bottom: context.spacingSmall),
+          margin: EdgeInsets.only(
+            right: context.spacingSmall / 2,
+            top: context.spacingSmall,
+            bottom: context.spacingSmall,
+          ),
           width: 40,
           height: 40,
           decoration: BoxDecoration(
@@ -89,18 +90,18 @@ class ItemDetailAppBarSection extends StatelessWidget
     );
   }
 
-  Widget _buildReportButton(
-    BuildContext context,
-    bool isMyItem,
-    Map<String, dynamic>? sellerProfile,
-  ) {
+  Widget _buildReportButton(BuildContext context, bool isMyItem) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _handleReport(context, isMyItem, sellerProfile),
+        onTap: () => _handleReport(context, isMyItem),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          margin: EdgeInsets.only(right: context.spacingSmall, top: context.spacingSmall, bottom: context.spacingSmall),
+          margin: EdgeInsets.only(
+            right: context.spacingSmall,
+            top: context.spacingSmall,
+            bottom: context.spacingSmall,
+          ),
           width: 40,
           height: 40,
           decoration: BoxDecoration(
@@ -135,11 +136,7 @@ class ItemDetailAppBarSection extends StatelessWidget
     }
   }
 
-  void _handleReport(
-    BuildContext context,
-    bool isMyItem,
-    Map<String, dynamic>? sellerProfile,
-  ) {
+  void _handleReport(BuildContext context, bool isMyItem) {
     if (isMyItem) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -166,7 +163,7 @@ class ItemDetailAppBarSection extends StatelessWidget
           itemId: item.itemId,
           itemTitle: item.itemTitle,
           targetUserId: item.sellerId,
-          targetNickname: sellerProfile?['nick_name'] as String?,
+          targetNickname: item.sellerTitle,
         ),
       ),
     );

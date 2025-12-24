@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/network_api_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
 
 import '../../domain/entities/items_entity.dart';
@@ -9,22 +10,26 @@ class HomeNetworkApiManager {
 
   static HomeNetworkApiManager get shared => _shared;
   final dio = Dio();
+  final _supabase = SupabaseManager.shared.supabase;
 
-  HomeNetworkApiManager() {}
+  HomeNetworkApiManager();
 
   Future<List<KeywordType>> getKeywordType() async {
-    final response = await dio.get(
-      //키워드 최신순으로 정렬
-      '${NetworkApiManager.supabaseUrl}/code_keyword_type?select=*&order=id.asc',
-      options: Options(headers: NetworkApiManager.useThisHeaders()),
-    );
-    final List<dynamic> data = response.data;
-    print("data 데이터 타입: ${data.runtimeType}");
-    final List<KeywordType> results = data.map((json) {
-      return KeywordType.fromJson(json);
-    }).toList();
+    try {
+      final response = await _supabase.rpc('get_keyword_types_v2');
 
-    return results;
+      if (response is Map && response.containsKey('error')) {
+        throw Exception('Failed to fetch keyword types: ${response['error']}');
+      }
+
+      if (response is List) {
+        return response.map((json) => KeywordType.fromJson(json as Map<String, dynamic>)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      throw Exception('Failed to fetch keyword types: $e');
+    }
   }
 
   Future<List<ItemsEntity>> getItems(
@@ -33,35 +38,32 @@ class HomeNetworkApiManager {
     int perPage = 8,
     int? keywordType,
   }) async {
-    final String range = NetworkApiManager.useThisPagingLogic(
-      currentIndex: currentIndex,
-      perPage: perPage,
-    );
+    try {
+      final response = await _supabase.rpc(
+        'get_home_items_v2',
+        params: {
+          'p_page': currentIndex,
+          'p_page_size': perPage,
+          if (keywordType != null && keywordType != 110)
+            'p_keyword_id': keywordType,
+        },
+      );
 
-    // 쿼리 조건 정리
-    String keywordFilter = "";
-    if (keywordType != null && keywordType != 110) {
-      keywordFilter = "&keyword_type=eq.$keywordType";
+      // 에러 응답 처리
+      if (response is Map && response.containsKey('error')) {
+        throw Exception('RPC Error: ${response['error']}');
+      }
+
+      // 정상 응답 처리
+      if (response is Map && response.containsKey('items')) {
+        final List<dynamic> items = response['items'];
+        return items.map((json) => ItemsEntity.fromJson(json as Map<String, dynamic>)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      throw Exception('Failed to fetch items: $e');
     }
-
-    // 통합 쿼리: visibility_status=true, auction_start_at이 존재하는 모든 매물
-    final response = await dio.get(
-      '${NetworkApiManager.supabaseUrl}/items_detail?'
-      'select=*,auctions!inner(current_price,bid_count,auction_start_at,auction_end_at,last_bid_user_id,auction_status_code,trade_status_code)'
-      '&visibility_status=is.true'
-      '&auctions.auction_start_at=not.is.null'
-      '$keywordFilter'
-      '&order=$orderBy',
-      options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
-    );
-    
-    final List<dynamic> data = response.data;
-    print("getItems 응답 개수: ${data.length}");
-    final List<ItemsEntity> results = data.map((json) {
-      return ItemsEntity.fromJson(json);
-    }).toList();
-
-    return results;
   }
 
   Future<List<ItemsEntity>> getSearchResults(
@@ -71,40 +73,33 @@ class HomeNetworkApiManager {
     int? keywordType,
     String? userInputSearchText,
   }) async {
-    final String range = NetworkApiManager.useThisPagingLogic(
-      currentIndex: currentIndex,
-      perPage: perPage,
-    );
+    try {
+      final response = await _supabase.rpc(
+        'get_home_items_v2',
+        params: {
+          'p_page': currentIndex,
+          'p_page_size': perPage,
+          if (keywordType != null && keywordType != 110)
+            'p_keyword_id': keywordType,
+          if (userInputSearchText != null && userInputSearchText.isNotEmpty)
+            'p_search': userInputSearchText,
+        },
+      );
 
-    // 쿼리 조건 정리
-    String keywordFilter = "";
-    if (keywordType != null && keywordType != 110) {
-      keywordFilter = "&keyword_type=eq.$keywordType";
+      // 에러 응답 처리
+      if (response is Map && response.containsKey('error')) {
+        throw Exception('RPC Error: ${response['error']}');
+      }
+
+      // 정상 응답 처리
+      if (response is Map && response.containsKey('items')) {
+        final List<dynamic> items = response['items'];
+        return items.map((json) => ItemsEntity.fromJson(json as Map<String, dynamic>)).toList();
+      }
+
+      return [];
+    } catch (e) {
+      throw Exception('Failed to fetch search results: $e');
     }
-
-    String searchFilter = "";
-    if (userInputSearchText != null && userInputSearchText.isNotEmpty) {
-      searchFilter = "&or=(title.ilike.*$userInputSearchText*,description.ilike.*$userInputSearchText*)";
-    }
-
-    // 통합 쿼리: visibility_status=true, auction_start_at이 존재하는 모든 매물
-    final response = await dio.get(
-      '${NetworkApiManager.supabaseUrl}/items_detail?'
-      'select=*,auctions!inner(current_price,bid_count,auction_start_at,auction_end_at,last_bid_user_id,auction_status_code,trade_status_code)'
-      '&visibility_status=is.true'
-      '&auctions.auction_start_at=not.is.null'
-      '$searchFilter'
-      '$keywordFilter'
-      '&order=$orderBy',
-      options: Options(headers: NetworkApiManager.useThisHeaders(range: range)),
-    );
-    
-    final List<dynamic> data = response.data;
-    print("getSearchResults 응답 개수: ${data.length}");
-    final List<ItemsEntity> results = data.map((json) {
-      return ItemsEntity.fromJson(json);
-    }).toList();
-
-    return results;
   }
 }

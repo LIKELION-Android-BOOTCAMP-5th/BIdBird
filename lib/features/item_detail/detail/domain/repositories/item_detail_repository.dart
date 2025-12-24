@@ -9,9 +9,9 @@ abstract class ItemDetailRepository {
   Future<Map<String, dynamic>?> fetchSellerProfile(String sellerId);
   Future<List<BidHistoryItem>> fetchBidHistory(String itemId);
   Future<bool> checkIsMyItem(String itemId, String sellerId);
+  Future<bool> isCurrentUserTopBidder(String itemId);
   bool? getLastIsTopBidder();
+  bool? getLastIsFavorite();
+  String? getLastSellerProfileImage();
   SupabaseClient get supabase;
 }
-
-
-

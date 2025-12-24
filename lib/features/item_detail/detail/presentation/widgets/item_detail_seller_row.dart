@@ -13,16 +13,14 @@ class ItemDetailSellerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<ItemDetailViewModel, Map<String, dynamic>?>(
-      selector: (_, vm) => vm.sellerProfile,
-      builder: (context, sellerProfile, _) {
-        final String avatarUrl = (sellerProfile?['profile_image_url'] as String?) ?? '';
-        final String rawNickname =
-            (sellerProfile?['nick_name'] as String?)?.trim() ?? '';
-        final String sellerNickname =
-            rawNickname.isNotEmpty ? rawNickname : '닉네임 없음';
-        final double sellerRating =
-            (sellerProfile?['rating'] as num?)?.toDouble() ?? item.sellerRating;
+    return Selector<ItemDetailViewModel, String?>(
+      selector: (_, vm) => vm.sellerProfileImage,
+      builder: (context, sellerProfileImage, _) {
+        final String avatarUrl = sellerProfileImage ?? '';
+        final String sellerNickname = item.sellerTitle.isNotEmpty
+            ? item.sellerTitle
+            : '닉네임 없음';
+        final double sellerRating = item.sellerRating;
 
         final horizontalPadding = context.screenPadding;
         final spacingSmall = context.spacingSmall;
@@ -43,8 +41,9 @@ class ItemDetailSellerRow extends StatelessWidget {
               icon: CircleAvatar(
                 radius: avatarRadius,
                 backgroundColor: const Color(0xFFF2F4F6),
-                backgroundImage:
-                    avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                backgroundImage: avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
                 child: avatarUrl.isEmpty
                     ? Icon(
                         Icons.person,
@@ -66,4 +65,3 @@ class ItemDetailSellerRow extends StatelessWidget {
     );
   }
 }
-

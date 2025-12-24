@@ -19,8 +19,22 @@ import 'package:provider/provider.dart';
 class ChattingRoomScreen extends StatefulWidget {
   final String itemId;
   final String? roomId;
+  final String? itemTitle; // 상품명
+  final String? sellerName; // 판매자명
+  final String? sellerImage; // 판매자 이미지
+  final int? itemPrice; // 상품 가격
+  final String? sellerUserId; // 판매자 ID
 
-  const ChattingRoomScreen({super.key, required this.itemId, this.roomId});
+  const ChattingRoomScreen({
+    super.key,
+    required this.itemId,
+    this.roomId,
+    this.itemTitle,
+    this.sellerUserId,
+    this.sellerName,
+    this.sellerImage,
+    this.itemPrice,
+  });
 
   @override
   State<ChattingRoomScreen> createState() => _ChattingRoomScreenState();
@@ -47,8 +61,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
       },
     );
   }
-
   late ChattingRoomViewmodel viewModel;
+
   @override
   void initState() {
     super.initState();
@@ -56,10 +70,34 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
       setState(() {}); // 포커스 상태 변경 시 리빌드
     });
     WidgetsBinding.instance.addObserver(this);
+    
+    // viewModel 생성
     viewModel = ChattingRoomViewmodel(
       itemId: widget.itemId,
       roomId: widget.roomId,
     );
+    
+    // 전달받은 item 정보를 viewModel에 설정 (roomInfo 없이도 표시할 수 있도록)
+    if (widget.itemTitle != null) {
+      // 현재 사용자 기준으로 상대방 이름을 낙관적으로 결정
+      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      final isCurrentUserSeller =
+          currentUserId != null && widget.sellerUserId != null && widget.sellerUserId == currentUserId;
+
+      viewModel.setInitialItemInfo(
+        itemTitle: widget.itemTitle!,
+        // 판매자인 경우엔 상대가 구매자이므로 내 이름이 아닌 '구매자'로 표시
+        sellerName: isCurrentUserSeller ? '구매자' : widget.sellerName,
+        sellerImage: widget.sellerImage,
+        itemPrice: widget.itemPrice,
+      );
+
+      // 판매자라면, 방 정보가 오기 전이라도 구매자 닉네임을 비동기로 채워 넣기
+      if (isCurrentUserSeller) {
+        // 실패해도 조용히 무시
+        viewModel.fetchFallbackOpponentNameIfNeeded(isCurrentUserSeller: true);
+      }
+    }
   }
 
   @override
@@ -153,10 +191,13 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               .auth
                               .currentUser
                               ?.id;
+                          // viewModel 데이터가 없을 때는 위젯 파라미터로 대체 판단
                           final isSeller =
                               currentUserId != null &&
-                              viewModel.itemInfo != null &&
-                              viewModel.itemInfo!.sellerId == currentUserId;
+                              (
+                                (viewModel.itemInfo != null && viewModel.itemInfo!.sellerId == currentUserId) ||
+                                (viewModel.itemInfo == null && widget.sellerUserId != null && widget.sellerUserId == currentUserId)
+                              );
 
                           // 거래 상태 텍스트 결정
                           String tradeStatusText = '거래 중';
@@ -196,9 +237,9 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                   viewModel.hasSubmittedReview);
 
                           return TradeContextCard(
-                            itemTitle: viewModel.itemInfo?.title ?? "",
+                            itemTitle: viewModel.itemInfo?.title ?? widget.itemTitle ?? "",
                             itemThumbnail: viewModel.itemInfo?.thumbnailImage,
-                            itemPrice: viewModel.auctionInfo?.currentPrice ?? 0,
+                            itemPrice: viewModel.auctionInfo?.currentPrice ?? widget.itemPrice ?? 0,
                             isSeller: isSeller,
                             tradeStatus: tradeStatusText,
                             tradeStatusCode:
