@@ -106,10 +106,16 @@ export default async (req: Request, res: Response) => {
     if (rpcError) {
       console.error("[ERROR] Supabase RPC execution failed:", JSON.stringify(rpcError, null, 2));
       return res.status(500).json({ 
-        error: `Database RPC Error: ${rpcError.message}`,
+        error: "Database RPC Error", 
+        message: rpcError.message,
         details: rpcError,
         hint: rpcError.hint 
       });
+    }
+
+    if (!itemId) {
+      console.error("[ERROR] RPC returned null itemId");
+      return res.status(500).json({ error: "Creation failed", message: "RPC executed but returned no ID." });
     }
 
     console.log(`[ULTRA-DEBUG] [SUCCESS] Item created successfully with ID: ${itemId}`);

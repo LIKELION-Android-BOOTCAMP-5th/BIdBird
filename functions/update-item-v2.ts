@@ -90,15 +90,24 @@ export default async (req: Request, res: Response) => {
     
     console.log(`[ULTRA-DEBUG] [STEP 7: Update Payload]`, JSON.stringify(updatePayload, null, 2));
 
-    const { error: updateError } = await supabase
+    const { data: updateData, error: updateError, count } = await supabase
       .from('items_detail')
-      .update(updatePayload)
+      .update(updatePayload, { count: 'exact' })
       .eq('item_id', itemId)
       .eq('seller_id', sellerId); // 보안: 본인 매물만 수정 가능
 
     if (updateError) {
-      console.error("[ERROR] Update Detail failed:", JSON.stringify(updateError, null, 2));
-      throw updateError;
+      console.error("[ERROR] Supabase Update failed:", JSON.stringify(updateError, null, 2));
+      return res.status(500).json({ error: "Database update error", details: updateError.message });
+    }
+
+    // [핵심] 만약 업데이트된 행이 없다면 (잘못된 itemId 또는 권한 없음)
+    if (count === 0) {
+      console.error(`[ERROR] No item found to update. ItemID: ${itemId}, SellerID: ${sellerId}`);
+      return res.status(404).json({ 
+        error: "item not found", 
+        details: `Could not find item with ID ${itemId} for seller ${sellerId}. Please check if you are the owner and the ID is correct.` 
+      });
     }
 
     console.log(`[ULTRA-DEBUG] [STEP 8: Refreshing Images/Docs] Deleting old assets first...`);
