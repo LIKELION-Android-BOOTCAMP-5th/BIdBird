@@ -1,4 +1,3 @@
-import 'dart:async';
 
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
@@ -16,18 +15,4 @@ class ItemImageCacheManager extends CacheManager {
           ),
         );
 
-  @override
-  Stream<FileResponse> getFileStream(
-    String url, {
-    String? key,
-    Map<String, String>? headers,
-    bool withProgress = false,
-  }) {
-    return super.getFileStream(
-      url,
-      key: key,
-      headers: headers,
-      withProgress: withProgress,
-    );
-  }
 }

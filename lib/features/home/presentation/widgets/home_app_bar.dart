@@ -27,9 +27,9 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           else
             SearchBar(
               constraints: const BoxConstraints(maxWidth: 250, minHeight: 40),
-              backgroundColor: const MaterialStatePropertyAll(Colors.white),
+              backgroundColor: const WidgetStatePropertyAll(Colors.white),
               hintText: "검색어를 입력하세요",
-              hintStyle: MaterialStateProperty.all(
+              hintStyle: WidgetStateProperty.all(
                 TextStyle(color: Colors.grey.shade400, fontSize: 14),
               ),
               autoFocus: true,

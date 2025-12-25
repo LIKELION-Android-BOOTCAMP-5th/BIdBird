@@ -37,7 +37,7 @@ class ReportContentCardState extends State<ReportContentCard>
       final content = widget.viewModel.contentController.text.trim();
       if (content.isEmpty) {
         _contentError = '상세 내용을 입력해주세요';
-      } else if (content.length < 1) {
+      } else if (content.isEmpty) {
         _contentError = '최소 1자 이상 입력해주세요';
       }
     });
@@ -64,7 +64,7 @@ class ReportContentCardState extends State<ReportContentCard>
   void _handleContentChange() {
     final content = widget.viewModel.contentController.text.trim();
     // 내용이 입력되어 에러가 있으면 제거
-    if (content.isNotEmpty && content.length >= 1 && _contentError != null) {
+    if (content.isNotEmpty && content.isNotEmpty && _contentError != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           clearError(() => _contentError = null);

@@ -19,13 +19,13 @@ class ImagePickerManager {
 
   /// 갤러리에서 여러 이미지 선택
   Future<ImagePickerResult?> pickImagesFromGallery() async {
-    final List<XFile>? pickedImages = await _picker.pickMultiImage(
+    final List<XFile> pickedImages = await _picker.pickMultiImage(
       imageQuality: 70,
       maxWidth: 1200,
       maxHeight: 1200,
     );
     
-    if (pickedImages == null || pickedImages.isEmpty) {
+    if (pickedImages.isEmpty) {
       return null;
     }
     

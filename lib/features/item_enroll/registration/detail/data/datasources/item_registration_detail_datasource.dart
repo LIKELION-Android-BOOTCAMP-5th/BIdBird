@@ -10,24 +10,25 @@ class ItemRegistrationDetailDatasource {
   final SupabaseClient _supabase;
 
   Future<_RegisterItemPayload> _fetchRegisterItem(String itemId) async {
-    final response = await _supabase.functions.invoke(
-      'get-register-item',
-      body: <String, dynamic>{'itemId': itemId},
+    final response = await _supabase.rpc(
+      'get_register_item',
+      params: {'item_id_param': itemId},
     );
 
-    final data = response.data;
-    if (data is! Map<String, dynamic>) {
+    if (response is! Map<String, dynamic>) {
       throw Exception('잘못된 응답 형식입니다.');
     }
 
     final images =
-        (data['images'] as List?)
+        (response['images'] as List?)
             ?.whereType<String>()
             .where((e) => e.isNotEmpty)
             .toList() ??
         <String>[];
 
-    return _RegisterItemPayload(images: images);
+    final item = response['item'] as Map<String, dynamic>?;
+
+    return _RegisterItemPayload(images: images, item: item);
   }
 
   Future<String> fetchTermsText() async {
@@ -52,9 +53,9 @@ class ItemRegistrationDetailDatasource {
     try {
       final userId = ItemSecurityUtils.requireAuth(_supabase);
 
-      await _supabase.functions.invoke(
-        'register-item-v2',
-        body: <String, dynamic>{'itemId': itemId, 'userId': userId},
+      await _supabase.rpc(
+        'register_item_v2',
+        params: {'item_id_param': itemId, 'user_id_param': userId},
       );
     } catch (e) {
       rethrow;
@@ -99,7 +100,8 @@ class ItemRegistrationDetailDatasource {
 }
 
 class _RegisterItemPayload {
-  _RegisterItemPayload({required this.images});
+  _RegisterItemPayload({required this.images, this.item});
 
   final List<String> images;
+  final Map<String, dynamic>? item;
 }

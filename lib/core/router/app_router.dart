@@ -154,7 +154,7 @@ GoRouter createAppRouter(BuildContext context) {
               if (location != '/home') {
                 context.go('/home');
               } else {
-                await doubleBackHandler.onWillPop(context);
+                doubleBackHandler.onWillPop(context);
               }
             },
             child: Scaffold(
@@ -432,12 +432,13 @@ GoRouter createAppRouter(BuildContext context) {
             child: ChangeNotifierProvider<ItemAddViewModel>(
               create: (_) {
                 final vm = ItemAddViewModel();
-                if (editingItemId != null)
+                if (editingItemId != null) {
                   vm.startEdit(editingItemId);
-                else
+                } else {
                   WidgetsBinding.instance.addPostFrameCallback(
                     (_) => vm.init(),
                   );
+                }
                 return vm;
               },
               child: const ItemAddScreen(),

@@ -31,11 +31,11 @@ class AuctionItemCard extends StatelessWidget {
       final days = auctionDurationHours ~/ 24;
       final hours = auctionDurationHours % 24;
       if (hours == 0) {
-        return '${days}일';
+        return '$days일';
       }
-      return '${days}일 ${hours}시간';
+      return '$days일 $hours시간';
     }
-    return '${auctionDurationHours}시간';
+    return '$auctionDurationHours시간';
   }
 
   @override

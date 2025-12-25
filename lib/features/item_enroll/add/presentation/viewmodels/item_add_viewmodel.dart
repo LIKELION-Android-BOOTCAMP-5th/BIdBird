@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
+
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart'
@@ -59,6 +61,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
 
   List<XFile> selectedImages = <XFile>[];
+  List<File> selectedDocuments = <File>[]; // PDF 보증서 목록
   final List<KeywordTypeEntity> keywordTypes = <KeywordTypeEntity>[];
 
   final List<String> durations = ItemAuctionDurationConstants.durationOptions;
@@ -94,6 +97,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
   }
 
   Future<void> init() async {
+    editingItemId = null; // 신규 작성을 위해 초기화
     await fetchKeywordTypes();
   }
 
@@ -170,6 +174,38 @@ class ItemAddViewModel extends ItemBaseViewModel {
     notifyListeners(); // 비디오 추가 시 UI 업데이트 필요
   }
 
+  /// PDF 보증서 선택
+  Future<void> pickDocuments() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: true,
+      );
+
+      if (result != null) {
+        final newFiles = result.paths
+            .where((path) => path != null)
+            .map((path) => File(path!))
+            .toList();
+
+        // 최대 5개 제한 (필요 시 조정)
+        if (selectedDocuments.length + newFiles.length > 5) {
+          // 5개까지만 추가
+          final remaining = 5 - selectedDocuments.length;
+          if (remaining > 0) {
+            selectedDocuments.addAll(newFiles.take(remaining));
+          }
+        } else {
+          selectedDocuments.addAll(newFiles);
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error picking documents: $e');
+    }
+  }
+
   void removeImageAt(int index) {
     if (index < 0 || index >= selectedImages.length) return;
     final List<XFile> list = List<XFile>.from(selectedImages);
@@ -186,6 +222,13 @@ class ItemAddViewModel extends ItemBaseViewModel {
       }
     }
     notifyListeners(); // 이미지 제거 시 UI 업데이트 필요
+  }
+
+  /// 보증서 삭제
+  void removeDocumentAt(int index) {
+    if (index < 0 || index >= selectedDocuments.length) return;
+    selectedDocuments.removeAt(index);
+    notifyListeners();
   }
 
   void setPrimaryImage(int index) {
@@ -230,9 +273,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
       notifyListeners();
 
       try {
-        await loadExistingImages(editItem.imageUrls);
+        await Future.wait([
+          loadExistingImages(editItem.imageUrls),
+          loadExistingDocuments(editItem.documentUrls),
+        ]);
       } catch (e) {
-        // 이미지 로드 실패 시에도 수정은 계속 진행 가능
         // 에러는 로그에만 남기고 사용자에게는 알리지 않음
       }
     } catch (e) {
@@ -263,6 +308,45 @@ class ItemAddViewModel extends ItemBaseViewModel {
       // 완전 실패 시에도 네트워크 URL로 폴백
       selectedImages = imageUrls.map((u) => XFile(u)).toList();
       notifyListeners(); // 실패 시에도 UI 업데이트 필요
+    }
+  }
+  /// 수정 모드에서 기존 문서를 불러와 selectedDocuments에 채웁니다.
+  Future<void> loadExistingDocuments(List<String> documentUrls) async {
+    if (documentUrls.isEmpty) return;
+
+    _dio ??= Dio();
+    final dio = _dio!;
+
+    try {
+      final results = await Future.wait(
+        documentUrls.map((url) => _downloadSingleDocument(dio, url)),
+        eagerError: false,
+      );
+
+      final files = results.whereType<File>().toList();
+      if (files.isNotEmpty) {
+        selectedDocuments = files;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading existing documents: $e');
+    }
+  }
+
+  Future<File?> _downloadSingleDocument(Dio dio, String url) async {
+    try {
+      final response = await dio.get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final fileName = url.split('/').last;
+      final tempPath = '${Directory.systemTemp.path}/$fileName';
+      final file = File(tempPath);
+      await file.writeAsBytes(response.data ?? <int>[]);
+      return file;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -386,12 +470,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
       return !(uri != null && (uri.scheme == 'http' || uri.scheme == 'https'));
     }).length;
 
-    final Map<String, double> _fileProgress = {};
-    late final StreamSubscription _progressSub;
-    _progressSub = UploadProgressBus.instance.stream.listen((event) {
+    final Map<String, double> fileProgress = {};
+    late final StreamSubscription progressSub;
+    progressSub = UploadProgressBus.instance.stream.listen((event) {
       if (uploadFileCount == 0) return;
-      _fileProgress[event.filePath] = event.progress.clamp(0.0, 1.0);
-      final double sum = _fileProgress.values.fold(0.0, (a, b) => a + b);
+      fileProgress[event.filePath] = event.progress.clamp(0.0, 1.0);
+      final double sum = fileProgress.values.fold(0.0, (a, b) => a + b);
       final double overall = (sum / uploadFileCount).clamp(0.0, 1.0);
       _progressController.add(overall * 0.7); // 업로드 단계는 0~70%
     });
@@ -409,6 +493,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
       final (success, failure) = await _itemEnrollFlowUseCase.enroll(
         itemData: itemData,
         images: selectedImages,
+        documents: selectedDocuments,
         primaryImageIndex: primaryImageIndex,
         editingItemId: editingItemId,
         onProgress: (progress) => _progressController.add(progress),
@@ -437,7 +522,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
     } finally {
       _isSubmitting = false;
       notifyListeners(); // 제출 완료 상태 UI 업데이트 필요
-      await _progressSub.cancel();
+      await progressSub.cancel();
       _closeLoadingDialog(navigator, loadingDialogOpen);
     }
   }
@@ -508,6 +593,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
       auctionEndAt: now.add(Duration(hours: auctionHours)),
       auctionDurationHours: auctionHours,
       imageUrls: [], // 이미지 URL은 업로드 후 설정
+      documentUrls: [], // PDF URL도 업로드 후 설정
       isAgree: agreed,
     );
   }

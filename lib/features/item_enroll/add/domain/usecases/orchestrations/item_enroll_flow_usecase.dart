@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:bidbird/core/upload/gateways/nhost_storage_manager.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/add_item_usecase.dart';
@@ -9,8 +11,9 @@ import 'package:image_picker/image_picker.dart';
 /// 
 /// 책임: 상품 등록 전체 플로우 오케스트레이션
 /// 1. 이미지 업로드 (썸네일 포함)
-/// 2. 상품 정보 저장
-/// 3. 결과 반환
+/// 2. PDF 보증서 업로드 (Nhost Storage)
+/// 3. 상품 정보 저장
+/// 4. 결과 반환
 sealed class ItemEnrollFlowResult {}
 
 class ItemEnrollFlowSuccess extends ItemEnrollFlowResult {
@@ -39,6 +42,7 @@ class ItemEnrollFlowUseCase {
   Future<(ItemEnrollFlowSuccess?, ItemEnrollFlowFailure?)> enroll({
     required ItemAddEntity itemData,
     required List<XFile> images,
+    required List<File> documents,
     required int primaryImageIndex,
     required String? editingItemId,
     required Function(double) onProgress,
@@ -60,11 +64,20 @@ class ItemEnrollFlowUseCase {
         );
       }
 
-      // Step 2: 상품 정보 저장
-      onProgress(0.75);
+      // Step 2: PDF 보증서 업로드 (Nhost Storage)
+      onProgress(0.70);
+      List<String> documentUrls = [];
+      if (documents.isNotEmpty) {
+        documentUrls = await NhostStorageManager.shared.uploadFileList(documents);
+        // 보증서 업로드 실패 시에도 진행할지 여부는 정책에 따라 다름. 여기서는 계속 진행.
+      }
+
+      // Step 3: 상품 정보 저장
+      onProgress(0.85);
       final String? itemId = await _saveItem(
         itemData: itemData,
         imageUrls: uploadResult.imageUrls,
+        documentUrls: documentUrls,
         thumbnailUrl: uploadResult.thumbnailUrl,
         primaryImageIndex: primaryImageIndex,
         editingItemId: editingItemId,
@@ -107,35 +120,33 @@ class ItemEnrollFlowUseCase {
   Future<String?> _saveItem({
     required ItemAddEntity itemData,
     required List<String> imageUrls,
+    required List<String> documentUrls,
     required String thumbnailUrl,
     required int primaryImageIndex,
     required String? editingItemId,
   }) async {
-    try {
-      final updatedData = ItemAddEntity(
-        title: itemData.title,
-        description: itemData.description,
-        startPrice: itemData.startPrice,
-        instantPrice: itemData.instantPrice,
-        keywordTypeId: itemData.keywordTypeId,
-        auctionStartAt: itemData.auctionStartAt,
-        auctionEndAt: itemData.auctionEndAt,
-        auctionDurationHours: itemData.auctionDurationHours,
-        imageUrls: imageUrls,
-        isAgree: itemData.isAgree,
-      );
+    final updatedData = ItemAddEntity(
+      title: itemData.title,
+      description: itemData.description,
+      startPrice: itemData.startPrice,
+      instantPrice: itemData.instantPrice,
+      keywordTypeId: itemData.keywordTypeId,
+      auctionStartAt: itemData.auctionStartAt,
+      auctionEndAt: itemData.auctionEndAt,
+      auctionDurationHours: itemData.auctionDurationHours,
+      imageUrls: imageUrls,
+      documentUrls: documentUrls,
+      isAgree: itemData.isAgree,
+    );
 
-      final ItemRegistrationData result = await _addItemUseCase(
-        entity: updatedData,
-        imageUrls: imageUrls,
-        primaryImageIndex: primaryImageIndex,
-        editingItemId: editingItemId,
-        thumbnailUrl: thumbnailUrl,
-      );
-      
-      return result.id;
-    } catch (e) {
-      return null;
-    }
+    final ItemRegistrationData result = await _addItemUseCase(
+      entity: updatedData,
+      imageUrls: imageUrls,
+      primaryImageIndex: primaryImageIndex,
+      editingItemId: editingItemId,
+      thumbnailUrl: thumbnailUrl,
+    );
+    
+    return result.id;
   }
 }

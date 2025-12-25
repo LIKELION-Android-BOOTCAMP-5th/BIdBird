@@ -189,7 +189,7 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
               ),
               // 타이머 오버레이 - 좌하단 (항상 표시, 박스에서 띄움)
               Positioned(
-                bottom: 40,
+                bottom: 12,
                 left: 16,
                 child: _RemainingTimeOverlay(
                   finishTime: widget.item.finishTime,
@@ -197,14 +197,14 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
               ),
               // 입찰 카운트 오버레이 - 우하단 (왼쪽)
               Positioned(
-                bottom: 40,
+                bottom: 12,
                 right: 70,
                 child: _BidCountOverlay(bidCount: widget.item.biddingCount),
               ),
               // 이미지 개수 표시 오버레이 - 우하단 (오른쪽)
               if (hasImages && images.isNotEmpty)
                 Positioned(
-                  bottom: 40,
+                  bottom: 12,
                   right: 16,
                   child: _ImageCountOverlay(
                     currentIndex: _currentPage,
@@ -214,16 +214,7 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
             ],
           ),
         ),
-        if (hasImages && images.length > 1) ...[
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              images.length,
-              (index) => _buildDot(isActive: index == _currentPage),
-            ),
-          ),
-        ],
+
       ],
     );
   }
