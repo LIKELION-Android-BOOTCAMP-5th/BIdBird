@@ -9,7 +9,6 @@ import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/secondary_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 

@@ -18,10 +18,7 @@ class ItemDetailDatasource {
       // 직접 RPC 호출 (엣지 함수 제거)
       final coreData = await _supabase.rpc(
         'get_item_detail_core',
-        params: {
-          'p_item_id': itemId,
-          'p_user_id': user?.id,
-        },
+        params: {'p_item_id': itemId, 'p_user_id': user?.id},
       );
 
       if (coreData == null || coreData is! Map<String, dynamic>) {
@@ -36,20 +33,29 @@ class ItemDetailDatasource {
           .order('sort_order', ascending: true)
           .limit(10);
 
-      final images = (imagesResult as List<dynamic>?)
-          ?.map((e) => (e as Map<String, dynamic>)['image_url']?.toString() ?? '')
-          .where((e) => e.isNotEmpty)
-          .toList() ?? [];
+      final images =
+          (imagesResult as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    (e as Map<String, dynamic>)['image_url']?.toString() ?? '',
+              )
+              .where((e) => e.isNotEmpty)
+              .toList() ??
+          [];
 
       // finishTime 파싱
       String? finishTimeRaw = coreData['auction_end_at'] as String?;
       DateTime effectiveFinishTime;
 
       if (finishTimeRaw != null && finishTimeRaw.isNotEmpty) {
-        effectiveFinishTime = DateTime.tryParse(finishTimeRaw) ?? DateTime.now();
+        effectiveFinishTime =
+            DateTime.tryParse(finishTimeRaw) ?? DateTime.now();
       } else {
-        final createdAt = DateTime.tryParse(coreData['created_at'] as String? ?? '') ?? DateTime.now();
-        final durationHours = (coreData['auction_duration_hours'] as num?)?.toInt() ?? 24;
+        final createdAt =
+            DateTime.tryParse(coreData['created_at'] as String? ?? '') ??
+            DateTime.now();
+        final durationHours =
+            (coreData['auction_duration_hours'] as num?)?.toInt() ?? 24;
         effectiveFinishTime = createdAt.add(Duration(hours: durationHours));
       }
 
@@ -58,22 +64,39 @@ class ItemDetailDatasource {
       _lastIsFavorite = coreData['is_favorite'] as bool?;
       _lastSellerProfileImage = coreData['seller_profile_image'] as String?;
 
+      // 문서 파싱
+      List<ItemDocument>? documents;
+      final documentsData = coreData['documents'];
+      if (documentsData != null && documentsData is List) {
+        documents = documentsData
+            .whereType<Map<String, dynamic>>()
+            .map((doc) => ItemDocument.fromJson(doc))
+            .toList();
+      }
+
       return ItemDetail(
         itemId: coreData['item_id']?.toString() ?? itemId,
         sellerId: coreData['seller_id']?.toString() ?? '',
         itemTitle: coreData['title']?.toString() ?? '',
         itemImages: images,
         finishTime: effectiveFinishTime,
-        sellerTitle: coreData['seller_nick_name']?.toString() ?? coreData['seller_name']?.toString() ?? '',
+        sellerTitle:
+            coreData['seller_nick_name']?.toString() ??
+            coreData['seller_name']?.toString() ??
+            '',
         buyNowPrice: (coreData['buy_now_price'] as num?)?.toInt() ?? 0,
         biddingCount: (coreData['bid_count'] as num?)?.toInt() ?? 0,
         itemContent: coreData['description']?.toString() ?? '',
         currentPrice: (coreData['current_price'] as num?)?.toInt() ?? 0,
-        bidPrice: _calculateBidStep((coreData['current_price'] as num?)?.toInt() ?? 0),
+        bidPrice: _calculateBidStep(
+          (coreData['current_price'] as num?)?.toInt() ?? 0,
+        ),
         sellerRating: (coreData['seller_rating'] as num?)?.toDouble() ?? 0.0,
-        sellerReviewCount: (coreData['seller_review_count'] as num?)?.toInt() ?? 0,
+        sellerReviewCount:
+            (coreData['seller_review_count'] as num?)?.toInt() ?? 0,
         statusCode: (coreData['auction_status_code'] as num?)?.toInt() ?? 0,
         tradeStatusCode: coreData['trade_status_code'] as int?,
+        itemDocuments: documents,
       );
     } catch (e) {
       _lastIsTopBidder = null;

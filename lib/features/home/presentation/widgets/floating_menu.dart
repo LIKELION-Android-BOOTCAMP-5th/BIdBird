@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:bidbird/core/managers/nhost_manager.dart';
 import '../../../../core/utils/ui_set/colors_style.dart';
-
 import 'floating_item.dart';
 
 class FloatingMenu extends StatefulWidget {
@@ -36,8 +35,23 @@ class _FloatingMenuState extends State<FloatingMenu> {
                 FabMenuItem(
                   label: "매물 작성",
                   icon: Icons.edit_outlined,
-                  onTap: () {
+                  onTap: () async {
                     setState(() => _open = false);
+                    
+                    // Nhost 동적 초기화 (백그라운드/지연 초기화)
+                    if (!NhostManager.shared.isInitialized) {
+                      try {
+                        await NhostManager.shared.initialize();
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('서버 설정을 불러오는데 실패했습니다.')),
+                          );
+                        }
+                        return;
+                      }
+                    }
+                    
                     _verifiedPush('/add_item');
                   },
                 ),
@@ -45,8 +59,23 @@ class _FloatingMenuState extends State<FloatingMenu> {
                 FabMenuItem(
                   label: "매물 등록",
                   icon: Icons.check_circle_outline,
-                  onTap: () {
+                  onTap: () async {
                     setState(() => _open = false);
+                    
+                    // 매물 등록 목록 확인 시에도 Nhost 초기화 필요할 수 있음
+                    if (!NhostManager.shared.isInitialized) {
+                      try {
+                        await NhostManager.shared.initialize();
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('서버 설정을 불러오는데 실패했습니다.')),
+                          );
+                        }
+                        return;
+                      }
+                    }
+                    
                     _verifiedPush('/add_item/item_registration_list');
                   },
                 ),

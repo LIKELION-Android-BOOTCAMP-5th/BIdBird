@@ -90,7 +90,7 @@ class ReportViewModel extends ChangeNotifier {
   bool get canSubmit {
     return _selectedCategory != null &&
         _selectedReportCode != null &&
-        contentController.text.trim().length >= 1;
+        contentController.text.trim().isNotEmpty;
   }
 
   @override

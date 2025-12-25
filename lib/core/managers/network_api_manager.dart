@@ -8,7 +8,7 @@ class NetworkApiManager {
   static NetworkApiManager get shared => _shared;
   final dio = Dio();
 
-  NetworkApiManager() {}
+  NetworkApiManager();
 
   //위에것은 걍 정의하는 것임
   static final String supabaseUrl =

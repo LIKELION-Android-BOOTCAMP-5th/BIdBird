@@ -76,7 +76,7 @@ class _ReportFormSectionState extends State<ReportFormSection> {
             widget.viewModel.selectedReportCode != null;
       case 1:
         final content = widget.viewModel.contentController.text.trim();
-        return content.isNotEmpty && content.length >= 1;
+        return content.isNotEmpty && content.isNotEmpty;
       case 2:
         return true;
       default:

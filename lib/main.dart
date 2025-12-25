@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bidbird/core/managers/app_initializer.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
@@ -116,8 +117,18 @@ class _MyAppState extends State<MyApp> {
     final theme = ThemeData(
       splashFactory: NoSplash.splashFactory, // 스플래쉬(리플효과) 제거
       highlightColor: Colors.transparent, // 하이라이트 효과 제거
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: PrimaryBlue,
+        primary: PrimaryBlue,
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: PrimaryBlue,
+        selectionColor: PrimaryBlue.withOpacity(0.4),
+        selectionHandleColor: PrimaryBlue,
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: PrimaryBlue,
+      ),
       scaffoldBackgroundColor: const Color(0xFFF5F5F5),
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFFF5F5F5),

@@ -34,14 +34,25 @@ class EditItemDatasource {
           .where((url) => url.isNotEmpty)
           .toList();
 
+      final List<dynamic> docRows = await _supabase
+          .from('item_documents')
+          .select('document_url')
+          .eq('item_id', itemId);
+
+      final List<String> documentUrls = docRows
+          .whereType<Map<String, dynamic>>()
+          .map((e) => getStringFromRow(e, 'document_url'))
+          .where((url) => url.isNotEmpty)
+          .toList();
+
       return EditItemEntity(
         title: getStringFromRow(row, 'title'),
         description: getStringFromRow(row, 'description'),
         startPrice: getIntFromRow(row, 'start_price'),
-        // buyNowPrice: getIntFromRow(row, 'buy_now_price', 0),
         keywordTypeId: getIntFromRow(row, 'keyword_type'),
         auctionDurationHours: getIntFromRow(row, 'auction_duration_hours', 4),
         imageUrls: imageUrls,
+        documentUrls: documentUrls,
       );
     } catch (e) {
       if (e.toString().contains('PGRST116') || e.toString().contains('No rows')) {

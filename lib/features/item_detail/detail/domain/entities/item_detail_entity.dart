@@ -17,6 +17,7 @@ class ItemDetail {
     required this.sellerReviewCount,
     required this.statusCode,
     this.tradeStatusCode,
+    this.itemDocuments,
   });
 
   final String itemId;
@@ -34,6 +35,7 @@ class ItemDetail {
   final int sellerReviewCount;
   final int statusCode;
   final int? tradeStatusCode;
+  final List<ItemDocument>? itemDocuments;
 
   /// 부분 업데이트를 위한 copyWith 메서드
   ItemDetail copyWith({
@@ -52,6 +54,7 @@ class ItemDetail {
     int? sellerReviewCount,
     int? statusCode,
     int? tradeStatusCode,
+    List<ItemDocument>? itemDocuments,
   }) {
     return ItemDetail(
       itemId: itemId ?? this.itemId,
@@ -69,15 +72,66 @@ class ItemDetail {
       sellerReviewCount: sellerReviewCount ?? this.sellerReviewCount,
       statusCode: statusCode ?? this.statusCode,
       tradeStatusCode: tradeStatusCode ?? this.tradeStatusCode,
+      itemDocuments: itemDocuments ?? this.itemDocuments,
     );
   }
 }
 
-class SellerRatingSummary {
-  SellerRatingSummary({
-    required this.rating,
-    required this.reviewCount,
+/// 상품 문서 엔티티
+class ItemDocument {
+  ItemDocument({
+    required this.documentId,
+    required this.documentName,
+    required this.documentUrl,
+    required this.fileSize,
+    required this.fileType,
+    required this.uploadedAt,
   });
+
+  final String documentId;
+  final String documentName;
+  final String documentUrl;
+  final int fileSize; // bytes
+  final String fileType; // pdf, doc, etc.
+  final DateTime uploadedAt;
+
+  factory ItemDocument.fromJson(Map<String, dynamic> json) {
+    return ItemDocument(
+      documentId: json['document_id'] as String? ?? '',
+      documentName: json['document_name'] as String? ?? '',
+      documentUrl: json['document_url'] as String? ?? '',
+      fileSize: json['file_size'] as int? ?? 0,
+      fileType: json['file_type'] as String? ?? '',
+      uploadedAt: json['uploaded_at'] != null
+          ? DateTime.parse(json['uploaded_at'] as String)
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'document_id': documentId,
+      'document_name': documentName,
+      'document_url': documentUrl,
+      'file_size': fileSize,
+      'file_type': fileType,
+      'uploaded_at': uploadedAt.toIso8601String(),
+    };
+  }
+
+  String get fileSizeFormatted {
+    if (fileSize < 1024) {
+      return '$fileSize B';
+    } else if (fileSize < 1024 * 1024) {
+      return '${(fileSize / 1024).toStringAsFixed(1)} KB';
+    } else {
+      return '${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+  }
+}
+
+class SellerRatingSummary {
+  SellerRatingSummary({required this.rating, required this.reviewCount});
 
   final double rating;
   final int reviewCount;
@@ -97,13 +151,11 @@ class SellerRatingSummary {
     }
 
     final int reviewCount = completedTrades.length;
-    final double averageRating =
-        reviewCount > 0 ? totalRating / reviewCount : 0.0;
+    final double averageRating = reviewCount > 0
+        ? totalRating / reviewCount
+        : 0.0;
 
-    return SellerRatingSummary(
-      rating: averageRating,
-      reviewCount: reviewCount,
-    );
+    return SellerRatingSummary(rating: averageRating, reviewCount: reviewCount);
   }
 }
 
@@ -148,8 +200,8 @@ class BidHistoryItem {
   /// Map 리스트에서 BidHistoryItem 리스트 생성
   static List<BidHistoryItem> fromMapList(List<dynamic> list) {
     return list
-        .where((item) => item is Map<String, dynamic>)
-        .map((item) => BidHistoryItem.fromMap(item as Map<String, dynamic>))
+        .whereType<Map<String, dynamic>>()
+        .map((item) => BidHistoryItem.fromMap(item))
         .toList();
   }
 
@@ -165,4 +217,3 @@ class BidHistoryItem {
     };
   }
 }
-

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:bidbird/core/utils/item/media_resizer.dart';
 import 'package:bidbird/core/upload/gateways/image_upload_gateway.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
@@ -19,16 +21,16 @@ class UploadItemImagesWithThumbnailUseCase {
     }
 
     // 1. 메인 이미지들 업로드
-    print('이미지 업로드 시작: ${images.length}개');
+    debugPrint('이미지 업로드 시작: ${images.length}개');
     final imageUrls = await _imageUploadGateway.uploadImages(images);
-    print('이미지 업로드 완료: ${imageUrls.length}개 URL 반환');
+    debugPrint('이미지 업로드 완료: ${imageUrls.length}개 URL 반환');
     
     if (imageUrls.isEmpty) {
       throw Exception('이미지 업로드에 실패했습니다.');
     }
     
     if (imageUrls.length != images.length) {
-      print('경고: 업로드한 이미지 수(${images.length})와 반환된 URL 수(${imageUrls.length})가 다릅니다.');
+      debugPrint('경고: 업로드한 이미지 수(${images.length})와 반환된 URL 수(${imageUrls.length})가 다릅니다.');
     }
 
     // 2. 썸네일 생성 및 업로드 (로컬에서 생성 후 별도 업로드)

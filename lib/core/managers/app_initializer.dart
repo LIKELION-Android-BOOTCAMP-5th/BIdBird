@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
@@ -9,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 
 class AppInitializer {
   static Future<void>? _initFuture;
@@ -30,6 +32,9 @@ class AppInitializer {
       url: dotenv.env['SUPABASE_URL'] ?? '',
       anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
     );
+
+    // Nhost & GraphQL Hive 초기화
+    await initHiveForFlutter();
 
     _firebaseInitFuture ??= Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

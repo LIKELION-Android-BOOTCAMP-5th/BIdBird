@@ -30,7 +30,13 @@ class ItemDetailAppBarSection extends StatelessWidget
           centerTitle: false,
           actions: [
             _buildShareButton(context),
-            _buildReportButton(context, isMyItem),
+            const SizedBox(width: 8),
+            if (!isMyItem) ...[
+              _buildReportButton(context, isMyItem),
+              const SizedBox(width: 8),
+            ],
+            if (!isMyItem) _buildFavoriteButton(context),
+            const SizedBox(width: 16), // Right padding
           ],
         );
       },
@@ -61,6 +67,38 @@ class ItemDetailAppBarSection extends StatelessWidget
     );
   }
 
+  Widget _buildFavoriteButton(BuildContext context) {
+    return Selector<ItemDetailViewModel, bool>(
+      selector: (_, vm) => vm.isFavorite,
+      builder: (context, isFavorite, _) {
+        final viewModel = context.read<ItemDetailViewModel>();
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => viewModel.toggleFavorite(),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              margin: EdgeInsets.zero,
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: isFavorite ? Colors.red : chatItemCardBackground,
+                size: context.iconSizeSmall,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildShareButton(BuildContext context) {
     return Material(
       color: Colors.transparent,
@@ -68,11 +106,7 @@ class ItemDetailAppBarSection extends StatelessWidget
         onTap: () => _handleShare(context),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          margin: EdgeInsets.only(
-            right: context.spacingSmall / 2,
-            top: context.spacingSmall,
-            bottom: context.spacingSmall,
-          ),
+          margin: EdgeInsets.zero,
           width: 40,
           height: 40,
           decoration: BoxDecoration(
@@ -97,11 +131,7 @@ class ItemDetailAppBarSection extends StatelessWidget
         onTap: () => _handleReport(context, isMyItem),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          margin: EdgeInsets.only(
-            right: context.spacingSmall,
-            top: context.spacingSmall,
-            bottom: context.spacingSmall,
-          ),
+          margin: EdgeInsets.zero,
           width: 40,
           height: 40,
           decoration: BoxDecoration(
