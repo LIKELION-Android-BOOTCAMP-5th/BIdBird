@@ -2,135 +2,57 @@ import { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * Nhost Function: create-item-v2
+ * Nhost Function: create-item-v2 (REFACTORED as Asset Handler)
  * 
- * 이 함수는 Nhost에서 실행되며, Supabase DB의 create_item_v2 RPC를 호출합니다.
- * 
- * @param req Express Request
- * @param res Express Response
+ * 이 함수는 이제 상품 메타데이터를 받지 않고, 
+ * 생성된 itemId와 documentUrls만 받아 Nhost 전용 처리를 수행합니다.
  */
 export default async (req: Request, res: Response) => {
-  console.log(`[DEBUG] Received request: ${req.method} ${req.url}`);
-  
-  // 1. CORS 처리
-  if (req.method === 'OPTIONS') {
-    return res.status(200).send('ok');
-  }
+  if (req.method === 'OPTIONS') return res.status(200).send('ok');
 
   try {
-    // 2. 요청 바디 데이터 추출 및 로깅
-    const body = req.body;
-    console.log(`[ULTRA-DEBUG] [STEP 1: Request Arrival] Method: ${req.method}, URL: ${req.url}`);
-    console.log(`[ULTRA-DEBUG] [STEP 2: Raw Body Received]`, JSON.stringify(body, null, 2));
+    const { itemId, documentUrls } = req.body;
+    console.log(`[ASSET-HANDLER] Received assets for Item: ${itemId}, Docs: ${documentUrls?.length || 0}`);
 
-    if (!body || Object.keys(body).length === 0) {
-      console.error("[ERROR] Empty or missing request body");
-      return res.status(400).json({ error: "Missing request body", details: "The body received by the function was empty or null." });
+    if (!itemId) {
+      return res.status(400).json({ error: "Missing itemId" });
     }
 
-    const {
-      title,
-      description,
-      startPrice,
-      buyNowPrice,
-      keywordType,
-      auctionDurationHours,
-      imageUrls,
-      documentUrls,
-      primaryImageIndex,
-      thumbnailUrl,
-    } = body;
+    // PDF가 없을 경우 바로 성공 반환
+    if (!documentUrls || documentUrls.length === 0) {
+      return res.status(200).json({ success: true, message: "No documents to process" });
+    }
 
-    console.log(`[ULTRA-DEBUG] [STEP 3: Parsed Fields]`, {
-      title: title || 'MISSING',
-      description: description ? 'PRESENT' : 'MISSING',
-      startPrice,
-      buyNowPrice,
-      keywordType,
-      auctionDurationHours,
-      imagesCount: imageUrls?.length || 0,
-      docsCount: documentUrls?.length || 0,
-    });
-
-    // 3. 환경 변수 확인
     const supabaseUrl = process.env.SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    console.log(`[ULTRA-DEBUG] [STEP 4: Environment Check]`, {
-      hasUrl: !!supabaseUrl,
-      hasKey: !!serviceRoleKey,
-      urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 15) + '...' : 'NONE'
-    });
-
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error("[ERROR] Missing Supabase environment variables in Nhost Secrets");
-      return res.status(500).json({ 
-        error: "Server environment not configured",
-        details: "Please ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in Nhost Settings -> Secrets"
-      });
+      return res.status(500).json({ error: "Server environment not configured" });
     }
 
-    // 4. Supabase 클라이언트 초기화
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const durationMinutes = Math.round((Number(auctionDurationHours) || 0) * 60);
 
-    // 5. 판매자 ID 확인
-    const sellerId = req.nhost?.auth?.getUser()?.id || body.sellerId;
-    console.log(`[ULTRA-DEBUG] [STEP 5: Auth Check] SellerID: ${sellerId || 'NOT FOUND'}`);
+    // 문서 정보 저장 (이미 RPC에서 했을 수도 있지만, Nhost Function에서 추가 작업이 필요할 경우를 대비)
+    const documentObjects = documentUrls.map((url: string) => ({
+      item_id: itemId,
+      document_url: url,
+      document_name: url.split('/').pop()?.split('_').pop() || 'certificate.pdf',
+      file_type: 'pdf',
+      file_size: 0,
+      uploaded_at: new Date().toISOString()
+    }));
 
-    if (!sellerId) {
-      console.error("[ERROR] No seller ID found in token or body");
-      return res.status(401).json({ error: "Unauthorized: No seller ID found", details: "Function could not identify the user. Check if you are logged in or passing sellerId explicitly." });
-    }
-
-    console.log(`[ULTRA-DEBUG] [STEP 6: Calling Supabase RPC] RPC Name: create_item_v2`);
-
-    // 6. Supabase RPC 호출
-    const rpcParams = {
-      p_seller_id: sellerId,
-      p_title: title,
-      p_description: description,
-      p_start_price: Number(startPrice),
-      p_buy_now_price: buyNowPrice && buyNowPrice > 0 ? Number(buyNowPrice) : null,
-      p_keyword_type: Number(keywordType),
-      p_duration_minutes: durationMinutes,
-      p_thumbnail_url: thumbnailUrl,
-      p_image_urls: imageUrls || [],
-      p_document_urls: documentUrls || []
-    };
+    const { error: docError } = await supabase.from('item_documents').insert(documentObjects);
     
-    console.log(`[ULTRA-DEBUG] [STEP 7: RPC Params]`, JSON.stringify(rpcParams, null, 2));
-
-    const { data: itemId, error: rpcError } = await supabase.rpc("create_item_v2", rpcParams);
-
-    if (rpcError) {
-      console.error("[ERROR] Supabase RPC execution failed:", JSON.stringify(rpcError, null, 2));
-      return res.status(500).json({ 
-        error: "Database RPC Error", 
-        message: rpcError.message,
-        details: rpcError,
-        hint: rpcError.hint 
-      });
+    if (docError) {
+      console.error("[ERROR] Document Sync failed:", docError);
+      return res.status(500).json({ error: "Document sync failed", details: docError });
     }
 
-    if (!itemId) {
-      console.error("[ERROR] RPC returned null itemId");
-      return res.status(500).json({ error: "Creation failed", message: "RPC executed but returned no ID." });
-    }
-
-    console.log(`[ULTRA-DEBUG] [SUCCESS] Item created successfully with ID: ${itemId}`);
-    return res.status(200).json({ 
-      success: true,
-      itemId: itemId,
-      thumbnailUrl: thumbnailUrl 
-    });
+    return res.status(200).json({ success: true, itemId, version: "v4_lightweight" });
 
   } catch (err: any) {
-    console.error("[CRITICAL ERROR] Internal Server Error in create-item-v2:", err);
-    return res.status(500).json({ 
-      error: "Internal server error",
-      message: err.message,
-      stack: err.stack
-    });
+    console.error("[CRITICAL ERROR]", err);
+    return res.status(500).json({ error: "Internal server error", message: err.message });
   }
 };
