@@ -11,8 +11,8 @@ export default async (req: Request, res: Response) => {
   if (req.method === 'OPTIONS') return res.status(200).send('ok');
 
   try {
-    const { itemId, documentUrls } = req.body;
-    console.log(`[ASSET-HANDLER] Received assets for Item: ${itemId}, Docs: ${documentUrls?.length || 0}`);
+    const { itemId, documentUrls, documentNames } = req.body;
+    console.log(`[ASSET-HANDLER] Received assets for Item: ${itemId}, Docs: ${documentUrls?.length || 0}, Names: ${documentNames?.length || 0}`);
 
     if (!itemId) {
       return res.status(400).json({ error: "Missing itemId" });
@@ -33,10 +33,10 @@ export default async (req: Request, res: Response) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // 문서 정보 저장 (이미 RPC에서 했을 수도 있지만, Nhost Function에서 추가 작업이 필요할 경우를 대비)
-    const documentObjects = documentUrls.map((url: string) => ({
+    const documentObjects = documentUrls.map((url: string, index: number) => ({
       item_id: itemId,
       document_url: url,
-      document_name: url.split('/').pop()?.split('_').pop() || 'certificate.pdf',
+      document_name: (documentNames && documentNames[index]) || url.split('/').pop()?.split('_').pop() || 'certificate.pdf',
       file_type: 'pdf',
       file_size: 0,
       uploaded_at: new Date().toISOString()
