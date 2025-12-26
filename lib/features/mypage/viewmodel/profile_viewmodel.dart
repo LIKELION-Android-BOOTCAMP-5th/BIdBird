@@ -18,11 +18,16 @@ class ProfileViewModel extends ChangeNotifier {
 
   ProfileViewModel(this._getProfile) {
     loadProfile(); //생성자에서 쵸기로딩 // main에서 ..loadProfile()하지 않아도 됨
-    _loginSubscription = eventBus.on<LoginEventBus>().listen((event) {
+    _loginSubscription = eventBus.on<LoginEventBus>().listen((event) async {
       if (event.type == LoginEventType.logout) {
         profile = null;
         errorMessage = null;
         notifyListeners();
+      }
+
+      if (event.type == LoginEventType.login) {
+        // 재로그인 시 프로필 다시 fetch
+        await loadProfile();
       }
     });
   }

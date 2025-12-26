@@ -153,7 +153,7 @@ class NotificationViewmodel extends ChangeNotifier {
         return a.is_checked ? 1 : -1;
         // false → -1 (앞), true → 1 (뒤)
       }
-
+      debugPrint('알림 리스트 정렬되었습니다. 알림 뷰모델 156');
       // 2️⃣ createdAt: 최신순
       return b.created_at.compareTo(a.created_at);
     });
@@ -165,18 +165,19 @@ class NotificationViewmodel extends ChangeNotifier {
     _isFetching = true;
     final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentUserId == null) {
-      print("로그인 상태가 아닙니다.");
+      debugPrint("로그인 상태가 아닙니다.");
       _isFetching = false;
       return;
     }
     try {
       notifyList = await _fetchNotificationUseCase();
     } catch (e) {
-      print("알림 불러오기 실패했습니다 : $e");
+      debugPrint("알림 불러오기 실패했습니다 : $e");
     }
     sortNotifyList();
     notifyListeners();
     _isFetching = false;
+    debugPrint('알림 불러오기 완료. 알림 뷰모델 180');
   }
 
   Future<void> checkNotification(String id) async {
@@ -187,7 +188,7 @@ class NotificationViewmodel extends ChangeNotifier {
       await _checkNotificationUseCase(id);
     } catch (e) {
       notifyList[index].is_checked = false;
-      print("알림 확인 업데이트 실패했습니다 : $e");
+      debugPrint("알림 확인 업데이트 실패했습니다 : $e");
     }
     notifyListeners();
   }
@@ -196,7 +197,7 @@ class NotificationViewmodel extends ChangeNotifier {
     try {
       await _checkAllNotificationUseCase();
     } catch (e) {
-      print("알림 확인 업데이트 실패했습니다 : $e");
+      debugPrint("알림 확인 업데이트 실패했습니다 : $e");
     }
     await fetchNotify();
     notifyListeners();
@@ -206,7 +207,7 @@ class NotificationViewmodel extends ChangeNotifier {
     try {
       await _deleteNotificationUseCase(id);
     } catch (e) {
-      print("알림 삭제에 실패했습니다 : $e");
+      debugPrint("알림 삭제에 실패했습니다 : $e");
     }
     notifyListeners();
   }
@@ -215,7 +216,7 @@ class NotificationViewmodel extends ChangeNotifier {
     try {
       await _deleteAllNotificationUseCase();
     } catch (e) {
-      print("알림 전체 삭제에 실패했습니다 : $e");
+      debugPrint("알림 전체 삭제에 실패했습니다 : $e");
     }
     await fetchNotify();
     notifyListeners();
@@ -235,14 +236,14 @@ class NotificationViewmodel extends ChangeNotifier {
   void cancelRealtimeSubscription() {
     _notificationListRealtimeSubscriptionManager.closeSubscription();
     notifyList.clear(); // 로그아웃 시 이전 사용자의 알림 캐시 삭제
-    print("로그아웃으로 알림 채널이 닫혔습니다");
+    debugPrint("로그아웃으로 알림 채널이 닫혔습니다");
   }
 
   @override
   void dispose() {
     _loginSubscription?.cancel();
     _notificationListRealtimeSubscriptionManager.closeSubscription();
-    print("알림 채널이 닫혔습니다");
+    debugPrint("알림 채널이 닫혔습니다");
     super.dispose();
   }
 

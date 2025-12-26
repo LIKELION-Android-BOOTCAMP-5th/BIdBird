@@ -225,7 +225,7 @@ GoRouter createAppRouter(BuildContext context) {
               child: const ChatScreen(),
             ),
           ),
-        GoRoute(
+          GoRoute(
             path: '/mypage',
             pageBuilder: (context, state) => buildPage(
               context: context,

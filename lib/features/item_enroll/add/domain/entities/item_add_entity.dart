@@ -10,6 +10,8 @@ class ItemAddEntity {
     required this.auctionDurationHours,
     required this.imageUrls,
     required this.documentUrls,
+    this.documentNames,
+    this.documentSizes,
     required this.isAgree,
   });
 
@@ -23,6 +25,8 @@ class ItemAddEntity {
   final int auctionDurationHours;
   final List<String> imageUrls;
   final List<String> documentUrls;
+  final List<String>? documentNames;
+  final List<int>? documentSizes;
   final bool isAgree;
 
   Map<String, dynamic> toJson({required String sellerId}) {
@@ -37,6 +41,8 @@ class ItemAddEntity {
       'keyword_type': keywordTypeId,
       'auction_duration_hours': auctionDurationHours,
       'document_urls': documentUrls,
+      'document_names': documentNames,
+      'document_sizes': documentSizes,
       'is_agree': isAgree,
     };
   }

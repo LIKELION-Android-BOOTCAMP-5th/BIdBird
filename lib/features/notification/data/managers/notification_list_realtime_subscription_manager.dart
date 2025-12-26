@@ -1,5 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/notification/domain/entities/notification_entity.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationListRealtimeSubscriptionManager {
@@ -33,7 +34,7 @@ class NotificationListRealtimeSubscriptionManager {
           },
         )
         .subscribe((status, error) {
-          print('📡 notifyChannel status: $status');
+          debugPrint('📡 notifyChannel status: $status');
 
           if (status == RealtimeSubscribeStatus.subscribed) {
             _isSubscribed = true;

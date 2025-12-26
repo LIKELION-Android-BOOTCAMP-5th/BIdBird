@@ -43,6 +43,8 @@ class ItemEnrollFlowUseCase {
     required ItemAddEntity itemData,
     required List<XFile> images,
     required List<File> documents,
+    List<String>? documentOriginalNames,
+    List<int>? documentSizes,
     required int primaryImageIndex,
     required String? editingItemId,
     required Function(double) onProgress,
@@ -66,10 +68,17 @@ class ItemEnrollFlowUseCase {
 
       // Step 2: PDF 보증서 업로드 (Nhost Storage)
       onProgress(0.70);
-      List<String> documentUrls = [];
+      List<String> docUrls = [];
+      List<String> docNames = [];
+      List<int> docSizes = [];
       if (documents.isNotEmpty) {
-        documentUrls = await NhostStorageManager.shared.uploadFileList(documents);
-        // 보증서 업로드 실패 시에도 진행할지 여부는 정책에 따라 다름. 여기서는 계속 진행.
+        final uploadedDocs = await NhostStorageManager.shared.uploadFileList(
+          documents,
+          originalNames: documentOriginalNames,
+        );
+        docUrls = uploadedDocs.map((e) => e['url']!).toList();
+        docNames = uploadedDocs.map((e) => e['name']!).toList();
+        docSizes = uploadedDocs.map((e) => int.tryParse(e['size'] ?? '0') ?? 0).toList();
       }
 
       // Step 3: 상품 정보 저장
@@ -77,7 +86,9 @@ class ItemEnrollFlowUseCase {
       final String? itemId = await _saveItem(
         itemData: itemData,
         imageUrls: uploadResult.imageUrls,
-        documentUrls: documentUrls,
+        documentUrls: docUrls,
+        documentNames: docNames,
+        documentSizes: docSizes,
         thumbnailUrl: uploadResult.thumbnailUrl,
         primaryImageIndex: primaryImageIndex,
         editingItemId: editingItemId,
@@ -121,6 +132,8 @@ class ItemEnrollFlowUseCase {
     required ItemAddEntity itemData,
     required List<String> imageUrls,
     required List<String> documentUrls,
+    required List<String> documentNames,
+    required List<int> documentSizes,
     required String thumbnailUrl,
     required int primaryImageIndex,
     required String? editingItemId,
@@ -136,6 +149,8 @@ class ItemEnrollFlowUseCase {
       auctionDurationHours: itemData.auctionDurationHours,
       imageUrls: imageUrls,
       documentUrls: documentUrls,
+      documentNames: documentNames,
+      documentSizes: documentSizes,
       isAgree: itemData.isAgree,
     );
 

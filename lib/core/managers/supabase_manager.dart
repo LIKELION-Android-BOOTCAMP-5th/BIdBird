@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -85,6 +85,19 @@ class SupabaseManager {
       provider: OAuthProvider.apple,
       idToken: idToken,
       nonce: rawNonce,
+    );
+  }
+
+  Future<void> signInWithKakao() async {
+    await supabase.auth.signInWithOAuth(
+      OAuthProvider.kakao,
+      redirectTo: kIsWeb
+          ? null
+          : 'com.bidbird.app://oauth', // Optionally set the redirect link to bring back the user via deeplink.
+      authScreenLaunchMode: kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode
+                .externalApplication, // Launch the auth screen in a new webview on mobile.
     );
   }
 

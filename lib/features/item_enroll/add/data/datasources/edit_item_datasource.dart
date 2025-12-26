@@ -36,14 +36,21 @@ class EditItemDatasource {
 
       final List<dynamic> docRows = await _supabase
           .from('item_documents')
-          .select('document_url')
+          .select('document_url, document_name, file_size')
           .eq('item_id', itemId);
 
-      final List<String> documentUrls = docRows
-          .whereType<Map<String, dynamic>>()
-          .map((e) => getStringFromRow(e, 'document_url'))
-          .where((url) => url.isNotEmpty)
-          .toList();
+      final List<String> documentUrls = [];
+      final List<String> documentNames = [];
+      final List<int> documentSizes = [];
+
+      for (var row in docRows) {
+        final url = getStringFromRow(row, 'document_url');
+        if (url.isNotEmpty) {
+          documentUrls.add(url);
+          documentNames.add(getStringFromRow(row, 'document_name'));
+          documentSizes.add(getIntFromRow(row, 'file_size'));
+        }
+      }
 
       return EditItemEntity(
         title: getStringFromRow(row, 'title'),
@@ -53,6 +60,8 @@ class EditItemDatasource {
         auctionDurationHours: getIntFromRow(row, 'auction_duration_hours', 4),
         imageUrls: imageUrls,
         documentUrls: documentUrls,
+        documentNames: documentNames,
+        documentSizes: documentSizes,
       );
     } catch (e) {
       if (e.toString().contains('PGRST116') || e.toString().contains('No rows')) {

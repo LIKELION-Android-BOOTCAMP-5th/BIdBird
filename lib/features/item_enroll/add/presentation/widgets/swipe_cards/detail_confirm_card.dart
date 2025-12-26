@@ -85,7 +85,7 @@ class DetailConfirmCard extends StatelessWidget {
                           ...List.generate(vm.selectedDocuments.length,
                               (index) {
                             final doc = vm.selectedDocuments[index];
-                            final fileName = doc.path.split('/').last;
+                            final fileName = doc.originalName;
                             return Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
