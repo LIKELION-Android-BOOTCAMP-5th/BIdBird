@@ -32,7 +32,10 @@ export default async (req: Request, res: Response) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // 문서 정보 저장 (이미 RPC에서 했을 수도 있지만, Nhost Function에서 추가 작업이 필요할 경우를 대비)
+    // 1. 기존 문서 삭제 (RPC 호출 등으로 이미 생성되었을 경우 대비)
+    await supabase.from('item_documents').delete().eq('item_id', itemId);
+ 
+    // 2. 문서 정보 저장
     const documentObjects = documentUrls.map((url: string, index: number) => ({
       item_id: itemId,
       document_url: url,
