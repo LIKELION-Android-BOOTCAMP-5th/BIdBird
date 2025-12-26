@@ -16,10 +16,18 @@ class ItemGrid extends StatelessWidget {
           final items = viewModel.items;
           final itemsLength = items.length;
 
+          final double width = MediaQuery.of(context).size.width;
+          int crossAxisCount = 2;
+          if (width >= 900) {
+            crossAxisCount = 4;
+          } else if (width >= 600) {
+            crossAxisCount = 3;
+          }
+
           return SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.85,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: 0.75,
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
             ),

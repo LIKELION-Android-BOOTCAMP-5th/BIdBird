@@ -15,9 +15,9 @@ class HomeTimerSection extends StatelessWidget {
     final isFinished = now.isAfter(finishTime);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       decoration: BoxDecoration(
-        color: isFinished ? Colors.black45 : const Color(0xffef6b6b),
+        color: Colors.black54,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
