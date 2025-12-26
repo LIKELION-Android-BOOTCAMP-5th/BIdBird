@@ -16,7 +16,7 @@ class FavoritesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.read<FavoritesViewModel>();
+    final vm = context.watch<FavoritesViewModel>();
     final isLoading = context.select<FavoritesViewModel, bool>(
       (vm) => vm.isLoading,
     );
