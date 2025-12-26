@@ -7,6 +7,8 @@ class EditItemEntity {
     required this.auctionDurationHours,
     required this.imageUrls,
     required this.documentUrls,
+    this.documentNames,
+    this.documentSizes,
   });
 
   final String title;
@@ -16,4 +18,6 @@ class EditItemEntity {
   final int auctionDurationHours;
   final List<String> imageUrls;
   final List<String> documentUrls;
+  final List<String>? documentNames;
+  final List<int>? documentSizes;
 }

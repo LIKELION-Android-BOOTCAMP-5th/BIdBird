@@ -33,6 +33,19 @@ import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_en
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 
+class PickedDocument {
+  final File file;
+  final String originalName;
+  final int size;
+  PickedDocument({
+    required this.file,
+    required this.originalName,
+    required this.size,
+  });
+
+  String get path => file.path;
+}
+
 /// ItemAdd ViewModel - Thin Pattern
 /// 책임: UI 상태 관리, Flow UseCase 호출
 /// 제외: 비즈니스 로직 (Flow UseCase에서 처리)
@@ -61,7 +74,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
 
   List<XFile> selectedImages = <XFile>[];
-  List<File> selectedDocuments = <File>[]; // PDF 보증서 목록
+  List<PickedDocument> selectedDocuments = <PickedDocument>[]; // PDF 보증서 목록
   final List<KeywordTypeEntity> keywordTypes = <KeywordTypeEntity>[];
 
   final List<String> durations = ItemAuctionDurationConstants.durationOptions;
@@ -184,20 +197,23 @@ class ItemAddViewModel extends ItemBaseViewModel {
       );
 
       if (result != null) {
-        final newFiles = result.paths
-            .where((path) => path != null)
-            .map((path) => File(path!))
-            .toList();
-
+        final List<PickedDocument> newDocs = result.files.where((file) => file.path != null).map((file) {
+          return PickedDocument(
+            file: File(file.path!),
+            originalName: file.name,
+            size: file.size ?? 0,
+          );
+        }).toList();
+        
         // 최대 5개 제한 (필요 시 조정)
-        if (selectedDocuments.length + newFiles.length > 5) {
+        if (selectedDocuments.length + newDocs.length > 5) {
           // 5개까지만 추가
           final remaining = 5 - selectedDocuments.length;
           if (remaining > 0) {
-            selectedDocuments.addAll(newFiles.take(remaining));
+            selectedDocuments.addAll(newDocs.take(remaining));
           }
         } else {
-          selectedDocuments.addAll(newFiles);
+          selectedDocuments.addAll(newDocs);
         }
         notifyListeners();
       }
@@ -275,7 +291,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
       try {
         await Future.wait([
           loadExistingImages(editItem.imageUrls),
-          loadExistingDocuments(editItem.documentUrls),
+          loadExistingDocuments(editItem.documentUrls, editItem.documentNames, editItem.documentSizes),
         ]);
       } catch (e) {
         // 에러는 로그에만 남기고 사용자에게는 알리지 않음
@@ -311,7 +327,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
     }
   }
   /// 수정 모드에서 기존 문서를 불러와 selectedDocuments에 채웁니다.
-  Future<void> loadExistingDocuments(List<String> documentUrls) async {
+  Future<void> loadExistingDocuments(List<String> documentUrls, List<String>? documentNames, List<int>? documentSizes) async {
     if (documentUrls.isEmpty) return;
 
     _dio ??= Dio();
@@ -319,13 +335,19 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
     try {
       final results = await Future.wait(
-        documentUrls.map((url) => _downloadSingleDocument(dio, url)),
+        documentUrls.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final url = entry.value;
+          final name = (documentNames != null && documentNames.length > idx) ? documentNames[idx] : null;
+          final size = (documentSizes != null && documentSizes.length > idx) ? documentSizes[idx] : 0;
+          return _downloadSingleDocument(dio, url, originalName: name, originalSize: size);
+        }),
         eagerError: false,
       );
 
-      final files = results.whereType<File>().toList();
-      if (files.isNotEmpty) {
-        selectedDocuments = files;
+      final docs = results.whereType<PickedDocument>().toList();
+      if (docs.isNotEmpty) {
+        selectedDocuments = docs;
         notifyListeners();
       }
     } catch (e) {
@@ -333,18 +355,26 @@ class ItemAddViewModel extends ItemBaseViewModel {
     }
   }
 
-  Future<File?> _downloadSingleDocument(Dio dio, String url) async {
+  Future<PickedDocument?> _downloadSingleDocument(
+    Dio dio, 
+    String url, {
+    String? originalName,
+    int? originalSize,
+  }) async {
     try {
       final response = await dio.get<List<int>>(
         url,
         options: Options(responseType: ResponseType.bytes),
       );
 
-      final fileName = url.split('/').last;
-      final tempPath = '${Directory.systemTemp.path}/$fileName';
+      final fileName = originalName ?? url.split('/').last;
+      final size = originalSize ?? (response.data?.length ?? 0);
+      
+      final tempPath = '${Directory.systemTemp.path}/${url.split('/').last}'; // Keep UUID for temp file system
       final file = File(tempPath);
       await file.writeAsBytes(response.data ?? <int>[]);
-      return file;
+      
+      return PickedDocument(file: file, originalName: fileName, size: size);
     } catch (e) {
       return null;
     }
@@ -490,10 +520,15 @@ class ItemAddViewModel extends ItemBaseViewModel {
         return;
       }
 
+      final List<String> documentOriginalNames = selectedDocuments.map((doc) => doc.originalName).toList();
+      final List<int> documentSizes = selectedDocuments.map((doc) => doc.size).toList();
+
       final (success, failure) = await _itemEnrollFlowUseCase.enroll(
         itemData: itemData,
         images: selectedImages,
-        documents: selectedDocuments,
+        documents: selectedDocuments.map((e) => e.file).toList(),
+        documentOriginalNames: documentOriginalNames,
+        documentSizes: documentSizes,
         primaryImageIndex: primaryImageIndex,
         editingItemId: editingItemId,
         onProgress: (progress) => _progressController.add(progress),

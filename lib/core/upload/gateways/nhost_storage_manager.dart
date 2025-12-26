@@ -9,13 +9,19 @@ class NhostStorageManager {
 
   final _nhost = NhostManager.shared;
 
-  Future<String?> uploadFile(File file, {String bucketId = 'default'}) async {
+  Future<Map<String, String>?> uploadFile(File file, {String? originalName, String bucketId = 'default'}) async {
     try {
-      final fileName = file.path.split('/').last;
+      final fileName = originalName ?? file.path.split('/').last;
       final mimeType = _getMimeType(fileName);
       
       // Enforce PDF-only policy as per user request
-      if (mimeType != 'application/pdf') {
+      // Be lenient: Allow if extension is .pdf OR if it came from our trusted picker
+      final bool hasPdfExtension = fileName.toLowerCase().endsWith('.pdf');
+      final isAllowed = mimeType == 'application/pdf' || 
+                        (mimeType == 'application/octet-stream' && hasPdfExtension) ||
+                        (originalName != null && hasPdfExtension);
+
+      if (!isAllowed && !hasPdfExtension) {
         debugPrint('⚠️ Nhost Storage Policy: Only PDF files are allowed. Blocked: $fileName ($mimeType)');
         throw Exception('Nhost Storage only accepts PDF files.');
       }
@@ -57,7 +63,11 @@ class NhostStorageManager {
       final url = 'https://$subdomain.storage.$region.nhost.run/v1/files/$fileId';
       debugPrint('✅ Upload successful: $url');
       
-      return url;
+      return {
+        'url': url,
+        'name': fileName,
+        'size': bytes.length.toString(),
+      };
     } catch (e, stackTrace) {
       debugPrint('❌ Nhost Storage Upload Error: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -65,17 +75,25 @@ class NhostStorageManager {
     }
   }
 
-  Future<List<String>> uploadFileList(List<File> files, {String bucketId = 'default'}) async {
+  Future<List<Map<String, String>>> uploadFileList(
+    List<File> files, {
+    List<String>? originalNames,
+    String bucketId = 'default',
+  }) async {
     debugPrint('🔵 Uploading ${files.length} files...');
-    List<String> urls = [];
-    for (var file in files) {
-      final url = await uploadFile(file, bucketId: bucketId);
-      if (url != null) {
-        urls.add(url);
+    List<Map<String, String>> result = [];
+    for (int i = 0; i < files.length; i++) {
+      final file = files[i];
+      final originalName = (originalNames != null && originalNames.length > i)
+          ? originalNames[i]
+          : null;
+      final fileInfo = await uploadFile(file, originalName: originalName, bucketId: bucketId);
+      if (fileInfo != null) {
+        result.add(fileInfo);
       }
     }
-    debugPrint('✅ Uploaded ${urls.length}/${files.length} files successfully');
-    return urls;
+    debugPrint('✅ Uploaded ${result.length}/${files.length} files successfully');
+    return result;
   }
 
   String _getMimeType(String fileName) {

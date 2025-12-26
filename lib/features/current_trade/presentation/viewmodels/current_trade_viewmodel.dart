@@ -283,7 +283,11 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
       }
       notifyListeners();
     } catch (e) {
-      stopLoadingWithError(e.toString());
+      _bidHistory = [];
+      _saleHistory = [];
+      _invalidateFilterCache();
+      notifyListeners();
+
     } finally {
       stopLoading();
     }
@@ -312,7 +316,8 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
 
       notifyListeners();
     } catch (e) {
-      stopLoadingWithError(e.toString());
+      notifyListeners();
+
     } finally {
       stopLoading();
     }

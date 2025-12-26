@@ -1,6 +1,7 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
+import 'package:flutter/foundation.dart';
 
 class ItemAddDatasource {
   final _supabase = SupabaseManager.shared.supabase;
@@ -34,6 +35,8 @@ class ItemAddDatasource {
         thumbnailUrl: thumbnailUrl,
       );
     }
+
+    // documentNames are now passed directly into the RPC call in _createItemDirect / _updateItemDirect
 
     // Return success data directly without fetching (we already have all the info)
     return ItemRegistrationData(
@@ -72,6 +75,8 @@ class ItemAddDatasource {
         'p_thumbnail_url': thumbnailUrl,
         'p_image_urls': validImageUrls,
         'p_document_urls': validDocumentUrls,
+        'p_document_names': entity.documentNames ?? [],
+        'p_file_sizes': entity.documentSizes ?? [],
       };
       
       final result = await _supabase.rpc('create_item_v2', params: params);
@@ -108,10 +113,14 @@ class ItemAddDatasource {
         'p_thumbnail_url': thumbnailUrl,
         'p_image_urls': validImageUrls,
         'p_document_urls': validDocumentUrls,
+        'p_document_names': entity.documentNames ?? [],
+        'p_file_sizes': entity.documentSizes ?? [],
       };
 
       await _supabase.rpc('update_item_v2', params: params);
     } catch (e) {
       throw Exception('Failed to update item (Direct): $e');
-    }  }
+    }
+  }
+
 }
