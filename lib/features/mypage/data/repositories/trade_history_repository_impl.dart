@@ -76,11 +76,8 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
       );
     }
 
-    results.sort((a, b) {
-      final da = a.endAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final db = b.endAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return db.compareTo(da);
-    });
+    final nowUtc = DateTime.now().toUtc();
+    results.sort((a, b) => _compareHistory(a, b, nowUtc: nowUtc));
 
     return results;
   }
@@ -91,217 +88,104 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
       throw Exception('로그인 정보가 없습니다.');
     }
 
-    final rawLogRows = await _remoteDataSource.fetchBuyerLogs(userId);
+    final logRows = await _remoteDataSource.fetchBuyerHistory(userId);
 
-    final Map<String, Map<String, dynamic>> latestLogByAuctionId = {};
+    if (logRows.isEmpty) return [];
 
-    for (final row in rawLogRows) {
-      final String? auctionId = row['bid_status_id']?.toString();
-      if (auctionId == null || auctionId.isEmpty) continue;
-
-      final existing = latestLogByAuctionId[auctionId];
-      if (existing == null) {
-        latestLogByAuctionId[auctionId] = row;
-        continue;
-      }
-
-      final prevCreated = DateTime.tryParse(
-        existing['created_at']?.toString() ?? '',
-      );
-      final curCreated = DateTime.tryParse(row['created_at']?.toString() ?? '');
-
-      if (prevCreated == null) {
-        latestLogByAuctionId[auctionId] = row;
-      } else if (curCreated != null && curCreated.isAfter(prevCreated)) {
-        latestLogByAuctionId[auctionId] = row;
-      }
-    }
-
-    final List<Map<String, dynamic>> logRows = latestLogByAuctionId.values
-        .toList();
-
-    final tradeRows = await _remoteDataSource.fetchTradeStatus(userId);
-
-    if (logRows.isEmpty && tradeRows.isEmpty) return [];
-
-    final Set<String> auctionIds = {};
-    for (final row in logRows) {
-      final id = row['bid_status_id']?.toString();
-      if (id != null && id.isNotEmpty) {
-        auctionIds.add(id);
-      }
-    }
-
-    final Map<String, Map<String, dynamic>> auctionsById = {};
-    final Map<String, DateTime?> auctionEndByItem = {};
-    final Set<String> itemIds = {};
-    if (auctionIds.isNotEmpty) {
-      final auctionsRows = await _remoteDataSource.fetchAuctionsByIds(
-        auctionIds.toList(),
-      );
-
-      for (final row in auctionsRows) {
-        final id = row['auction_id']?.toString();
-        if (id != null) {
-          auctionsById[id] = row;
-        }
-        final itemId = row['item_id']?.toString();
-        if (itemId != null) {
-          auctionEndByItem[itemId] = DateTime.tryParse(
-            row['auction_end_at']?.toString() ?? '',
-          );
-          itemIds.add(itemId);
-        }
-      }
-    }
-
-    final missingItemEndIds = itemIds
-        .where((itemId) => !auctionEndByItem.containsKey(itemId))
-        .toList();
-    if (missingItemEndIds.isNotEmpty) {
-      final extraRows = await _remoteDataSource.fetchAuctionEndsByItemIds(
-        missingItemEndIds,
-      );
-
-      for (final row in extraRows) {
-        final itemId = row['item_id']?.toString();
-        if (itemId == null) continue;
-        auctionEndByItem[itemId] ??= DateTime.tryParse(
-          row['auction_end_at']?.toString() ?? '',
-        );
-
-        final auctionId = row['auction_id']?.toString();
-        if (auctionId != null && !auctionsById.containsKey(auctionId)) {
-          auctionsById[auctionId] = row;
-        }
-      }
-    }
-
-    for (final row in tradeRows) {
-      final itemId = row['item_id']?.toString();
-      if (itemId != null) {
-        itemIds.add(itemId);
-      }
-    }
-
-    final Map<String, Map<String, dynamic>> itemsById = {};
-    if (itemIds.isNotEmpty) {
-      final itemRows = await _remoteDataSource.fetchItemsByIds(
-        itemIds.toList(),
-      );
-
-      for (final row in itemRows) {
-        final id = row['item_id']?.toString();
-        if (id != null) {
-          itemsById[id] = row;
-        }
-      }
-    }
-
-    final Map<String, Map<String, dynamic>> latestTradeByItem = {};
-    for (final row in tradeRows) {
-      final itemId = row['item_id']?.toString();
-      if (itemId == null || itemId.isEmpty) continue;
-      final created = DateTime.tryParse(row['created_at']?.toString() ?? '');
-      final prevCreated = DateTime.tryParse(
-        latestTradeByItem[itemId]?['created_at']?.toString() ?? '',
-      );
-      if (prevCreated == null ||
-          (created != null && created.isAfter(prevCreated))) {
-        latestTradeByItem[itemId] = row;
-      }
-    }
-
+    // 아이템별 최신 로그만 추립니다.
     final Map<String, Map<String, dynamic>> latestLogByItem = {};
     for (final row in logRows) {
-      final auctionId = row['bid_status_id']?.toString();
-      final auction = auctionsById[auctionId] ?? <String, dynamic>{};
-      final itemId = auction['item_id']?.toString();
+      final auction = _asMap(row['auction']) ?? _asMap(row['auctions']);
+      final itemId = auction?['item_id']?.toString();
       if (itemId == null || itemId.isEmpty) continue;
-      final created = DateTime.tryParse(row['created_at']?.toString() ?? '');
-      final prevCreated = DateTime.tryParse(
-        latestLogByItem[itemId]?['created_at']?.toString() ?? '',
-      );
+      final created = _parseDate(row['created_at']);
+      final prevCreated = _parseDate(latestLogByItem[itemId]?['created_at']);
       if (prevCreated == null ||
           (created != null && created.isAfter(prevCreated))) {
         latestLogByItem[itemId] = row;
       }
     }
 
-    final Set<String> itemKeys = {};
-    itemKeys.addAll(latestTradeByItem.keys);
-    itemKeys.addAll(latestLogByItem.keys);
-
     final List<TradeHistoryDto> results = [];
     final nowUtc = DateTime.now().toUtc();
 
-    for (final itemId in itemKeys) {
-      final item = itemsById[itemId] ?? <String, dynamic>{};
-      final endAt = auctionEndByItem[itemId];
-      final tradeRow = latestTradeByItem[itemId];
+    for (final entry in latestLogByItem.entries) {
+      final itemId = entry.key;
+      final logRow = entry.value;
+      final auction =
+          _asMap(logRow['auction']) ??
+          _asMap(logRow['auctions']) ??
+          <String, dynamic>{};
+      final item =
+          _firstMap(auction['items_detail']) ?? _asMap(auction['items_detail']);
+      final tradeRow = _firstMap(item?['trade_status']);
 
-      if (tradeRow != null) {
+      // trade_status가 있으면 우선 사용
+      if (tradeRow != null &&
+          (tradeRow['buyer_id'] == null ||
+              tradeRow['buyer_id']?.toString() == userId)) {
+        final endAt = _parseDate(auction['auction_end_at']);
         final tradeCode = tradeRow['trade_status_code'] as int?;
         results.add(
           TradeHistoryDto(
             itemId: itemId,
             role: TradeRole.buyer,
-            title: item['title']?.toString() ?? '',
+            title: item?['title']?.toString() ?? '',
             currentPrice: (tradeRow['price'] as num?)?.toInt() ?? 0,
             statusCode: tradeCode ?? 0,
-            buyNowPrice: item['buy_now_price']?.toInt(),
-            thumbnailUrl: item['thumbnail_image']?.toString(),
-            createdAt: DateTime.tryParse(
-              tradeRow['created_at']?.toString() ?? '',
-            ),
+            buyNowPrice: (item?['buy_now_price'] as num?)?.toInt(),
+            thumbnailUrl: item?['thumbnail_image']?.toString(),
+            createdAt: _parseDate(tradeRow['created_at']),
             endAt: endAt,
           ),
         );
         continue;
       }
 
-      final logRow = latestLogByItem[itemId];
-      if (logRow != null) {
-        final auctionId = logRow['bid_status_id']?.toString();
-        final auction = auctionsById[auctionId] ?? <String, dynamic>{};
-        final lastBidUserId = auction['last_bid_user_id']?.toString();
-        final logCode = logRow['auction_log_code'] as int?;
-        final createdAt = DateTime.tryParse(
-          logRow['created_at']?.toString() ?? '',
-        );
-        final auctionStatus = auction['auction_status_code'] as int?;
-        const endedStatusCodes = {321, 322};
-        final endAtUtc = endAt?.toUtc();
-        final isEndedByTime = endAtUtc != null && endAtUtc.isBefore(nowUtc);
-        final isEndedByCode =
-            auctionStatus != null && endedStatusCodes.contains(auctionStatus);
-        final isEnded = isEndedByTime || isEndedByCode;
-        final isWinner = lastBidUserId != null && lastBidUserId == userId;
-        final statusCode = (!isWinner && isEnded) ? 433 : (logCode ?? 0);
+      // 거래가 없으면 로그 기반으로 상태 계산
+      final lastBidUserId = auction['last_bid_user_id']?.toString();
+      final logCode = logRow['auction_log_code'] as int?;
+      final createdAt = _parseDate(logRow['created_at']);
+      final auctionStatus = auction['auction_status_code'] as int?;
+      const endedStatusCodes = {321, 322};
+      final endAt = _parseDate(auction['auction_end_at']);
+      final endAtUtc = endAt?.toUtc();
+      final isEndedByTime = endAtUtc != null && endAtUtc.isBefore(nowUtc);
+      final isEndedByCode =
+          auctionStatus != null && endedStatusCodes.contains(auctionStatus);
+      final isEnded = isEndedByTime || isEndedByCode;
+      final isWinner = lastBidUserId != null && lastBidUserId == userId;
+      final statusCode = (!isWinner && isEnded) ? 433 : (logCode ?? 0);
 
-        results.add(
-          TradeHistoryDto(
-            itemId: itemId,
-            role: TradeRole.buyer,
-            title: item['title']?.toString() ?? '',
-            currentPrice: (logRow['bid_price'] as num?)?.toInt() ?? 0,
-            statusCode: statusCode,
-            buyNowPrice: (item['buy_now_price'] as num?)?.toInt(),
-            thumbnailUrl: item['thumbnail_image']?.toString(),
-            createdAt: createdAt,
-            endAt: endAt,
-          ),
-        );
-      }
+      results.add(
+        TradeHistoryDto(
+          itemId: itemId,
+          role: TradeRole.buyer,
+          title: item?['title']?.toString() ?? '',
+          currentPrice: (logRow['bid_price'] as num?)?.toInt() ?? 0,
+          statusCode: statusCode,
+          buyNowPrice: (item?['buy_now_price'] as num?)?.toInt(),
+          thumbnailUrl: item?['thumbnail_image']?.toString(),
+          createdAt: createdAt,
+          endAt: endAt,
+        ),
+      );
     }
 
-    results.sort((a, b) {
-      final da = a.endAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final db = b.endAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return db.compareTo(da);
-    });
+    results.sort((a, b) => _compareHistory(a, b, nowUtc: nowUtc));
 
     return results;
+  }
+
+  Map<String, dynamic>? _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    return null;
+  }
+
+  DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    return DateTime.tryParse(raw.toString());
   }
 
   Map<String, dynamic>? _firstMap(dynamic value) {
@@ -312,5 +196,40 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
       return value.first as Map<String, dynamic>;
     }
     return null;
+  }
+
+  int _compareHistory(
+    TradeHistoryDto a,
+    TradeHistoryDto b, {
+    required DateTime nowUtc,
+  }) {
+    final endA = a.endAt?.toUtc();
+    final endB = b.endAt?.toUtc();
+    final aEnded = endA != null && endA.isBefore(nowUtc);
+    final bEnded = endB != null && endB.isBefore(nowUtc);
+
+    // 진행 중 > 종료 여부는 유지, 진행 중은 endAt 오름차순, 종료는 endAt 내림차순
+    if (!aEnded && bEnded) return -1;
+    if (aEnded && !bEnded) return 1;
+
+    // 둘 다 진행 중
+    if (!aEnded && !bEnded) {
+      final va =
+          endA?.millisecondsSinceEpoch ??
+          DateTime.now()
+              .add(const Duration(days: 365 * 100))
+              .millisecondsSinceEpoch;
+      final vb =
+          endB?.millisecondsSinceEpoch ??
+          DateTime.now()
+              .add(const Duration(days: 365 * 100))
+              .millisecondsSinceEpoch;
+      return va.compareTo(vb); // 가까운 종료일 먼저
+    }
+
+    // 둘 다 종료
+    final va = endA?.millisecondsSinceEpoch ?? 0;
+    final vb = endB?.millisecondsSinceEpoch ?? 0;
+    return vb.compareTo(va); // 최근 종료 먼저
   }
 }

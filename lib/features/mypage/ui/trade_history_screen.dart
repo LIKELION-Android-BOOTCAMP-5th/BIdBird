@@ -28,7 +28,7 @@ class TradeHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final vm = context.read<TradeHistoryViewModel>();
+    final vm = context.watch<TradeHistoryViewModel>();
     final role = context.select<TradeHistoryViewModel, TradeRole>(
       (vm) => vm.role,
     );
