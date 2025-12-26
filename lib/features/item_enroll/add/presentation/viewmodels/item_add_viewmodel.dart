@@ -1,8 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
+
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/item/item_price_utils.dart' show formatNumber, parseFormattedPrice;
+import 'package:bidbird/core/utils/item/item_price_utils.dart'
+    show parseFormattedPrice, formatNumber;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_validator.dart';
@@ -22,25 +27,29 @@ import 'package:bidbird/features/item_enroll/add/domain/usecases/add_item_usecas
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_edit_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_keyword_types_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
+import 'package:bidbird/features/item_enroll/add/domain/usecases/orchestrations/item_enroll_flow_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
-import 'package:bidbird/core/upload/gateways/image_upload_gateway.dart';
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
+import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 
+/// ItemAdd ViewModel - Thin Pattern
+/// 책임: UI 상태 관리, Flow UseCase 호출
+/// 제외: 비즈니스 로직 (Flow UseCase에서 처리)
 class ItemAddViewModel extends ItemBaseViewModel {
   ItemAddViewModel()
-    : _addItemUseCase = AddItemUseCase(ItemAddRepositoryImpl()),
-      _getKeywordTypesUseCase =
-          GetKeywordTypesUseCase(KeywordRepositoryImpl()),
+    : _getKeywordTypesUseCase = GetKeywordTypesUseCase(KeywordRepositoryImpl()),
       _getEditItemUseCase = GetEditItemUseCase(EditItemRepositoryImpl()),
-      _uploadItemImagesWithThumbnailUseCase =
-          UploadItemImagesWithThumbnailUseCase(ImageUploadGatewayImpl());
+      _itemEnrollFlowUseCase = ItemEnrollFlowUseCase(
+        uploadItemImagesUseCase: UploadItemImagesWithThumbnailUseCase(
+          ImageUploadGatewayImpl(),
+        ),
+        addItemUseCase: AddItemUseCase(ItemAddRepositoryImpl()),
+      );
 
-  final AddItemUseCase _addItemUseCase;
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
-  final UploadItemImagesWithThumbnailUseCase _uploadItemImagesWithThumbnailUseCase;
+  final ItemEnrollFlowUseCase _itemEnrollFlowUseCase;
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController startPriceController = TextEditingController();
@@ -48,7 +57,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
   final TextEditingController descriptionController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
+
+
+
   List<XFile> selectedImages = <XFile>[];
+  List<File> selectedDocuments = <File>[]; // PDF 보증서 목록
   final List<KeywordTypeEntity> keywordTypes = <KeywordTypeEntity>[];
 
   final List<String> durations = ItemAuctionDurationConstants.durationOptions;
@@ -61,6 +74,10 @@ class ItemAddViewModel extends ItemBaseViewModel {
   bool _isSubmitting = false;
   bool useInstantPrice = false;
   int primaryImageIndex = 0;
+
+  final StreamController<double> _progressController =
+      StreamController<double>.broadcast();
+  Stream<double> get uploadProgressStream => _progressController.stream;
 
   bool get isLoadingKeywords => _isLoadingKeywords;
   bool get isSubmitting => _isSubmitting;
@@ -75,18 +92,20 @@ class ItemAddViewModel extends ItemBaseViewModel {
   @override
   void dispose() {
     disposeControllers();
-    _dio?.close();
-    _dio = null;
+    _progressController.close();
     super.dispose();
   }
 
   Future<void> init() async {
+    editingItemId = null; // 신규 작성을 위해 초기화
     await fetchKeywordTypes();
   }
 
   Future<void> fetchKeywordTypes() async {
+    if (_isLoadingKeywords) return; // 중복 호출 방지
+
     _isLoadingKeywords = true;
-    notifyListeners();
+    notifyListeners(); // 로딩 상태만 알림
 
     try {
       final types = await _getKeywordTypesUseCase();
@@ -101,16 +120,18 @@ class ItemAddViewModel extends ItemBaseViewModel {
           !validIds.contains(selectedKeywordTypeId)) {
         selectedKeywordTypeId = null;
       }
-    } catch (e) {
-      throw Exception(ItemRegistrationErrorMessages.categoryLoadError(e));
-    } finally {
+
       _isLoadingKeywords = false;
-      notifyListeners();
+      notifyListeners(); // 완료 상태만 알림
+    } catch (e) {
+      _isLoadingKeywords = false;
+      notifyListeners(); // 에러 상태 알림
+      throw Exception(ItemRegistrationErrorMessages.categoryLoadError(e));
     }
   }
 
   Future<void> pickImagesFromGallery() async {
-    final List<XFile> images = await _picker.pickMultiImage(imageQuality: 80);
+    final List<XFile> images = await _picker.pickMultiImage();
     if (images.isEmpty) {
       return;
     }
@@ -122,14 +143,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
     } else {
       selectedImages = all;
     }
-    notifyListeners();
+    notifyListeners(); // 이미지 추가 시 UI 업데이트 필요
   }
 
   Future<void> pickImageFromCamera() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-    );
+    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
     if (image == null) return;
 
     if (selectedImages.length >= ItemImageLimits.maxImageCount) {
@@ -138,13 +156,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
     // 리사이징은 upload datasource에서 처리
     selectedImages = <XFile>[...selectedImages, image];
-    notifyListeners();
+    notifyListeners(); // 이미지 추가 시 UI 업데이트 필요
   }
 
   Future<void> pickVideoFromGallery() async {
-    final XFile? video = await _picker.pickVideo(
-      source: ImageSource.gallery,
-    );
+    final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
     if (video == null) {
       return;
     }
@@ -155,7 +171,39 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
     // 리사이징은 upload datasource에서 처리
     selectedImages = <XFile>[...selectedImages, video];
-    notifyListeners();
+    notifyListeners(); // 비디오 추가 시 UI 업데이트 필요
+  }
+
+  /// PDF 보증서 선택
+  Future<void> pickDocuments() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: true,
+      );
+
+      if (result != null) {
+        final newFiles = result.paths
+            .where((path) => path != null)
+            .map((path) => File(path!))
+            .toList();
+
+        // 최대 5개 제한 (필요 시 조정)
+        if (selectedDocuments.length + newFiles.length > 5) {
+          // 5개까지만 추가
+          final remaining = 5 - selectedDocuments.length;
+          if (remaining > 0) {
+            selectedDocuments.addAll(newFiles.take(remaining));
+          }
+        } else {
+          selectedDocuments.addAll(newFiles);
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error picking documents: $e');
+    }
   }
 
   void removeImageAt(int index) {
@@ -173,19 +221,25 @@ class ItemAddViewModel extends ItemBaseViewModel {
         primaryImageIndex = primaryImageIndex - 1;
       }
     }
+    notifyListeners(); // 이미지 제거 시 UI 업데이트 필요
+  }
+
+  /// 보증서 삭제
+  void removeDocumentAt(int index) {
+    if (index < 0 || index >= selectedDocuments.length) return;
+    selectedDocuments.removeAt(index);
     notifyListeners();
   }
 
   void setPrimaryImage(int index) {
     if (index < 0 || index >= selectedImages.length) return;
     primaryImageIndex = index;
-    notifyListeners();
+    notifyListeners(); // 기본 이미지 변경 시 UI 업데이트 필요
   }
 
   Future<void> startEdit(String itemId) async {
     editingItemId = itemId;
     try {
-
       if (keywordTypes.isEmpty) {
         await fetchKeywordTypes();
       }
@@ -219,9 +273,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
       notifyListeners();
 
       try {
-        await loadExistingImages(editItem.imageUrls);
+        await Future.wait([
+          loadExistingImages(editItem.imageUrls),
+          loadExistingDocuments(editItem.documentUrls),
+        ]);
       } catch (e) {
-        // 이미지 로드 실패 시에도 수정은 계속 진행 가능
         // 에러는 로그에만 남기고 사용자에게는 알리지 않음
       }
     } catch (e) {
@@ -242,14 +298,55 @@ class ItemAddViewModel extends ItemBaseViewModel {
       final files = await _downloadImagesInParallel(dio, imageUrls);
 
       if (files.isEmpty) {
-        throw Exception('이미지를 불러올 수 없습니다.');
+        // 다운로드 실패 시에도 네트워크 URL을 직접 표시하도록 폴백
+        selectedImages = imageUrls.map((u) => XFile(u)).toList();
+      } else {
+        selectedImages = files;
       }
-
-      selectedImages = files;
-      notifyListeners();
+      notifyListeners(); // 이미지 로드 시 UI 업데이트 필요
     } catch (e) {
-      // 이미지 로드 실패 시 에러 재발생
-      rethrow;
+      // 완전 실패 시에도 네트워크 URL로 폴백
+      selectedImages = imageUrls.map((u) => XFile(u)).toList();
+      notifyListeners(); // 실패 시에도 UI 업데이트 필요
+    }
+  }
+  /// 수정 모드에서 기존 문서를 불러와 selectedDocuments에 채웁니다.
+  Future<void> loadExistingDocuments(List<String> documentUrls) async {
+    if (documentUrls.isEmpty) return;
+
+    _dio ??= Dio();
+    final dio = _dio!;
+
+    try {
+      final results = await Future.wait(
+        documentUrls.map((url) => _downloadSingleDocument(dio, url)),
+        eagerError: false,
+      );
+
+      final files = results.whereType<File>().toList();
+      if (files.isNotEmpty) {
+        selectedDocuments = files;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading existing documents: $e');
+    }
+  }
+
+  Future<File?> _downloadSingleDocument(Dio dio, String url) async {
+    try {
+      final response = await dio.get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final fileName = url.split('/').last;
+      final tempPath = '${Directory.systemTemp.path}/$fileName';
+      final file = File(tempPath);
+      await file.writeAsBytes(response.data ?? <int>[]);
+      return file;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -273,12 +370,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
       // 캐시에서 먼저 확인
       final cacheManager = ItemImageCacheManager.instance;
       final cachedFile = await cacheManager.getSingleFile(url);
-      
+
       if (await cachedFile.exists()) {
         // 캐시된 파일이 있으면 사용
         return XFile(cachedFile.path);
       }
-      
+
       // 캐시에 없으면 다운로드
       final response = await dio.get<List<int>>(
         url,
@@ -331,12 +428,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
   void setSelectedKeywordTypeId(int? id) {
     selectedKeywordTypeId = id;
-    notifyListeners();
+    notifyListeners(); // 카테고리 선택 UI 업데이트 필요
   }
 
   void setSelectedDuration(String value) {
     selectedDuration = value;
-    notifyListeners();
+    notifyListeners(); // 기간 선택 UI 업데이트 필요
   }
 
   void setUseInstantPrice(bool value) {
@@ -344,24 +441,44 @@ class ItemAddViewModel extends ItemBaseViewModel {
     if (!value) {
       instantPriceController.clear();
     }
-    notifyListeners();
+    notifyListeners(); // 즉시가 체크박스 UI 업데이트 필요
   }
 
+  // Methods: Submit (Delegate to Flow UseCase)
   Future<void> submit(BuildContext context) async {
-    // 중복 제출 방지
-    if (_isSubmitting) {
-      return;
-    }
+    if (_isSubmitting) return;
 
     final navigator = Navigator.of(context);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    if (!_validateSubmission(context, scaffoldMessenger)) {
+    final String? validationError = validate();
+    if (validationError != null) {
+      if (context.mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(validationError)),
+        );
+      }
       return;
     }
 
     _isSubmitting = true;
-    notifyListeners();
+    notifyListeners(); // 제출 시작 상태 UI 업데이트 필요
+
+    // 업로드 진행률: Cloudinary ProgressBus -> UI Progress
+    final int uploadFileCount = selectedImages.where((x) {
+      final uri = Uri.tryParse(x.path);
+      return !(uri != null && (uri.scheme == 'http' || uri.scheme == 'https'));
+    }).length;
+
+    final Map<String, double> fileProgress = {};
+    late final StreamSubscription progressSub;
+    progressSub = UploadProgressBus.instance.stream.listen((event) {
+      if (uploadFileCount == 0) return;
+      fileProgress[event.filePath] = event.progress.clamp(0.0, 1.0);
+      final double sum = fileProgress.values.fold(0.0, (a, b) => a + b);
+      final double overall = (sum / uploadFileCount).clamp(0.0, 1.0);
+      _progressController.add(overall * 0.7); // 업로드 단계는 0~70%
+    });
 
     bool loadingDialogOpen = true;
     _showLoadingDialog(context);
@@ -373,12 +490,21 @@ class ItemAddViewModel extends ItemBaseViewModel {
         return;
       }
 
-      final uploadResult = await _uploadItemImagesWithThumbnail(context, scaffoldMessenger);
-      if (uploadResult == null) {
+      final (success, failure) = await _itemEnrollFlowUseCase.enroll(
+        itemData: itemData,
+        images: selectedImages,
+        documents: selectedDocuments,
+        primaryImageIndex: primaryImageIndex,
+        editingItemId: editingItemId,
+        onProgress: (progress) => _progressController.add(progress),
+      );
+
+      if (failure != null) {
+        if (context.mounted) {
+          _showError(context, scaffoldMessenger, failure.message);
+        }
         return;
       }
-
-      await _saveItem(itemData, uploadResult.imageUrls, uploadResult.thumbnailUrl);
 
       _closeLoadingDialog(navigator, loadingDialogOpen);
       loadingDialogOpen = false;
@@ -387,26 +513,21 @@ class ItemAddViewModel extends ItemBaseViewModel {
       await _showSuccessDialog(context, navigator);
     } catch (e) {
       if (context.mounted) {
-        _showError(context, scaffoldMessenger, ItemRegistrationErrorMessages.registrationError(e));
+        _showError(
+          context,
+          scaffoldMessenger,
+          ItemRegistrationErrorMessages.registrationError(e),
+        );
       }
     } finally {
       _isSubmitting = false;
-      notifyListeners();
+      notifyListeners(); // 제출 완료 상태 UI 업데이트 필요
+      await progressSub.cancel();
       _closeLoadingDialog(navigator, loadingDialogOpen);
     }
   }
 
-  bool _validateSubmission(BuildContext context, ScaffoldMessengerState scaffoldMessenger) {
-    final String? error = validate();
-    if (error != null) {
-      if (context.mounted) {
-        scaffoldMessenger.showSnackBar(SnackBar(content: Text(error)));
-      }
-      return false;
-    }
-    return true;
-  }
-
+  // UI Helpers
   void _showLoadingDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -416,24 +537,31 @@ class ItemAddViewModel extends ItemBaseViewModel {
         final fontSize = dialogContext.fontSizeMedium;
 
         return Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(blueColor),
-              ),
-              SizedBox(height: spacing),
-              Text(
-                '로딩중',
-                style: TextStyle(
-                  fontSize: fontSize,
-                  color: textColor,
-                  decoration: TextDecoration.none,
-                  decorationColor: Colors.transparent,
-                  decorationThickness: 0,
-                ),
-              ),
-            ],
+          child: StreamBuilder<double>(
+            stream: uploadProgressStream,
+            initialData: 0.0,
+            builder: (context, snapshot) {
+              final p = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    value: p,
+                    valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+                  ),
+                  SizedBox(height: spacing),
+                  Text(
+                    '업로드 중 ${(p * 100).toStringAsFixed(0)}%',
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      color: Colors.white,
+                      decoration: TextDecoration.none,
+                      decorationThickness: 0,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         );
       },
@@ -465,60 +593,15 @@ class ItemAddViewModel extends ItemBaseViewModel {
       auctionEndAt: now.add(Duration(hours: auctionHours)),
       auctionDurationHours: auctionHours,
       imageUrls: [], // 이미지 URL은 업로드 후 설정
+      documentUrls: [], // PDF URL도 업로드 후 설정
       isAgree: agreed,
     );
   }
 
-  Future<ItemImageUploadResult?> _uploadItemImagesWithThumbnail(
+  Future<void> _showSuccessDialog(
     BuildContext context,
-    ScaffoldMessengerState scaffoldMessenger,
+    NavigatorState navigator,
   ) async {
-    try {
-      // 유즈케이스를 사용하여 이미지 및 썸네일 업로드
-      final result = await _uploadItemImagesWithThumbnailUseCase(
-        images: selectedImages,
-        primaryImageIndex: primaryImageIndex,
-      );
-
-      return result;
-    } catch (e) {
-      if (context.mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(content: Text(ItemRegistrationErrorMessages.imageUploadFailed)),
-        );
-      }
-      return null;
-    }
-  }
-
-  Future<void> _saveItem(
-    ItemAddEntity itemData,
-    List<String> imageUrls,
-    String? thumbnailUrl,
-  ) async {
-    final updatedData = ItemAddEntity(
-      title: itemData.title,
-      description: itemData.description,
-      startPrice: itemData.startPrice,
-      instantPrice: itemData.instantPrice,
-      keywordTypeId: itemData.keywordTypeId,
-      auctionStartAt: itemData.auctionStartAt,
-      auctionEndAt: itemData.auctionEndAt,
-      auctionDurationHours: itemData.auctionDurationHours,
-      imageUrls: imageUrls,
-      isAgree: itemData.isAgree,
-    );
-
-    await _addItemUseCase(
-      entity: updatedData,
-      imageUrls: imageUrls,
-      primaryImageIndex: primaryImageIndex,
-      editingItemId: editingItemId,
-      thumbnailUrl: thumbnailUrl,
-    );
-  }
-
-  Future<void> _showSuccessDialog(BuildContext context, NavigatorState navigator) async {
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -559,4 +642,3 @@ class ItemAddViewModel extends ItemBaseViewModel {
     }
   }
 }
-

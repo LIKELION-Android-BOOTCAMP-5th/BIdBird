@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
+import 'package:bidbird/main.dart';
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,6 +15,7 @@ enum OrderByType { newFirst, oldFirst, likesFirst }
 
 class HomeViewmodel extends ChangeNotifier {
   final HomeRepository _homeRepository;
+  StreamSubscription? _loginSubscription;
   //키워드 그릇 생성
   List<KeywordType> _keywords = [];
   List<KeywordType> get keywords => _keywords;
@@ -38,6 +41,14 @@ class HomeViewmodel extends ChangeNotifier {
   bool isSearching = false;
   String currentSearchText = "";
 
+  // 폴링 관련
+  Timer? _pollingTimer;
+  bool _isPollingActive = false;
+  static const Duration _pollingInterval = Duration(seconds: 6);
+
+  // 검색 캐싱
+  final Map<String, List<ItemsEntity>> _searchCache = {};
+
   int? get selectedKeywordId {
     if (selectKeyword == "전체") return null;
     try {
@@ -53,9 +64,12 @@ class HomeViewmodel extends ChangeNotifier {
   //스크롤 컨트롤러
   Timer? _debounce;
   ScrollController scrollController = ScrollController();
+  // 정렬/notify 배치 호출용
+  Timer? _sortDebounce;
 
   //실시간 검색
   Timer? _searchDebounce;
+  int _searchRequestId = 0; // 최신 검색 요청 식별자
 
   //ios fetch문제 잡기
   bool _isDisposed = false;
@@ -64,34 +78,17 @@ class HomeViewmodel extends ChangeNotifier {
   HomeViewmodel(this._homeRepository) {
     getKeywordList();
 
+    _loginSubscription = eventBus.on<LoginEventBus>().listen((event) {
+      if (event.type == LoginEventType.logout) {
+        _clearAllData();
+      }
+    });
+
     // 스크롤 fetch 설정 부분, 여기서 기본적인 fetch도 이루어짐
-    scrollController.addListener(() async {
-      if (_debounce?.isActive ?? false) _debounce!.cancel();
-
-      _debounce = Timer(const Duration(milliseconds: 300), () {
-        final double offset = scrollController.offset;
-        if (_isDisposed) return;
-
-        if (offset < 50) {
-          if (buttonIsWorking) {
-            buttonIsWorking = false;
-            notifyListeners();
-          }
-        } else {
-          if (!buttonIsWorking) {
-            buttonIsWorking = true;
-            notifyListeners();
-          }
-        }
-      });
-
+    scrollController.addListener(() {
       if (isSearching == true) return;
 
-      // if (scrollController.position.atEdge &&
-      //     scrollController.position.pixels != 0) {
-      //   fetchNextItems();
-      // }
-      //이걸 추가해야지 더욱 안정적이로 스크롤 닿기 전에 이미 fetch되어서 자연스러움
+      // 마지막에 도달하면 다음 페이지 로드
       if (scrollController.position.pixels >=
           scrollController.position.maxScrollExtent - 200) {
         fetchNextItems();
@@ -103,14 +100,15 @@ class HomeViewmodel extends ChangeNotifier {
     setupRealtimeSubscription();
   }
 
-  //[메모리 누수] scrollController, Timer 정지
-
   @override
   void dispose() {
     _isDisposed = true;
+    _loginSubscription?.cancel();
     scrollController.dispose();
     _debounce?.cancel();
     _searchDebounce?.cancel();
+    _sortDebounce?.cancel();
+    _pollingTimer?.cancel();
     userInputController.dispose();
 
     if (_actionRealtime != null) {
@@ -126,12 +124,13 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   String setOrderBy(OrderByType type) {
-    if (type == OrderByType.newFirst)
+    if (type == OrderByType.newFirst) {
       return "created_at.desc";
-    else if (type == OrderByType.oldFirst)
+    } else if (type == OrderByType.oldFirst) {
       return "created_at.asc";
-    else
+    } else {
       return "likes_count.desc";
+    }
   }
 
   //판매 중인 아이템 위로 보내는 로직
@@ -143,16 +142,37 @@ class HomeViewmodel extends ChangeNotifier {
       final bool bActive = b.finishTime.isAfter(now); // b가 아직 종료 안됐는가?
 
       // 진행 중(finishTime > now) 먼저
-      if (aActive && !bActive) return -1; // a 먼저
-      if (!aActive && bActive) return 1; // b 먼저
+      if (aActive != bActive) {
+        return aActive ? -1 : 1;
+      }
 
-      // 둘 다 진행중이거나 둘 다 종료 → 기존 정렬 유지
-      return 0;
+      // 둘 다 진행 중이면 종료 임박 순으로, 둘 다 종료면 종료 시간 늦은 순으로
+      final int finishCompare = a.finishTime.compareTo(b.finishTime);
+      if (aActive && bActive) {
+        return finishCompare; // 더 빨리 끝나는 것 우선
+      }
+      // 둘 다 종료 상태면 최신 종료를 아래로 보내기 위해 역순 정렬
+      return -finishCompare;
+    });
+  }
+
+  // 실시간 아이템 업데이트 (사용 안 함 - 폴링으로 변경)
+  // ignore: unused_element
+  void _scheduleResortAndNotify({
+    Duration delay = const Duration(milliseconds: 150),
+  }) {
+    if (_isDisposed) return;
+    _sortDebounce?.cancel();
+    _sortDebounce = Timer(delay, () {
+      if (_isDisposed) return;
+      sortItemsByFinishTime();
+      notifyListeners();
     });
   }
 
   Future<void> fetchItems() async {
     String orderBy = setOrderBy(type);
+    _hasMore = true;
     _items = await _homeRepository.fetchItems(
       orderBy,
       currentIndex: _currentPage,
@@ -167,10 +187,13 @@ class HomeViewmodel extends ChangeNotifier {
     String orderBy = setOrderBy(type);
     _currentPage = 1;
     _items = [];
+    _hasMore = true;
+    _isFetching = false; // 캐시된 fetch 플래그 초기화
     notifyListeners();
     _items = await _homeRepository.fetchItems(
       orderBy,
       currentIndex: _currentPage,
+      keywordType: selectedKeywordId,
     );
     sortItemsByFinishTime();
     notifyListeners();
@@ -217,6 +240,7 @@ class HomeViewmodel extends ChangeNotifier {
     selectKeyword = keyword;
     _currentPage = 1;
     _items = [];
+    _hasMore = true;
     notifyListeners();
 
     String orderBy = setOrderBy(type);
@@ -249,6 +273,7 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> search(String userInput) async {
+    final requestId = ++_searchRequestId; // 최신 요청 토큰
     isSearching = userInput.isNotEmpty;
     currentSearchText = userInput;
     _currentPage = 1;
@@ -258,12 +283,28 @@ class HomeViewmodel extends ChangeNotifier {
     String orderBy = setOrderBy(type);
     userInputController.text = userInput;
 
+    // 캐시 확인
+    if (_searchCache.containsKey(userInput)) {
+      _items = List.from(_searchCache[userInput]!);
+      sortItemsByFinishTime();
+      notifyListeners();
+      return;
+    }
+
     _items = await _homeRepository.fetchSearchResult(
       orderBy,
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
       userInputSearchText: userInput,
     );
+
+    // 늦게 도착한 응답은 폐기
+    if (requestId != _searchRequestId) {
+      return;
+    }
+
+    // 캐싱
+    _searchCache[userInput] = List.from(_items);
 
     sortItemsByFinishTime();
 
@@ -282,6 +323,9 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> searchNextItems() async {
+    if (_isFetching || !_hasMore) return;
+
+    _isFetching = true;
     _currentPage++;
 
     String orderBy = setOrderBy(type);
@@ -293,51 +337,76 @@ class HomeViewmodel extends ChangeNotifier {
       userInputSearchText: currentSearchText,
     );
 
-    _items.addAll(moreItems);
+    if (moreItems.isEmpty) {
+      _hasMore = false;
+    } else {
+      _items.addAll(moreItems);
+    }
 
     sortItemsByFinishTime();
 
+    _isFetching = false;
     notifyListeners();
   }
 
   void setupRealtimeSubscription() {
-    _actionRealtime = SupabaseManager.shared.supabase.channel(
-      'HomeActionChanel',
-    );
+    // 폴링 시작 (6초마다 아이템 정렬 상태 확인)
+    _startPolling();
+  }
 
-    _actionRealtime!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'auctions',
-          callback: (payload) {
-            final newData = payload.newRecord;
+  void _startPolling() {
+    if (_isPollingActive) return;
+    _isPollingActive = true;
 
-            final itemId = newData['item_id'];
-            final index = _items.indexWhere((e) => e.item_id == itemId);
-            if (index == -1) return;
+    _pollingTimer = Timer.periodic(_pollingInterval, (_) {
+      if (_isDisposed) {
+        _stopPolling();
+        return;
+      }
 
-            final item = _items[index];
+      // 현재 시간과 비교하여 종료/시작 상태 변경 확인
+      final now = DateTime.now();
+      bool needsUpdate = false;
 
-            // 1) bid_count 업데이트
-            item.auctions.bid_count =
-                newData['bid_count'] ?? item.auctions.bid_count;
+      for (final item in _items) {
+        if (item.finishTime.difference(now).inSeconds.abs() < 10) {
+          // 종료 시간 10초 이내일 때만 업데이트 확인
+          needsUpdate = true;
+          break;
+        }
+      }
 
-            // 2) current_price 업데이트
-            item.auctions.current_price =
-                newData['current_price'] ?? item.auctions.current_price;
+      // 필요할 때만 정렬 및 알림
+      if (needsUpdate) {
+        sortItemsByFinishTime();
+        notifyListeners();
+      }
+    });
+  }
 
-            // 3) finishTime 업데이트
-            final endAt = newData['auction_end_at']?.toString();
-            if (endAt != null && endAt.isNotEmpty) {
-              item.finishTime = DateTime.tryParse(endAt) ?? item.finishTime;
-            }
-            if (_isDisposed) return;
-            sortItemsByFinishTime();
-            notifyListeners();
-          },
-        )
-        .subscribe();
+  void _stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _isPollingActive = false;
+  }
+
+  /// 로그아웃 시 모든 데이터 초기화
+  void _clearAllData() {
+    _items = [];
+    _keywords = [];
+    _searchCache.clear();
+    selectKeyword = "전체";
+    _currentPage = 1;
+    _hasMore = true;
+    _isFetching = false;
+    searchButton = false;
+    isSearching = false;
+    currentSearchText = "";
+    userInputController.clear();
+    _stopPolling();
+    _actionRealtime?.unsubscribe();
+    _actionRealtime = null;
+    notifyListeners();
   }
 
   @override

@@ -19,7 +19,6 @@ class ItemAddPriceSection extends StatelessWidget {
   Widget build(BuildContext context) {
     // Responsive values
     final labelFontSize = context.fontSizeMedium;
-    final spacing = context.inputPadding;
     
     final startPriceField = Column(
       crossAxisAlignment: CrossAxisAlignment.start,

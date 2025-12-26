@@ -6,24 +6,30 @@ import 'package:bidbird/features/item_trade/trade_status/domain/entities/trade_s
 import 'package:bidbird/features/item_trade/trade_status/domain/usecases/fetch_trade_status_usecase.dart';
 import 'package:flutter/material.dart';
 
+/// TradeStatus ViewModel - Thin Pattern
+/// 책임: 거래 상태 UI 상태 관리, UseCase 호출
+/// 제외: 비즈니스 로직 (UseCase에서 처리)
 class TradeStatusViewModel extends ItemBaseViewModel {
   final String itemId;
   final FetchTradeStatusUseCase _fetchTradeStatusUseCase;
+  
+  // State: UI Status
+  bool _isRefreshing = false;
 
   TradeStatusViewModel({
     required this.itemId,
     FetchTradeStatusUseCase? fetchTradeStatusUseCase,
   })  : _fetchTradeStatusUseCase =
             fetchTradeStatusUseCase ?? FetchTradeStatusUseCase(TradeStatusRepositoryImpl()) {
-    // 초기 로딩 상태 설정
     setLoading(true);
   }
 
+  // State: Trade Data
   TradeStatusEntity? _tradeStatus;
 
   TradeStatusEntity? get tradeStatus => _tradeStatus;
 
-  /// 현재 사용자가 판매자인지 확인
+  // Computed
   bool get isSeller {
     final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     return currentUserId != null &&
@@ -31,7 +37,6 @@ class TradeStatusViewModel extends ItemBaseViewModel {
         _tradeStatus!.itemInfo!.sellerId == currentUserId;
   }
 
-  /// 현재 단계 확인
   TradeStep get currentStep {
     if (_tradeStatus?.tradeInfo != null) {
       switch (_tradeStatus!.tradeInfo!.tradeStatusCode) {
@@ -63,7 +68,6 @@ class TradeStatusViewModel extends ItemBaseViewModel {
     return TradeStep.bidding;
   }
 
-  /// 현재 상태 텍스트
   String get currentStatusText {
     // 거래 완료 상태를 우선 확인
     if (_tradeStatus?.tradeInfo != null &&
@@ -86,7 +90,6 @@ class TradeStatusViewModel extends ItemBaseViewModel {
     }
   }
 
-  /// 결제 기한 계산 (auction_end_at + 24시간)
   DateTime? get paymentDeadline {
     final auctionInfo = _tradeStatus?.auctionInfo;
     if (auctionInfo == null || auctionInfo.auctionEndAt.isEmpty) {
@@ -95,7 +98,6 @@ class TradeStatusViewModel extends ItemBaseViewModel {
 
     try {
       final auctionEndAt = DateTime.parse(auctionInfo.auctionEndAt);
-      // auction_end_at + 24시간
       return auctionEndAt.add(const Duration(hours: 24));
     } catch (e) {
       debugPrint('결제 기한 계산 에러: $e');
@@ -103,28 +105,25 @@ class TradeStatusViewModel extends ItemBaseViewModel {
     }
   }
 
-  /// 액션 버튼 표시 여부
   bool shouldShowActionButton() {
     final step = currentStep;
-    // 결제 단계에서 구매자에게 버튼 표시
     if (step == TradeStep.payment && !isSeller) {
       return true;
     }
-    // 배송 단계에서 판매자에게 버튼 표시
     if (step == TradeStep.shipping && isSeller) {
       return true;
     }
     return false;
   }
 
-  /// 데이터 로드
+  // Methods: Data Loading
   Future<void> loadData() async {
+    if (isLoading) return;
     startLoading();
 
     try {
       _tradeStatus = await _fetchTradeStatusUseCase(itemId);
       
-      // 거래 정보(tradeInfo)가 없으면 에러 처리
       if (_tradeStatus?.tradeInfo == null) {
         stopLoadingWithError('거래 정보가 없습니다.');
         return;
@@ -136,13 +135,16 @@ class TradeStatusViewModel extends ItemBaseViewModel {
     }
   }
 
-  /// 송장 정보 업데이트 후 재로드
   Future<void> refreshShippingInfo() async {
+    if (_isRefreshing) return;
+    _isRefreshing = true;
     try {
       _tradeStatus = await _fetchTradeStatusUseCase(itemId);
       notifyListeners();
     } catch (e) {
       debugPrint('송장 정보 재로드 에러: $e');
+    } finally {
+      _isRefreshing = false;
     }
   }
 }

@@ -10,7 +10,7 @@ class AuctionInfoEntity {
   final String? lastBidAt;
   // final int? buyNowPrice;
   // final String? buyNowLock;
-  final int itemStatusCode;
+  final int? itemStatusCode;
   final int auctionStatusCode;
   final int? tradeStatusCode;
 
@@ -44,11 +44,9 @@ class AuctionInfoEntity {
       lastBidAt: json['last_bid_at'] as String?,
       // buyNowPrice: json['buy_now_price'] as int?,
       // buyNowLock: json['buy_now_lock'] as String?,
-      itemStatusCode: json['item_status_code'] as int,
+      itemStatusCode: json['item_status_code'] as int?,
       auctionStatusCode: json['auction_status_code'] as int,
       tradeStatusCode: json['trade_status_code'] as int?,
     );
   }
 }
-
-

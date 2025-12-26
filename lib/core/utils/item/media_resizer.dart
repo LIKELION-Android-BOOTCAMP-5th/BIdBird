@@ -1,11 +1,9 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:video_compress/video_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
+import 'package:bidbird/core/utils/item/video_compressor_isolate.dart';
 
 /// 미디어 리사이징 유틸리티
 /// 이미지와 동영상을 리사이징하는 컴포넌트
@@ -54,12 +52,25 @@ class MediaResizer {
         return null;
       }
 
-      // 리사이징된 이미지 생성
-      final targetPath = await _getTempFilePath('resized_${DateTime.now().millisecondsSinceEpoch}.jpg');
-      
+      // 원본 이미지 크기 확인 (업스케일 방지)
+      final bytes = await file.readAsBytes();
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) {
+        return imageFile; // 디코드 실패 시 원본 반환
+      }
+
       final targetWidth = maxWidth ?? maxImageWidth;
       final targetHeight = maxHeight ?? maxImageHeight;
-      
+      final needsResize = decoded.width > targetWidth || decoded.height > targetHeight;
+
+      if (!needsResize) {
+        // 목표 크기 이하이면 업스케일/재압축 생략하여 성능 향상
+        return imageFile;
+      }
+
+      // 리사이징된 이미지 생성
+      final targetPath = await _getTempFilePath('resized_${DateTime.now().millisecondsSinceEpoch}.jpg');
+
       final result = await FlutterImageCompress.compressAndGetFile(
         imageFile.path,
         targetPath,
@@ -108,7 +119,7 @@ class MediaResizer {
     return resizedImages;
   }
 
-  /// 동영상 리사이징
+  /// 동영상 리사이징 (Isolate 사용으로 UI 블로킹 방지)
   static Future<XFile?> resizeVideo(
     XFile videoFile, {
     int? maxWidth,
@@ -125,34 +136,19 @@ class MediaResizer {
         return null;
       }
 
-      // 동영상 정보 가져오기
-      final mediaInfo = await VideoCompress.getMediaInfo(videoFile.path);
-      
-      // 이미 리사이징이 필요 없는 경우
-      if (mediaInfo.width! <= (maxWidth ?? maxVideoWidth) &&
-          mediaInfo.height! <= (maxHeight ?? maxVideoHeight)) {
-        return videoFile;
-      }
-
-      // 동영상 리사이징
-      final compressedVideo = await VideoCompress.compressVideo(
-        videoFile.path,
-        quality: VideoQuality.MediumQuality,
-        deleteOrigin: false,
-        includeAudio: true,
-        frameRate: 30,
+      // Isolate에서 비디오 압축 수행 (UI 블로킹 방지)
+      final result = await VideoCompressorIsolate.compressVideo(
+        videoFile,
+        maxWidth: maxWidth ?? maxVideoWidth,
+        maxHeight: maxHeight ?? maxVideoHeight,
       );
 
-      if (compressedVideo == null) {
-        return videoFile; // 리사이징 실패 시 원본 반환
+      if (result.isSuccess && result.path != null) {
+        return XFile(result.path!);
+      } else {
+        // 압축 실패 시 원본 반환
+        return videoFile;
       }
-      
-      final compressedPath = compressedVideo.path;
-      if (compressedPath == null || compressedPath.isEmpty) {
-        return videoFile; // 리사이징 실패 시 원본 반환
-      }
-
-      return XFile(compressedPath);
     } catch (e) {
       // 에러 발생 시 원본 파일 반환
       return videoFile;

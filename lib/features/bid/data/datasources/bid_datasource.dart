@@ -80,7 +80,22 @@ class BidDatasource {
       throw Exception(message);
     }
   }
+
+  Future<String?> createChatRoom(String itemId, String sellerId, String buyerId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw Exception(ItemRegistrationErrorMessages.loginRequired);
+    }
+    // 채팅방 생성 RPC 호출 (가정: create_chat_room 함수가 Supabase에 있음)
+    final response = await _supabase.rpc('create_chat_room', params: {
+      'p_item_id': itemId,
+      'p_seller_id': sellerId,
+      'p_buyer_id': buyerId,
+    });
+    final data = response as Map<String, dynamic>?;
+    if (data != null && data['room_id'] != null) {
+      return data['room_id'] as String;
+    }
+    return null;
+  }
 }
-
-
-

@@ -4,6 +4,7 @@ import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_terms.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/pop_up/confirm_check_cancel_popup.dart';
 import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
@@ -23,9 +24,10 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String startPriceText = formatPrice(item.startPrice);
-    final String? instantPriceText = item.instantPrice > 0
-        ? formatPrice(item.instantPrice)
-        : null;
+    // 즉시 입찰가는 현재 화면에서 노출하지 않기 위해 주석 처리
+    // final String? instantPriceText = item.instantPrice > 0
+    //     ? formatPrice(item.instantPrice)
+    //     : null;
 
     final String auctionDurationText = formatAuctionDurationForDisplay(
       item.auctionDurationHours,
@@ -35,8 +37,10 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
       create: (_) => ItemRegistrationDetailViewModel(item: item)
         ..loadTerms()
         ..loadImage(),
-      child: Consumer<ItemRegistrationDetailViewModel>(
-        builder: (context, viewModel, _) {
+      child: Builder(
+        builder: (context) {
+          final double horizontalPadding = context.screenPadding;
+          final double verticalPadding = context.spacingSmall;
           return Scaffold(
             backgroundColor: BackgroundColor,
             appBar: AppBar(
@@ -46,7 +50,9 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: blueColor),
                   onPressed: () {
-                    viewModel.deleteItem(context);
+                    context.read<ItemRegistrationDetailViewModel>().deleteItem(
+                      context,
+                    );
                   },
                 ),
                 IconButton(
@@ -65,26 +71,40 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                     child: SingleChildScrollView(
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalPadding,
+                        verticalPadding,
+                        horizontalPadding,
+                        verticalPadding,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Consumer<ItemRegistrationDetailViewModel>(
-                            builder: (context, viewModel, _) {
-                              return _buildImageSection(context, viewModel);
+                          Selector<
+                            ItemRegistrationDetailViewModel,
+                            List<String>
+                          >(
+                            selector: (_, vm) => vm.imageUrls,
+                            builder: (context, imageUrls, _) {
+                              return _buildImageSection(context, imageUrls);
                             },
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: context.spacingSmall),
                           _buildInfoCard(
+                            context,
                             startPriceText,
-                            instantPriceText,
                             auctionDurationText,
                           ),
                         ],
                       ),
                     ),
                   ),
-                  _buildBottomButton(context, viewModel),
+                  Selector<ItemRegistrationDetailViewModel, bool>(
+                    selector: (_, vm) => vm.isSubmitting,
+                    builder: (context, isSubmitting, _) {
+                      return _buildBottomButton(context, isSubmitting);
+                    },
+                  ),
                 ],
               ),
             ),
@@ -94,129 +114,147 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageSection(
-    BuildContext context,
-    ItemRegistrationDetailViewModel viewModel,
-  ) {
-    final imageUrls = viewModel.imageUrls;
+  Widget _buildImageSection(BuildContext context, List<String> imageUrls) {
     final hasImages = imageUrls.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: chatItemCardBackground,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            offset: Offset(0, 4),
+            blurRadius: 12,
+          ),
+        ],
       ),
-      clipBehavior: Clip.hardEdge,
+      clipBehavior: Clip.antiAlias,
       child: AspectRatio(
-        aspectRatio: 1,
+        aspectRatio: 3 / 4,
         child: hasImages
             ? _ImageGallery(imageUrls: imageUrls)
-            : const Center(
-                child: Text(
-                  '이미지 없음',
-                  style: TextStyle(color: Colors.black, fontSize: 16),
-                ),
-              ),
+            : Container(color: Colors.grey.shade200),
       ),
     );
   }
 
   Widget _buildInfoCard(
+    BuildContext context,
     String startPriceText,
-    String? instantPriceText,
     String auctionDurationText,
   ) {
+    final double cardPaddingH = context.spacingSmall + 6;
+    final double cardPaddingV = context.spacingMedium;
+    final double titleFont = context.fontSizeLarge;
+    final double labelFont = context.fontSizeSmall + 1;
+    final double valueFont = context.fontSizeMedium;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: chatItemCardBackground,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            offset: Offset(0, 4),
+            blurRadius: 12,
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: cardPaddingH,
+        vertical: cardPaddingV,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             item.title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
+            style: TextStyle(
+              fontSize: titleFont,
+              fontWeight: FontWeight.w700,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: context.spacingSmall),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 '시작가',
-                style: TextStyle(fontSize: 14, color: textColor),
+                style: TextStyle(
+                  fontSize: labelFont,
+                  color: textColor,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               Text(
                 '$startPriceText원',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: valueFont,
+                  color: textColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: context.spacingSmall * 0.6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '경매 기간',
+                style: TextStyle(
+                  fontSize: labelFont,
+                  color: textColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                auctionDurationText,
+                style: TextStyle(
+                  fontSize: valueFont,
                   color: textColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '즉시 입찰가',
-                style: TextStyle(fontSize: 14, color: textColor),
-              ),
-              Text(
-                instantPriceText != null ? '$instantPriceText원' : '없음',
-                style: const TextStyle(fontSize: 14, color: textColor),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                '경매 기간',
-                style: TextStyle(fontSize: 14, color: textColor),
-              ),
-              Text(
-                auctionDurationText,
-                style: const TextStyle(fontSize: 14, color: textColor),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1, color: Color(0xFFE5E5E5)),
-          const SizedBox(height: 12),
-          const Text(
+          SizedBox(height: context.spacingSmall * 1.5),
+          const Divider(height: 1, thickness: 1, color: LightBorderColor),
+          SizedBox(height: context.spacingSmall),
+          Text(
             '상품 설명',
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: valueFont,
+              fontWeight: FontWeight.w700,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: context.spacingSmall * 0.6),
           Text(
             item.description,
-            style: const TextStyle(fontSize: 14, color: textColor),
+            style: TextStyle(
+              fontSize: context.fontSizeSmall + 1,
+              color: textColor,
+              height: 1.5,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBottomButton(
-    BuildContext context,
-    ItemRegistrationDetailViewModel viewModel,
-  ) {
+  Widget _buildBottomButton(BuildContext context, bool isSubmitting) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        padding: EdgeInsets.fromLTRB(
+          context.screenPadding,
+          0,
+          context.screenPadding,
+          context.spacingSmall,
+        ),
         child: PrimaryButton(
           text: '등록하기',
           onPressed: () async {
@@ -232,14 +270,16 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                   cancelText: '취소',
                   onConfirm: (checked) async {
                     if (!checked) return;
-                    await viewModel.confirmRegistration(context);
+                    await context
+                        .read<ItemRegistrationDetailViewModel>()
+                        .confirmRegistration(context);
                   },
                   onCancel: () {},
                 );
               },
             );
           },
-          isEnabled: !viewModel.isSubmitting,
+          isEnabled: !isSubmitting,
           height: 52,
           fontSize: 16,
           width: double.infinity,
@@ -319,13 +359,21 @@ class _ImageGalleryState extends State<_ImageGallery> {
                       imageUrl: displayUrl,
                       cacheManager: ItemImageCacheManager.instance,
                       fit: BoxFit.contain,
-                      placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      errorWidget: (context, url, error) => const Center(
-                        child: Text(
-                          '이미지 없음',
-                          style: TextStyle(color: Colors.black, fontSize: 16),
+                      // 메모리 캐시 최적화: 화면 크기에 맞게 리사이징하여 메모리 사용량 감소
+                      memCacheWidth:
+                          (MediaQuery.of(context).size.width *
+                                  MediaQuery.of(context).devicePixelRatio)
+                              .round(),
+                      memCacheHeight:
+                          ((MediaQuery.of(context).size.width * 4 / 3) *
+                                  MediaQuery.of(context).devicePixelRatio)
+                              .round(),
+                      placeholder: (context, url) =>
+                          Container(color: Colors.grey.shade200),
+                      errorWidget: (context, url, error) => Container(
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: Icon(Icons.error_outline, size: 48),
                         ),
                       ),
                     ),
@@ -333,11 +381,11 @@ class _ImageGalleryState extends State<_ImageGallery> {
                   if (isVideo)
                     Positioned.fill(
                       child: Container(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: TextPrimary.withValues(alpha: 0.3),
                         child: const Center(
                           child: Icon(
                             Icons.play_circle_filled,
-                            color: Colors.white,
+                            color: chatItemCardBackground,
                             size: 64,
                           ),
                         ),
@@ -355,13 +403,13 @@ class _ImageGalleryState extends State<_ImageGallery> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
+                color: TextPrimary.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 '${_currentPage + 1}/${widget.imageUrls.length}',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: chatItemCardBackground,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),

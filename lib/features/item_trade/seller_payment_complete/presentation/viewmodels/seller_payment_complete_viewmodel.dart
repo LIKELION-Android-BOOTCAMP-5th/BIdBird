@@ -7,6 +7,9 @@ import 'package:bidbird/features/item_trade/shipping/domain/usecases/save_shippi
 import 'package:bidbird/features/item_trade/shipping/domain/usecases/update_shipping_info_usecase.dart';
 import 'package:flutter/material.dart';
 
+/// SellerPaymentComplete ViewModel - Thin Pattern
+/// 책임: 판매자 결제 완료 UI 상태 관리
+/// 제외: 비즈니스 로직 (UseCase에서 처리)
 class SellerPaymentCompleteViewModel extends ChangeNotifier {
   SellerPaymentCompleteViewModel({
     required this.item,
@@ -25,6 +28,7 @@ class SellerPaymentCompleteViewModel extends ChangeNotifier {
   final SaveShippingInfoUseCase _saveShippingInfoUseCase;
   final UpdateShippingInfoUseCase _updateShippingInfoUseCase;
 
+  // State: Shipping Info
   Map<String, dynamic>? _shippingInfo;
   bool _isLoadingShippingInfo = true;
 

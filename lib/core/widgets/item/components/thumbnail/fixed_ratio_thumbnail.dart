@@ -47,8 +47,8 @@ class FixedRatioThumbnail extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isVideo = imageUrl != null && isVideoFile(imageUrl!);
     final String? displayUrl = isVideo && imageUrl != null
-        ? getVideoThumbnailUrl(imageUrl!)
-        : imageUrl;
+      ? getVideoThumbnailUrl(imageUrl!)
+      : imageUrl;
 
     final defaultBorderRadius = borderRadius ?? BorderRadius.circular(8);
 
@@ -63,19 +63,43 @@ class FixedRatioThumbnail extends StatelessWidget {
               children: [
                 // 이미지
                 Positioned.fill(
-                  child: CachedNetworkImage(
-                    imageUrl: displayUrl,
-                    cacheManager: ItemImageCacheManager.instance,
-                    fit: BoxFit.cover, // center crop
-                    placeholder: (context, url) => Container(color: shadowHigh),
-                    errorWidget: (context, url, error) => Container(
-                      color: ImageBackgroundColor,
-                      child: const Icon(
-                        Icons.image_outlined,
-                        color: iconColor,
-                        size: 32,
-                      ),
-                    ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final dpr = MediaQuery.of(context).devicePixelRatio;
+                      final memWidth = (constraints.maxWidth.isFinite
+                              ? constraints.maxWidth * dpr
+                              : 0)
+                          .round();
+                      final memHeight = (constraints.maxHeight.isFinite
+                              ? constraints.maxHeight * dpr
+                              : 0)
+                          .round();
+
+                      // 서버 사이즈 변환(Cloudinary) + 디코드 다운스케일 동시 적용
+                      final transformedUrl = resizeCloudinaryUrl(
+                        displayUrl,
+                        width: memWidth > 0 ? memWidth : null,
+                        height: memHeight > 0 ? memHeight : null,
+                        cropFill: true,
+                      );
+
+                      return CachedNetworkImage(
+                        imageUrl: transformedUrl,
+                        cacheManager: ItemImageCacheManager.instance,
+                        fit: BoxFit.cover, // center crop
+                        memCacheWidth: memWidth > 0 ? memWidth : null,
+                        memCacheHeight: memHeight > 0 ? memHeight : null,
+                        placeholder: (context, url) => Container(color: shadowHigh),
+                        errorWidget: (context, url, error) => Container(
+                          color: ImageBackgroundColor,
+                          child: const Icon(
+                            Icons.image_outlined,
+                            color: iconColor,
+                            size: 32,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 // 세로 이미지 하단 그라데이션 (선택적)

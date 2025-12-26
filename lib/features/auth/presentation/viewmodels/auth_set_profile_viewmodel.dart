@@ -1,4 +1,5 @@
 import 'package:bidbird/core/managers/cloudinary_manager.dart';
+import 'package:bidbird/core/services/keyword_cache_service.dart';
 import 'package:bidbird/features/auth/data/repositories/auth_set_profile_repository_impl.dart';
 import 'package:bidbird/features/auth/domain/entities/auth_set_profile_entity.dart';
 import 'package:bidbird/features/auth/domain/usecases/fetch_profile_usecase.dart';
@@ -133,8 +134,24 @@ class AuthSetProfileViewmodel extends ChangeNotifier {
 
   //키워드 관련
   Future<void> getKeywordList({List<int>? initialKeywordIds}) async {
-    if (_keywords.isNotEmpty) return; // 중복 호출 방지
+    // 전역 캐시에 키워드가 있으면 사용
+    final cachedKeywords = KeywordCacheService().getKeywords();
+    if (cachedKeywords != null && cachedKeywords.isNotEmpty) {
+      _keywords = cachedKeywords;
+      if (initialKeywordIds != null && _selectedKeywordIds.isEmpty) {
+        _selectedKeywordIds.addAll(initialKeywordIds);
+      }
+      notifyListeners();
+      return;
+    }
+    
+    // 캐시가 없으면 네트워크에서 가져오기
     _keywords = await _repository.getKeywordType();
+    
+    // 전역 캐시에 저장
+    if (_keywords.isNotEmpty) {
+      KeywordCacheService().setKeywords(_keywords);
+    }
 
     if (initialKeywordIds != null && _selectedKeywordIds.isEmpty) {
       _selectedKeywordIds.addAll(initialKeywordIds);

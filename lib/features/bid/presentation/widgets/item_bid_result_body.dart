@@ -88,7 +88,7 @@ class ItemBidResultBody extends StatelessWidget {
                 ),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: chatItemCardBackground,
                     borderRadius: defaultBorder,
                     boxShadow: [
                       BoxShadow(

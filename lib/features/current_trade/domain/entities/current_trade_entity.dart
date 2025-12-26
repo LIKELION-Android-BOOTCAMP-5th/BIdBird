@@ -136,16 +136,18 @@ class ActionHubItem {
 
   String get label {
     switch (actionType) {
-      case TradeActionType.paymentRequired:
-        return '결제하러 가기';
+      // case TradeActionType.paymentRequired:
+      //   return '결제 대기';
       case TradeActionType.paymentWaiting:
-        return '결제 정보 입력';
-      case TradeActionType.shippingInfoRequired:
-        return '배송지 입력';
+        return '판매 물품';
+      // case TradeActionType.shippingInfoRequired:
+      //   return '배송지 입력';
       case TradeActionType.purchaseConfirmRequired:
         return '구매 확정';
       case TradeActionType.none:
         return '';
+      default:
+        return '낙찰 받은 물품';
     }
   }
 }

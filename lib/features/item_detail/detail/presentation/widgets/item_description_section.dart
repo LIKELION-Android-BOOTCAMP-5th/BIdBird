@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
+import 'package:bidbird/core/utils/formatters/price_formatter.dart';
 
 class ItemDescriptionSection extends StatefulWidget {
   const ItemDescriptionSection({required this.item, super.key});
@@ -20,19 +21,20 @@ class ItemDescriptionSection extends StatefulWidget {
 class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ItemDetailViewModel>();
-    final sellerProfile = vm.sellerProfile;
-    final bids = vm.bidHistory;
+    final sellerProfileImage = context.select<ItemDetailViewModel, String?>(
+      (vm) => vm.sellerProfileImage,
+    );
+    final bids = context.select<ItemDetailViewModel, List<BidHistoryItem>>(
+      (vm) => vm.bidHistory,
+    );
 
-    final String avatarUrl = (sellerProfile?['profile_image_url'] as String?) ?? '';
-    final String rawNickname =
-        (sellerProfile?['nick_name'] as String?)?.trim() ?? '';
-    final String sellerNickname =
-        rawNickname.isNotEmpty ? rawNickname : '닉네임 없음';
-    final double sellerRating =
-        (sellerProfile?['rating'] as num?)?.toDouble() ?? widget.item.sellerRating;
-    final int sellerReviewCount =
-        (sellerProfile?['review_count'] as int?) ?? widget.item.sellerReviewCount;
+    final String avatarUrl = sellerProfileImage ?? '';
+    final String rawNickname = widget.item.sellerTitle.trim();
+    final String sellerNickname = rawNickname.isNotEmpty
+        ? rawNickname
+        : '닉네임 없음';
+    final double sellerRating = widget.item.sellerRating;
+    final int sellerReviewCount = widget.item.sellerReviewCount;
 
     return Column(
       children: [
@@ -53,8 +55,9 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
                     CircleAvatar(
                       radius: 20,
                       backgroundColor: BorderColor,
-                      backgroundImage:
-                          avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      backgroundImage: avatarUrl.isNotEmpty
+                          ? NetworkImage(avatarUrl)
+                          : null,
                       child: avatarUrl.isNotEmpty
                           ? null
                           : const Icon(Icons.person, color: BackgroundColor),
@@ -186,7 +189,7 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
       separatorBuilder: (_, __) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
         final bid = limited[index];
-        final price = bid.price.toString();
+        final priceLabel = formatPrice(bid.price);
         final createdAtRaw = bid.createdAt;
         final relative = formatRelativeTime(createdAtRaw);
 
@@ -201,7 +204,7 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
           typeLabel = '즉시 입찰';
         } else if (code == 410 || code == 411 || code == 430) {
           typeLabel = '일반 입찰';
-        } else if (price.isNotEmpty) {
+        } else if (priceLabel.isNotEmpty) {
           // 그 외 코드는 가격이 들어와 있으면 즉시 입찰 실패로 간주
           typeLabel = '즉시 입찰';
           statusLabel = '실패';
@@ -218,18 +221,12 @@ class _ItemDescriptionSectionState extends State<ItemDescriptionSection> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${index + 1}. $price원$trailingLabel',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              '${index + 1}. $priceLabel$trailingLabel',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
             Text(
               relative,
-              style: const TextStyle(
-                fontSize: 11,
-                color: iconColor,
-              ),
+              style: const TextStyle(fontSize: 11, color: iconColor),
             ),
           ],
         );

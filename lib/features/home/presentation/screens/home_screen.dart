@@ -1,5 +1,4 @@
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
-import 'package:bidbird/features/home/data/repository/home_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,44 +18,40 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => HomeViewmodel(HomeRepositoryImpl()),
-      child: MediaQuery(
-        //휴대폰 글씨크기 무시, 글씨 고정
-        data: MediaQuery.of(
-          context,
-        ).copyWith(textScaler: TextScaler.linear(1.0)),
-        child: Consumer<HomeViewmodel>(
-          builder: (context, viewModel, child) {
-            return Scaffold(
-              appBar: HomeAppBar(viewModel: viewModel),
-              body: SafeArea(
-                child: Stack(
-                  children: [
-                    TransparentRefreshIndicator(
-                      onRefresh: viewModel.handleRefresh,
-                      child: CustomScrollView(
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        controller: viewModel.scrollController,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        slivers: [
-                          // 키워드 영역
-                          KeywordWidget(viewModel: viewModel),
+    // ViewModel은 main.dart에서 전역으로 생성되므로 여기서는 Consumer만 사용
+    return MediaQuery(
+      //휴대폰 글씨크기 무시, 글씨 고정
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
+      child: Consumer<HomeViewmodel>(
+        builder: (context, viewModel, child) {
+          return Scaffold(
+            appBar: const HomeAppBar(),
+            body: SafeArea(
+              child: Stack(
+                children: [
+                  TransparentRefreshIndicator(
+                    onRefresh: context.read<HomeViewmodel>().handleRefresh,
+                    child: CustomScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      controller: viewModel.scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      slivers: [
+                        // 키워드 영역
+                        const KeywordWidget(),
 
-                          // 슬라이버 그리드 search 모드가 필요 없어짐 viewmodel에서 그냥 데이터만 뿌려주면 되기 때문
-                          ItemGrid(viewModel: viewModel),
-                        ],
-                      ),
+                        // 슬라이버 그리드 search 모드가 필요 없어짐 viewmodel에서 그냥 데이터만 뿌려주면 되기 때문
+                        const ItemGrid(),
+                      ],
                     ),
-                    child!, // 불변 위젯을 child로 분리
-                  ],
-                ),
+                  ),
+                  child!, // 불변 위젯을 child로 분리
+                ],
               ),
-            );
-          },
-          child: const FloatingMenu(), // 불변 위젯을 child로 분리하여 리빌드 방지
-        ),
+            ),
+          );
+        },
+        child: const FloatingMenu(), // 불변 위젯을 child로 분리하여 리빌드 방지
       ),
     );
   }

@@ -9,6 +9,7 @@ class ItemAddEntity {
     required this.auctionEndAt,
     required this.auctionDurationHours,
     required this.imageUrls,
+    required this.documentUrls,
     required this.isAgree,
   });
 
@@ -21,6 +22,7 @@ class ItemAddEntity {
   final DateTime auctionEndAt;
   final int auctionDurationHours;
   final List<String> imageUrls;
+  final List<String> documentUrls;
   final bool isAgree;
 
   Map<String, dynamic> toJson({required String sellerId}) {
@@ -34,6 +36,7 @@ class ItemAddEntity {
       'buy_now_price': instantPrice,
       'keyword_type': keywordTypeId,
       'auction_duration_hours': auctionDurationHours,
+      'document_urls': documentUrls,
       'is_agree': isAgree,
     };
   }

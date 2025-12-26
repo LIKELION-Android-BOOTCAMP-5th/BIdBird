@@ -32,8 +32,7 @@ class NotificationViewmodel extends ChangeNotifier {
   final CheckNotificationUseCase _checkNotificationUseCase;
   final DeleteAllNotificationUseCase _deleteAllNotificationUseCase;
   final DeleteNotificationUseCase _deleteNotificationUseCase;
-
-  RealtimeChannel? _notifyChannel;
+  late final StreamSubscription<AuthState> _authSub;
   StreamSubscription? _loginSubscription;
   List<NotificationEntity> notifyList = [];
   final List<String> toItemDetail = [
@@ -47,9 +46,11 @@ class NotificationViewmodel extends ChangeNotifier {
     "PURCHASE_AUTO_CONFIRMED",
     "PURCHASE_CONFIRMED",
     "PURCHASE_REJECTED",
+    "BID_SUCCESS",
   ];
 
   DateTime? _lastPausedAt;
+  bool _isFetching = false; // 중복 요청 방지 플래그
 
   int get unCheckedCount =>
       notifyList.where((e) => e.is_checked == false).length;
@@ -93,11 +94,22 @@ class NotificationViewmodel extends ChangeNotifier {
     });
   }
 
+  void removeNotificationLocally(String id) {
+    notifyList.removeWhere((e) => e.id == id);
+    notifyListeners();
+  }
+
+  // 중복 fetch 방지를 위한 래퍼 메서드
+  Future<void> _safelyFetchNotify() async {
+    if (_isFetching) return;
+    await fetchNotify();
+  }
+
   Future<void> _bootstrap() async {
     final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (userId == null) return;
 
-    await fetchNotify(); // ✅ 무조건 1회 보장
+    await _safelyFetchNotify(); // ✅ 중복 방지하며 1회 보장
     setupRealtimeSubscription(); // ✅ 이후 실시간
   }
 
@@ -112,7 +124,7 @@ class NotificationViewmodel extends ChangeNotifier {
 
     if (wasDisconnected) {
       debugPrint('🔄 Realtime was disconnected → full sync');
-      await fetchNotify();
+      await _safelyFetchNotify(); // 중복 fetch 방지
       setupRealtimeSubscription();
       return;
     }
@@ -121,7 +133,7 @@ class NotificationViewmodel extends ChangeNotifier {
     if (_lastPausedAt != null &&
         now.difference(_lastPausedAt!) > const Duration(minutes: 2)) {
       debugPrint('⏱️ Long background → full sync');
-      await fetchNotify();
+      await _safelyFetchNotify(); // 중복 fetch 방지
       return;
     }
 
@@ -148,9 +160,13 @@ class NotificationViewmodel extends ChangeNotifier {
   }
 
   Future<void> fetchNotify() async {
+    if (_isFetching) return; // 중복 호출 방지
+
+    _isFetching = true;
     final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentUserId == null) {
       print("로그인 상태가 아닙니다.");
+      _isFetching = false;
       return;
     }
     try {
@@ -160,6 +176,7 @@ class NotificationViewmodel extends ChangeNotifier {
     }
     sortNotifyList();
     notifyListeners();
+    _isFetching = false;
   }
 
   Future<void> checkNotification(String id) async {
@@ -217,11 +234,13 @@ class NotificationViewmodel extends ChangeNotifier {
 
   void cancelRealtimeSubscription() {
     _notificationListRealtimeSubscriptionManager.closeSubscription();
+    notifyList.clear(); // 로그아웃 시 이전 사용자의 알림 캐시 삭제
     print("로그아웃으로 알림 채널이 닫혔습니다");
   }
 
   @override
   void dispose() {
+    _loginSubscription?.cancel();
     _notificationListRealtimeSubscriptionManager.closeSubscription();
     print("알림 채널이 닫혔습니다");
     super.dispose();

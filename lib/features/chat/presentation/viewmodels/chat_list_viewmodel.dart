@@ -33,6 +33,7 @@ class ChatListViewmodel extends ChangeNotifier {
   bool hasMore = true;
   int _currentPage = 1;
   int _pageSize = 20;
+  bool _isFetchingList = false; // 중복 요청 방지 플래그
 
   // 정적 인스턴스 (외부에서 접근 가능)
   static ChatListViewmodel? _instance;
@@ -132,6 +133,8 @@ class ChatListViewmodel extends ChangeNotifier {
     bool forceRefresh = false,
     int? visibleItemCount,
   }) async {
+    if (_isFetchingList) return; // 중복 호출 방지
+
     final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (userId == null) {
       debugPrint('⛔ fetchChattingRoomList skipped: no user');
@@ -156,6 +159,8 @@ class ChatListViewmodel extends ChangeNotifier {
     bool forceRefresh = true,
     int? visibleItemCount,
   }) async {
+    if (_isFetchingList) return; // 중복 호출 방지
+
     if (forceRefresh) {
       chattingRoomList.clear();
       _currentPage = 1;
@@ -217,6 +222,9 @@ class ChatListViewmodel extends ChangeNotifier {
     required int limit,
     required int page,
   }) async {
+    if (_isFetchingList) return; // 중복 호출 방지
+
+    _isFetchingList = true;
     if (showLoading) {
       isLoading = true;
       notifyListeners();
@@ -240,6 +248,7 @@ class ChatListViewmodel extends ChangeNotifier {
     } catch (e) {
       // 에러 발생 시에도 기존 데이터 유지
     } finally {
+      _isFetchingList = false;
       if (showLoading) {
         isLoading = false;
       }
@@ -352,7 +361,7 @@ class ChatListViewmodel extends ChangeNotifier {
       Future.wait([
         _cacheManager.loadSellerIds([newRoom]),
         _cacheManager.loadTopBidders([newRoom]),
-      ], eagerError: false).catchError((_) {});
+      ], eagerError: false).catchError((_) => []);
 
       notifyListeners();
     } catch (e) {
@@ -397,6 +406,7 @@ class ChatListViewmodel extends ChangeNotifier {
     if (_instance == this) {
       _instance = null;
     }
+    _loginSubscription?.cancel();
     _fullReloadDebounceTimer?.cancel();
     _realtimeSubscriptionManager.dispose();
     super.dispose();
@@ -420,7 +430,7 @@ class ChatListViewmodel extends ChangeNotifier {
         chattingRoomList[index].lastMessage = newLastMessage;
       if (newLastMessageSendAt != null)
         chattingRoomList[index].lastMessageSendAt =
-            data['last_message_send_at'] as String ?? "";
+            data['last_message_send_at'] as String;
       if (chattingRoomList[index].count != newUnreadCount) {
         chattingRoomList[index].count = newUnreadCount;
       }

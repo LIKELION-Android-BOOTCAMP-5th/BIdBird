@@ -56,29 +56,53 @@ class _ContentInputSectionState extends State<ContentInputSection> {
   static const double _labelBottomSpacing = 12.0;
   static const double _counterTopSpacing = 8.0;
 
-  Widget _buildTextField() {
+  late int _textLength;
+
+  @override
+  void initState() {
+    super.initState();
+    _textLength = widget.controller.text.length;
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final newLength = widget.controller.text.length;
+    if (_textLength != newLength) {
+      setState(() {
+        _textLength = newLength;
+      });
+    }
+  }
+
+  Widget _buildTextField(double fontSizeSmall) {
     final isExpandable = widget.minLines == null && widget.maxLines == null;
-    
-    final textField = TextField(
-      controller: widget.controller,
-      maxLines: isExpandable ? null : widget.maxLines,
-      minLines: isExpandable ? null : widget.minLines,
-      maxLength: widget.maxLength,
-      cursorColor: PrimaryBlue,
-      style: const TextStyle(
-        color: TextPrimary,
-      ),
-      decoration: InputDecoration(
-        hintText: widget.hintText,
-        hintStyle: TextStyle(
-          color: chatTimeTextColor,
-          fontSize: context.fontSizeSmall,
+
+    final textField = RepaintBoundary(
+      child: TextField(
+        controller: widget.controller,
+        maxLines: isExpandable ? null : widget.maxLines,
+        minLines: isExpandable ? null : widget.minLines,
+        maxLength: widget.maxLength,
+        cursorColor: PrimaryBlue,
+        style: const TextStyle(color: TextPrimary),
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: TextStyle(
+            color: chatTimeTextColor,
+            fontSize: fontSizeSmall,
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+          counterText: '',
+          focusedBorder: InputBorder.none,
+          enabledBorder: InputBorder.none,
         ),
-        border: InputBorder.none,
-        contentPadding: EdgeInsets.zero,
-        counterText: '',
-        focusedBorder: InputBorder.none,
-        enabledBorder: InputBorder.none,
       ),
     );
 
@@ -87,66 +111,61 @@ class _ContentInputSectionState extends State<ContentInputSection> {
 
   @override
   Widget build(BuildContext context) {
+    // context 값 캐싱
+    final fontSizeSmall = context.fontSizeSmall;
+
     final showValidation = widget.minLength != null;
+    final isValid =
+        widget.minLength == null || _textLength >= widget.minLength!;
 
-    return ValueListenableBuilder<TextEditingValue>(
-      valueListenable: widget.controller,
-      builder: (_, value, __) {
-        final textLength = value.text.length;
-        final isValid = widget.minLength == null || textLength >= widget.minLength!;
-
-        return SizedBox(
-          width: double.infinity,
-          child: Container(
-            padding: const EdgeInsets.all(_cardPadding),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: defaultBorder,
-              border: Border.all(
-                color: LightBorderColor,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: const EdgeInsets.all(_cardPadding),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: defaultBorder,
+          border: Border.all(color: LightBorderColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            FormLabel(text: widget.label),
+            SizedBox(height: _labelBottomSpacing),
+            _buildTextField(fontSizeSmall),
+            SizedBox(height: _counterTopSpacing),
+            Row(
+              mainAxisAlignment:
+                  showValidation && widget.successMessage != null && isValid
+                  ? MainAxisAlignment.spaceBetween
+                  : MainAxisAlignment.end,
               children: [
-                FormLabel(text: widget.label),
-                SizedBox(height: _labelBottomSpacing),
-                _buildTextField(),
-                SizedBox(height: _counterTopSpacing),
-                Row(
-                  mainAxisAlignment: showValidation && widget.successMessage != null && isValid
-                      ? MainAxisAlignment.spaceBetween
-                      : MainAxisAlignment.end,
-                  children: [
-                    if (showValidation && widget.successMessage != null && isValid)
-                      Text(
-                        widget.successMessage!,
-                        style: TextStyle(
-                          fontSize: context.fontSizeSmall,
-                          color: TextSecondary,
-                        ),
-                      ),
-                    Text(
-                      '$textLength/${widget.maxLength}',
-                      style: TextStyle(
-                        fontSize: context.fontSizeSmall,
-                        color: chatTimeTextColor,
-                      ),
+                if (showValidation && widget.successMessage != null && isValid)
+                  Text(
+                    widget.successMessage!,
+                    style: TextStyle(
+                      fontSize: fontSizeSmall,
+                      color: TextSecondary,
                     ),
-                  ],
-                ),
-                if (widget.errorMessage != null)
-                  ErrorText(
-                    text: widget.errorMessage!,
-                    topPadding: _counterTopSpacing,
                   ),
+                Text(
+                  '$_textLength/${widget.maxLength}',
+                  style: TextStyle(
+                    fontSize: fontSizeSmall,
+                    color: chatTimeTextColor,
+                  ),
+                ),
               ],
             ),
-          ),
-        );
-      },
+            if (widget.errorMessage != null)
+              ErrorText(
+                text: widget.errorMessage!,
+                topPadding: _counterTopSpacing,
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
-

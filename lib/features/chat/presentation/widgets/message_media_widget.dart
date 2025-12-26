@@ -33,7 +33,7 @@ class MessageMediaWidget extends StatelessWidget {
     // 동영상 URL인지 확인
     final bool isVideo = originalUrl != null && isVideoFile(originalUrl);
 
-    if (isVideo && originalUrl != null) {
+    if (isVideo) {
       return _buildVideoWidget(context, originalUrl, imageUrlForMessage);
     } else {
       return _buildImageWidget(context, imageUrlForMessage);
@@ -47,10 +47,7 @@ class MessageMediaWidget extends StatelessWidget {
     String thumbnailUrl,
   ) {
     return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: maxWidth,
-        maxHeight: maxHeight,
-      ),
+      constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
       child: GestureDetector(
         onTap: () {
           FullScreenVideoViewer.show(context, originalUrl);
@@ -65,6 +62,9 @@ class MessageMediaWidget extends StatelessWidget {
                 cacheManager: ItemImageCacheManager.instance,
                 fit: BoxFit.contain,
                 width: maxWidth,
+                // 메모리 최적화 - 중간 크기
+                memCacheWidth: 600,
+                memCacheHeight: 600,
                 placeholder: (context, url) => Container(
                   width: maxWidth,
                   height: 200,
@@ -105,14 +105,11 @@ class MessageMediaWidget extends StatelessWidget {
   /// 이미지 위젯 빌드
   Widget _buildImageWidget(BuildContext context, String imageUrl) {
     return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: maxWidth,
-        maxHeight: maxHeight,
-      ),
+      constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
       child: GestureDetector(
         onTap: () {
           final originalImageUrl = message.imageUrl ?? imageUrl;
-          
+
           // 모든 메시지가 제공된 경우 갤러리 뷰어 사용
           if (allMessages != null) {
             final imageUrls = _extractImageUrls(allMessages!);
@@ -126,13 +123,11 @@ class MessageMediaWidget extends StatelessWidget {
               return;
             }
           }
-          
+
           // 단일 이미지 뷰어 사용 (fallback)
-          FullScreenImageGalleryViewer.show(
-            context,
-            [originalImageUrl],
-            initialIndex: 0,
-          );
+          FullScreenImageGalleryViewer.show(context, [
+            originalImageUrl,
+          ], initialIndex: 0);
         },
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -140,6 +135,8 @@ class MessageMediaWidget extends StatelessWidget {
             imageUrl: imageUrl,
             cacheManager: ItemImageCacheManager.instance,
             fit: BoxFit.contain,
+            memCacheWidth: 600,
+            memCacheHeight: 600,
             placeholder: (context, url) => Container(
               width: maxWidth,
               height: 200,
@@ -176,6 +173,3 @@ class MessageMediaWidget extends StatelessWidget {
     return imageUrls;
   }
 }
-
-
-

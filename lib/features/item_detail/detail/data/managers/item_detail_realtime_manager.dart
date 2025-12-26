@@ -2,6 +2,26 @@ import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// 실시간 업데이트 타입 구분
+/// 부분 업데이트: UI 상태만 변경 (빠른 업데이트)
+/// 전체 새로고침: 전체 데이터 재로드 필요 (비용 높음)
+enum RealtimeUpdateType {
+  /// 부분 업데이트: 현재가 변경
+  partialPriceUpdate,
+
+  /// 부분 업데이트: 입찰 횟수 변경
+  partialBidCountUpdate,
+
+  /// 부분 업데이트: 최고 입찰자 변경
+  partialTopBidderUpdate,
+
+  /// 전체 새로고침: 상태 코드 변경
+  fullRefreshStatus,
+
+  /// 전체 새로고침: 종료 시간 변경
+  fullRefreshFinishTime,
+}
+
 /// 아이템 디테일 실시간 구독 관리자
 /// 경매 상태 변경(현재가, 입찰 횟수, 최고 입찰자, 상태 코드 등)을 실시간으로 감지
 /// Data Layer: Supabase와 직접 통신하는 데이터 소스 역할
@@ -9,6 +29,7 @@ class ItemDetailRealtimeManager {
   final _supabase = SupabaseManager.shared.supabase;
 
   RealtimeChannel? _auctionChannel;
+  RealtimeChannel? _bidHistoryChannel; // 최고 입찰자 감지용
   String? _currentItemId; // 현재 구독 중인 itemId 추적
 
   /// 구독 중인지 확인
@@ -18,7 +39,7 @@ class ItemDetailRealtimeManager {
   String? get currentItemId => _currentItemId;
 
   /// 경매 상태 구독 설정
-  /// 
+  ///
   /// [itemId] 아이템 ID
   /// [onPriceUpdate] 현재가 변경 시 콜백 (newPrice, newBidPrice)
   /// [onBidCountUpdate] 입찰 횟수 변경 시 콜백
@@ -45,7 +66,11 @@ class ItemDetailRealtimeManager {
       _supabase.removeChannel(_auctionChannel!);
       _auctionChannel = null;
     }
-    
+    if (_bidHistoryChannel != null) {
+      _supabase.removeChannel(_bidHistoryChannel!);
+      _bidHistoryChannel = null;
+    }
+
     _currentItemId = itemId;
 
     _auctionChannel = _supabase.channel('auctions_$itemId');
@@ -87,17 +112,32 @@ class ItemDetailRealtimeManager {
     final newRecord = payload.newRecord;
     if (newRecord.isEmpty) return;
 
-    // 최고 입찰자 변경 시 isTopBidder 업데이트 (먼저 처리하여 타이밍 이슈 방지)
-    if (newRecord.containsKey('last_bid_user_id') && onTopBidderUpdate != null) {
+    // 업데이트 타입 결정 (먼저 비용이 높은 전체 새로고침 확인)
+    if (newRecord.containsKey('auction_status_code') ||
+        newRecord.containsKey('trade_status_code')) {
+      onStatusUpdate?.call();
+      return; // 상태 변경 시 다른 업데이트 무시
+    }
+
+    if (newRecord.containsKey('finish_time')) {
+      onFinishTimeUpdate?.call();
+      return; // 시간 변경 시 다른 업데이트 무시
+    }
+
+    // 부분 업데이트 처리 (함께 처리 가능)
+    // 최고 입찰자 변경
+    if (newRecord.containsKey('last_bid_user_id') &&
+        onTopBidderUpdate != null) {
       final currentUserId = _supabase.auth.currentUser?.id;
       if (currentUserId != null) {
         final lastBidUserId = newRecord['last_bid_user_id'] as String?;
-        final isTopBidder = lastBidUserId != null && lastBidUserId == currentUserId;
+        final isTopBidder =
+            lastBidUserId != null && lastBidUserId == currentUserId;
         onTopBidderUpdate(isTopBidder);
       }
     }
 
-    // 현재가 변경 시 부분 업데이트
+    // 현재가 변경
     if (newRecord.containsKey('current_price') && onPriceUpdate != null) {
       final newPrice = newRecord['current_price'] as int?;
       if (newPrice != null) {
@@ -106,24 +146,34 @@ class ItemDetailRealtimeManager {
       }
     }
 
-    // 입찰 횟수 변경 시 부분 업데이트
+    // 입찰 횟수 변경
     if (newRecord.containsKey('bid_count') && onBidCountUpdate != null) {
       final newCount = newRecord['bid_count'] as int?;
       if (newCount != null) {
         onBidCountUpdate(newCount);
       }
     }
+  }
 
-    // 상태 코드 변경 시 전체 새로고침 필요
+  /// 업데이트 타입 판단 (테스트 및 로깅용)
+  static RealtimeUpdateType? detectUpdateType(Map<String, dynamic> newRecord) {
     if (newRecord.containsKey('auction_status_code') ||
         newRecord.containsKey('trade_status_code')) {
-      onStatusUpdate?.call();
+      return RealtimeUpdateType.fullRefreshStatus;
     }
-
-    // 종료 시간 변경 시 전체 새로고침 필요
     if (newRecord.containsKey('finish_time')) {
-      onFinishTimeUpdate?.call();
+      return RealtimeUpdateType.fullRefreshFinishTime;
     }
+    if (newRecord.containsKey('current_price')) {
+      return RealtimeUpdateType.partialPriceUpdate;
+    }
+    if (newRecord.containsKey('bid_count')) {
+      return RealtimeUpdateType.partialBidCountUpdate;
+    }
+    if (newRecord.containsKey('last_bid_user_id')) {
+      return RealtimeUpdateType.partialTopBidderUpdate;
+    }
+    return null;
   }
 
   /// 경매 상태 구독 해제
@@ -140,4 +190,3 @@ class ItemDetailRealtimeManager {
     unsubscribeFromAuctionStatus();
   }
 }
-

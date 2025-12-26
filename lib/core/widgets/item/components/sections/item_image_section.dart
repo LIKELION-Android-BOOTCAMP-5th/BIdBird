@@ -56,10 +56,14 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                     });
                   },
                   itemCount: images.length,
+                  pageSnapping: true,
+                  allowImplicitScrolling: false,
                   itemBuilder: (context, index) {
                     final imageUrl = images[index];
                     final bool isVideo = isVideoFile(imageUrl);
-                    final thumbnailUrl = isVideo ? getVideoThumbnailUrl(imageUrl) : imageUrl;
+                    final thumbnailUrl = isVideo
+                        ? getVideoThumbnailUrl(imageUrl)
+                        : imageUrl;
 
                     return GestureDetector(
                       onTap: () {
@@ -73,7 +77,7 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                               .where((url) => !isVideoFile(url))
                               .toList();
                           final imageIndex = imageOnlyUrls.indexOf(imageUrl);
-                          
+
                           if (imageIndex >= 0) {
                             FullScreenImageGalleryViewer.show(
                               context,
@@ -94,15 +98,33 @@ class _ItemImageSectionState extends State<ItemImageSection> {
                                 imageUrl: thumbnailUrl,
                                 cacheManager: ItemImageCacheManager.instance,
                                 fit: BoxFit.cover,
+                                // 이미지 디코딩 최적화: 화면 크기에 맞게 리사이징
+                                maxWidthDiskCache: 1080,
+                                maxHeightDiskCache: 1080,
+                                memCacheWidth:
+                                    (MediaQuery.of(context).size.width *
+                                            MediaQuery.of(
+                                              context,
+                                            ).devicePixelRatio)
+                                        .round(),
+                                memCacheHeight:
+                                    (MediaQuery.of(context).size.width *
+                                            MediaQuery.of(
+                                              context,
+                                            ).devicePixelRatio)
+                                        .round(),
                                 placeholder: (context, url) => const Center(
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                                errorWidget: (context, url, error) => const Center(
-                                  child: Text(
-                                    '상품 사진',
-                                    style: TextStyle(color: Colors.grey),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
                                   ),
                                 ),
+                                errorWidget: (context, url, error) =>
+                                    const Center(
+                                      child: Text(
+                                        '상품 사진',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ),
                               ),
                             ),
                             if (isVideo)
@@ -209,18 +231,13 @@ class _RemainingTimeBadgeState extends State<_RemainingTimeBadge> {
     final isFinished = DateTime.now().isAfter(widget.finishTime);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: isFinished ? Colors.black : RedColor,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        isFinished
-            ? '경매 종료'
-            : '${formatRemainingTime(widget.finishTime)} 남음',
+        isFinished ? '경매 종료' : '${formatRemainingTime(widget.finishTime)} 남음',
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,

@@ -1,17 +1,17 @@
 import 'package:bidbird/core/mixins/form_validation_mixin.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/item/price_input_formatter.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/fields/category_selector_field.dart';
 import 'package:bidbird/core/widgets/item/components/fields/duration_chip_selector.dart';
 import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
 import 'package:bidbird/core/widgets/item/components/fields/form_label.dart';
-import 'package:bidbird/core/widgets/item/components/fields/form_label_with_checkbox.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 /// 카드 2: 가격·경매
@@ -95,37 +95,16 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
     _durationError = null;
   }
 
-  void _handlePriceInput(
-    String value,
-    TextEditingController controller,
-    ValueChanged<int>? onValidated,
-  ) {
-    final formatted = formatNumber(value);
-    if (formatted != value) {
-      controller.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
-
-    // 검증 콜백이 있으면 실행
-    if (onValidated != null) {
-      final price = parseFormattedPrice(formatted);
-      onValidated(price);
-    }
-    // notifyListeners 제거: item_add_screen에서 직접 체크하므로 불필요
-  }
-
   @override
   Widget build(BuildContext context) {
+    // 반응형 값 캐싱
     final spacing = context.spacingMedium;
+    final hPadding = context.hPadding;
+    final vPadding = context.vPadding;
 
     return SingleChildScrollView(
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: EdgeInsets.symmetric(
-        horizontal: context.hPadding,
-        vertical: context.vPadding,
-      ),
+      physics: const ClampingScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -134,28 +113,30 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               FormLabel(text: '시작가 (원)'),
-              TextField(
-                controller: widget.viewModel.startPriceController,
-                keyboardType: TextInputType.number,
-                decoration: widget
-                    .inputDecoration('시작 가격 입력')
-                    .copyWith(
-                      errorText: shouldShowErrors ? _startPriceError : null,
-                    ),
-                onChanged: (value) {
-                  _handlePriceInput(
-                    value,
-                    widget.viewModel.startPriceController,
-                    shouldShowErrors && _startPriceError != null
-                        ? (startPrice) {
-                            if (startPrice > 0 &&
-                                startPrice >= ItemPriceLimits.minPrice) {
-                              clearError(() => _startPriceError = null);
-                            }
-                          }
-                        : null,
-                  );
-                },
+              RepaintBoundary(
+                child: TextField(
+                  controller: widget.viewModel.startPriceController,
+                  keyboardType: TextInputType.number,
+                  decoration: widget
+                      .inputDecoration('시작 가격 입력')
+                      .copyWith(
+                        errorText: shouldShowErrors ? _startPriceError : null,
+                      ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    PriceInputFormatter(),
+                  ],
+                  onChanged: (value) {
+                    // 에러가 있을 때만 검증하여 에러 제거
+                    if (shouldShowErrors && _startPriceError != null) {
+                      final startPrice = parseFormattedPrice(value);
+                      if (startPrice > 0 &&
+                          startPrice >= ItemPriceLimits.minPrice) {
+                        clearError(() => _startPriceError = null);
+                      }
+                    }
+                  },
+                ),
               ),
             ],
           ),
@@ -211,15 +192,20 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               FormLabel(text: '경매 기간'),
-              DurationChipSelector(
-                durations: widget.viewModel.durations,
-                selectedDuration: widget.viewModel.selectedDuration,
-                onDurationSelected: (duration) {
-                  widget.viewModel.setSelectedDuration(duration);
+              Selector<ItemAddViewModel, String?>(
+                selector: (_, vm) => vm.selectedDuration,
+                builder: (context, selectedDuration, _) {
+                  return DurationChipSelector(
+                    durations: widget.viewModel.durations,
+                    selectedDuration: selectedDuration,
+                    onDurationSelected: (duration) {
+                      widget.viewModel.setSelectedDuration(duration);
+                    },
+                    onErrorCleared: shouldShowErrors && _durationError != null
+                        ? () => clearError(() => _durationError = null)
+                        : null,
+                  );
                 },
-                onErrorCleared: shouldShowErrors && _durationError != null
-                    ? () => clearError(() => _durationError = null)
-                    : null,
               ),
               if (shouldShowErrors && _durationError != null)
                 ErrorText(text: _durationError!),

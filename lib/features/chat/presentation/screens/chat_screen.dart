@@ -208,6 +208,8 @@ class _ChatScreenState extends State<ChatScreen>
           itemCount:
               data.chattingRoomList.length + (data.isLoadingMore ? 1 : 0),
           separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
+          addAutomaticKeepAlives: false,
+          addRepaintBoundaries: true,
           itemBuilder: (context, index) {
             // 로딩 인디케이터 표시
             if (index == data.chattingRoomList.length) {

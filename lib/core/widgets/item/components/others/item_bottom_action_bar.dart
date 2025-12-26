@@ -1,18 +1,18 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
-import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
-import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
+// import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
+// import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
+// import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'package:bidbird/features/identity_verification/presentation/utils/identity_verification_helper.dart';
-import 'package:bidbird/features/bid/presentation/widgets/buy_now_input_bottom_sheet.dart';
-import 'package:bidbird/features/bid/presentation/widgets/bid_bottom_sheet.dart';
-import 'package:bidbird/features/bid/presentation/viewmodels/buy_now_input_viewmodel.dart';
+// import 'package:bidbird/features/bid/presentation/widgets/buy_now_input_bottom_sheet.dart';
+// import 'package:bidbird/features/bid/presentation/viewmodels/buy_now_input_viewmodel.dart';
 import 'package:bidbird/features/bid/presentation/viewmodels/price_input_viewmodel.dart';
+import 'package:bidbird/features/bid/presentation/widgets/bid_bottom_sheet.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/presentation/screens/item_bid_win_screen.dart';
 import 'package:bidbird/features/item_trade/seller_payment_complete/presentation/screens/seller_payment_complete_screen.dart';
@@ -20,13 +20,15 @@ import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_input_popup.dart';
 import 'package:bidbird/features/item_trade/shipping/presentation/widgets/shipping_info_view_popup.dart';
 import 'package:bidbird/features/item_trade/shipping/data/repositories/shipping_info_repository.dart';
-import 'package:bidbird/features/item_trade/shipping/domain/repositories/shipping_info_repository.dart' as domain;
+import 'package:bidbird/features/item_trade/shipping/domain/repositories/shipping_info_repository.dart'
+    as domain;
 import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
-import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
+// import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/bid/domain/usecases/check_bid_restriction_usecase.dart';
 import 'package:bidbird/features/bid/data/repositories/bid_repository.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 
 class ItemBottomActionBar extends StatefulWidget {
   const ItemBottomActionBar({
@@ -48,11 +50,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   bool _hasShownRelistPopup = false;
   bool _hasShownPaymentCompleteScreen = false;
   bool? _hasShippingInfo;
-  bool? _hasShippingInfoForSeller;
 
   final CheckBidRestrictionUseCase _checkBidRestrictionUseCase =
       CheckBidRestrictionUseCase(BidRepositoryImpl());
-  final domain.ShippingInfoRepository _shippingInfoRepository = ShippingInfoRepositoryImpl();
+  final domain.ShippingInfoRepository _shippingInfoRepository =
+      ShippingInfoRepositoryImpl();
 
   Future<bool> _ensureIdentityVerified() async {
     if (!mounted) return false;
@@ -68,42 +70,25 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     _statusCode = widget.item.statusCode;
     _checkBidRestriction();
     _checkShippingInfo();
-    _checkShippingInfoForSeller();
   }
 
   Future<void> _checkShippingInfo() async {
     try {
-      final shippingInfo = await _shippingInfoRepository.getShippingInfo(widget.item.itemId);
+      final shippingInfo = await _shippingInfoRepository.getShippingInfo(
+        widget.item.itemId,
+      );
       if (mounted) {
         setState(() {
-          _hasShippingInfo = shippingInfo != null && 
-                           shippingInfo['tracking_number'] != null &&
-                           (shippingInfo['tracking_number'] as String).isNotEmpty;
+          _hasShippingInfo =
+              shippingInfo != null &&
+              shippingInfo['tracking_number'] != null &&
+              (shippingInfo['tracking_number'] as String).isNotEmpty;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _hasShippingInfo = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _checkShippingInfoForSeller() async {
-    try {
-      final shippingInfo = await _shippingInfoRepository.getShippingInfo(widget.item.itemId);
-      if (mounted) {
-        setState(() {
-          _hasShippingInfoForSeller = shippingInfo != null && 
-                                     shippingInfo['tracking_number'] != null &&
-                                     (shippingInfo['tracking_number'] as String).isNotEmpty;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _hasShippingInfoForSeller = false;
         });
       }
     }
@@ -117,7 +102,6 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       _hasShownPaymentCompleteScreen = false;
     }
   }
-
 
   Future<void> _checkBidRestriction() async {
     try {
@@ -136,10 +120,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
   Widget build(BuildContext context) {
     // 즐겨찾기 상태만 Selector로 분리하여 불필요한 리빌드 방지
     final itemDetailViewModel = context.watch<ItemDetailViewModel?>();
-    final isTopBidder = itemDetailViewModel?.isTopBidder ?? false;
+    final isTopBidder = context.select<ItemDetailViewModel?, bool>(
+      (vm) => vm?.isTopBidder ?? false,
+    );
     final isMyItem = widget.isMyItem;
     final bool isBidRestricted = _isBidRestricted;
-    final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
     final int? tradeStatusCode = widget.item.tradeStatusCode;
     final bool isTradePaid = tradeStatusCode == 520;
 
@@ -162,10 +147,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                 if (!context.mounted) return;
                 // 기존 매물 등록 화면을 "수정 모드"로 열어서
                 // 현재 매물 정보를 그대로 가져와 재등록할 수 있게 함
-                context.push(
-                  '/add_item',
-                  extra: widget.item.itemId,
-                );
+                context.push('/add_item', extra: widget.item.itemId);
               },
             );
           },
@@ -195,8 +177,13 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     // 구매자 입장: 낙찰(321) 상태이고 아직 결제하지 않은 경우 자동으로 낙찰 성공 화면 표시
     final int statusCode = _statusCode ?? 0;
-    final bool hasShownBidWinScreen = itemDetailViewModel?.hasShownBidWinScreen ?? false;
-    if (!isMyItem && statusCode == 321 && isTopBidder && !isTradePaid && !hasShownBidWinScreen) {
+    final bool hasShownBidWinScreen =
+        itemDetailViewModel?.hasShownBidWinScreen ?? false;
+    if (!isMyItem &&
+        statusCode == 321 &&
+        isTopBidder &&
+        !isTradePaid &&
+        !hasShownBidWinScreen) {
       itemDetailViewModel?.markBidWinScreenAsShown();
 
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -225,9 +212,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     //     !isTradePaid;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: context.hPadding,
+        vertical: context.spacingSmall,
+      ),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: chatItemCardBackground,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(defaultRadius),
           topRight: Radius.circular(defaultRadius),
@@ -246,20 +236,22 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           if (!isMyItem && isBidRestricted) ...[
             Expanded(
               child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.spacingMedium,
+                ),
                 decoration: BoxDecoration(
                   color: BackgroundColor,
                   borderRadius: BorderRadius.circular(8.7),
                   border: Border.all(color: BorderColor),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
                     '결제 3회 이상 실패하여 입찰이 제한되었습니다.',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: context.fontSizeSmall,
                       fontWeight: FontWeight.w600,
-                      color: Colors.red,
+                      color: RedColor,
                     ),
                   ),
                 ),
@@ -269,7 +261,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           // 일반 사용자: 하트 + 입찰/즉시구매 버튼
           else if (!isMyItem) ...[
             _buildFavoriteButton(itemDetailViewModel),
-            const SizedBox(width: 12),
+            SizedBox(width: context.spacingSmall * 1.5),
             Expanded(child: _buildBidButton(isTopBidder)),
             // if (showBuyNow) ...[
             //   const SizedBox(width: 8),
@@ -279,19 +271,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             // 판매자 입장: trade_status_code가 520이면 구매자 연락하기, 배송 정보 입력하기 버튼 표시
             if (isTradePaid) ...[
               Expanded(
-                child: OutlinedButton(
+                child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ChattingRoomScreen(
-                          itemId: widget.item.itemId,
-                        ),
+                        builder: (_) =>
+                            ChattingRoomScreen(itemId: widget.item.itemId),
                       ),
                     );
                   },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: blueColor),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: blueColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8.7),
                     ),
@@ -301,26 +292,29 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: blueColor,
+                      color: Colors.white,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: context.spacingSmall),
               Expanded(
                 child: ElevatedButton(
                   onPressed: () async {
                     // 배송 정보 조회
-                    final shippingInfoRepository = ShippingInfoRepositoryImpl();
                     try {
-                      final shippingInfo = await shippingInfoRepository.getShippingInfo(widget.item.itemId);
-                      
+                      final shippingInfo = await _shippingInfoRepository
+                          .getShippingInfo(widget.item.itemId);
+
                       if (!context.mounted) return;
-                      
-                      final hasShippingInfo = shippingInfo != null && 
+
+                      final hasShippingInfo =
+                          shippingInfo != null &&
                           shippingInfo['tracking_number'] != null &&
-                          (shippingInfo['tracking_number'] as String?)?.isNotEmpty == true;
-                      
+                          (shippingInfo['tracking_number'] as String?)
+                                  ?.isNotEmpty ==
+                              true;
+
                       if (hasShippingInfo) {
                         // 송장 정보가 있으면 확인 팝업 표시
                         showDialog(
@@ -328,7 +322,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                           builder: (dialogContext) => ShippingInfoViewPopup(
                             createdAt: shippingInfo['created_at'] as String?,
                             carrier: shippingInfo['carrier'] as String?,
-                            trackingNumber: shippingInfo['tracking_number'] as String?,
+                            trackingNumber:
+                                shippingInfo['tracking_number'] as String?,
                           ),
                         );
                       } else {
@@ -338,20 +333,29 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                           barrierDismissible: true,
                           builder: (dialogContext) {
                             return ShippingInfoInputPopup(
-                              initialCarrier: shippingInfo?['carrier'] as String?,
-                              initialTrackingNumber: shippingInfo?['tracking_number'] as String?,
+                              initialCarrier:
+                                  shippingInfo?['carrier'] as String?,
+                              initialTrackingNumber:
+                                  shippingInfo?['tracking_number'] as String?,
                               onConfirm: (carrier, trackingNumber) async {
                                 try {
                                   if (shippingInfo != null) {
                                     // 기존 정보가 있으면 택배사만 수정 (송장 번호는 수정 불가)
-                                    final existingTrackingNumber = shippingInfo['tracking_number'] as String?;
-                                    await shippingInfoRepository.updateShippingInfo(
-                                      itemId: widget.item.itemId,
-                                      carrier: carrier,
-                                      trackingNumber: existingTrackingNumber ?? trackingNumber,
-                                    );
+                                    final existingTrackingNumber =
+                                        shippingInfo['tracking_number']
+                                            as String?;
+                                    await _shippingInfoRepository
+                                        .updateShippingInfo(
+                                          itemId: widget.item.itemId,
+                                          carrier: carrier,
+                                          trackingNumber:
+                                              existingTrackingNumber ??
+                                              trackingNumber,
+                                        );
                                     if (dialogContext.mounted) {
-                                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        dialogContext,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text('택배사 정보가 수정되었습니다'),
                                         ),
@@ -359,13 +363,16 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                                     }
                                   } else {
                                     // 기존 정보가 없으면 새로 저장
-                                    await shippingInfoRepository.saveShippingInfo(
-                                      itemId: widget.item.itemId,
-                                      carrier: carrier,
-                                      trackingNumber: trackingNumber,
-                                    );
+                                    await _shippingInfoRepository
+                                        .saveShippingInfo(
+                                          itemId: widget.item.itemId,
+                                          carrier: carrier,
+                                          trackingNumber: trackingNumber,
+                                        );
                                     if (dialogContext.mounted) {
-                                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        dialogContext,
+                                      ).showSnackBar(
                                         const SnackBar(
                                           content: Text('송장 정보가 입력되었습니다'),
                                         ),
@@ -374,9 +381,13 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                                   }
                                 } catch (e) {
                                   if (dialogContext.mounted) {
-                                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                    ScaffoldMessenger.of(
+                                      dialogContext,
+                                    ).showSnackBar(
                                       SnackBar(
-                                        content: Text('송장 정보 저장 실패: ${e.toString()}'),
+                                        content: Text(
+                                          '송장 정보 저장 실패: ${e.toString()}',
+                                        ),
                                       ),
                                     );
                                   }
@@ -388,7 +399,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                       }
                     } catch (e) {
                       if (!context.mounted) return;
-                      
+
                       showDialog(
                         context: context,
                         builder: (dialogContext) => AskPopup(
@@ -408,11 +419,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                     ),
                   ),
                   child: Text(
-                    _hasShippingInfoForSeller == true ? '배송 정보 확인하기' : '배송 정보 입력하기',
-                    style: const TextStyle(
-                      fontSize: 13,
+                    _hasShippingInfo == true ? '배송 정보 확인하기' : '배송 정보 입력하기',
+                    style: TextStyle(
+                      fontSize: context.fontSizeSmall,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: chatItemCardBackground,
                     ),
                   ),
                 ),
@@ -420,18 +431,20 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             ] else
               Expanded(
                 child: Container(
-                  height: 40,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.spacingMedium,
+                  ),
                   decoration: BoxDecoration(
                     color: BackgroundColor,
                     borderRadius: BorderRadius.circular(8.7),
                     border: Border.all(color: BorderColor),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
                       '내 매물은 입찰이 불가능합니다',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: context.fontSizeSmall,
                         fontWeight: FontWeight.w600,
                         color: TopBidderTextColor,
                       ),
@@ -449,7 +462,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     if (itemDetailViewModel == null) {
       return const SizedBox.shrink();
     }
-    
+
     // 즐겨찾기 상태만 Selector로 분리
     return Selector<ItemDetailViewModel, bool>(
       selector: (_, vm) => vm.isFavorite,
@@ -459,16 +472,16 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
             itemDetailViewModel.toggleFavorite();
           },
           child: Container(
-            width: 40,
-            height: 40,
+            width: context.iconSizeMedium,
+            height: context.iconSizeMedium,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: BorderColor),
             ),
             child: Icon(
               isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : iconColor,
-              size: 22,
+              color: isFavorite ? RedColor : iconColor,
+              size: context.iconSizeSmall,
             ),
           ),
         );
@@ -483,7 +496,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     final bool isTimeOver = DateTime.now().isAfter(widget.item.finishTime);
 
-    final bool isAuctionEnded = isTimeOver ||
+    final bool isAuctionEnded =
+        isTimeOver ||
         statusCode == 321 ||
         statusCode == 322 ||
         statusCode == 323;
@@ -501,18 +515,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     // 경매가 완전히 끝난 상태(유찰/즉시구매 완료 등)
     if (isAuctionEnded && statusCode != 321) {
       return Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+        padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
         decoration: BoxDecoration(
           color: BackgroundColor,
           borderRadius: BorderRadius.circular(8.7),
           border: Border.all(color: BorderColor),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             '경매가 종료되었습니다.',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: context.fontSizeSmall,
               fontWeight: FontWeight.w600,
               color: TopBidderTextColor,
             ),
@@ -549,30 +563,31 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: context.spacingSmall),
           Expanded(
             child: ElevatedButton(
               onPressed: () async {
                 // 배송 정보 조회
-                final shippingInfoRepository = ShippingInfoRepositoryImpl();
+                final navigatorContext = context;
                 try {
-                  final shippingInfo = await shippingInfoRepository.getShippingInfo(widget.item.itemId);
-                  
+                  final shippingInfo = await _shippingInfoRepository
+                      .getShippingInfo(widget.item.itemId);
+
                   if (!mounted) return;
-                  
-                  final navigatorContext = context;
+
                   showDialog(
                     context: navigatorContext,
                     builder: (dialogContext) => ShippingInfoViewPopup(
                       createdAt: shippingInfo?['created_at'] as String?,
                       carrier: shippingInfo?['carrier'] as String?,
-                      trackingNumber: shippingInfo?['tracking_number'] as String? ?? 
-                                    shippingInfo?['tracking_num'] as String?,
+                      trackingNumber:
+                          shippingInfo?['tracking_number'] as String? ??
+                          shippingInfo?['tracking_num'] as String?,
                     ),
                   );
                 } catch (e) {
                   if (!mounted) return;
-                  
+
                   final navigatorContext = context;
                   showDialog(
                     context: navigatorContext,
@@ -592,12 +607,12 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                   borderRadius: BorderRadius.circular(8.7),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 '배송 정보 확인',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: context.fontSizeSmall,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: chatItemCardBackground,
                 ),
               ),
             ),
@@ -751,18 +766,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
       // 다른 사용자는 결제 대기 안내 문구만 표시
       return Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+        padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
         decoration: BoxDecoration(
           color: BackgroundColor,
           borderRadius: BorderRadius.circular(8.7),
           border: Border.all(color: BorderColor),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             '즉시 구매 결제 대기중입니다',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: context.fontSizeSmall,
               fontWeight: FontWeight.w600,
               color: TopBidderTextColor,
             ),
@@ -773,18 +788,18 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     if (isBuyNowCompleted) {
       return Container(
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        height: ResponsiveConstants.buttonHeight(context) * 2 / 3,
+        padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
         decoration: BoxDecoration(
           color: BackgroundColor,
           borderRadius: BorderRadius.circular(8.7),
           border: Border.all(color: BorderColor),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             '즉시 구매되었습니다',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: context.fontSizeSmall,
               fontWeight: FontWeight.w600,
               color: TopBidderTextColor,
             ),
@@ -803,7 +818,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            backgroundColor: Colors.white,
+            useSafeArea: true,
+            backgroundColor: chatItemCardBackground,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(defaultRadius),
@@ -831,7 +850,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
         child: Text(
           '입찰하기',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: context.fontSizeSmall,
             fontWeight: FontWeight.w600,
             color: blueColor,
           ),
@@ -872,7 +891,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     return Container(
       height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: context.spacingMedium),
       decoration: BoxDecoration(
         color: BackgroundColor,
         borderRadius: BorderRadius.circular(8.7),
@@ -881,8 +900,8 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
       child: Center(
         child: Text(
           reason,
-          style: const TextStyle(
-            fontSize: 13,
+          style: TextStyle(
+            fontSize: context.fontSizeSmall,
             fontWeight: FontWeight.w600,
             color: TopBidderTextColor,
           ),

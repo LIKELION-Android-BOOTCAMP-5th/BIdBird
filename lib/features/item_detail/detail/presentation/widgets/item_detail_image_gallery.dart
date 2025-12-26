@@ -5,7 +5,7 @@ import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
 import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
-import 'package:bidbird/core/utils/item/trade_status_codes.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -21,7 +21,8 @@ class ItemDetailImageGallery extends StatefulWidget {
   State<ItemDetailImageGallery> createState() => _ItemDetailImageGalleryState();
 }
 
-class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with WidgetsBindingObserver {
+class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
+    with WidgetsBindingObserver {
   int _currentPage = 0;
   final PageController _pageController = PageController();
   Timer? _timer;
@@ -40,7 +41,8 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
     if (state == AppLifecycleState.resumed) {
       _isAppInForeground = true;
       _startTimer();
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _isAppInForeground = false;
       _stopTimer();
     }
@@ -107,7 +109,9 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
                         itemBuilder: (context, index) {
                           final imageUrl = images[index];
                           final bool isVideo = isVideoFile(imageUrl);
-                          final thumbnailUrl = isVideo ? getVideoThumbnailUrl(imageUrl) : imageUrl;
+                          final thumbnailUrl = isVideo
+                              ? getVideoThumbnailUrl(imageUrl)
+                              : imageUrl;
 
                           return GestureDetector(
                             onTap: () {
@@ -117,8 +121,10 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
                                 final imageOnlyUrls = images
                                     .where((url) => !isVideoFile(url))
                                     .toList();
-                                final imageIndex = imageOnlyUrls.indexOf(imageUrl);
-                                
+                                final imageIndex = imageOnlyUrls.indexOf(
+                                  imageUrl,
+                                );
+
                                 if (imageIndex >= 0) {
                                   FullScreenImageGalleryViewer.show(
                                     context,
@@ -137,23 +143,30 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
                                   Positioned.fill(
                                     child: CachedNetworkImage(
                                       imageUrl: thumbnailUrl,
-                                      cacheManager: ItemImageCacheManager.instance,
+                                      cacheManager:
+                                          ItemImageCacheManager.instance,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(color: shadowHigh),
-                                      errorWidget: (context, url, error) => Container(
-                                        color: ImageBackgroundColor,
-                                        child: const Icon(
-                                          Icons.image_outlined,
-                                          color: iconColor,
-                                          size: 32,
-                                        ),
-                                      ),
+                                      memCacheWidth: 600,
+                                      memCacheHeight: 600,
+                                      placeholder: (context, url) =>
+                                          Container(color: shadowHigh),
+                                      errorWidget: (context, url, error) =>
+                                          Container(
+                                            color: ImageBackgroundColor,
+                                            child: const Icon(
+                                              Icons.image_outlined,
+                                              color: iconColor,
+                                              size: 32,
+                                            ),
+                                          ),
                                     ),
                                   ),
                                   if (isVideo)
                                     Positioned.fill(
                                       child: Container(
-                                        color: Colors.black.withValues(alpha: 0.3),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         child: const Center(
                                           child: Icon(
                                             Icons.play_circle_filled,
@@ -176,20 +189,22 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
               ),
               // 타이머 오버레이 - 좌하단 (항상 표시, 박스에서 띄움)
               Positioned(
-                bottom: 40,
+                bottom: 12,
                 left: 16,
-                child: _RemainingTimeOverlay(finishTime: widget.item.finishTime),
+                child: _RemainingTimeOverlay(
+                  finishTime: widget.item.finishTime,
+                ),
               ),
               // 입찰 카운트 오버레이 - 우하단 (왼쪽)
               Positioned(
-                bottom: 40,
+                bottom: 12,
                 right: 70,
                 child: _BidCountOverlay(bidCount: widget.item.biddingCount),
               ),
               // 이미지 개수 표시 오버레이 - 우하단 (오른쪽)
               if (hasImages && images.isNotEmpty)
                 Positioned(
-                  bottom: 40,
+                  bottom: 12,
                   right: 16,
                   child: _ImageCountOverlay(
                     currentIndex: _currentPage,
@@ -199,35 +214,12 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery> with Wi
             ],
           ),
         ),
-        if (hasImages && images.length > 1) ...[
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              images.length,
-              (index) => _buildDot(isActive: index == _currentPage),
-            ),
-          ),
-        ],
+
       ],
     );
   }
 
-  Widget _buildDot({required bool isActive}) {
-    return Container(
-      width: 6,
-      height: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isActive ? Colors.black : Colors.transparent,
-        border: Border.all(
-          color: isActive ? Colors.black : const Color(0xFFBDBDBD),
-          width: isActive ? 1.5 : 1,
-        ),
-      ),
-    );
-  }
+
 }
 
 class _RemainingTimeOverlay extends StatefulWidget {
@@ -239,7 +231,8 @@ class _RemainingTimeOverlay extends StatefulWidget {
   State<_RemainingTimeOverlay> createState() => _RemainingTimeOverlayState();
 }
 
-class _RemainingTimeOverlayState extends State<_RemainingTimeOverlay> with WidgetsBindingObserver {
+class _RemainingTimeOverlayState extends State<_RemainingTimeOverlay>
+    with WidgetsBindingObserver {
   Timer? _timer;
   bool _isAppInForeground = true;
 
@@ -256,7 +249,8 @@ class _RemainingTimeOverlayState extends State<_RemainingTimeOverlay> with Widge
     if (state == AppLifecycleState.resumed) {
       _isAppInForeground = true;
       _startTimer();
-    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _isAppInForeground = false;
       _stopTimer();
     }
@@ -307,11 +301,7 @@ class _RemainingTimeOverlayState extends State<_RemainingTimeOverlay> with Widge
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.access_time,
-            size: 16,
-            color: Colors.white,
-          ),
+          const Icon(Icons.access_time, size: 16, color: Colors.white),
           const SizedBox(width: 6),
           Text(
             isFinished ? '경매 종료' : '$remainingTime 남음',
@@ -372,11 +362,7 @@ class _BidCountOverlay extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.gavel,
-            size: 16,
-            color: Colors.white,
-          ),
+          const Icon(Icons.gavel, size: 16, color: Colors.white),
           const SizedBox(width: 6),
           Text(
             '$bidCount',
@@ -391,4 +377,3 @@ class _BidCountOverlay extends StatelessWidget {
     );
   }
 }
-

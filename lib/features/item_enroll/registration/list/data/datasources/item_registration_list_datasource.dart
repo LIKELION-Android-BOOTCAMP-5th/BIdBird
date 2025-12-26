@@ -11,22 +11,25 @@ class ItemRegistrationListDatasource {
   final SupabaseClient _supabase;
 
   Future<List<ItemRegistrationData>> fetchMyPendingItems() async {
-    final userId = ItemSecurityUtils.requireAuth(_supabase);
-
     try {
-      final List<dynamic> rows = await _supabase
-          .from('items_detail')
-          .select(
-        'item_id, title, description, start_price, buy_now_price, keyword_type, seller_id, thumbnail_image, is_agreed, created_at, auction_duration_hours',
-      )
-          .eq('seller_id', userId)
-          .filter('is_agreed', 'is', null)
-          .order('created_at', ascending: false);
+      final userId = ItemSecurityUtils.requireAuth(_supabase);
 
-      return rows
+      // Edge Function 호출로 매물 등록 대기 리스트를 조회
+      final response = await _supabase.functions.invoke(
+        'get-register-list-item',
+        body: <String, dynamic>{
+          'userId': userId,
+        },
+      );
+
+      final dynamic data = response.data;
+      if (data is! List) {
+        throw Exception('잘못된 응답 형식입니다.');
+      }
+
+      return data
           .whereType<Map<String, dynamic>>()
           .map<ItemRegistrationData>((row) {
-
         return ItemRegistrationData(
           id: getStringFromRow(row, 'item_id'),
           title: getStringFromRow(row, 'title'),
@@ -36,11 +39,18 @@ class ItemRegistrationListDatasource {
           auctionDurationHours: getIntFromRow(row, 'auction_duration_hours'),
           thumbnailUrl: getNullableStringFromRow(row, 'thumbnail_image'),
           keywordTypeId: getNullableIntFromRow(row, 'keyword_type'),
+          statusText: _deriveStatus(row['is_agreed']),
         );
       }).toList();
     } catch (e) {
       rethrow;
     }
+  }
+
+  String _deriveStatus(dynamic rawIsAgreed) {
+    if (rawIsAgreed == null) return '등록 대기';
+    if (rawIsAgreed is String && rawIsAgreed.trim().isEmpty) return '등록 대기';
+    return '승인 완료';
   }
 }
 

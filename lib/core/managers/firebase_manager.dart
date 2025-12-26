@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
+import 'package:bidbird/core/services/datasource_manager.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
-import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail_datasource.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +21,10 @@ class FirebaseManager {
   FirebaseMessaging get fcm => _fcm;
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+
+  // FCM 토큰 변경 감지용
+  static String? _lastSavedToken;
+  static StreamSubscription? _tokenRefreshSubscription;
 
   static String? _webVapidKey() {
     final vapidKey = dotenv.env['FIREBASE_WEB_VAPID_KEY'];
@@ -258,11 +263,16 @@ class FirebaseManager {
         vapidKey: _webVapidKey(),
       );
       if (token != null) {
-        // fcm 토큰 supabase에 저장하기
+        // 이전 토큰과 다를 때만 저장
         await saveTokenToSupabase(token);
       }
-      // 토큰이 갱신될 시 토큰 값을 다시 업데이트하기
-      _fcm.onTokenRefresh.listen((newToken) {
+
+      // 기존 리스너 취소 (중복 등록 방지)
+      await _tokenRefreshSubscription?.cancel();
+      _tokenRefreshSubscription = null;
+
+      // 토큰이 갱신될 시에만 업데이트
+      _tokenRefreshSubscription = _fcm.onTokenRefresh.listen((newToken) {
         saveTokenToSupabase(newToken);
       });
     } catch (e) {
@@ -270,9 +280,14 @@ class FirebaseManager {
     }
   }
 
-  // fcm 토큰 supabase에 저장하기
+  // fcm 토큰 supabase에 저장하기 (토큰 변경 시에만)
   static Future<void> saveTokenToSupabase(String token) async {
     try {
+      // 토큰이 변경되지 않았으면 저장하지 않음
+      if (token == _lastSavedToken) {
+        return;
+      }
+
       final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
       if (userId == null) {
         return;
@@ -295,6 +310,9 @@ class FirebaseManager {
           .from('users')
           .update({'device_token': token, 'device_type': platform})
           .eq('id', userId);
+
+      // 저장 성공 시 이전 토큰 업데이트
+      _lastSavedToken = token;
     } catch (e) {
       debugPrint('FCM 토큰 저장 실패: $e');
     }
@@ -421,62 +439,7 @@ class FirebaseManager {
   //   );
   // }
 
-  // TODO : 채널 타입 설정
-  static String? _getChannelFromNotificationType(String? type) {
-    if (type == null) return null;
 
-    const channelMap = {
-      'comment': 'comment_channel',
-      'like': 'like_channel',
-      'follow': 'follow_channel',
-      'message': 'message_channel',
-      'chat': 'message_channel',
-      'post': 'post_channel',
-      'announcement': 'announcement_channel',
-    };
-
-    return channelMap[type];
-  }
-
-  // TODO : 채널 이름 설정
-  static String _getChannelName(String channelId) {
-    const channelNames = {
-      'general_channel': '일반 알림',
-      'comment_channel': '댓글 알림',
-      'like_channel': '좋아요 알림',
-      'announcement_channel': '공지사항',
-      'follow_channel': '팔로우 알림',
-      'post_channel': '게시글 알림',
-      'message_channel': '메시지 알림',
-      'high_importance_channel': 'High Importance Notifications',
-    };
-
-    if (channelId.startsWith('chat_room_')) {
-      return '채팅 알림';
-    }
-
-    return channelNames[channelId] ?? '알림';
-  }
-
-  // 채널 관련 코드
-  static String _getChannelDescription(String channelId) {
-    // 동적 채널
-    if (channelId.startsWith('chat_room_')) {
-      return '채팅방 메시지 알림을 받습니다.';
-    }
-    // 정적 채널
-    const descriptions = {
-      'general_channel': '일반적인 알림을 위한 채널입니다.',
-      'comment_channel': '댓글이 달렸을 때 알림을 받습니다.',
-      'like_channel': '좋아요를 받았을 때 알림을 받습니다.',
-      'announcement_channel': '중요한 공지사항을 받습니다.',
-      'follow_channel': '새로운 팔로워 알림을 받습니다.',
-      'post_channel': '게시글 관련 알림을 받습니다.',
-      'message_channel': '메시지 알림을 받습니다.',
-    };
-    // 없을 시 알림을 받습니다.
-    return descriptions[channelId] ?? '알림을 받습니다.';
-  }
 
   static Future<void> _onNotificationTapped(
     NotificationResponse notificationResponse,
@@ -496,10 +459,9 @@ class FirebaseManager {
         final String targetRoute = _generateRoute(alarmType, fcmData);
 
         if (alarmType == "WIN") {
-          ItemDetailDatasource _datasource = ItemDetailDatasource();
           final String? itemId = fcmData['item_id'] as String;
           if (itemId == null) return;
-          final ItemDetail? item = await _datasource.fetchItemDetail(itemId);
+          final ItemDetail? item = await DatasourceManager().itemDetail.fetchItemDetail(itemId);
           if (item == null) {
             rootNavigatorKey.currentContext?.push(targetRoute);
             return;
@@ -532,10 +494,9 @@ class FirebaseManager {
     // _generateRoute 함수를 사용하여 알림 타입과 데이터에 맞는 라우팅 경로 생성
     final String targetRoute = _generateRoute(alarmType, fcmData);
     if (alarmType == "WIN") {
-      ItemDetailDatasource _datasource = ItemDetailDatasource();
       final String? itemId = fcmData['item_id'] as String;
       if (itemId == null) return;
-      final ItemDetail? item = await _datasource.fetchItemDetail(itemId);
+      final ItemDetail? item = await DatasourceManager().itemDetail.fetchItemDetail(itemId);
       if (item == null) {
         rootNavigatorKey.currentContext?.push(targetRoute);
         return;

@@ -19,12 +19,21 @@ class TermsScreen extends StatelessWidget {
       create: (_) => TermsViewModel(GetTermsContent(TermsRepositoryImpl())),
       child: Builder(
         builder: (context) {
-          final vm = context.watch<TermsViewModel>();
+          final vm = context.read<TermsViewModel>();
+          final isLoading = context.select<TermsViewModel, bool>(
+            (vm) => vm.isLoading,
+          );
+          final termsContent = context.select<TermsViewModel, List>(
+            (vm) => vm.termsContent,
+          );
+          final errorMessage = context.select<TermsViewModel, String?>(
+            (vm) => vm.errorMessage,
+          );
 
           Widget body;
-          if (vm.isLoading && vm.termsContent.isEmpty) {
+          if (isLoading && termsContent.isEmpty) {
             body = const Center(child: CircularProgressIndicator());
-          } else if (vm.errorMessage != null) {
+          } else if (errorMessage != null) {
             body = Center(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -33,7 +42,7 @@ class TermsScreen extends StatelessWidget {
                   children: [
                     const Text('약관을 불러오지 못했습니다.'),
                     const SizedBox(height: 8),
-                    Text(vm.errorMessage!, textAlign: TextAlign.center),
+                    Text(errorMessage, textAlign: TextAlign.center),
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: vm.loadTerms,
@@ -54,7 +63,7 @@ class TermsScreen extends StatelessWidget {
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
                     child: Column(
-                      children: vm.termsContent
+                      children: termsContent
                           .map(
                             (section) => Container(
                               width: double.infinity,

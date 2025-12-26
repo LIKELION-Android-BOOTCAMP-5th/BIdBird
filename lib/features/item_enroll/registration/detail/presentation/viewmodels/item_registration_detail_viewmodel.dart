@@ -1,6 +1,5 @@
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import '../../domain/entities/item_registration_detail_entity.dart';
 import '../../data/repositories/item_registration_detail_repository.dart';
 import '../../domain/usecases/fetch_terms_text_usecase.dart';
 import '../../domain/usecases/confirm_registration_usecase.dart';
@@ -17,15 +16,19 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     ConfirmRegistrationUseCase? confirmRegistrationUseCase,
     DeleteItemUseCase? deleteItemUseCase,
     FetchAllImageUrlsUseCase? fetchAllImageUrlsUseCase,
-  })  : _item = item,
-        _fetchTermsTextUseCase =
-            fetchTermsTextUseCase ?? FetchTermsTextUseCase(ItemRegistrationDetailRepositoryImpl()),
-        _confirmRegistrationUseCase = confirmRegistrationUseCase ??
-            ConfirmRegistrationUseCase(ItemRegistrationDetailRepositoryImpl()),
-        _deleteItemUseCase =
-            deleteItemUseCase ?? DeleteItemUseCase(ItemRegistrationDetailRepositoryImpl()),
-        _fetchAllImageUrlsUseCase = fetchAllImageUrlsUseCase ??
-            FetchAllImageUrlsUseCase(ItemRegistrationDetailRepositoryImpl());
+  }) : _item = item,
+       _fetchTermsTextUseCase =
+           fetchTermsTextUseCase ??
+           FetchTermsTextUseCase(ItemRegistrationDetailRepositoryImpl()),
+       _confirmRegistrationUseCase =
+           confirmRegistrationUseCase ??
+           ConfirmRegistrationUseCase(ItemRegistrationDetailRepositoryImpl()),
+       _deleteItemUseCase =
+           deleteItemUseCase ??
+           DeleteItemUseCase(ItemRegistrationDetailRepositoryImpl()),
+       _fetchAllImageUrlsUseCase =
+           fetchAllImageUrlsUseCase ??
+           FetchAllImageUrlsUseCase(ItemRegistrationDetailRepositoryImpl());
 
   final FetchTermsTextUseCase _fetchTermsTextUseCase;
   final ConfirmRegistrationUseCase _confirmRegistrationUseCase;
@@ -48,6 +51,15 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
   bool _isLoadingImage = false;
   bool get isLoadingImage => _isLoadingImage;
 
+  // 이미지 URL 캐시 추가
+  Map<String, List<String>>? _imageUrlCache;
+  DateTime? _imageUrlCacheTime;
+  static const Duration _imageUrlCacheDuration = Duration(seconds: 30);
+
+  // 이미지 로드 에러 상태 추가
+  String? _imageLoadError;
+  String? get imageLoadError => _imageLoadError;
+
   Future<void> loadTerms() async {
     try {
       _termsText = await _fetchTermsTextUseCase();
@@ -60,33 +72,60 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
 
   Future<void> loadImage() async {
     _isLoadingImage = true;
+    _imageLoadError = null; // 에러 초기화
     notifyListeners();
 
     try {
+      // 캐시 검증 추가
+      if (_imageUrlCache != null &&
+          _imageUrlCacheTime != null &&
+          DateTime.now().difference(_imageUrlCacheTime!) <
+              _imageUrlCacheDuration) {
+        _imageUrls = _imageUrlCache![_item.id] ?? [];
+        if (_imageUrls.isNotEmpty) {
+          _imageUrl = _imageUrls.first;
+          _imageLoadError = null;
+        }
+        _isLoadingImage = false;
+        notifyListeners();
+        return; // 캐시 사용하고 반환
+      }
+
       // 모든 이미지 URL 가져오기
       final imageUrls = await _fetchAllImageUrlsUseCase(_item.id);
-      
+
       if (imageUrls.isNotEmpty) {
-        _imageUrls = imageUrls;
+        _imageUrls = List<String>.from(imageUrls);
         _imageUrl = imageUrls.first;
+
+        // 캐시 저장
+        _imageUrlCache = {_item.id: _imageUrls};
+        _imageUrlCacheTime = DateTime.now();
+        _imageLoadError = null;
+      } else if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
+        // 폴백: thumbnailUrl 사용
+        _imageUrl = _item.thumbnailUrl;
+        _imageUrls = [_item.thumbnailUrl!];
+
+        // 폴백도 캐시
+        _imageUrlCache = {_item.id: _imageUrls};
+        _imageUrlCacheTime = DateTime.now();
+        _imageLoadError = null;
       } else {
-        // 이미지가 없으면 thumbnailUrl 사용
-        if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
-          _imageUrl = _item.thumbnailUrl;
-          _imageUrls = [_item.thumbnailUrl!];
-        } else {
-          _imageUrl = null;
-          _imageUrls = [];
-        }
+        _imageUrl = null;
+        _imageUrls = [];
+        _imageLoadError = '등록된 이미지가 없습니다';
       }
     } catch (e) {
       // 이미지 로드 실패 시 thumbnailUrl 사용
       if (_item.thumbnailUrl != null && _item.thumbnailUrl!.isNotEmpty) {
         _imageUrl = _item.thumbnailUrl;
         _imageUrls = [_item.thumbnailUrl!];
+        _imageLoadError = null;
       } else {
         _imageUrl = null;
         _imageUrls = [];
+        _imageLoadError = '이미지 로드 실패';
       }
     } finally {
       _isLoadingImage = false;
@@ -125,7 +164,9 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     } catch (e) {
       if (context.mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text(ItemRegistrationErrorMessages.registrationError(e))),
+          SnackBar(
+            content: Text(ItemRegistrationErrorMessages.registrationError(e)),
+          ),
         );
       }
     } finally {
@@ -162,10 +203,11 @@ class ItemRegistrationDetailViewModel extends ChangeNotifier {
     } catch (e) {
       if (context.mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text(ItemRegistrationErrorMessages.deletionError(e))),
+          SnackBar(
+            content: Text(ItemRegistrationErrorMessages.deletionError(e)),
+          ),
         );
       }
     }
   }
 }
-

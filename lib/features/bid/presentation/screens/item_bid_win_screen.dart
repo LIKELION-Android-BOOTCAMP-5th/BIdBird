@@ -1,15 +1,9 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
 import 'package:bidbird/features/chat/presentation/screens/chatting_room_screen.dart';
-import 'package:bidbird/features/payment/payment_complete/presentation/screens/payment_complete_screen.dart';
-import 'package:bidbird/features/payment/portone_payment/domain/entities/item_payment_request_entity.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/features/payment/portone_payment/presentation/screens/portone_payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/bid/presentation/widgets/item_bid_result_body.dart';
@@ -21,8 +15,6 @@ class ItemBidWinScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authVM = context.read<AuthViewModel>();
-    final String buyerTel = authVM.user?.phone_number ?? '';
     final bool isTradePaid = item.tradeStatusCode == 520;
 
     if (isTradePaid) {
@@ -65,14 +57,12 @@ class ItemBidWinScreen extends StatelessWidget {
             Builder(
               builder: (context) {
                 final buttonHeight = ResponsiveConstants.buttonHeight(context);
-                final buttonFontSize = ResponsiveConstants.buttonFontSize(context);
                 final textButtonFontSize = ResponsiveConstants.fontSizeMedium(context);
                 final spacing = ResponsiveConstants.spacingSmall(context);
                 
                 return Column(
                   children: [
                     if (!isTradePaid) ...[
-                      // TODO: 사업자 인증 후 아래 주석 해제
                       // SizedBox(
                       //   width: double.infinity,
                       //   height: buttonHeight,
@@ -142,29 +132,7 @@ class ItemBidWinScreen extends StatelessWidget {
                       //     ),
                       //   ),
                       // ),
-                      
-                      // 임시: 판매자 결제정보 입력 대기 안내
-                      SizedBox(
-                        width: double.infinity,
-                        height: buttonHeight,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
-                            borderRadius: defaultBorder,
-                            border: Border.all(color: const Color(0xFFE0E0E0)),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '판매자가 결제정보 입력 중입니다',
-                              style: TextStyle(
-                                fontSize: buttonFontSize,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF9E9E9E),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // 임시: 결제 안내 박스 대신 간격만 유지
                       SizedBox(height: spacing),
                     ],
                     SizedBox(
@@ -172,6 +140,7 @@ class ItemBidWinScreen extends StatelessWidget {
                       height: buttonHeight,
                       child: OutlinedButton(
                         onPressed: () {
+                          Navigator.of(context).pop();
                           Navigator.push(
                             context,
                             MaterialPageRoute(

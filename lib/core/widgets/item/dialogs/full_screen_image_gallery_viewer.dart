@@ -25,9 +25,9 @@ class FullScreenImageGalleryViewer extends StatefulWidget {
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             FullScreenImageGalleryViewer(
-          imageUrls: imageUrls,
-          initialIndex: initialIndex,
-        ),
+              imageUrls: imageUrls,
+              initialIndex: initialIndex,
+            ),
         transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 300),
         fullscreenDialog: true,
@@ -74,88 +74,97 @@ class _FullScreenImageGalleryViewerState
         onTap: _toggleControls,
         child: Stack(
           children: [
-            PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              itemCount: widget.imageUrls.length,
-              itemBuilder: (context, index) {
-                final imageUrl = widget.imageUrls[index];
-                final bool isVideo = isVideoFile(imageUrl);
-                final displayUrl = isVideo ? getVideoThumbnailUrl(imageUrl) : imageUrl;
+            Positioned.fill(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemCount: widget.imageUrls.length,
+                itemBuilder: (context, index) {
+                  final imageUrl = widget.imageUrls[index];
+                  final bool isVideo = isVideoFile(imageUrl);
+                  final displayUrl = isVideo
+                      ? getVideoThumbnailUrl(imageUrl)
+                      : imageUrl;
 
-                if (isVideo) {
-                  return GestureDetector(
-                    onTap: () {
-                      FullScreenVideoViewer.show(context, imageUrl);
-                    },
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: CachedNetworkImage(
-                            imageUrl: displayUrl,
-                            cacheManager: ItemImageCacheManager.instance,
-                            fit: BoxFit.contain,
-                            placeholder: (context, url) => const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
+                  if (isVideo) {
+                    return GestureDetector(
+                      onTap: () {
+                        FullScreenVideoViewer.show(context, imageUrl);
+                      },
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: CachedNetworkImage(
+                              imageUrl: displayUrl,
+                              cacheManager: ItemImageCacheManager.instance,
+                              fit: BoxFit.contain,
+                              memCacheWidth: 1200,
+                              memCacheHeight: 1200,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
                               ),
+                              errorWidget: (context, url, error) =>
+                                  const Center(
+                                    child: Icon(
+                                      Icons.broken_image_outlined,
+                                      color: Colors.white,
+                                      size: 48,
+                                    ),
+                                  ),
                             ),
-                            errorWidget: (context, url, error) => const Center(
-                              child: Icon(
-                                Icons.broken_image_outlined,
-                                color: Colors.white,
-                                size: 48,
+                          ),
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.play_circle_filled,
+                                  color: Colors.white,
+                                  size: 64,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Positioned.fill(
-                          child: Container(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            child: const Center(
-                              child: Icon(
-                                Icons.play_circle_filled,
-                                color: Colors.white,
-                                size: 64,
-                              ),
-                            ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return Center(
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: CachedNetworkImage(
+                        imageUrl: displayUrl,
+                        cacheManager: ItemImageCacheManager.instance,
+                        fit: BoxFit.contain,
+                        memCacheWidth: 1200,
+                        memCacheHeight: 1200,
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
                           ),
                         ),
-                      ],
+                        errorWidget: (context, url, error) => const Center(
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: Colors.white,
+                            size: 48,
+                          ),
+                        ),
+                      ),
                     ),
                   );
-                }
-
-                return Center(
-                  child: InteractiveViewer(
-                    minScale: 0.5,
-                    maxScale: 4.0,
-                    child: CachedNetworkImage(
-                      imageUrl: displayUrl,
-                      cacheManager: ItemImageCacheManager.instance,
-                      fit: BoxFit.contain,
-                      placeholder: (context, url) => const Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      ),
-                      errorWidget: (context, url, error) => const Center(
-                        child: Icon(
-                          Icons.broken_image_outlined,
-                          color: Colors.white,
-                          size: 48,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+                },
+              ),
             ),
             if (_showControls)
               SafeArea(
@@ -212,6 +221,3 @@ class _FullScreenImageGalleryViewerState
     );
   }
 }
-
-
-

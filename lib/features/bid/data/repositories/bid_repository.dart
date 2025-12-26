@@ -30,6 +30,11 @@ class BidRepositoryImpl implements domain.BidRepository {
   Future<bool> isBidRestricted() {
     return _bidRestrictionDatasource.isBidRestricted();
   }
+
+  @override
+  Future<String?> createChatRoom(String itemId, String sellerId, String buyerId) {
+    return _bidDatasource.createChatRoom(itemId, sellerId, buyerId);
+  }
 }
 
 

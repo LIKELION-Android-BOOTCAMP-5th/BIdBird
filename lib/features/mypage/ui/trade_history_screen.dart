@@ -28,10 +28,16 @@ class TradeHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final vm = context.watch<TradeHistoryViewModel>();
+    final vm = context.read<TradeHistoryViewModel>();
+    final role = context.select<TradeHistoryViewModel, TradeRole>(
+      (vm) => vm.role,
+    );
+    final statusFilter = context.select<TradeHistoryViewModel, int?>(
+      (vm) => vm.statusFilter,
+    );
 
     final statusOptions =
-        (vm.role == TradeRole.seller ? _sellerFilterCodes : _buyerFilterCodes)
+        (role == TradeRole.seller ? _sellerFilterCodes : _buyerFilterCodes)
             .map(_statusInfoText)
             .whereType<_StatusInfo>()
             .toList();
@@ -53,11 +59,11 @@ class TradeHistoryScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _TopRoleTabs(role: vm.role, onChanged: vm.changeRole),
+              _TopRoleTabs(role: role, onChanged: vm.changeRole),
               const SizedBox(height: 6),
               _Filters(
                 options: statusOptions,
-                selected: vm.statusFilter,
+                selected: statusFilter,
                 onSelected: vm.changeFilter,
               ),
               const SizedBox(height: 12),
@@ -374,7 +380,7 @@ class _HistoryItem extends StatelessWidget {
           borderRadius: defaultBorder,
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
               borderRadius: defaultBorder,
@@ -411,7 +417,7 @@ class _HistoryItem extends StatelessWidget {
                           borderRadius: defaultBorder,
                         ),
                         child: Text(
-                          statusInfo!.label,
+                          statusInfo.label,
                           style: TextStyle(color: statusInfo.color),
                         ),
                       ),

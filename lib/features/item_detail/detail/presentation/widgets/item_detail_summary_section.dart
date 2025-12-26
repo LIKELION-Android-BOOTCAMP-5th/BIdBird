@@ -29,10 +29,8 @@ class ItemDetailSummarySection extends StatelessWidget {
     // Section Container - padding 24
     final horizontalPadding = context.screenPadding;
     final spacingSmall = context.spacingSmall;
-    final spacingMedium = context.spacingMedium;
     final priceFontSize = context.widthRatio(0.085, min: 26.0, max: 36.0);
     final labelFontSize = context.fontSizeSmall;
-    final subtitleFontSize = context.fontSizeSmall;
     final isCompact = context.isSmallScreen(threshold: 360);
 
     Widget buildContactButton() {
@@ -84,10 +82,11 @@ class ItemDetailSummarySection extends StatelessWidget {
     final contactButton = (!isMyItem && !isAuctionExpired) ? buildContactButton() : null;
 
     return Padding(
-      padding: EdgeInsets.all(horizontalPadding),
+      padding: EdgeInsets.fromLTRB(horizontalPadding, horizontalPadding, horizontalPadding, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 32),
           Text(
             '현재 입찰가',
             style: TextStyle(
@@ -133,22 +132,6 @@ class ItemDetailSummarySection extends StatelessWidget {
                 if (contactButton != null) contactButton,
               ],
             ),
-          // SizedBox(height: spacingSmall * 0.6),
-          // Text(
-          //   item.buyNowPrice > 0
-          //       ? '즉시 구매가 ${formatPrice(item.buyNowPrice)}원'
-          //       : '즉시 구매 불가',
-          //   style: TextStyle(
-          //     fontSize: subtitleFontSize,
-          //     color: const Color(0xFF9CA3AF),
-          //   ),
-          // ),
-          SizedBox(height: spacingMedium),
-          const Divider(
-            height: 1,
-            thickness: 1,
-            color: Color(0xFFE5E7EB),
-          ),
         ],
       ),
     );

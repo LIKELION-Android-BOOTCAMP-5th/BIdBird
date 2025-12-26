@@ -27,7 +27,7 @@ class TransparentRefreshIndicator extends StatelessWidget {
         backgroundColor: Colors.transparent,
         displacement: 0,
         strokeWidth: 2.0,
-        child: child,
+        child: SizedBox.expand(child: child),
       ),
     );
   }

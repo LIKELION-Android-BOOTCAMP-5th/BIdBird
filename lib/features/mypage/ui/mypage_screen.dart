@@ -45,10 +45,12 @@ class MypageScreen extends StatelessWidget {
 class _MypageProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<ProfileViewModel>();
+    final isLoading = context.select<ProfileViewModel, bool>(
+      (vm) => vm.isLoading,
+    );
 
     //처음프로필로딩할떄나옴
-    if (vm.isLoading) {
+    if (isLoading) {
       return Center(
         child: SizedBox(
           width: 32,
@@ -58,7 +60,9 @@ class _MypageProfile extends StatelessWidget {
       );
     }
 
-    final profile = vm.profile;
+    final profile = context.select<ProfileViewModel, dynamic>(
+      (vm) => vm.profile,
+    );
     final nickName = profile?.nickName ?? '닉네임을 등록하세요';
 
     return GestureDetector(
@@ -89,7 +93,7 @@ class _MypageProfile extends StatelessWidget {
                         : null,
                     child: const Icon(Icons.person, color: iconColor, size: 32),
                   ),
-                  if (vm.isLoading)
+                  if (isLoading)
                     const SizedBox(
                       width: 20,
                       height: 20,
