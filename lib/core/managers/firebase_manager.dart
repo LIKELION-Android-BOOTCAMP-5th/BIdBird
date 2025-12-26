@@ -9,9 +9,10 @@ import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:bidbird/core/config/firebase_config.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
+
 
 class FirebaseManager {
   static final FirebaseManager _shared = FirebaseManager();
@@ -27,11 +28,10 @@ class FirebaseManager {
   static StreamSubscription? _tokenRefreshSubscription;
 
   static String? _webVapidKey() {
-    final vapidKey = dotenv.env['FIREBASE_WEB_VAPID_KEY'];
     if (!kIsWeb) return null;
-    if (vapidKey == null || vapidKey.isEmpty) return null;
-    return vapidKey;
+    return FirebaseConfig.webVapidKey;
   }
+
 
   Future<String?> getFcmToken() async {
     final fcmToken = await FirebaseMessaging.instance.getToken(

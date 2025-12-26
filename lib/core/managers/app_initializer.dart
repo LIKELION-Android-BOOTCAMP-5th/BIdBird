@@ -1,5 +1,7 @@
+import 'package:bidbird/core/config/supabase_config.dart';
 import 'package:bidbird/core/config/firebase_config.dart';
 import 'package:flutter/foundation.dart';
+
 
 import 'dart:async';
 
@@ -9,7 +11,7 @@ import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:cloudinary_flutter/cloudinary_object.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
@@ -25,15 +27,14 @@ class AppInitializer {
   }
 
   static Future<void> _initialize() async {
-    await dotenv.load(fileName: '.env');
-    NetworkApiManager.shared.checkEnv();
-
     CloudinaryObject.fromCloudName(cloudName: 'dn12so6sm');
 
+
     await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL'] ?? '',
-      anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
     );
+
 
     // Firebase 설정 로드
     await FirebaseConfig.initialize();
