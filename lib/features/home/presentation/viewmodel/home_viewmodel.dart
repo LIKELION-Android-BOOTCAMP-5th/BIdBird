@@ -284,37 +284,42 @@ class HomeViewmodel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> workSearchBar() async {
+  void workSearchBar() {
     searchButton = !searchButton;
+
+    if (!searchButton) {
+      // 검색 종료
+      isSearching = false;
+      currentSearchText = "";
+      userInputController.clear();
+    }
+
     notifyListeners();
   }
 
   Future<void> search(String userInput) async {
-    final requestId = ++_searchRequestId; // 최신 요청 토큰
-    isSearching = userInput.isNotEmpty;
+    final requestId = ++_searchRequestId;
+
+    // 🔥 빈 문자열 방어
+    if (userInput.isEmpty) return;
+
+    isSearching = true;
     currentSearchText = userInput;
     _currentPage = 1;
     _items = [];
     notifyListeners();
 
     String orderBy = setOrderBy(type);
-    userInputController.text = userInput;
 
-    // 캐시 확인
-    if (_searchCache.containsKey(userInput)) {
-      _items = List.from(_searchCache[userInput]!);
-      // sortItemsByFinishTime();
-      notifyListeners();
-      return;
-    }
-
-    _items = await _homeRepository.fetchSearchResult(
+    final results = await _homeRepository.fetchSearchResult(
       orderBy,
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
       userInputSearchText: userInput,
     );
 
+    // 🔥 오래된 응답 무시
+    if (requestId != _searchRequestId) return;
     // 늦게 도착한 응답은 폐기
     if (requestId != _searchRequestId) {
       return;
@@ -325,16 +330,35 @@ class HomeViewmodel extends ChangeNotifier {
 
     // sortItemsByFinishTime();
 
+    _items = results;
     notifyListeners();
   }
 
   // 실시간 검색 호출
   void onSearchTextChanged(String text) {
-    if (_searchDebounce?.isActive ?? false) _searchDebounce!.cancel();
+    if (_searchDebounce?.isActive ?? false) {
+      _searchDebounce!.cancel();
+    }
 
-    _searchDebounce = Timer(const Duration(milliseconds: 100), () {
+    _searchDebounce = Timer(const Duration(milliseconds: 150), () async {
       if (_isDisposed) return;
-      isSearching = text.isNotEmpty;
+
+      // 검색어 삭제 → 검색 종료
+      if (text.isEmpty) {
+        isSearching = false;
+        currentSearchText = "";
+        _currentPage = 1;
+        _items = [];
+        _hasMore = true;
+        notifyListeners();
+
+        // 기본 리스트 다시 로드
+        await fetchItems();
+        return;
+      }
+
+      // 검색 시작
+      isSearching = true;
       search(text);
     });
   }
