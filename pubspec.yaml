@@ -67,6 +67,7 @@ dependencies:
   path: ^1.9.0
   image: ^4.1.7
   share_plus: ^10.1.2
+  kakao_flutter_sdk: ^1.9.5 # 카카오 로그인 API 패키지
   file_picker: ^10.3.8
   syncfusion_flutter_pdfviewer: ^32.1.20
   crypto: ^3.0.7
@@ -115,6 +116,7 @@ flutter:
     - assets/logos/bidbird_image_text_logo.png
     - assets/logos/apple_logo.png
     - assets/logos/google_logo.png
+    - assets/logos/kakao_logo.png
     - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see

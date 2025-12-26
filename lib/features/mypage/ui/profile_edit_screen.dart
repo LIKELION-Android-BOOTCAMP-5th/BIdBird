@@ -76,75 +76,90 @@ class ProfileEditScreen extends StatelessWidget {
               if (didPop) return;
               confirmAndPop();
             },
-            child: Scaffold(
-              resizeToAvoidBottomInset: false,
+            child: Stack(
+              children: [
+                Scaffold(
+                  resizeToAvoidBottomInset: false,
 
-              backgroundColor: theme.scaffoldBackgroundColor,
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () async {
-                    await confirmAndPop();
-                  },
-                ),
-                title: const Text('정보수정'),
-                centerTitle: true,
-              ),
-              body: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return SingleChildScrollView(
-                              keyboardDismissBehavior:
-                                  ScrollViewKeyboardDismissBehavior.onDrag,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  minHeight: constraints.maxHeight,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Column(
-                                      children: [
-                                        const SizedBox(height: 24),
-                                        _ProfileImage(vm: vm),
-                                        const SizedBox(height: 36),
-                                        _ProfileForm(vm: vm),
-                                        const SizedBox(
-                                          height: 150,
-                                        ), //키보드가올라오는높이에따라가변적으로하면더확실해질듯함//아니면아래칼럼을패딩으로감싸고그쪽을가변적으로
-                                      ],
+                  backgroundColor: theme.scaffoldBackgroundColor,
+                  appBar: AppBar(
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () async {
+                        await confirmAndPop();
+                      },
+                    ),
+                    title: const Text('정보수정'),
+                    centerTitle: true,
+                  ),
+                  body: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                return SingleChildScrollView(
+                                  keyboardDismissBehavior:
+                                      ScrollViewKeyboardDismissBehavior.onDrag,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minHeight: constraints.maxHeight,
                                     ),
-                                    //Column부분은키보드가올라오면가려짐
-                                    Column(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        _LogoutLink(),
-                                        _UnregisterLink(vm: vm),
-                                        //gorouter에의해login으로이동하게됨
+                                        Column(
+                                          children: [
+                                            const SizedBox(height: 24),
+                                            _ProfileImage(vm: vm),
+                                            const SizedBox(height: 36),
+                                            _ProfileForm(vm: vm),
+                                            const SizedBox(
+                                              height: 150,
+                                            ), //키보드가올라오는높이에따라가변적으로하면더확실해질듯함//아니면아래칼럼을패딩으로감싸고그쪽을가변적으로
+                                          ],
+                                        ),
+                                        //Column부분은키보드가올라오면가려짐
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            _LogoutLink(),
+                                            _UnregisterLink(vm: vm),
+                                            //gorouter에의해login으로이동하게됨
+                                          ],
+                                        ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
 
-                      const SizedBox(height: 48),
-                      _SaveButton(vm: vm),
-                    ],
+                          const SizedBox(height: 48),
+                          _SaveButton(vm: vm),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                Consumer<AuthViewModel>(
+                  builder: (context, authVM, child) {
+                    if (!authVM.isLoggingOut) return const SizedBox.shrink();
+
+                    return const ColoredBox(
+                      color: Color(0x55000000),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  },
+                ),
+              ],
             ),
           );
         },
@@ -169,11 +184,7 @@ class _LogoutLink extends StatelessWidget {
               noText: '취소',
               yesLogic: () async {
                 Navigator.pop(dialogContext);
-                await context.read<AuthViewModel>().logout(
-                  onLoggedOut: () {
-                    context.go('/login');
-                  },
-                );
+                await context.read<AuthViewModel>().logout();
               },
             );
           },
