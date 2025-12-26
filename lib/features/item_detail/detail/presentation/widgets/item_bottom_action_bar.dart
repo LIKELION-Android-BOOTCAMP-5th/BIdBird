@@ -529,36 +529,7 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     );
   }
 
-  Widget _buildFavoriteButton(ItemDetailViewModel? itemDetailViewModel) {
-    if (itemDetailViewModel == null) {
-      return const SizedBox.shrink();
-    }
 
-    // 즐겨찾기 상태만 Selector로 분리
-    return Selector<ItemDetailViewModel, bool>(
-      selector: (_, vm) => vm.isFavorite,
-      builder: (context, isFavorite, _) {
-        return InkWell(
-          onTap: () {
-            itemDetailViewModel.toggleFavorite();
-          },
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: BorderColor),
-            ),
-            child: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : iconColor,
-              size: 22,
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildBidButton(bool isTopBidder, bool isTimeOver) {
     // ViewModel의 최신 itemDetail에서 상태 정보 가져오기 (실시간 업데이트 반영)

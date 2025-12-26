@@ -219,21 +219,7 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
     );
   }
 
-  Widget _buildDot({required bool isActive}) {
-    return Container(
-      width: 6,
-      height: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isActive ? Colors.black : Colors.transparent,
-        border: Border.all(
-          color: isActive ? Colors.black : const Color(0xFFBDBDBD),
-          width: isActive ? 1.5 : 1,
-        ),
-      ),
-    );
-  }
+
 }
 
 class _RemainingTimeOverlay extends StatefulWidget {

@@ -1,13 +1,8 @@
-import 'package:bidbird/core/managers/nhost_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
-import 'package:flutter/foundation.dart';
-import 'package:dio/dio.dart';
 
 class ItemAddDatasource {
-  final _nhost = NhostManager.shared;
   final _supabase = SupabaseManager.shared.supabase;
 
   Future<ItemRegistrationData> saveItem({
