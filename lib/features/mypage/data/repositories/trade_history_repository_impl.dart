@@ -150,7 +150,9 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
       const endedStatusCodes = {321, 322};
       final endAt = _parseDate(auction['auction_end_at']);
       final endAtUtc = endAt?.toUtc();
-      final isEndedByTime = endAtUtc != null && endAtUtc.isBefore(nowUtc);
+      final isEndedByTime =
+          endAtUtc != null &&
+          endAtUtc.isBefore(nowUtc); //상태코드로하는게더맞을거같은데어차피그것도크론으로정해질듯
       final isEndedByCode =
           auctionStatus != null && endedStatusCodes.contains(auctionStatus);
       final isEnded = isEndedByTime || isEndedByCode;

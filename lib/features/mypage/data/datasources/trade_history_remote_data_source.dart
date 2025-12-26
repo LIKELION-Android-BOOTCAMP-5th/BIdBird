@@ -56,7 +56,14 @@ class TradeHistoryRemoteDataSource {
               item_id,
               title,
               thumbnail_image,
-              buy_now_price
+              buy_now_price,
+              trade_status:trade_status(
+                item_id,
+                buyer_id,
+                price,
+                trade_status_code,
+                created_at
+              )
             )
           )
         ''')
