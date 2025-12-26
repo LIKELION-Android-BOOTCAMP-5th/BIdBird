@@ -81,6 +81,11 @@ class FavoriteStatusInfo {
 //관심물품은300번대만보여줘도될거같음
 //관심물품은기본적으로구매자사이드//300번은필요없음
 FavoriteStatusInfo statusInfoText(int code) {
+  if (code >= 500) {
+    // 거래(500번대) 상태는 모두 경매 종료로 취급
+    return const FavoriteStatusInfo('경매종료', tradePurchaseDoneColor);
+  }
+
   switch (code) {
     case 310:
       return const FavoriteStatusInfo(
