@@ -43,7 +43,6 @@ class TradeContextCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
       decoration: BoxDecoration(
@@ -72,7 +71,10 @@ class TradeContextCard extends StatelessWidget {
               onTap: onItemTap,
               borderRadius: BorderRadius.zero,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -104,14 +106,15 @@ class TradeContextCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           // 2행: 가격
-                          Text(
-                            "${formatPrice(itemPrice)}원",
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700, // Bold
-                              color: Color(0xFF111111),
+                          if (itemPrice != 0)
+                            Text(
+                              "${formatPrice(itemPrice)}원",
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700, // Bold
+                                color: Color(0xFF111111),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -131,7 +134,10 @@ class TradeContextCard extends StatelessWidget {
                             child: TextButton(
                               onPressed: onTradeStatusTap,
                               style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 minimumSize: Size.zero,
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
@@ -140,7 +146,9 @@ class TradeContextCard extends StatelessWidget {
                                 children: [
                                   Text(
                                     // 거래 완료 상태(550)일 때는 "거래 평가", 그 외에는 "거래 현황 보기"
-                                    tradeStatusCode == 550 ? '거래 평가' : '거래 현황 보기',
+                                    tradeStatusCode == 550
+                                        ? '거래 평가'
+                                        : '거래 현황 보기',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
@@ -220,6 +228,3 @@ class TradeContextCard extends StatelessWidget {
     );
   }
 }
-
-
-
