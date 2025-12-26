@@ -11,6 +11,8 @@ class FirebaseConfig {
   static String? _webAppId;
   static String? _webAuthDomain;
   static String? _webMeasurementId;
+  static String? _webVapidKey;
+
 
   // Android
   static String? _androidApiKey;
@@ -33,6 +35,8 @@ class FirebaseConfig {
   static String get webAppId => _require(_webAppId, 'webAppId');
   static String get webAuthDomain => _require(_webAuthDomain, 'webAuthDomain');
   static String? get webMeasurementId => _webMeasurementId;
+  static String? get webVapidKey => _webVapidKey;
+
 
   static String get androidApiKey => _require(_androidApiKey, 'androidApiKey');
   static String get androidAppId => _require(_androidAppId, 'androidAppId');
@@ -77,7 +81,9 @@ class FirebaseConfig {
           _webAppId = webData['appId'] as String?;
           _webAuthDomain = webData['authDomain'] as String?;
           _webMeasurementId = webData['measurementId'] as String?;
+          _webVapidKey = webData['vapidKey'] as String?;
         }
+
 
         final androidData = configData['android'] as Map?;
         if (androidData != null) {

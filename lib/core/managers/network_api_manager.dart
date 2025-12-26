@@ -1,3 +1,4 @@
+import 'package:bidbird/core/config/supabase_config.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,12 +11,10 @@ class NetworkApiManager {
 
   NetworkApiManager();
 
-  static String get supabaseUrl {
-    final client = Supabase.instance.client;
-    return '${client.supabaseUrl}/rest/v1';
-  }
+  static final String supabaseUrl = '${SupabaseConfig.url}/rest/v1';
+  static final String apiKey = SupabaseConfig.anonKey;
 
-  static String get apiKey => Supabase.instance.client.supabaseAnonKey;
+
 
 
   static final Map<String, String> headers = {
