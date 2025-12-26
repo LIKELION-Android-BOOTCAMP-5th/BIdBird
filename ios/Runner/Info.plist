@@ -45,7 +45,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>kakao832c37d41a36556fc1dc064fe80f65a6</string>
+				<string>com.bidbird.app</string>
 			</array>
 		</dict>
 	</array>
