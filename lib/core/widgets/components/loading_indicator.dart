@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+
 
 /// 앱 브랜드 색상을 사용하는 로딩 인디케이터 위젯
 /// 앱 전체에서 일관된 로딩 UI를 제공합니다.
