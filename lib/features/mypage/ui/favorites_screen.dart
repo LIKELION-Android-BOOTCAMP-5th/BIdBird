@@ -16,7 +16,10 @@ class FavoritesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.read<FavoritesViewModel>();
+    final vm = context
+        .watch<
+          FavoritesViewModel
+        >(); //거래내역과비슷한현상//이건처음엔뜨는데//하트활성화비활성화가안보임//read를watch로바꾸니까됨
     final isLoading = context.select<FavoritesViewModel, bool>(
       (vm) => vm.isLoading,
     );
