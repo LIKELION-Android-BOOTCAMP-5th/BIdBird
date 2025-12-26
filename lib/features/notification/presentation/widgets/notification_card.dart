@@ -131,120 +131,124 @@ class NotificationCard extends StatelessWidget {
             BoxShadow(color: shadowLow, blurRadius: 4, offset: Offset(0, 1)),
           ],
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // 👈 좌측 알림 타입 스트립
-            Container(
-              width: 4,
-              decoration: BoxDecoration(
-                color: color, // 알림 타입 컬러
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(defaultRadius),
-                  bottomLeft: Radius.circular(defaultRadius),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 👈 좌측 알림 타입 스트립
+              Container(
+                width: 4,
+                decoration: BoxDecoration(
+                  color: color, // 알림 타입 컬러
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(defaultRadius),
+                    bottomLeft: Radius.circular(defaultRadius),
+                  ),
                 ),
               ),
-            ),
 
-            // 👉 메인 컨텐츠
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(context.screenPadding),
-                child: Row(
-                  spacing: context.spacingSmall,
-                  children: [
-                    // 🔔 알림 아이콘 (채팅의 프로필 영역 대체)
-                    CircleAvatar(
-                      radius: context.isLargeScreen() ? 28 : 24,
-                      backgroundColor: color.withOpacity(0.15),
-                      child: Icon(
-                        icon, // notificationIcon(type)
-                        color: color,
-                        size: 22,
+              // 👉 메인 컨텐츠
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.all(context.screenPadding),
+                  child: Row(
+                    spacing: context.spacingSmall,
+                    children: [
+                      // 🔔 알림 아이콘 (채팅의 프로필 영역 대체)
+                      CircleAvatar(
+                        radius: context.isLargeScreen() ? 28 : 24,
+                        backgroundColor: color.withOpacity(0.15),
+                        child: Icon(
+                          icon, // notificationIcon(type)
+                          color: color,
+                          size: 22,
+                        ),
                       ),
-                    ),
 
-                    // 📄 텍스트 영역
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: context.fontSizeLarge,
-                                  ),
-                                ),
-                              ),
-                              if (date != null)
-                                Text(
-                                  date!.toTimesAgo(),
-                                  style: TextStyle(
-                                    color: iconColor,
-                                    fontSize: context.fontSizeSmall,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Row(
+                      // 📄 텍스트 영역
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Expanded(
                                   child: Text(
-                                    body,
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: context.fontSizeMedium,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: context.fontSizeLarge,
                                     ),
-                                    textAlign: TextAlign.left,
                                   ),
                                 ),
-                                if (!is_checked)
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      left: context.spacingSmall,
-                                    ),
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: context.spacingSmall,
-                                        vertical: 4,
-                                      ),
-                                      height: 10,
-                                      width: 10,
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
+                                if (date != null)
+                                  Text(
+                                    date!.toTimesAgo(),
+                                    style: TextStyle(
+                                      color: iconColor,
+                                      fontSize: context.fontSizeSmall,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                               ],
                             ),
-                          ),
-                        ],
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      body,
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: context.fontSizeMedium,
+                                      ),
+                                      textAlign: TextAlign.left,
+                                    ),
+                                  ),
+                                  if (!is_checked)
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        left: context.spacingSmall,
+                                      ),
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: context.spacingSmall,
+                                          vertical: 4,
+                                        ),
+                                        height: 10,
+                                        width: 10,
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(
+                                            15,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // // ❌ 삭제 버튼
-                    // IconButton(
-                    //   icon: const Icon(Icons.close, size: 18),
-                    //   onPressed: onDelete,
-                    // ),
-                  ],
+                      // // ❌ 삭제 버튼
+                      // IconButton(
+                      //   icon: const Icon(Icons.close, size: 18),
+                      //   onPressed: onDelete,
+                      // ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
