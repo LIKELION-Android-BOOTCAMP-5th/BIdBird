@@ -19,7 +19,6 @@ class ItemCard extends StatelessWidget {
     return RepaintBoundary(
       child: GestureDetector(
         onTap: () {
-          // item_detail 페이지로 이동
           context.push('/item/${item.item_id}');
         },
         child: Column(
@@ -30,134 +29,117 @@ class ItemCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8.7),
                 boxShadow: [defaultShadow],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    Stack(
-                      children: [
-                        FixedRatioThumbnail(
-                          imageUrl: item.thumbnail_image,
-                          aspectRatio: 1.0,
-                          borderRadius: BorderRadius.circular(defaultRadius),
-                        ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Stack(
+                    children: [
+                      FixedRatioThumbnail(
+                        imageUrl: item.thumbnail_image,
+                        aspectRatio: 1.0,
+                        borderRadius: BorderRadius.circular(defaultRadius),
+                      ),
 
-                        // 잔여 시간 (상세 화면과 동일 스타일)
-                        Positioned(
-                          top: 8,
-                          left: 8,
-                          child: HomeTimerSection(finishTime: item.finishTime),
-                        ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: HomeTimerSection(finishTime: item.finishTime),
+                      ),
 
-                        // 입찰 건수
-                        Positioned(
-                          bottom: 6,
-                          left: 6,
-                          right: 8,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black45,
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: Row(
-                                  spacing: 3,
-                                  children: [
-                                    const Icon(
-                                      Icons.account_circle,
-                                      color: Colors.white,
-                                      size: 12,
-                                    ),
-                                    Text(
-                                      "${item.auctions.bid_count}",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(defaultRadius),
+                              bottomRight: Radius.circular(defaultRadius),
+                            ),
+                            gradient: const LinearGradient(
+                              colors: [Colors.transparent, Colors.black87],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
                           ),
                         ),
+                      ),
 
-                        //현재 가격
-                        Positioned(
-                          bottom: 6,
-                          right: 6,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black45,
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: Text(
-                                  "${item.auctions.current_price.toCommaString()}원",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                      Positioned(
+                        bottom: 12,
+                        left: 12,
+                        child: Text(
+                          "${item.auctions.current_price.toCommaString()}원",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        // 시간 만료 되면 나오는 UI
-                        if (DateTime.now().isAfter(item.finishTime))
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: defaultBorder,
+                      ),
+
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 15,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "${item.auctions.bid_count}",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
                               ),
-                              child: Align(
-                                alignment: Alignment.center,
-                                child: Text(
-                                  "종료된 상품입니다",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      if (DateTime.now().isAfter(item.finishTime))
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius:
+                              BorderRadius.circular(defaultRadius),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                "종료된 상품입니다",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           ),
-                      ],
-                    ),
-
-                    // const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                            overflow: TextOverflow.ellipsis,
-                          ),
                         ),
+                    ],
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],

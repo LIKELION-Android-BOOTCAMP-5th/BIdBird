@@ -88,6 +88,7 @@ class _FloatingMenuState extends State<FloatingMenu> {
           bottom: 16,
           right: 16,
           child: FloatingActionButton(
+            shape: const CircleBorder(),
             backgroundColor: blueColor,
             onPressed: () => setState(() => _open = !_open),
             child: Icon(_open ? Icons.close : Icons.add, color: Colors.white),

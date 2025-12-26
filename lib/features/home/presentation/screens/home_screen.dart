@@ -27,26 +27,31 @@ class _HomeScreenState extends State<HomeScreen> {
           return Scaffold(
             appBar: const HomeAppBar(),
             body: SafeArea(
-              child: Stack(
-                children: [
-                  TransparentRefreshIndicator(
-                    onRefresh: context.read<HomeViewmodel>().handleRefresh,
-                    child: CustomScrollView(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      controller: viewModel.scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      slivers: [
-                        // 키워드 영역
-                        const KeywordWidget(),
-
-                        // 슬라이버 그리드 search 모드가 필요 없어짐 viewmodel에서 그냥 데이터만 뿌려주면 되기 때문
-                        const ItemGrid(),
-                      ],
-                    ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Stack(
+                    children: [
+                      TransparentRefreshIndicator(
+                        onRefresh: context.read<HomeViewmodel>().handleRefresh,
+                        child: CustomScrollView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          controller: viewModel.scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            // 키워드 영역
+                            const KeywordWidget(),
+    
+                            // 슬라이버 그리드 search 모드가 필요 없어짐 viewmodel에서 그냥 데이터만 뿌려주면 되기 때문
+                            const ItemGrid(),
+                          ],
+                        ),
+                      ),
+                      child!, // 불변 위젯을 child로 분리
+                    ],
                   ),
-                  child!, // 불변 위젯을 child로 분리
-                ],
+                ),
               ),
             ),
           );
