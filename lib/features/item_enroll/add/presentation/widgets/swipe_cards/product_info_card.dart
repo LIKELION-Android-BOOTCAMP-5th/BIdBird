@@ -70,6 +70,7 @@ class ProductInfoCardState extends State<ProductInfoCard>
     final fontSizeSmall = context.fontSizeSmall;
 
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(

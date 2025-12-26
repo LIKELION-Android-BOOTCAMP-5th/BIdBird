@@ -151,27 +151,27 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   //판매 중인 아이템 위로 보내는 로직
-  void sortItemsByFinishTime() {
-    final now = DateTime.now();
-
-    _items.sort((a, b) {
-      final bool aActive = a.finishTime.isAfter(now); // a가 아직 종료 안됐는가?
-      final bool bActive = b.finishTime.isAfter(now); // b가 아직 종료 안됐는가?
-
-      // 진행 중(finishTime > now) 먼저
-      if (aActive != bActive) {
-        return aActive ? -1 : 1;
-      }
-
-      // 둘 다 진행 중이면 종료 임박 순으로, 둘 다 종료면 종료 시간 늦은 순으로
-      final int finishCompare = a.finishTime.compareTo(b.finishTime);
-      if (aActive && bActive) {
-        return finishCompare; // 더 빨리 끝나는 것 우선
-      }
-      // 둘 다 종료 상태면 최신 종료를 아래로 보내기 위해 역순 정렬
-      return -finishCompare;
-    });
-  }
+  // void sortItemsByFinishTime() {
+  //   final now = DateTime.now();
+  //
+  //   _items.sort((a, b) {
+  //     final bool aActive = a.finishTime.isAfter(now); // a가 아직 종료 안됐는가?
+  //     final bool bActive = b.finishTime.isAfter(now); // b가 아직 종료 안됐는가?
+  //
+  //     // 진행 중(finishTime > now) 먼저
+  //     if (aActive != bActive) {
+  //       return aActive ? -1 : 1;
+  //     }
+  //
+  //     // 둘 다 진행 중이면 종료 임박 순으로, 둘 다 종료면 종료 시간 늦은 순으로
+  //     final int finishCompare = a.finishTime.compareTo(b.finishTime);
+  //     if (aActive && bActive) {
+  //       return finishCompare; // 더 빨리 끝나는 것 우선
+  //     }
+  //     // 둘 다 종료 상태면 최신 종료를 아래로 보내기 위해 역순 정렬
+  //     return -finishCompare;
+  //   });
+  // }
 
   // 실시간 아이템 업데이트 (사용 안 함 - 폴링으로 변경)
   // ignore: unused_element
@@ -182,7 +182,7 @@ class HomeViewmodel extends ChangeNotifier {
     _sortDebounce?.cancel();
     _sortDebounce = Timer(delay, () {
       if (_isDisposed) return;
-      sortItemsByFinishTime();
+      // sortItemsByFinishTime();
       notifyListeners();
     });
   }
@@ -196,7 +196,7 @@ class HomeViewmodel extends ChangeNotifier {
       keywordType: selectedKeywordId,
     );
     if (_isDisposed) return;
-    sortItemsByFinishTime();
+    // sortItemsByFinishTime();
     notifyListeners();
   }
 
@@ -212,7 +212,7 @@ class HomeViewmodel extends ChangeNotifier {
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
     );
-    sortItemsByFinishTime();
+    // sortItemsByFinishTime();
     notifyListeners();
   }
 
@@ -248,7 +248,7 @@ class HomeViewmodel extends ChangeNotifier {
       _items.addAll(newFetchPosts);
     }
 
-    sortItemsByFinishTime();
+    // sortItemsByFinishTime();
     _isFetching = false;
     notifyListeners();
   }
@@ -279,62 +279,77 @@ class HomeViewmodel extends ChangeNotifier {
       );
     }
 
-    sortItemsByFinishTime();
+    // sortItemsByFinishTime();
 
     notifyListeners();
   }
 
-  Future<void> workSearchBar() async {
+  void workSearchBar() {
     searchButton = !searchButton;
+
+    if (!searchButton) {
+      // 검색 종료
+      isSearching = false;
+      currentSearchText = "";
+      userInputController.clear();
+    }
+
     notifyListeners();
   }
 
   Future<void> search(String userInput) async {
-    final requestId = ++_searchRequestId; // 최신 요청 토큰
-    isSearching = userInput.isNotEmpty;
+    final requestId = ++_searchRequestId;
+
+    // 🔥 빈 문자열 방어
+    if (userInput.isEmpty) return;
+
+    isSearching = true;
     currentSearchText = userInput;
     _currentPage = 1;
     _items = [];
     notifyListeners();
 
     String orderBy = setOrderBy(type);
-    userInputController.text = userInput;
 
-    // 캐시 확인
-    if (_searchCache.containsKey(userInput)) {
-      _items = List.from(_searchCache[userInput]!);
-      sortItemsByFinishTime();
-      notifyListeners();
-      return;
-    }
-
-    _items = await _homeRepository.fetchSearchResult(
+    final results = await _homeRepository.fetchSearchResult(
       orderBy,
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
       userInputSearchText: userInput,
     );
 
-    // 늦게 도착한 응답은 폐기
-    if (requestId != _searchRequestId) {
-      return;
-    }
+    // 🔥 오래된 응답 무시
+    if (requestId != _searchRequestId) return;
 
-    // 캐싱
-    _searchCache[userInput] = List.from(_items);
-
-    sortItemsByFinishTime();
-
+    _items = results;
     notifyListeners();
   }
 
   // 실시간 검색 호출
   void onSearchTextChanged(String text) {
-    if (_searchDebounce?.isActive ?? false) _searchDebounce!.cancel();
+    if (_searchDebounce?.isActive ?? false) {
+      _searchDebounce!.cancel();
+    }
 
-    _searchDebounce = Timer(const Duration(milliseconds: 100), () {
+    _searchDebounce = Timer(const Duration(milliseconds: 150), () async {
       if (_isDisposed) return;
-      isSearching = text.isNotEmpty;
+
+      // 검색어 삭제 → 검색 종료
+      if (text.isEmpty) {
+        isSearching = false;
+        currentSearchText = "";
+        _currentPage = 1;
+        _items = [];
+        _hasMore = true;
+        notifyListeners();
+
+        // 기본 리스트 다시 로드
+        await fetchItems();
+        return;
+      }
+
+      // 검색 시작
+      isSearching = true;
       search(text);
     });
   }
@@ -360,7 +375,7 @@ class HomeViewmodel extends ChangeNotifier {
       _items.addAll(moreItems);
     }
 
-    sortItemsByFinishTime();
+    // sortItemsByFinishTime();
 
     _isFetching = false;
     notifyListeners();
@@ -395,7 +410,7 @@ class HomeViewmodel extends ChangeNotifier {
 
       // 필요할 때만 정렬 및 알림
       if (needsUpdate) {
-        sortItemsByFinishTime();
+        // sortItemsByFinishTime();
         notifyListeners();
       }
     });

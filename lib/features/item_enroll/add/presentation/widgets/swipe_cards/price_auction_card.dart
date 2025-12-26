@@ -103,6 +103,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
     final vPadding = context.vPadding;
 
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
