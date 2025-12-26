@@ -18,6 +18,7 @@ import 'package:bidbird/features/notification/domain/usecases/delete_notificatio
 import 'package:bidbird/features/notification/domain/usecases/fetch_notification_usecase.dart';
 import 'package:bidbird/main.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationViewmodel extends ChangeNotifier {
   // Manager 클래스들
@@ -31,7 +32,7 @@ class NotificationViewmodel extends ChangeNotifier {
   final CheckNotificationUseCase _checkNotificationUseCase;
   final DeleteAllNotificationUseCase _deleteAllNotificationUseCase;
   final DeleteNotificationUseCase _deleteNotificationUseCase;
-
+  late final StreamSubscription<AuthState> _authSub;
   StreamSubscription? _loginSubscription;
   List<NotificationEntity> notifyList = [];
   final List<String> toItemDetail = [
@@ -97,7 +98,7 @@ class NotificationViewmodel extends ChangeNotifier {
     notifyList.removeWhere((e) => e.id == id);
     notifyListeners();
   }
-  
+
   // 중복 fetch 방지를 위한 래퍼 메서드
   Future<void> _safelyFetchNotify() async {
     if (_isFetching) return;
