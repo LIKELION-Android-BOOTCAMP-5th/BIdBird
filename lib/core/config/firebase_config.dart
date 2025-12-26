@@ -21,6 +21,10 @@ class FirebaseConfig {
   static String? _iosAppId;
   static String? _iosBundleId;
 
+  // Google Sign-In
+  static String? _googleWebClientId;
+  static String? _googleIosClientId;
+
   static String get projectId => _require(_projectId, 'projectId');
   static String get messagingSenderId => _require(_messagingSenderId, 'messagingSenderId');
   static String get storageBucket => _require(_storageBucket, 'storageBucket');
@@ -36,6 +40,10 @@ class FirebaseConfig {
   static String get iosApiKey => _require(_iosApiKey, 'iosApiKey');
   static String get iosAppId => _require(_iosAppId, 'iosAppId');
   static String get iosBundleId => _require(_iosBundleId, 'iosBundleId');
+
+  static String? get googleWebClientId => _googleWebClientId;
+  static String? get googleIosClientId => _googleIosClientId;
+
 
   static String _require(String? value, String name) {
     if (value == null) {
@@ -84,7 +92,14 @@ class FirebaseConfig {
           _iosBundleId = iosData['bundleId'] as String?;
         }
 
+        final googleData = configData['googleSignIn'] as Map?;
+        if (googleData != null) {
+          _googleWebClientId = googleData['webClientId'] as String?;
+          _googleIosClientId = googleData['iosClientId'] as String?;
+        }
+
         if (_projectId == null || _messagingSenderId == null || _storageBucket == null) {
+
           throw StateError('Failed to load Firebase config: missing base values');
         }
       } else {

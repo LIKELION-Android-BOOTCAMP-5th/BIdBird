@@ -1,6 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NetworkApiManager {
   static final NetworkApiManager _shared = NetworkApiManager();
@@ -10,19 +10,13 @@ class NetworkApiManager {
 
   NetworkApiManager();
 
-  //위에것은 걍 정의하는 것임
-  static final String supabaseUrl =
-      (dotenv.env['SUPABASE_API_URL']?.isNotEmpty ?? false)
-          ? (dotenv.env['SUPABASE_API_URL'] ?? '')
-          : _deriveRestBase(dotenv.env['SUPABASE_URL']);
-  static final String apiKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-
-  static String _deriveRestBase(String? supabaseUrl) {
-    final base = (supabaseUrl ?? '').trim();
-    if (base.isEmpty) return '';
-    final normalized = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
-    return '$normalized/rest/v1';
+  static String get supabaseUrl {
+    final client = Supabase.instance.client;
+    return '${client.supabaseUrl}/rest/v1';
   }
+
+  static String get apiKey => Supabase.instance.client.supabaseAnonKey;
+
 
   static final Map<String, String> headers = {
     'apikey': apiKey,

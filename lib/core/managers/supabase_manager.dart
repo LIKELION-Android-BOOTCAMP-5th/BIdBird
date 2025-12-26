@@ -1,9 +1,6 @@
-import 'dart:async';
-import 'dart:convert';
-
+import 'package:bidbird/core/config/firebase_config.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -32,15 +29,15 @@ class SupabaseManager {
   }
 
   Future<void> googleSignIn() async {
-    final webClientId = dotenv.env['GOOGLE_SIGN_IN_WEB_CLIENT_ID'];
-
-    final iosClientId = dotenv.env['GOOGLE_SIGN_IN_IOS_CLIENT_ID'];
+    final webClientId = FirebaseConfig.googleWebClientId;
+    final iosClientId = FirebaseConfig.googleIosClientId;
 
     final GoogleSignIn signIn = GoogleSignIn.instance;
 
     unawaited(
       signIn.initialize(clientId: iosClientId, serverClientId: webClientId),
     );
+
 
     // Perform the sign in
     final googleAccount = await signIn.authenticate();
