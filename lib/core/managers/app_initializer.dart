@@ -1,4 +1,6 @@
+import 'package:bidbird/core/config/firebase_config.dart';
 import 'package:flutter/foundation.dart';
+
 import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
@@ -33,12 +35,16 @@ class AppInitializer {
       anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
     );
 
+    // Firebase 설정 로드
+    await FirebaseConfig.initialize();
+
     // Nhost & GraphQL Hive 초기화
     await initHiveForFlutter();
 
     _firebaseInitFuture ??= Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
 
     unawaited(
       _firebaseInitFuture!.catchError((e) {
