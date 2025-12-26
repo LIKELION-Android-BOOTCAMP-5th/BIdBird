@@ -52,7 +52,7 @@ class TradeHistoryRemoteDataSource {
             auction_end_at,
             last_bid_user_id,
             round,
-            items_detail!inner(
+            items_detail:items_detail!inner(
               item_id,
               title,
               thumbnail_image,
@@ -66,7 +66,7 @@ class TradeHistoryRemoteDataSource {
               )
             )
           )
-        ''')
+        ''') //trade_status는 left join
         .eq('user_id', userId)
         .eq('auctions.round', 1)
         .order('created_at', ascending: false);
