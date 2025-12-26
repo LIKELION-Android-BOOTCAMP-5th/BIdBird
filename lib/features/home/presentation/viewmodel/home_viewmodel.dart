@@ -320,6 +320,15 @@ class HomeViewmodel extends ChangeNotifier {
 
     // 🔥 오래된 응답 무시
     if (requestId != _searchRequestId) return;
+    // 늦게 도착한 응답은 폐기
+    if (requestId != _searchRequestId) {
+      return;
+    }
+
+    // 캐싱
+    _searchCache[userInput] = List.from(_items);
+
+    // sortItemsByFinishTime();
 
     _items = results;
     notifyListeners();

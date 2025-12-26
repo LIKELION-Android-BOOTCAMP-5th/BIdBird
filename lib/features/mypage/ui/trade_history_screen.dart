@@ -28,7 +28,10 @@ class TradeHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final vm = context.read<TradeHistoryViewModel>();
+    final vm = context
+        .watch<
+          TradeHistoryViewModel
+        >(); //read로해놨었는데로딩인디케이터만보이는현상있어서watch해보니까돼서그냥이렇게하기로함
     final role = context.select<TradeHistoryViewModel, TradeRole>(
       (vm) => vm.role,
     );

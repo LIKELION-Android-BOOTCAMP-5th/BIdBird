@@ -16,7 +16,10 @@ class FavoritesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.read<FavoritesViewModel>();
+    final vm = context
+        .watch<
+          FavoritesViewModel
+        >(); //거래내역과비슷한현상//이건처음엔뜨는데//하트활성화비활성화가안보임//read를watch로바꾸니까됨
     final isLoading = context.select<FavoritesViewModel, bool>(
       (vm) => vm.isLoading,
     );
@@ -81,6 +84,11 @@ class FavoriteStatusInfo {
 //관심물품은300번대만보여줘도될거같음
 //관심물품은기본적으로구매자사이드//300번은필요없음
 FavoriteStatusInfo statusInfoText(int code) {
+  if (code >= 500) {
+    // 거래(500번대) 상태는 모두 경매 종료로 취급
+    return const FavoriteStatusInfo('경매종료', tradePurchaseDoneColor);
+  }
+
   switch (code) {
     case 310:
       return const FavoriteStatusInfo(
