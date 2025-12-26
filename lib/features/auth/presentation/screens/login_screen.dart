@@ -67,31 +67,26 @@ class LoginScreen extends StatelessWidget {
 
                   SizedBox(height: spacing),
 
-                  SizedBox(
-                    height: buttonHeight,
-                    child: LoginButton(
-                      buttonHeight: buttonHeight,
-                      buttonFontSize: buttonFontSize,
-                      buttonLogic: SupabaseManager.shared.signInWithApple,
-                      logoImage: 'assets/logos/apple_logo.png',
-                      buttonText: '애플 로그인',
-                      backgroundColor: Colors.black,
-                      textColor: Colors.white,
-                    ),
+                  LoginButton(
+                    buttonHeight: buttonHeight,
+                    buttonFontSize: buttonFontSize,
+                    buttonLogic: SupabaseManager.shared.signInWithApple,
+                    logoImage: 'assets/logos/apple_logo.png',
+                    buttonText: '애플 로그인',
+                    backgroundColor: Colors.black,
+                    textColor: Colors.white,
                   ),
+
                   SizedBox(height: spacing),
 
-                  SizedBox(
-                    height: buttonHeight,
-                    child: LoginButton(
-                      buttonHeight: buttonHeight,
-                      buttonFontSize: buttonFontSize,
-                      buttonLogic: SupabaseManager.shared.signInWithKakao,
-                      logoImage: 'assets/logos/kakao_logo.png',
-                      buttonText: '카카오 로그인',
-                      backgroundColor: Color(0xffFEE500),
-                      textColor: Color(0xff000000),
-                    ),
+                  LoginButton(
+                    buttonHeight: buttonHeight,
+                    buttonFontSize: buttonFontSize,
+                    buttonLogic: SupabaseManager.shared.signInWithKakao,
+                    logoImage: 'assets/logos/kakao_logo.png',
+                    buttonText: '카카오 로그인',
+                    backgroundColor: Color(0xffFEE500),
+                    textColor: Color(0xff000000),
                   ),
 
                   SizedBox(height: spacing * 1.5),
