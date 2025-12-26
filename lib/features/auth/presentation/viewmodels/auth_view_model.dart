@@ -27,6 +27,10 @@ class AuthViewModel extends ChangeNotifier {
   UserEntity? get user => _user;
   late StreamSubscription<AuthState> _subscription;
 
+  //로그아웃 인디케이터 설정
+  bool _isLoggingOut = false;
+  bool get isLoggingOut => _isLoggingOut;
+
   Future<void> _loadUserAndSetupFCM(String userId) async {
     try {
       final fetchedUser = await SupabaseManager.shared
@@ -49,40 +53,45 @@ class AuthViewModel extends ChangeNotifier {
   AuthViewModel() {
     // Supabase 인증 상태 구독
     _subscription = SupabaseManager.shared.supabase.auth.onAuthStateChange
-        .listen((data) async {
-          print("============= Supabase 인증 상태 listen 작동 ===========");
+        .listen((data) {
           final session = data.session;
 
           if (session == null) {
             _user = null;
             _status = AuthStatus.unauthenticated;
-            _loginEventFired = false; // 👈 로그아웃 시 초기화
-          } else {
-            _status = AuthStatus.authenticated;
-            notifyListeners();
+            _loginEventFired = false;
 
-            // 🔥 여기서 딱 한 번만 fire
-            if (!_loginEventFired) {
-              _loginEventFired = true;
-              eventBus.fire(LoginEventBus(LoginEventType.login));
-            }
-            unawaited(_loadUserAndSetupFCM(session.user.id));
+            eventBus.fire(LoginEventBus(LoginEventType.logout));
+            notifyListeners();
             return;
           }
 
+          _status = AuthStatus.authenticated;
           notifyListeners();
+
+          if (!_loginEventFired) {
+            _loginEventFired = true;
+            eventBus.fire(LoginEventBus(LoginEventType.login));
+          }
+
+          unawaited(_loadUserAndSetupFCM(session.user.id));
         });
   }
 
-  // 로그아웃 함수 (빠른 반응 + 백그라운드 처리)
-  Future<void> logout({VoidCallback? onLoggedOut}) async {
-    _status = AuthStatus.unauthenticated;
-    _user = null;
-    notifyListeners();
+  Future<void> logout() async {
+    if (_isLoggingOut) return;
 
-    onLoggedOut?.call();
-    unawaited(_performLogoutTasks());
-    eventBus.fire(LoginEventBus(LoginEventType.logout));
+    _isLoggingOut = true;
+    notifyListeners(); // 🔄 인디케이터 표시
+
+    try {
+      await _performLogoutTasks();
+      // ❗ 여기서 UI 상태 직접 변경하지 않음
+      // Supabase signOut → onAuthStateChange가 처리
+    } finally {
+      _isLoggingOut = false;
+      notifyListeners();
+    }
   }
 
   Future<void> _performLogoutTasks() async {
@@ -99,15 +108,12 @@ class AuthViewModel extends ChangeNotifier {
 
       try {
         final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-        print("useId  : $userId");
-        if (userId == null) {
-          return;
+        if (userId != null) {
+          await SupabaseManager.shared.supabase
+              .from('users')
+              .update({'device_token': '', 'device_type': 'logOut'})
+              .eq('id', userId);
         }
-
-        await SupabaseManager.shared.supabase
-            .from('users')
-            .update({'device_token': '', 'device_type': 'logOut'})
-            .eq('id', userId);
       } catch (e) {
         debugPrint('FCM 초기화: $e');
       }

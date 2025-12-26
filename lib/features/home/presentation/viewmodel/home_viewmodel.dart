@@ -78,9 +78,26 @@ class HomeViewmodel extends ChangeNotifier {
   HomeViewmodel(this._homeRepository) {
     getKeywordList();
 
-    _loginSubscription = eventBus.on<LoginEventBus>().listen((event) {
+    _loginSubscription = eventBus.on<LoginEventBus>().listen((event) async {
       if (event.type == LoginEventType.logout) {
         _clearAllData();
+      }
+
+      if (event.type == LoginEventType.login) {
+        // 🔥 재로그인 시 홈 데이터 다시 로드
+        _currentPage = 1;
+        _items = [];
+        _keywords = [];
+        _hasMore = true;
+        _isFetching = false;
+
+        notifyListeners();
+
+        await getKeywordList();
+        await fetchItems();
+
+        // polling / realtime 다시 시작
+        setupRealtimeSubscription();
       }
     });
 

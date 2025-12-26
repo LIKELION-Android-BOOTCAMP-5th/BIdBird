@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../widget/login_button.dart';
+
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -42,93 +44,56 @@ class LoginScreen extends StatelessWidget {
                     fit: BoxFit.contain,
                   ),
                   SizedBox(height: logoSpacing),
-                  SizedBox(
-                    height: buttonHeight,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xffF2F2F2),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.7),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () async {
-                        try {
-                          if (!kIsWeb &&
-                              (Platform.isAndroid || Platform.isIOS)) {
-                            await SupabaseManager.shared.googleSignIn();
-                          } else {
-                            await SupabaseManager.shared.supabase.auth
-                                .signInWithOAuth(OAuthProvider.google);
-                          }
-                        } catch (e) {
-                          return;
+                  LoginButton(
+                    buttonHeight: buttonHeight,
+                    buttonFontSize: buttonFontSize,
+                    buttonLogic: () async {
+                      try {
+                        if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+                          await SupabaseManager.shared.googleSignIn();
+                        } else {
+                          await SupabaseManager.shared.supabase.auth
+                              .signInWithOAuth(OAuthProvider.google);
                         }
-                      },
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset('assets/logos/google_logo.png'),
-                            Text(
-                              'Sign in with Google',
-                              style: TextStyle(
-                                fontSize: buttonFontSize,
-                                color: Color(0xff1F1F1F),
-                                fontFamily: 'GoogleFont',
-                              ),
-                            ),
-                            SizedBox(
-                              width: context.widthRatio(
-                                0.025,
-                                min: 8.0,
-                                max: 14.0,
-                              ),
-                            ), // 특수 케이스: 버튼 내부 간격
-                          ],
-                        ),
-                      ),
-                    ),
+                      } catch (e) {
+                        return;
+                      }
+                    },
+                    logoImage: 'assets/logos/google_logo.png',
+                    buttonText: '구글 로그인',
+                    backgroundColor: Color(0xffF2F2F2),
+                    textColor: Color(0xff1F1F1F),
                   ),
 
                   SizedBox(height: spacing),
 
                   SizedBox(
                     height: buttonHeight,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.7),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        SupabaseManager.shared.signInWithApple();
-                      },
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset('assets/logos/apple_logo.png'),
-                            Text(
-                              'Sign in with Apple',
-                              style: TextStyle(
-                                fontSize: buttonFontSize,
-                                color: Colors.white,
-                                fontFamily: 'GoogleFont',
-                              ),
-                            ),
-                            SizedBox(width: context.inputPadding),
-                          ],
-                        ),
-                      ),
+                    child: LoginButton(
+                      buttonHeight: buttonHeight,
+                      buttonFontSize: buttonFontSize,
+                      buttonLogic: SupabaseManager.shared.signInWithApple,
+                      logoImage: 'assets/logos/apple_logo.png',
+                      buttonText: '애플 로그인',
+                      backgroundColor: Colors.black,
+                      textColor: Colors.white,
                     ),
                   ),
+                  SizedBox(height: spacing),
+
+                  SizedBox(
+                    height: buttonHeight,
+                    child: LoginButton(
+                      buttonHeight: buttonHeight,
+                      buttonFontSize: buttonFontSize,
+                      buttonLogic: SupabaseManager.shared.signInWithKakao,
+                      logoImage: 'assets/logos/kakao_logo.png',
+                      buttonText: '카카오 로그인',
+                      backgroundColor: Color(0xffFEE500),
+                      textColor: Color(0xff000000),
+                    ),
+                  ),
+
                   SizedBox(height: spacing * 1.5),
                 ],
               ),
@@ -143,3 +108,38 @@ class LoginScreen extends StatelessWidget {
     );
   }
 }
+
+// SizedBox(
+// height: buttonHeight,
+// child: ElevatedButton(
+// style: ElevatedButton.styleFrom(
+// backgroundColor: Colors.black,
+// foregroundColor: Colors.white,
+// shape: RoundedRectangleBorder(
+// borderRadius: BorderRadius.circular(8.7),
+// ),
+// elevation: 0,
+// ),
+// onPressed: () {
+// SupabaseManager.shared.signInWithApple();
+// },
+// child: Align(
+// alignment: Alignment.center,
+// child: Row(
+// mainAxisAlignment: MainAxisAlignment.center,
+// children: [
+// Image.asset('assets/logos/apple_logo.png'),
+// Text(
+// '애플 아이디로 로그인',
+// style: TextStyle(
+// fontSize: buttonFontSize,
+// color: Colors.white,
+// fontFamily: 'GoogleFont',
+// ),
+// ),
+// SizedBox(width: context.inputPadding),
+// ],
+// ),
+// ),
+// ),
+// ),
