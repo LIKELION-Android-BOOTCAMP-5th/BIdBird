@@ -272,17 +272,32 @@ class _FilteredTradeListScreenState extends State<FilteredTradeListScreen> {
       body: SafeArea(
         child: isLoading
             ? const SizedBox.shrink()
-            : error != null
+            : error != null || totalItems == 0
             ? TransparentRefreshIndicator(
                 onRefresh: () =>
                     context.read<CurrentTradeViewModel>().refresh(),
-                child: const SizedBox.shrink(),
-              )
-            : totalItems == 0
-            ? TransparentRefreshIndicator(
-                onRefresh: () =>
-                    context.read<CurrentTradeViewModel>().refresh(),
-                child: const SizedBox.shrink(),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '현재 거래내역이 없습니다',
+                        style: TextStyle(
+                          fontSize: context.fontSizeMedium,
+                          color: TextSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '새로운 상품을 등록하거나 입찰에 참여해보세요!',
+                        style: TextStyle(
+                          fontSize: context.fontSizeSmall,
+                          color: TextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               )
             : TransparentRefreshIndicator(
                 onRefresh: () =>
