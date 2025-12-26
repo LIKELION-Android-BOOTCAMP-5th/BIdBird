@@ -92,7 +92,7 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
 
     if (logRows.isEmpty) return [];
 
-    // 아이템별 최신 로그만 추립니다.
+    // 아이템별 최신 로그만
     final Map<String, Map<String, dynamic>> latestLogByItem = {};
     for (final row in logRows) {
       final auction = _asMap(row['auction']) ?? _asMap(row['auctions']);
