@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:bidbird/core/config/supabase_config.dart';
+import 'package:bidbird/core/config/ssl_pinning_config.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
 
 class NetworkApiManager {
   static final NetworkApiManager _shared = NetworkApiManager();
@@ -8,7 +12,29 @@ class NetworkApiManager {
   static NetworkApiManager get shared => _shared;
   final dio = Dio();
 
-  NetworkApiManager();
+  NetworkApiManager() {
+    _configureSslPinning();
+  }
+
+  void _configureSslPinning() {
+    if (dio.httpClientAdapter is! IOHttpClientAdapter) {
+      debugPrint('[SSL Pinning] Not IOHttpClientAdapter, skipping');
+      return;
+    }
+
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+        return SslPinningConfig.validateCertificate(cert, host);
+      };
+      
+      return client;
+    };
+    
+    debugPrint('[SSL Pinning] Certificate Fingerprint Pinning configured');
+    debugPrint('[SSL Pinning] Protected domain: ${SslPinningConfig.supabaseDomain}');
+  }
 
   static final String supabaseUrl = '${SupabaseConfig.url}/rest/v1';
   static final String apiKey = SupabaseConfig.anonKey;
