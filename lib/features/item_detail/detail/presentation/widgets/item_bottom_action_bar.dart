@@ -560,15 +560,9 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
     if (isAuctionActive && isTopBidder && !isBuyNowInProgress) {
       return ModernStatusContainer(
         text: '최고 입찰자입니다',
-
         backgroundColor: const Color(0xFFE8F4FD),
         textColor: blueColor,
         borderColor: blueColor.withOpacity(0.3),
-        icon: Icon(
-          Icons.star_outline,
-          size: context.iconSizeSmall,
-          color: blueColor,
-        ),
       );
     }
 

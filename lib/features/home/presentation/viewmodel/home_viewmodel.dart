@@ -292,6 +292,11 @@ class HomeViewmodel extends ChangeNotifier {
       isSearching = false;
       currentSearchText = "";
       userInputController.clear();
+      // 원래 리스트로 복구
+      _currentPage = 1;
+      _items = [];
+      _hasMore = true;
+      fetchItems();
     }
 
     notifyListeners();
