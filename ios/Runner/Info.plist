@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>동영상 촬영 시 음성을 함께 녹음하기 위해 마이크 접근이 필요합니다.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>상품 사진과 동영상 촬영을 위해 카메라 접근이 필요합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>상품 사진과 동영상을 선택하여 업로드하기 위해 사진 보관함 접근이 필요합니다.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>촬영한 사진과 동영상을 기기에 저장하기 위해 사진 보관함 접근이 필요합니다.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
