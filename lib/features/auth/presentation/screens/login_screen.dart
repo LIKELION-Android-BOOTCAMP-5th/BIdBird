@@ -75,7 +75,29 @@ class LoginScreen extends StatelessWidget {
                     LoginButton(
                       buttonHeight: buttonHeight,
                       buttonFontSize: buttonFontSize,
-                      buttonLogic: SupabaseManager.shared.signInWithApple,
+                      buttonLogic: () async {
+                        try {
+                          await SupabaseManager.shared.signInWithApple();
+                        } on AuthException catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(e.message),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Apple 로그인에 실패했습니다: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      },
                       logoImage: 'assets/logos/apple_logo.png',
                       buttonText: '애플 로그인',
                       backgroundColor: Colors.black,
