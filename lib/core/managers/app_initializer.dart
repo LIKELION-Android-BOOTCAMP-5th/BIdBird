@@ -7,7 +7,6 @@ import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
-import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:cloudinary_flutter/cloudinary_object.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
@@ -15,6 +14,7 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:bidbird/core/utils/secure_local_storage.dart';
 
 class AppInitializer {
   static Future<void>? _initFuture;
@@ -33,6 +33,9 @@ class AppInitializer {
     await Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
+      authOptions: const FlutterAuthClientOptions(
+        localStorage: SecureLocalStorage(),
+      ),
     );
 
 

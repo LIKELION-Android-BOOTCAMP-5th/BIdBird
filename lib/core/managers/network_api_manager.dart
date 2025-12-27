@@ -1,7 +1,6 @@
 import 'package:bidbird/core/config/supabase_config.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NetworkApiManager {
   static final NetworkApiManager _shared = NetworkApiManager();
