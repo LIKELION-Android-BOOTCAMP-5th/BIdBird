@@ -263,8 +263,8 @@ class FirebaseManager {
         vapidKey: _webVapidKey(),
       );
       if (token != null) {
-        // 이전 토큰과 다를 때만 저장
-        await saveTokenToSupabase(token);
+        // 이전 토큰과 다를 때만 저장 -> 로그인 시에는 강제 저장
+        await saveTokenToSupabase(token, force: true);
       }
 
       // 기존 리스너 취소 (중복 등록 방지)
@@ -281,10 +281,10 @@ class FirebaseManager {
   }
 
   // fcm 토큰 supabase에 저장하기 (토큰 변경 시에만)
-  static Future<void> saveTokenToSupabase(String token) async {
+  static Future<void> saveTokenToSupabase(String token, {bool force = false}) async {
     try {
-      // 토큰이 변경되지 않았으면 저장하지 않음
-      if (token == _lastSavedToken) {
+      // 토큰이 변경되지 않았으면 저장하지 않음 (force가 true면 무시하고 저장)
+      if (!force && token == _lastSavedToken) {
         return;
       }
 
@@ -316,6 +316,10 @@ class FirebaseManager {
     } catch (e) {
       debugPrint('FCM 토큰 저장 실패: $e');
     }
+  }
+
+  static void clearTokenCache() {
+    _lastSavedToken = null;
   }
   // ================================================================================
 

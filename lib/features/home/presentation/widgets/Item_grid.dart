@@ -10,7 +10,7 @@ class ItemGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 15),
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 20, top: 10),
       sliver: Consumer<HomeViewmodel>(
         builder: (context, viewModel, _) {
           final items = viewModel.items;
@@ -27,9 +27,9 @@ class ItemGrid extends StatelessWidget {
           return SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
-              childAspectRatio: 0.75,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
+              childAspectRatio: 0.9, // 오버플로우 해결을 위해 비율 조정
+              mainAxisSpacing: 5, // 간격 늘리기
+              crossAxisSpacing: 12,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {

@@ -67,6 +67,8 @@ class AuthViewModel extends ChangeNotifier {
           }
 
           _status = AuthStatus.authenticated;
+          // 로그인 시 FCM 토큰 강제 업데이트
+          unawaited(FirebaseManager.setupFCMTokenAtLogin());
           notifyListeners();
 
           if (!_loginEventFired) {
@@ -116,6 +118,8 @@ class AuthViewModel extends ChangeNotifier {
         }
       } catch (e) {
         debugPrint('FCM 초기화: $e');
+      } finally {
+        FirebaseManager.clearTokenCache();
       }
 
       // Supabase 세션 로그아웃
