@@ -7,11 +7,13 @@ abstract class HomeRepository {
     String orderBy, {
     int currentIndex = 1,
     int? keywordType,
+    bool forceRefresh = false,
   });
   Future<List<ItemsEntity>> fetchSearchResult(
     String orderBy, {
     int currentIndex = 1,
     int? keywordType,
     String? userInputSearchText,
+    bool forceRefresh = false,
   });
 }
