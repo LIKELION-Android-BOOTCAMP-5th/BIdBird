@@ -211,6 +211,7 @@ class HomeViewmodel extends ChangeNotifier {
       orderBy,
       currentIndex: _currentPage,
       keywordType: selectedKeywordId,
+      forceRefresh: true, // 강제 새로고침 - 캐시 무시
     );
     // sortItemsByFinishTime();
     notifyListeners();
@@ -345,7 +346,8 @@ class HomeViewmodel extends ChangeNotifier {
       _searchDebounce!.cancel();
     }
 
-    _searchDebounce = Timer(const Duration(milliseconds: 150), () async {
+    // Debounce 350ms로 증가 (네트워크 호출 감소)
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () async {
       if (_isDisposed) return;
 
       // 검색어 삭제 → 검색 종료
@@ -359,6 +361,12 @@ class HomeViewmodel extends ChangeNotifier {
 
         // 기본 리스트 다시 로드
         await fetchItems();
+        return;
+      }
+
+      // distinctUntilChanged: 동일 검색어 중복 방지
+      if (text == currentSearchText && isSearching) {
+        print('[HomeViewmodel] Skipping duplicate search: $text');
         return;
       }
 
@@ -404,6 +412,8 @@ class HomeViewmodel extends ChangeNotifier {
     if (_isPollingActive) return;
     _isPollingActive = true;
 
+    print('[HomeViewmodel] Polling started');
+
     _pollingTimer = Timer.periodic(_pollingInterval, (_) {
       if (_isDisposed) {
         _stopPolling();
@@ -424,6 +434,7 @@ class HomeViewmodel extends ChangeNotifier {
 
       // 필요할 때만 정렬 및 알림
       if (needsUpdate) {
+        print('[HomeViewmodel] Polling update triggered');
         // sortItemsByFinishTime();
         notifyListeners();
       }
@@ -434,6 +445,7 @@ class HomeViewmodel extends ChangeNotifier {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _isPollingActive = false;
+    print('[HomeViewmodel] Polling stopped');
   }
 
   /// 로그아웃 시 모든 데이터 초기화
