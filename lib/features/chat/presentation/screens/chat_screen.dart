@@ -3,6 +3,7 @@ import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/core/utils/ui_set/visible_item_calculator.dart';
 import 'package:bidbird/core/widgets/components/default_profile_avatar.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
@@ -86,6 +87,7 @@ class _ChatScreenState extends State<ChatScreen>
     // 스크롤이 하단 근처(200px 이내)에 도달하면 더 많은 데이터 로드
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
+      debugPrint('📜 ChatScreen: Scroll reached bottom threshold. Loading more...');
       viewModel.loadMoreChattingRooms();
     }
   }
@@ -141,6 +143,7 @@ class _ChatScreenState extends State<ChatScreen>
             bool isSeller,
             bool isTopBidder,
             bool isOpponentTopBidder,
+            bool isTradeComplete,
           })
         >
         itemStatusMap,
@@ -180,6 +183,7 @@ class _ChatScreenState extends State<ChatScreen>
           bool isSeller,
           bool isTopBidder,
           bool isOpponentTopBidder,
+          bool isTradeComplete,
         })
       >
       itemStatusMap,
@@ -187,6 +191,9 @@ class _ChatScreenState extends State<ChatScreen>
     data,
   ) {
     if (data.chattingRoomList.isEmpty) {
+      if (data.isLoading) {
+        return const SizedBox.shrink();
+      }
       return const Center(child: Text('채팅방이 없습니다.'));
     }
 
@@ -203,18 +210,21 @@ class _ChatScreenState extends State<ChatScreen>
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        child: ListView.separated(
-          controller: _scrollController,
-          padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: verticalPadding,
-          ),
-          itemCount:
-              data.chattingRoomList.length + (data.isLoadingMore ? 1 : 0),
-          separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
-          addAutomaticKeepAlives: false,
-          addRepaintBoundaries: true,
-          itemBuilder: (context, index) {
+        child: TransparentRefreshIndicator(
+          onRefresh: () => viewModel.reloadList(forceRefresh: true),
+          child: ListView.separated(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
+            itemCount:
+                data.chattingRoomList.length + (data.isLoadingMore ? 1 : 0),
+            separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
+            addAutomaticKeepAlives: false,
+            addRepaintBoundaries: true,
+            itemBuilder: (context, index) {
             // 로딩 인디케이터 표시
             if (index == data.chattingRoomList.length) {
               return const SizedBox.shrink();
@@ -228,12 +238,17 @@ class _ChatScreenState extends State<ChatScreen>
             final isSeller = status?.isSeller ?? false;
             final isTopBidder = status?.isTopBidder ?? false;
             final isOpponentTopBidder = status?.isOpponentTopBidder ?? false;
+            final isTradeComplete = status?.isTradeComplete ?? false;
 
-            // 낙찰 물품/낙찰자는 거래 완료(550)여도 노란색 유지
-            final isBidderRole =
-                (!isSeller && isTopBidder) || (isSeller && isOpponentTopBidder);
+            // 1. 거래 완료(550)인 경우 모두 노란색
+            // 2. 경매 종료(230 등)인 경우에만 낙찰자(및 판매자에게 보이는 낙찰자) 노란색
+            // 진행 중(310)인 경우에는 낙찰자라도 노란색 아님 (파란색/녹색)
+            final isBidderRole = isTradeComplete ||
+                (isExpired &&
+                    ((!isSeller && isTopBidder) ||
+                        (isSeller && isOpponentTopBidder)));
 
-            // 만료된 거래만 회색으로 표시 (낙찰 물품/낙찰자 거래 완료는 제외)
+            // 만료된 거래만 회색으로 표시 (노란색 대상 제외)
             final shouldShowGray = isExpired && !isBidderRole;
 
             return GestureDetector(
@@ -359,8 +374,12 @@ class _ChatScreenState extends State<ChatScreen>
                                           ),
                                         ),
                                         Text(
-                                          chattingRoom.lastMessageSendAt
-                                              .toTimesAgo(),
+                                          (chattingRoom.lastMessageSendAt != null &&
+                                                  chattingRoom
+                                                      .lastMessageSendAt!.isNotEmpty)
+                                              ? chattingRoom.lastMessageSendAt!
+                                                  .toTimesAgo()
+                                              : '',
                                           style: TextStyle(
                                             color: iconColor,
                                             fontSize: context.fontSizeSmall,
@@ -444,6 +463,7 @@ class _ChatScreenState extends State<ChatScreen>
           },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

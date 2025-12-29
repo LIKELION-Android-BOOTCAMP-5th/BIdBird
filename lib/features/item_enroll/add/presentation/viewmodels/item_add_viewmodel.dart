@@ -201,7 +201,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
           return PickedDocument(
             file: File(file.path!),
             originalName: file.name,
-            size: file.size ?? 0,
+            size: file.size,
           );
         }).toList();
         

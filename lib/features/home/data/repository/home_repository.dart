@@ -1,4 +1,3 @@
-import 'package:bidbird/core/network/network_cache_manager.dart';
 import 'package:bidbird/core/network/request_deduplicator.dart';
 import 'package:bidbird/features/home/domain/entities/items_entity.dart';
 import 'package:bidbird/features/home/domain/entities/keywordType_entity.dart';

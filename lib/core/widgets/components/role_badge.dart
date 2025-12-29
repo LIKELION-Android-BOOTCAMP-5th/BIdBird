@@ -52,7 +52,7 @@ class RoleBadge extends StatelessWidget {
       );
     }
     
-    // 내가 구매자이고 낙찰자인 경우: "낙찰 물품" (노란색)
+    // 내가 구매자이고 낙찰자인 경우: "낙찰자" (노란색)
     if (!isSeller && isTopBidder) {
       return Container(
         padding: padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -61,7 +61,7 @@ class RoleBadge extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
-          '낙찰 물품',
+          '낙찰자',
           style: TextStyle(
             color: const Color(0xFF856404), // 노란색 텍스트
             fontSize: fontSize ?? 11,

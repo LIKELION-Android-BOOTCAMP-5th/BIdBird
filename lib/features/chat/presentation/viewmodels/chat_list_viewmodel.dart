@@ -4,6 +4,7 @@ import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
 import 'package:bidbird/features/chat/data/managers/chat_list_realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
+import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_chatting_room_list_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_new_chatting_room_usecase.dart';
@@ -181,7 +182,9 @@ class ChatListViewmodel extends ChangeNotifier {
 
   /// 더 많은 채팅방 로드 (무한 스크롤)
   Future<void> loadMoreChattingRooms() async {
+    debugPrint('🐛 [ChatListViewmodel] loadMoreChattingRooms called: isLoadingMore=$isLoadingMore, hasMore=$hasMore, isLoading=$isLoading');
     if (isLoadingMore || !hasMore || isLoading) {
+      debugPrint('🐛 [ChatListViewmodel] loadMoreChattingRooms returning early.');
       return;
     }
 
@@ -243,10 +246,14 @@ class ChatListViewmodel extends ChangeNotifier {
       hasMore = newList.length >= limit;
 
       _sortRoomListByLastMessage();
+      
+      debugPrint('🐛 [ChatListViewmodel] _loadChattingRoomList: Parsed ${newList.length} rooms.');
+      debugPrint('🐛 [ChatListViewmodel] _loadChattingRoomList: hasMore=$hasMore');
 
       // 아이템 상태 정보 로드
       await _loadItemStatuses(chattingRoomList);
     } catch (e) {
+      debugPrint('🐛 [ChatListViewmodel] Error in _loadChattingRoomList: $e');
     } finally {
       _isFetchingList = false;
       if (showLoading) {
@@ -264,6 +271,15 @@ class ChatListViewmodel extends ChangeNotifier {
 
     final itemIds = chattingRoomList.map((room) => room.itemId).toSet().toList();
 
+    // 기존 데이터 클리어
+    for (final itemId in itemIds) {
+      _sellerIdMap.remove(itemId);
+      _topBidderMap.remove(itemId);
+      _lastBidUserIdMap.remove(itemId);
+      _auctionStatusCodeMap.remove(itemId);
+      _tradeStatusCodeMap.remove(itemId);
+    }
+
     try {
       // Seller IDs 로드
       final sellerResponse = await supabase
@@ -279,25 +295,28 @@ class ChatListViewmodel extends ChangeNotifier {
         }
       }
 
-      // Top bidder 정보 로드
-      final bidderResponse = await supabase
-          .from('bidding_history')
-          .select('item_id, user_id')
-          .inFilter('item_id', itemIds)
-          .order('bid_price', ascending: false)
-          .order('created_at', ascending: false)
-          .limit(1);
+      // Top bidder 정보 로드 (Auctions 테이블에서 last_bid_user_id 조회)
+      final auctionResponse = await supabase
+          .from('auctions')
+          .select('item_id, last_bid_user_id')
+          .inFilter('item_id', itemIds);
 
-      for (final row in bidderResponse) {
+      for (final row in auctionResponse) {
         final itemId = row['item_id'] as String?;
-        final userId = row['user_id'] as String?;
+        final lastBidUserId = row['last_bid_user_id'] as String?;
+        
         if (itemId != null) {
-          _lastBidUserIdMap[itemId] = userId;
-          _topBidderMap[itemId] = userId == currentUserId;
+          _lastBidUserIdMap[itemId] = lastBidUserId;
+          // 현재 유저가 낙찰자인지 확인
+          if (lastBidUserId == currentUserId) {
+            _topBidderMap[itemId] = true;
+          }
         }
       }
 
       // Auction status codes 로드
+      // items_detail에 auction_status_code가 없으므로 제거 (Entity에서 가져옴)
+      /*
       final auctionResponse = await supabase
           .from('items_detail')
           .select('item_id, auction_status_code')
@@ -310,18 +329,24 @@ class ChatListViewmodel extends ChangeNotifier {
           _auctionStatusCodeMap[itemId] = code;
         }
       }
+      */
 
       // Trade status codes 로드 (items_trade에서)
       final tradeResponse = await supabase
           .from('items_trade')
-          .select('item_id, trade_status_code')
+          .select('item_id, trade_status_code, buyer_id')
           .inFilter('item_id', itemIds);
 
       for (final row in tradeResponse) {
         final itemId = row['item_id'] as String?;
         final code = row['trade_status_code'] as int?;
+        final buyerId = row['buyer_id'] as String?;
         if (itemId != null) {
           _tradeStatusCodeMap[itemId] = code;
+          if (code == 550 && buyerId != null) {
+            _lastBidUserIdMap[itemId] = buyerId;
+            _topBidderMap[itemId] = buyerId == currentUserId;
+          }
         }
       }
     } catch (e) {
@@ -366,6 +391,7 @@ class ChatListViewmodel extends ChangeNotifier {
       bool isSeller,
       bool isTopBidder,
       bool isOpponentTopBidder,
+      bool isTradeComplete,
     })
   >
   get itemStatusMap {
@@ -376,6 +402,7 @@ class ChatListViewmodel extends ChangeNotifier {
         bool isSeller,
         bool isTopBidder,
         bool isOpponentTopBidder,
+        bool isTradeComplete,
       })
     >
     statusMap = {};
@@ -387,14 +414,25 @@ class ChatListViewmodel extends ChangeNotifier {
       final isTopBidder = _topBidderMap[itemId] ?? false;
       final lastBidUserId = _lastBidUserIdMap[itemId];
       final isOpponentTopBidder = lastBidUserId != null && lastBidUserId != currentUserId;
+      final auctionStatusCode = room.auctionStatusCode ?? _auctionStatusCodeMap[itemId];
       final tradeStatusCode = _tradeStatusCodeMap[itemId];
-      final isExpired = tradeStatusCode == 550; // 거래 완료
+      final isTradeComplete = tradeStatusCode == 550;
+      final isAuctionEnded = auctionStatusCode == 230 || 
+          auctionStatusCode == AuctionStatusCode.bidWon || 
+          auctionStatusCode == AuctionStatusCode.instantBuyCompleted || 
+          auctionStatusCode == AuctionStatusCode.failed;
+      final isExpired = isTradeComplete || isAuctionEnded; // 거래 완료 또는 경매 종료
+      
+      if (isTradeComplete || isAuctionEnded) {
+        debugPrint('🐛 [ChatListViewmodel] Status Map: Item $itemId -> TradeComplete: $isTradeComplete, AuctionEnded: $isAuctionEnded, AuctionCode: $auctionStatusCode');
+      }
 
       statusMap[itemId] = (
         isExpired: isExpired,
         isSeller: isSeller,
         isTopBidder: isTopBidder,
         isOpponentTopBidder: isOpponentTopBidder,
+        isTradeComplete: isTradeComplete,
       );
     }
 
@@ -554,8 +592,17 @@ class ChatListViewmodel extends ChangeNotifier {
   void _sortRoomListByLastMessage() {
     chattingRoomList.sort((a, b) {
       try {
-        final aTime = DateTime.parse(a.lastMessageSendAt);
-        final bTime = DateTime.parse(b.lastMessageSendAt);
+        final aTimeRaw = a.lastMessageSendAt;
+        final bTimeRaw = b.lastMessageSendAt;
+
+        // null이면 1970년으로 처리 (가장 뒤로)
+        final aTime = aTimeRaw != null 
+            ? DateTime.tryParse(aTimeRaw) ?? DateTime(0) 
+            : DateTime(0);
+        final bTime = bTimeRaw != null 
+            ? DateTime.tryParse(bTimeRaw) ?? DateTime(0) 
+            : DateTime(0);
+            
         return bTime.compareTo(aTime);
       } catch (e) {
         return 0;

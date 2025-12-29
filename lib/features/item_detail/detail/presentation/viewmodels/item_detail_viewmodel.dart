@@ -19,33 +19,28 @@ import 'package:bidbird/features/item_detail/detail/domain/usecases/orchestratio
 class ItemDetailViewModel extends ItemBaseViewModel {
   final String itemId;
   late final FetchItemDetailUseCase _fetchItemDetailUseCase;
-  late final CheckIsFavoriteUseCase _checkIsFavoriteUseCase;
   late final ToggleFavoriteUseCase _toggleFavoriteUseCase;
   late final FetchBidHistoryUseCase _fetchBidHistoryUseCase;
-  late final CheckIsMyItemUseCase _checkIsMyItemUseCase;
+
   final domain.ItemDetailRepository _repository;
   late final ItemDetailFlowUseCase _flowUseCase;
 
   ItemDetailViewModel({
     required this.itemId,
     FetchItemDetailUseCase? fetchItemDetailUseCase,
-    CheckIsFavoriteUseCase? checkIsFavoriteUseCase,
     ToggleFavoriteUseCase? toggleFavoriteUseCase,
     FetchBidHistoryUseCase? fetchBidHistoryUseCase,
-    CheckIsMyItemUseCase? checkIsMyItemUseCase,
     domain.ItemDetailRepository? repository,
   }) : _repository = repository ?? data.ItemDetailRepositoryImpl() {
     // 모든 UseCase가 동일한 repository 인스턴스를 사용하도록 설정
     _fetchItemDetailUseCase =
         fetchItemDetailUseCase ?? FetchItemDetailUseCase(_repository);
-    _checkIsFavoriteUseCase =
-        checkIsFavoriteUseCase ?? CheckIsFavoriteUseCase(_repository);
     _toggleFavoriteUseCase =
         toggleFavoriteUseCase ?? ToggleFavoriteUseCase(_repository);
     _fetchBidHistoryUseCase =
         fetchBidHistoryUseCase ?? FetchBidHistoryUseCase(_repository);
-    _checkIsMyItemUseCase =
-        checkIsMyItemUseCase ?? CheckIsMyItemUseCase(_repository);
+
+
 
     // 초기 로딩 상태 설정
     setLoading(true);
@@ -160,34 +155,7 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     _isRefreshingFromRealtime = false;
   }
 
-  /// 추가 데이터를 한 번에 로드하는 헬퍼 메서드
-  /// 개별 메서드에서는 notifyListeners를 호출하지 않음
-  /// 캐시가 유효하면 API 호출을 건너뜀
-  Future<void> _loadAdditionalData({bool forceRefresh = false}) async {
-    await Future.wait([
-      _checkIsMyItem(forceRefresh: forceRefresh),
-      _loadFavoriteState(forceRefresh: forceRefresh),
-      // 판매자 프로필 이미지는 초기 로드에 포함됨
-    ], eagerError: false);
-  }
 
-  Future<void> _loadFavoriteState({bool forceRefresh = false}) async {
-    try {
-      _isFavorite = await _checkIsFavoriteUseCase(itemId);
-    } catch (e) {
-      // 즐겨찾기 상태 로드 실패 시 기본값 유지
-    }
-  }
-
-  Future<void> _checkIsMyItem({bool forceRefresh = false}) async {
-    if (_itemDetail != null) {
-      try {
-        _isMyItem = await _checkIsMyItemUseCase(itemId, _itemDetail!.sellerId);
-      } catch (e) {
-        // 내 아이템 확인 실패 시 기본값 유지
-      }
-    }
-  }
 
   bool _isLoadingBidHistory = false;
 

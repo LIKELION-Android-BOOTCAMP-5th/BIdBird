@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
 import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
@@ -25,6 +25,7 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
     with WidgetsBindingObserver {
   int _currentPage = 0;
   final PageController _pageController = PageController();
+
   Timer? _timer;
   bool _isAppInForeground = true;
 
@@ -32,8 +33,11 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
     _startTimer();
   }
+
+
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -82,20 +86,15 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
   Widget build(BuildContext context) {
     final hasImages = widget.item.itemImages.isNotEmpty;
     final images = hasImages ? widget.item.itemImages : <String>[];
-    final screenWidth = MediaQuery.of(context).size.width;
-    final topPadding = MediaQuery.of(context).padding.top;
-    final appBarHeight = 56.0;
-    final imageHeight = screenWidth + topPadding + appBarHeight;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 이미지가 AppBar 아래까지 확장되도록 높이 조정
         SizedBox(
-          height: imageHeight,
+          height: MediaQuery.of(context).size.width,
           child: Stack(
             children: [
-              // 이미지 영역 - AppBar 포함 전체 영역
+              // 이미지 영역
               Positioned.fill(
                 child: hasImages && images.isNotEmpty
                     ? PageView.builder(
@@ -137,7 +136,6 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
                             child: Container(
                               width: double.infinity,
                               height: double.infinity,
-                              color: ImageBackgroundColor,
                               child: Stack(
                                 children: [
                                   Positioned.fill(
@@ -149,16 +147,9 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
                                       memCacheWidth: 600,
                                       memCacheHeight: 600,
                                       placeholder: (context, url) =>
-                                          Container(color: shadowHigh),
+                                          Container(),
                                       errorWidget: (context, url, error) =>
-                                          Container(
-                                            color: ImageBackgroundColor,
-                                            child: const Icon(
-                                              Icons.image_outlined,
-                                              color: iconColor,
-                                              size: 32,
-                                            ),
-                                          ),
+                                          Container(),
                                     ),
                                   ),
                                   if (isVideo)
@@ -184,10 +175,9 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
                       )
                     : Container(
                         width: double.infinity,
-                        color: ImageBackgroundColor,
                       ),
               ),
-              // 타이머 오버레이 - 좌하단 (항상 표시, 박스에서 띄움)
+              // 타이머 오버레이 - 좌하단
               Positioned(
                 bottom: 12,
                 left: 16,
@@ -214,12 +204,9 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
             ],
           ),
         ),
-
       ],
     );
   }
-
-
 }
 
 class _RemainingTimeOverlay extends StatefulWidget {

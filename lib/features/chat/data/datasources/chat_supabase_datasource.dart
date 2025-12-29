@@ -224,8 +224,9 @@ class ChatSupabaseDatasource {
     int page = 1,
     int limit = 20,
   }) async {
-    print('🔍 fetchChattingRoomList: Starting with page=$page, limit=$limit');
     try {
+      debugPrint('🐛 [ChatSupabaseDatasource] fetchChattingRoomList params: page=$page, limit=$limit');
+      
       final response = await _supabase.rpc(
         'get_chat_list_v2',
         params: {
@@ -234,28 +235,32 @@ class ChatSupabaseDatasource {
         },
       );
 
-      print('🔍 fetchChattingRoomList: RPC response type = ${response.runtimeType}');
-      print('🔍 fetchChattingRoomList: RPC response = $response');
+      debugPrint('🐛 [ChatSupabaseDatasource] fetchChattingRoomList raw response type: ${response.runtimeType}');
+      // debugPrint('🐛 [ChatSupabaseDatasource] fetchChattingRoomList raw response: $response');
 
       if (response is Map && response.containsKey('error')) {
-        print('🔍 fetchChattingRoomList: Error in response = ${response['error']}');
+        debugPrint('🐛 [ChatSupabaseDatasource] Error in response: ${response['error']}');
         return List.empty();
       }
 
       if (response is List) {
-        print('🔍 fetchChattingRoomList: Response is List with length = ${response.length}');
+        debugPrint('🐛 [ChatSupabaseDatasource] Parsing ${response.length} items...');
         final List<ChattingRoomEntity> results = response.map((json) {
-          print('🔍 fetchChattingRoomList: Processing item = $json');
-          return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
+          try {
+             return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
+          } catch (e) {
+             debugPrint('🐛 [ChatSupabaseDatasource] Parsing error for item: $json, error: $e');
+             rethrow;
+          }
         }).toList();
-        print('🔍 fetchChattingRoomList: Returning ${results.length} items');
+        debugPrint('🐛 [ChatSupabaseDatasource] Successfully parsed ${results.length} items.');
         return results;
       }
 
-      print('🔍 fetchChattingRoomList: Response is not List, returning empty');
+      debugPrint('🐛 [ChatSupabaseDatasource] Response is not a List or Map with error.');
       return List.empty();
     } catch (e) {
-      print('🔍 fetchChattingRoomList: Exception = $e');
+      debugPrint('🐛 [ChatSupabaseDatasource] Exception in fetchChattingRoomList: $e');
       return List.empty();
     }
   }
