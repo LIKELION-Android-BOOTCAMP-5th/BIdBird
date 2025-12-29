@@ -24,6 +24,7 @@ class ChattingRoomScreen extends StatefulWidget {
   final String? sellerImage; // 판매자 이미지
   final int? itemPrice; // 상품 가격
   final String? sellerUserId; // 판매자 ID
+  final bool isSellerMode; // 판매자 모드 여부 (판매자가 구매자에게 연락할 때 true)
 
   const ChattingRoomScreen({
     super.key,
@@ -34,6 +35,7 @@ class ChattingRoomScreen extends StatefulWidget {
     this.sellerName,
     this.sellerImage,
     this.itemPrice,
+    this.isSellerMode = false,
   });
 
   @override
@@ -81,8 +83,10 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     if (widget.itemTitle != null) {
       // 현재 사용자 기준으로 상대방 이름을 낙관적으로 결정
       final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-      final isCurrentUserSeller =
-          currentUserId != null && widget.sellerUserId != null && widget.sellerUserId == currentUserId;
+      
+      // isSellerMode가 true이거나, sellerId가 내 ID와 같으면 판매자로 간주
+      final isCurrentUserSeller = widget.isSellerMode ||
+          (currentUserId != null && widget.sellerUserId != null && widget.sellerUserId == currentUserId);
 
       viewModel.setInitialItemInfo(
         itemTitle: widget.itemTitle!,

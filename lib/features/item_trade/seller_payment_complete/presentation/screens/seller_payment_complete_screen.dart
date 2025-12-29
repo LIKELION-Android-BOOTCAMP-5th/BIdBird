@@ -58,6 +58,7 @@ class SellerPaymentCompleteScreen extends StatelessWidget {
                                     MaterialPageRoute(
                                       builder: (_) => ChattingRoomScreen(
                                         itemId: item.itemId,
+                                        isSellerMode: true,
                                       ),
                                     ),
                                   );

@@ -1,6 +1,6 @@
 import 'package:bidbird/core/config/supabase_config.dart';
 import 'package:bidbird/core/config/firebase_config.dart';
-import 'package:flutter/foundation.dart';
+
 
 
 import 'dart:async';
