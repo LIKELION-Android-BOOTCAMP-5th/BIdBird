@@ -82,7 +82,6 @@ class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
           color: BorderColor,
           iconColor: textColor,
           itemBuilder: (context) => [
-            const PopupMenuItem(onTap: null, child: Text("차단")),
             PopupMenuItem(
               onTap: () {
                 Navigator.of(context).pop();
