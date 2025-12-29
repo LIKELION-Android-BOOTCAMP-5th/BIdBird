@@ -73,16 +73,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
   List<BidHistoryItem> _bidHistory = [];
   List<BidHistoryItem> get bidHistory => _bidHistory;
 
-  // 입찰 히스토리 캐시
-  DateTime? _bidHistoryCacheTime;
-  static const Duration _bidHistoryCacheDuration = Duration(minutes: 1);
-
-  bool _isBidHistoryCacheValid() {
-    if (_bidHistoryCacheTime == null) return false;
-    return DateTime.now().difference(_bidHistoryCacheTime!) <
-        _bidHistoryCacheDuration;
-  }
-
   final ItemDetailRealtimeManager _realtimeManager =
       ItemDetailRealtimeManager();
   bool _isLoadingDetail = false;
@@ -131,32 +121,9 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     notifyListeners();
   }
 
-  // 캐싱 관련
-  static const Duration _cacheValidDuration = Duration(minutes: 3);
-  static const Duration _additionalDataCacheValidDuration = Duration(
-    minutes: 5,
-  );
-
-  // 추가 데이터 캐싱 (통합: 3개 변수 → 1개 맵)
-  final Map<String, DateTime> _additionalDataCacheTime = {};
-
-  // 캐시 키 상수
-  static const String _cacheKeyFavorite = 'favorite';
-  static const String _cacheKeyMyItem = 'myItem';
-
   Future<void> loadItemDetail({bool forceRefresh = false}) async {
     if (_isLoadingDetail) return;
     await _loadBidWinScreenFlag();
-
-    // 캐시 사용 조건 유지
-    if (!forceRefresh &&
-        isCacheValid(_cacheValidDuration) &&
-        _itemDetail != null) {
-      await _loadAdditionalData(forceRefresh: false);
-      notifyListeners();
-      setupRealtimeSubscription();
-      return;
-    }
 
     _isLoadingDetail = true;
     startLoading();
@@ -184,7 +151,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
 
     stopLoading();
     notifyListeners();
-    updateCacheTime();
 
     // ✅ 백그라운드 작업들 (로딩 화면을 블로킹하지 않음)
     setupRealtimeSubscription();
@@ -206,19 +172,8 @@ class ItemDetailViewModel extends ItemBaseViewModel {
   }
 
   Future<void> _loadFavoriteState({bool forceRefresh = false}) async {
-    // 캐시 검증
-    if (!forceRefresh &&
-        _additionalDataCacheTime.containsKey(_cacheKeyFavorite)) {
-      final lastCheckTime = _additionalDataCacheTime[_cacheKeyFavorite]!;
-      if (DateTime.now().difference(lastCheckTime) <
-          _additionalDataCacheValidDuration) {
-        return; // 캐시 사용
-      }
-    }
-
     try {
       _isFavorite = await _checkIsFavoriteUseCase(itemId);
-      _additionalDataCacheTime[_cacheKeyFavorite] = DateTime.now();
     } catch (e) {
       // 즐겨찾기 상태 로드 실패 시 기본값 유지
     }
@@ -226,19 +181,8 @@ class ItemDetailViewModel extends ItemBaseViewModel {
 
   Future<void> _checkIsMyItem({bool forceRefresh = false}) async {
     if (_itemDetail != null) {
-      // 캐시 검증
-      if (!forceRefresh &&
-          _additionalDataCacheTime.containsKey(_cacheKeyMyItem)) {
-        final lastCheckTime = _additionalDataCacheTime[_cacheKeyMyItem]!;
-        if (DateTime.now().difference(lastCheckTime) <
-            _additionalDataCacheValidDuration) {
-          return; // 캐시 사용
-        }
-      }
-
       try {
         _isMyItem = await _checkIsMyItemUseCase(itemId, _itemDetail!.sellerId);
-        _additionalDataCacheTime[_cacheKeyMyItem] = DateTime.now();
       } catch (e) {
         // 내 아이템 확인 실패 시 기본값 유지
       }
@@ -252,16 +196,9 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     // 중복 호출 방지
     if (_isLoadingBidHistory) return;
 
-    // 캐시가 유효하면 재로드하지 않음
-    if (_isBidHistoryCacheValid()) return;
-
-    // 이미 로드된 데이터가 있으면 재로드하지 않음
-    if (_bidHistory.isNotEmpty && _isBidHistoryCacheValid()) return;
-
     _isLoadingBidHistory = true;
     try {
       _bidHistory = await _fetchBidHistoryUseCase(itemId);
-      _bidHistoryCacheTime = DateTime.now(); // 캐시 시간 업데이트
       notifyListeners();
     } catch (e) {
       // 입찰 내역 로드 실패 시 빈 리스트 유지
@@ -276,7 +213,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     try {
       await _toggleFavoriteUseCase(itemId, _isFavorite);
       _isFavorite = !_isFavorite;
-      _additionalDataCacheTime[_cacheKeyFavorite] = DateTime.now(); // 캐시 업데이트
       notifyListeners();
     } catch (e) {
       // toggle favorite 실패 시 조용히 처리
@@ -344,7 +280,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       () {
         if (_isRefreshingFromRealtime || _isLoadingDetail) return;
         _isRefreshingFromRealtime = true;
-        super.invalidateCache();
         loadItemDetail(forceRefresh: true);
       },
     );

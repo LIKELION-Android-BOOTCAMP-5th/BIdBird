@@ -4,6 +4,7 @@ import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// 채팅 데이터 소스
@@ -104,12 +105,28 @@ class ChatSupabaseDatasource {
         SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentUserId == null) return;
     try {
+      // 메시지 전송
       await _supabase.from('chatting_message').insert({
         'room_id': roomId,
         'sender_id': currentUserId,
         'message_type': 'text',
         'text': message,
       });
+
+      // chatting_room 업데이트
+      await _supabase.from('chatting_room').update({
+        'last_message': message,
+        'last_message_send_at': DateTime.now().toIso8601String(),
+      }).eq('id', roomId);
+
+      // 상대방의 unread_count 증가
+      final roomData = await _supabase.from('chatting_room').select('seller_id, buyer_id').eq('id', roomId).single();
+      final opponentId = roomData['seller_id'] == currentUserId ? roomData['buyer_id'] : roomData['seller_id'];
+      final userRoomData = await _supabase.from('chatting_room_users').select('unread_count').eq('room_id', roomId).eq('user_id', opponentId).single();
+      final currentUnread = (userRoomData['unread_count'] as int?) ?? 0;
+      await _supabase.from('chatting_room_users').update({
+        'unread_count': currentUnread + 1,
+      }).eq('room_id', roomId).eq('user_id', opponentId);
     } catch (e) {
       // 메시지 전송 실패 시 무시
     }
@@ -126,6 +143,21 @@ class ChatSupabaseDatasource {
         'message_type': 'image',
         'image_url': imageUrl,
       });
+
+      // chatting_room 업데이트
+      await _supabase.from('chatting_room').update({
+        'last_message': '사진',
+        'last_message_send_at': DateTime.now().toIso8601String(),
+      }).eq('id', roomId);
+
+      // 상대방의 unread_count 증가
+      final roomData = await _supabase.from('chatting_room').select('seller_id, buyer_id').eq('id', roomId).single();
+      final opponentId = roomData['seller_id'] == currentUserId ? roomData['buyer_id'] : roomData['seller_id'];
+      final userRoomData = await _supabase.from('chatting_room_users').select('unread_count').eq('room_id', roomId).eq('user_id', opponentId).single();
+      final currentUnread = (userRoomData['unread_count'] as int?) ?? 0;
+      await _supabase.from('chatting_room_users').update({
+        'unread_count': currentUnread + 1,
+      }).eq('room_id', roomId).eq('user_id', opponentId);
     } catch (e) {
       // 메시지 전송 실패 시 무시
     }
@@ -192,6 +224,7 @@ class ChatSupabaseDatasource {
     int page = 1,
     int limit = 20,
   }) async {
+    print('🔍 fetchChattingRoomList: Starting with page=$page, limit=$limit');
     try {
       final response = await _supabase.rpc(
         'get_chat_list_v2',
@@ -201,19 +234,28 @@ class ChatSupabaseDatasource {
         },
       );
 
+      print('🔍 fetchChattingRoomList: RPC response type = ${response.runtimeType}');
+      print('🔍 fetchChattingRoomList: RPC response = $response');
+
       if (response is Map && response.containsKey('error')) {
+        print('🔍 fetchChattingRoomList: Error in response = ${response['error']}');
         return List.empty();
       }
 
       if (response is List) {
+        print('🔍 fetchChattingRoomList: Response is List with length = ${response.length}');
         final List<ChattingRoomEntity> results = response.map((json) {
+          print('🔍 fetchChattingRoomList: Processing item = $json');
           return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
         }).toList();
+        print('🔍 fetchChattingRoomList: Returning ${results.length} items');
         return results;
       }
 
+      print('🔍 fetchChattingRoomList: Response is not List, returning empty');
       return List.empty();
     } catch (e) {
+      print('🔍 fetchChattingRoomList: Exception = $e');
       return List.empty();
     }
   }
