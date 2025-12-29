@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:bidbird/core/utils/event_bus/item_event_bus.dart';
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
+import 'package:bidbird/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bidbird/features/item_detail/detail/domain/repositories/item_detail_repository.dart'
@@ -204,6 +206,13 @@ class ItemDetailViewModel extends ItemBaseViewModel {
           currentPrice: newPrice,
           bidPrice: newBidPrice,
         );
+        
+        // 홈 화면 등에 업데이트 알림
+        eventBus.fire(ItemUpdateEvent(
+          itemId: itemId,
+          currentPrice: newPrice,
+        ));
+
         // ✅ 가격 업데이트 시 최고 입찰자 상태를 즉시 확인
         // (WebSocket 지연으로 인한 타이밍 이슈 방지)
         _checkAndUpdateTopBidderStatus();
@@ -212,6 +221,13 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       onBidCountUpdate: (newCount) {
         if (_itemDetail == null) return;
         _itemDetail = _itemDetail!.copyWith(biddingCount: newCount);
+        
+        // 홈 화면 등에 업데이트 알림
+        eventBus.fire(ItemUpdateEvent(
+          itemId: itemId,
+          biddingCount: newCount,
+        ));
+        
         notifyListeners();
       },
       onTopBidderUpdate: (isTopBidder) {
