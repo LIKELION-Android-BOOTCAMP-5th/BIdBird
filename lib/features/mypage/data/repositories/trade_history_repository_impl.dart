@@ -12,7 +12,7 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
   @override
   Future<TradeHistoryPageEntity> fetchHistory({
     required TradeRole role,
-    int? statusCode,
+    List<int>? statusCodes,
     required int page,
     required int pageSize,
   }) async {
@@ -20,9 +20,9 @@ class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
         ? await _fetchSellerHistory()
         : await _fetchBuyerHistory();
 
-    final filtered = statusCode == null
+    final filtered = statusCodes == null || statusCodes.isEmpty
         ? allItems
-        : allItems.where((item) => item.statusCode == statusCode).toList();
+        : allItems.where((item) => statusCodes.contains(item.statusCode)).toList();
 
     final start = (page - 1) * pageSize;
     if (start >= filtered.length) {
