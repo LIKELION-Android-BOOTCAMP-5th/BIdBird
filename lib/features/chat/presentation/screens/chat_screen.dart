@@ -59,15 +59,19 @@ class _ChatScreenState extends State<ChatScreen>
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context)!);
     _viewModel = context.read<ChatListViewmodel>();
-    if (!_isViewModelInitialized) {
-      // 화면 크기에 맞는 개수 계산 (코어 유틸리티 사용)
-      final loadCount = VisibleItemCalculator.calculateChatListVisibleCount(
-        context,
-      );
 
+    // 화면 크기에 맞는 개수 계산 (코어 유틸리티 사용)
+    final loadCount = VisibleItemCalculator.calculateChatListVisibleCount(
+      context,
+    );
+
+    if (!_isViewModelInitialized) {
       context.read<ChatListViewmodel>().setPageSize(loadCount);
       _isViewModelInitialized = true;
     }
+
+    // 탭 전환 시 채팅 리스트 로드 (캐시 제거로 항상 새로고침)
+    _viewModel!.fetchChattingRoomList(visibleItemCount: loadCount);
 
     // 스크롤 리스너 추가 (한 번만)
     if (!_isListenerAttached && _viewModel != null) {
@@ -230,7 +234,7 @@ class _ChatScreenState extends State<ChatScreen>
                 (!isSeller && isTopBidder) || (isSeller && isOpponentTopBidder);
 
             // 만료된 거래만 회색으로 표시 (낙찰 물품/낙찰자 거래 완료는 제외)
-            final shouldShowGray = isExpired;
+            final shouldShowGray = isExpired && !isBidderRole;
 
             return GestureDetector(
               onTap: () {
