@@ -4,7 +4,6 @@ import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// 채팅 데이터 소스
@@ -225,8 +224,6 @@ class ChatSupabaseDatasource {
     int limit = 20,
   }) async {
     try {
-      debugPrint('🐛 [ChatSupabaseDatasource] fetchChattingRoomList params: page=$page, limit=$limit');
-      
       final response = await _supabase.rpc(
         'get_chat_list_v2',
         params: {
@@ -235,32 +232,24 @@ class ChatSupabaseDatasource {
         },
       );
 
-      debugPrint('🐛 [ChatSupabaseDatasource] fetchChattingRoomList raw response type: ${response.runtimeType}');
-      // debugPrint('🐛 [ChatSupabaseDatasource] fetchChattingRoomList raw response: $response');
-
       if (response is Map && response.containsKey('error')) {
-        debugPrint('🐛 [ChatSupabaseDatasource] Error in response: ${response['error']}');
         return List.empty();
       }
 
       if (response is List) {
-        debugPrint('🐛 [ChatSupabaseDatasource] Parsing ${response.length} items...');
         final List<ChattingRoomEntity> results = response.map((json) {
           try {
              return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
           } catch (e) {
-             debugPrint('🐛 [ChatSupabaseDatasource] Parsing error for item: $json, error: $e');
-             rethrow;
+             // 파싱 에러 발생 시 해당 아이템은 건너뛰거나 로그 처리
+             rethrow; 
           }
         }).toList();
-        debugPrint('🐛 [ChatSupabaseDatasource] Successfully parsed ${results.length} items.');
         return results;
       }
 
-      debugPrint('🐛 [ChatSupabaseDatasource] Response is not a List or Map with error.');
       return List.empty();
     } catch (e) {
-      debugPrint('🐛 [ChatSupabaseDatasource] Exception in fetchChattingRoomList: $e');
       return List.empty();
     }
   }

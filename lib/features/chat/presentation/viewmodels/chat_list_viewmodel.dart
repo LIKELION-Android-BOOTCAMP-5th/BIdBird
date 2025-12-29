@@ -182,9 +182,7 @@ class ChatListViewmodel extends ChangeNotifier {
 
   /// 더 많은 채팅방 로드 (무한 스크롤)
   Future<void> loadMoreChattingRooms() async {
-    debugPrint('🐛 [ChatListViewmodel] loadMoreChattingRooms called: isLoadingMore=$isLoadingMore, hasMore=$hasMore, isLoading=$isLoading');
     if (isLoadingMore || !hasMore || isLoading) {
-      debugPrint('🐛 [ChatListViewmodel] loadMoreChattingRooms returning early.');
       return;
     }
 
@@ -247,13 +245,10 @@ class ChatListViewmodel extends ChangeNotifier {
 
       _sortRoomListByLastMessage();
       
-      debugPrint('🐛 [ChatListViewmodel] _loadChattingRoomList: Parsed ${newList.length} rooms.');
-      debugPrint('🐛 [ChatListViewmodel] _loadChattingRoomList: hasMore=$hasMore');
-
       // 아이템 상태 정보 로드
       await _loadItemStatuses(chattingRoomList);
     } catch (e) {
-      debugPrint('🐛 [ChatListViewmodel] Error in _loadChattingRoomList: $e');
+      // 에러 무시
     } finally {
       _isFetchingList = false;
       if (showLoading) {
@@ -423,10 +418,6 @@ class ChatListViewmodel extends ChangeNotifier {
           auctionStatusCode == AuctionStatusCode.failed;
       final isExpired = isTradeComplete || isAuctionEnded; // 거래 완료 또는 경매 종료
       
-      if (isTradeComplete || isAuctionEnded) {
-        debugPrint('🐛 [ChatListViewmodel] Status Map: Item $itemId -> TradeComplete: $isTradeComplete, AuctionEnded: $isAuctionEnded, AuctionCode: $auctionStatusCode');
-      }
-
       statusMap[itemId] = (
         isExpired: isExpired,
         isSeller: isSeller,

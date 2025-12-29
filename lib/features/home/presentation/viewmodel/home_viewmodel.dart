@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/utils/event_bus/item_event_bus.dart';
 import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
 import 'package:bidbird/main.dart';
 import 'package:flutter/widgets.dart';
@@ -99,6 +100,11 @@ class HomeViewmodel extends ChangeNotifier {
         // polling / realtime 다시 시작
         setupRealtimeSubscription();
       }
+    });
+
+    // 아이템 업데이트 이벤트 리스닝
+    eventBus.on<ItemUpdateEvent>().listen((event) {
+      _updateItemInList(event);
     });
 
     // 스크롤 fetch 설정 부분, 여기서 기본적인 fetch도 이루어짐
@@ -471,5 +477,29 @@ class HomeViewmodel extends ChangeNotifier {
   void notifyListeners() {
     if (_isDisposed) return;
     super.notifyListeners();
+  }
+
+  void _updateItemInList(ItemUpdateEvent event) {
+    bool isChanged = false;
+    for (final item in _items) {
+      if (item.item_id == event.itemId) {
+        if (event.biddingCount != null &&
+            item.auctions.bid_count != event.biddingCount) {
+          item.auctions.bid_count = event.biddingCount!;
+          isChanged = true;
+        }
+
+        if (event.currentPrice != null &&
+            item.auctions.current_price != event.currentPrice) {
+          item.auctions.current_price = event.currentPrice!;
+          isChanged = true;
+        }
+        break;
+      }
+    }
+
+    if (isChanged) {
+      notifyListeners();
+    }
   }
 }

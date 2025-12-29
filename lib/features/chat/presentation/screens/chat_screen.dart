@@ -87,7 +87,6 @@ class _ChatScreenState extends State<ChatScreen>
     // 스크롤이 하단 근처(200px 이내)에 도달하면 더 많은 데이터 로드
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
-      debugPrint('📜 ChatScreen: Scroll reached bottom threshold. Loading more...');
       viewModel.loadMoreChattingRooms();
     }
   }
@@ -351,9 +350,9 @@ class _ChatScreenState extends State<ChatScreen>
                                                 ),
                                                 child: RoleBadge(
                                                   isSeller: isSeller,
-                                                  isTopBidder: isTopBidder,
+                                                  isTopBidder: isTopBidder && isExpired,
                                                   isOpponentTopBidder:
-                                                      isOpponentTopBidder,
+                                                      isOpponentTopBidder && isExpired,
                                                   isExpired: shouldShowGray,
                                                 ),
                                               ),
