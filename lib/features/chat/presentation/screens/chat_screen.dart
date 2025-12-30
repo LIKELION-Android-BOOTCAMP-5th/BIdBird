@@ -22,7 +22,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen>
-    with RouteAware, WidgetsBindingObserver {
+    with RouteAware, WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   late ChatListViewmodel? _viewModel;
   bool _isViewModelInitialized = false;
   final ScrollController _scrollController = ScrollController();
@@ -68,11 +68,9 @@ class _ChatScreenState extends State<ChatScreen>
 
     if (!_isViewModelInitialized) {
       context.read<ChatListViewmodel>().setPageSize(loadCount);
+      _viewModel!.fetchChattingRoomList(visibleItemCount: loadCount);
       _isViewModelInitialized = true;
     }
-
-    // 탭 전환 시 채팅 리스트 로드 (캐시 제거로 항상 새로고침)
-    _viewModel!.fetchChattingRoomList(visibleItemCount: loadCount);
 
     // 스크롤 리스너 추가 (한 번만)
     if (!_isListenerAttached && _viewModel != null) {
@@ -106,6 +104,9 @@ class _ChatScreenState extends State<ChatScreen>
   /// 실시간 구독이 자동으로 처리하지만, 읽음 처리 후 즉시 반영을 위해 새로고침
   @override
   void didPopNext() {
+    // 스크롤 초기화 방지를 위해 자동 새로고침 제거
+    // Socket 연결이 유지되어 있다면 실시간으로 업데이트됨
+    /*
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted && _viewModel != null) {
         // 화면 크기에 맞는 개수만 다시 로드 (코어 유틸리티 사용)
@@ -121,10 +122,15 @@ class _ChatScreenState extends State<ChatScreen>
         }
       }
     });
+    */
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     if (!_isViewModelInitialized) {
       return const Scaffold(body: SizedBox.shrink());
     }

@@ -189,7 +189,6 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
 
   Widget _buildDualButtonBar(ItemAddViewModel viewModel) {
     if (_currentStep == 0) {
-      // 첫 번째 단계에서는 제목 변경을 감지
       return ValueListenableBuilder<TextEditingValue>(
         valueListenable: viewModel.titleController,
         builder: (context, titleValue, _) {
@@ -216,8 +215,71 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
           );
         },
       );
+    } else if (_currentStep == 1) {
+      // Step 1: Price/Auction checks startPrice, duration, and category
+      return ValueListenableBuilder<TextEditingValue>(
+        valueListenable: viewModel.startPriceController,
+        builder: (context, priceValue, _) {
+          return Selector<ItemAddViewModel, ({String? duration, int? keywordId})>(
+            selector: (_, vm) => (
+              duration: vm.selectedDuration,
+              keywordId: vm.selectedKeywordTypeId,
+            ),
+            builder: (context, data, _) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: SecondaryButton(
+                      text: '이전',
+                      onPressed: () => _goToStep(_currentStep - 1),
+                      width: null,
+                    ),
+                  ),
+                  SizedBox(width: context.spacingSmall),
+                  Expanded(
+                    child: PrimaryButton(
+                      text: _getNextButtonText(),
+                      onPressed: () => _handleNextButtonPress(viewModel),
+                      isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+                      width: null,
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } else if (_currentStep == 2) {
+      return ValueListenableBuilder<TextEditingValue>(
+        valueListenable: viewModel.descriptionController,
+        builder: (context, descValue, _) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: SecondaryButton(
+                  text: '이전',
+                  onPressed: () => _goToStep(_currentStep - 1),
+                  width: null,
+                ),
+              ),
+              SizedBox(width: context.spacingSmall),
+              Expanded(
+                child: PrimaryButton(
+                  text: _getNextButtonText(),
+                  onPressed: () => _handleNextButtonPress(viewModel),
+                  isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+                  width: null,
+                ),
+              ),
+            ],
+          );
+        },
+      );
     } else {
-      // 다른 단계에서는 제목 감지하지 않음
+      // Others
       return Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

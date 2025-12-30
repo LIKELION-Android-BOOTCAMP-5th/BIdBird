@@ -834,9 +834,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   /// 거래 완료 처리
   Future<void> completeTrade() async {
+    debugPrint('[ChattingRoomViewmodel] completeTrade entry check itemId=$itemId');
     if (itemId.isEmpty) {
       throw Exception('매물 ID가 없습니다.');
     }
+    debugPrint('[ChattingRoomViewmodel] completeTrade called for itemId=$itemId');
 
     await _completeTradeUseCase(itemId);
 
@@ -849,11 +851,12 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (itemId.isEmpty) {
       throw Exception('매물 ID가 없습니다.');
     }
+    debugPrint('[ChattingRoomViewmodel] cancelTrade called for itemId=$itemId reason=$reasonCode');
 
     await _cancelTradeUseCase(itemId, reasonCode, isSellerFault);
 
     // 거래 취소 후 룸 정보 새로고침
-    await fetchRoomInfo();
+    await fetchRoomInfo(forceRefresh: true);
   }
 
   /// 거래 평가 작성 처리
