@@ -320,11 +320,11 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                           }
 
                           // 거래 현황 보기 / 거래 평가 버튼 표시 조건: 낙찰자 또는 판매자만
-                          // 거래 완료 상태(550)일 때는 평가를 작성하지 않았을 때만 표시
+                          // 거래 완료 상태(550)일 때만 평가 버튼 표시 (일반 거래 현황 보기는 숨김)
                           final canShowTradeStatus =
                               (viewModel.isTopBidder || isSeller) &&
-                              !(tradeStatusCode == 550 &&
-                                  viewModel.hasSubmittedReview);
+                              tradeStatusCode == 550 &&
+                              !viewModel.hasSubmittedReview;
 
                           return TradeContextCard(
                             itemTitle: viewModel.itemInfo?.title ?? widget.itemTitle ?? "",
