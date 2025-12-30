@@ -194,17 +194,14 @@ class ItemAddViewModel extends ItemBaseViewModel {
       );
 
       if (result != null) {
-        final List<PickedDocument> newDocs = result.files
-            .where((file) => file.path != null)
-            .map((file) {
-              return PickedDocument(
-                file: File(file.path!),
-                originalName: file.name,
-                size: file.size ?? 0,
-              );
-            })
-            .toList();
-
+        final List<PickedDocument> newDocs = result.files.where((file) => file.path != null).map((file) {
+          return PickedDocument(
+            file: File(file.path!),
+            originalName: file.name,
+            size: file.size,
+          );
+        }).toList();
+        
         // 최대 5개 제한 (필요 시 조정)
         if (selectedDocuments.length + newDocs.length > 5) {
           // 5개까지만 추가

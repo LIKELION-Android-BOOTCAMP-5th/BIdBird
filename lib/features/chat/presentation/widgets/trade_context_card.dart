@@ -83,7 +83,7 @@ class TradeContextCard extends StatelessWidget {
                       imageUrl: itemThumbnail,
                       width: 48,
                       height: 48,
-                      aspectRatio: 1.0,
+                      aspectRatio: null, // 원본 비율 유지
                       borderRadius: BorderRadius.circular(8),
                     ),
                     const SizedBox(width: 12),

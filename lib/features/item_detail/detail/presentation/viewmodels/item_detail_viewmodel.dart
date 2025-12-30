@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:bidbird/core/utils/event_bus/item_event_bus.dart';
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
+import 'package:bidbird/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:bidbird/features/item_detail/detail/domain/repositories/item_detail_repository.dart'
@@ -19,33 +21,28 @@ import 'package:bidbird/features/item_detail/detail/domain/usecases/orchestratio
 class ItemDetailViewModel extends ItemBaseViewModel {
   final String itemId;
   late final FetchItemDetailUseCase _fetchItemDetailUseCase;
-  late final CheckIsFavoriteUseCase _checkIsFavoriteUseCase;
   late final ToggleFavoriteUseCase _toggleFavoriteUseCase;
   late final FetchBidHistoryUseCase _fetchBidHistoryUseCase;
-  late final CheckIsMyItemUseCase _checkIsMyItemUseCase;
+
   final domain.ItemDetailRepository _repository;
   late final ItemDetailFlowUseCase _flowUseCase;
 
   ItemDetailViewModel({
     required this.itemId,
     FetchItemDetailUseCase? fetchItemDetailUseCase,
-    CheckIsFavoriteUseCase? checkIsFavoriteUseCase,
     ToggleFavoriteUseCase? toggleFavoriteUseCase,
     FetchBidHistoryUseCase? fetchBidHistoryUseCase,
-    CheckIsMyItemUseCase? checkIsMyItemUseCase,
     domain.ItemDetailRepository? repository,
   }) : _repository = repository ?? data.ItemDetailRepositoryImpl() {
     // 모든 UseCase가 동일한 repository 인스턴스를 사용하도록 설정
     _fetchItemDetailUseCase =
         fetchItemDetailUseCase ?? FetchItemDetailUseCase(_repository);
-    _checkIsFavoriteUseCase =
-        checkIsFavoriteUseCase ?? CheckIsFavoriteUseCase(_repository);
     _toggleFavoriteUseCase =
         toggleFavoriteUseCase ?? ToggleFavoriteUseCase(_repository);
     _fetchBidHistoryUseCase =
         fetchBidHistoryUseCase ?? FetchBidHistoryUseCase(_repository);
-    _checkIsMyItemUseCase =
-        checkIsMyItemUseCase ?? CheckIsMyItemUseCase(_repository);
+
+
 
     // 초기 로딩 상태 설정
     setLoading(true);
@@ -72,16 +69,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
 
   List<BidHistoryItem> _bidHistory = [];
   List<BidHistoryItem> get bidHistory => _bidHistory;
-
-  // 입찰 히스토리 캐시
-  DateTime? _bidHistoryCacheTime;
-  static const Duration _bidHistoryCacheDuration = Duration(minutes: 1);
-
-  bool _isBidHistoryCacheValid() {
-    if (_bidHistoryCacheTime == null) return false;
-    return DateTime.now().difference(_bidHistoryCacheTime!) <
-        _bidHistoryCacheDuration;
-  }
 
   final ItemDetailRealtimeManager _realtimeManager =
       ItemDetailRealtimeManager();
@@ -131,32 +118,9 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     notifyListeners();
   }
 
-  // 캐싱 관련
-  static const Duration _cacheValidDuration = Duration(minutes: 3);
-  static const Duration _additionalDataCacheValidDuration = Duration(
-    minutes: 5,
-  );
-
-  // 추가 데이터 캐싱 (통합: 3개 변수 → 1개 맵)
-  final Map<String, DateTime> _additionalDataCacheTime = {};
-
-  // 캐시 키 상수
-  static const String _cacheKeyFavorite = 'favorite';
-  static const String _cacheKeyMyItem = 'myItem';
-
   Future<void> loadItemDetail({bool forceRefresh = false}) async {
     if (_isLoadingDetail) return;
     await _loadBidWinScreenFlag();
-
-    // 캐시 사용 조건 유지
-    if (!forceRefresh &&
-        isCacheValid(_cacheValidDuration) &&
-        _itemDetail != null) {
-      await _loadAdditionalData(forceRefresh: false);
-      notifyListeners();
-      setupRealtimeSubscription();
-      return;
-    }
 
     _isLoadingDetail = true;
     startLoading();
@@ -184,7 +148,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
 
     stopLoading();
     notifyListeners();
-    updateCacheTime();
 
     // ✅ 백그라운드 작업들 (로딩 화면을 블로킹하지 않음)
     setupRealtimeSubscription();
@@ -194,56 +157,7 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     _isRefreshingFromRealtime = false;
   }
 
-  /// 추가 데이터를 한 번에 로드하는 헬퍼 메서드
-  /// 개별 메서드에서는 notifyListeners를 호출하지 않음
-  /// 캐시가 유효하면 API 호출을 건너뜀
-  Future<void> _loadAdditionalData({bool forceRefresh = false}) async {
-    await Future.wait([
-      _checkIsMyItem(forceRefresh: forceRefresh),
-      _loadFavoriteState(forceRefresh: forceRefresh),
-      // 판매자 프로필 이미지는 초기 로드에 포함됨
-    ], eagerError: false);
-  }
 
-  Future<void> _loadFavoriteState({bool forceRefresh = false}) async {
-    // 캐시 검증
-    if (!forceRefresh &&
-        _additionalDataCacheTime.containsKey(_cacheKeyFavorite)) {
-      final lastCheckTime = _additionalDataCacheTime[_cacheKeyFavorite]!;
-      if (DateTime.now().difference(lastCheckTime) <
-          _additionalDataCacheValidDuration) {
-        return; // 캐시 사용
-      }
-    }
-
-    try {
-      _isFavorite = await _checkIsFavoriteUseCase(itemId);
-      _additionalDataCacheTime[_cacheKeyFavorite] = DateTime.now();
-    } catch (e) {
-      // 즐겨찾기 상태 로드 실패 시 기본값 유지
-    }
-  }
-
-  Future<void> _checkIsMyItem({bool forceRefresh = false}) async {
-    if (_itemDetail != null) {
-      // 캐시 검증
-      if (!forceRefresh &&
-          _additionalDataCacheTime.containsKey(_cacheKeyMyItem)) {
-        final lastCheckTime = _additionalDataCacheTime[_cacheKeyMyItem]!;
-        if (DateTime.now().difference(lastCheckTime) <
-            _additionalDataCacheValidDuration) {
-          return; // 캐시 사용
-        }
-      }
-
-      try {
-        _isMyItem = await _checkIsMyItemUseCase(itemId, _itemDetail!.sellerId);
-        _additionalDataCacheTime[_cacheKeyMyItem] = DateTime.now();
-      } catch (e) {
-        // 내 아이템 확인 실패 시 기본값 유지
-      }
-    }
-  }
 
   bool _isLoadingBidHistory = false;
 
@@ -252,16 +166,9 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     // 중복 호출 방지
     if (_isLoadingBidHistory) return;
 
-    // 캐시가 유효하면 재로드하지 않음
-    if (_isBidHistoryCacheValid()) return;
-
-    // 이미 로드된 데이터가 있으면 재로드하지 않음
-    if (_bidHistory.isNotEmpty && _isBidHistoryCacheValid()) return;
-
     _isLoadingBidHistory = true;
     try {
       _bidHistory = await _fetchBidHistoryUseCase(itemId);
-      _bidHistoryCacheTime = DateTime.now(); // 캐시 시간 업데이트
       notifyListeners();
     } catch (e) {
       // 입찰 내역 로드 실패 시 빈 리스트 유지
@@ -276,7 +183,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
     try {
       await _toggleFavoriteUseCase(itemId, _isFavorite);
       _isFavorite = !_isFavorite;
-      _additionalDataCacheTime[_cacheKeyFavorite] = DateTime.now(); // 캐시 업데이트
       notifyListeners();
     } catch (e) {
       // toggle favorite 실패 시 조용히 처리
@@ -300,6 +206,13 @@ class ItemDetailViewModel extends ItemBaseViewModel {
           currentPrice: newPrice,
           bidPrice: newBidPrice,
         );
+        
+        // 홈 화면 등에 업데이트 알림
+        eventBus.fire(ItemUpdateEvent(
+          itemId: itemId,
+          currentPrice: newPrice,
+        ));
+
         // ✅ 가격 업데이트 시 최고 입찰자 상태를 즉시 확인
         // (WebSocket 지연으로 인한 타이밍 이슈 방지)
         _checkAndUpdateTopBidderStatus();
@@ -308,6 +221,13 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       onBidCountUpdate: (newCount) {
         if (_itemDetail == null) return;
         _itemDetail = _itemDetail!.copyWith(biddingCount: newCount);
+        
+        // 홈 화면 등에 업데이트 알림
+        eventBus.fire(ItemUpdateEvent(
+          itemId: itemId,
+          biddingCount: newCount,
+        ));
+        
         notifyListeners();
       },
       onTopBidderUpdate: (isTopBidder) {
@@ -344,7 +264,6 @@ class ItemDetailViewModel extends ItemBaseViewModel {
       () {
         if (_isRefreshingFromRealtime || _isLoadingDetail) return;
         _isRefreshingFromRealtime = true;
-        super.invalidateCache();
         loadItemDetail(forceRefresh: true);
       },
     );

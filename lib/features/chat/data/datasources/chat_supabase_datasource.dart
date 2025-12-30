@@ -104,12 +104,28 @@ class ChatSupabaseDatasource {
         SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentUserId == null) return;
     try {
+      // 메시지 전송
       await _supabase.from('chatting_message').insert({
         'room_id': roomId,
         'sender_id': currentUserId,
         'message_type': 'text',
         'text': message,
       });
+
+      // chatting_room 업데이트
+      await _supabase.from('chatting_room').update({
+        'last_message': message,
+        'last_message_send_at': DateTime.now().toIso8601String(),
+      }).eq('id', roomId);
+
+      // 상대방의 unread_count 증가
+      final roomData = await _supabase.from('chatting_room').select('seller_id, buyer_id').eq('id', roomId).single();
+      final opponentId = roomData['seller_id'] == currentUserId ? roomData['buyer_id'] : roomData['seller_id'];
+      final userRoomData = await _supabase.from('chatting_room_users').select('unread_count').eq('room_id', roomId).eq('user_id', opponentId).single();
+      final currentUnread = (userRoomData['unread_count'] as int?) ?? 0;
+      await _supabase.from('chatting_room_users').update({
+        'unread_count': currentUnread + 1,
+      }).eq('room_id', roomId).eq('user_id', opponentId);
     } catch (e) {
       // 메시지 전송 실패 시 무시
     }
@@ -126,6 +142,21 @@ class ChatSupabaseDatasource {
         'message_type': 'image',
         'image_url': imageUrl,
       });
+
+      // chatting_room 업데이트
+      await _supabase.from('chatting_room').update({
+        'last_message': '사진',
+        'last_message_send_at': DateTime.now().toIso8601String(),
+      }).eq('id', roomId);
+
+      // 상대방의 unread_count 증가
+      final roomData = await _supabase.from('chatting_room').select('seller_id, buyer_id').eq('id', roomId).single();
+      final opponentId = roomData['seller_id'] == currentUserId ? roomData['buyer_id'] : roomData['seller_id'];
+      final userRoomData = await _supabase.from('chatting_room_users').select('unread_count').eq('room_id', roomId).eq('user_id', opponentId).single();
+      final currentUnread = (userRoomData['unread_count'] as int?) ?? 0;
+      await _supabase.from('chatting_room_users').update({
+        'unread_count': currentUnread + 1,
+      }).eq('room_id', roomId).eq('user_id', opponentId);
     } catch (e) {
       // 메시지 전송 실패 시 무시
     }
@@ -207,7 +238,12 @@ class ChatSupabaseDatasource {
 
       if (response is List) {
         final List<ChattingRoomEntity> results = response.map((json) {
-          return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
+          try {
+             return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
+          } catch (e) {
+             // 파싱 에러 발생 시 해당 아이템은 건너뛰거나 로그 처리
+             rethrow; 
+          }
         }).toList();
         return results;
       }

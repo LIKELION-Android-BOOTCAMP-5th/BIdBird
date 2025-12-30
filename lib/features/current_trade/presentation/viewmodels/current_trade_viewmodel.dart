@@ -340,7 +340,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     _pendingActionCount = 0;
     _acknowledgedPendingCount = 0;
     _invalidateFilterCache();
-    invalidateCache(); // 캐시 시간 초기화
+    // invalidateCache(); // 캐시 시간 초기화
     // notifyListeners()는 한 번만 호출
     notifyListeners();
   }
