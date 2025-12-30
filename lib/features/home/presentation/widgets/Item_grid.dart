@@ -25,6 +25,15 @@ class ItemGrid extends StatelessWidget {
           final items = viewModel.items;
           final itemsLength = items.length;
 
+          // 로딩 중이거나 아직 초기화되지 않았고 아이템이 없으면 빈 화면(배경) 표시
+          if ((viewModel.isLoading || !viewModel.isInitialized) &&
+              items.isEmpty) {
+            return const SliverFillRemaining(
+              hasScrollBody: false,
+              child: SizedBox.shrink(),
+            );
+          }
+
           if (items.isEmpty) {
             return const SliverFillRemaining(
               hasScrollBody: false,

@@ -38,7 +38,11 @@ class HomeViewmodel extends ChangeNotifier {
 
   //로딩 플래그 개선
   bool _isFetching = false;
+  bool get isLoading => _isFetching;
+
   bool _hasMore = true;
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
 
   //검색 기능 관련
   bool searchButton = false;
@@ -207,16 +211,23 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> fetchItems() async {
+    _isFetching = true; // 로딩 시작
+    notifyListeners();
+
     String orderBy = setOrderBy(type);
     _hasMore = true;
-    _items = await _homeRepository.fetchItems(
-      orderBy,
-      currentIndex: _currentPage,
-      keywordType: selectedKeywordId,
-    );
-    if (_isDisposed) return;
-    // sortItemsByFinishTime();
-    notifyListeners();
+    try {
+      _items = await _homeRepository.fetchItems(
+        orderBy,
+        currentIndex: _currentPage,
+        keywordType: selectedKeywordId,
+      );
+    } finally {
+      _isFetching = false;
+      _isInitialized = true; // 초기화 완료
+      if (_isDisposed) return;
+      notifyListeners();
+    }
   }
 
   Future<void> handleRefresh() async {
