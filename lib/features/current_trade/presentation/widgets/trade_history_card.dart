@@ -26,6 +26,9 @@ class TradeHistoryCard extends StatelessWidget {
     this.isHighlighted = false,
     this.bottomSlot,
     this.useResponsive = false,
+    this.isTopBidder = false,
+    this.isOpponentTopBidder = false,
+    this.isExpired = false,
   });
 
   final String title;
@@ -38,6 +41,9 @@ class TradeHistoryCard extends StatelessWidget {
   final bool isHighlighted;
   final Widget? bottomSlot;
   final bool useResponsive;
+  final bool isTopBidder;
+  final bool isOpponentTopBidder;
+  final bool isExpired;
 
   @override
   Widget build(BuildContext context) {
@@ -136,6 +142,9 @@ class TradeHistoryCard extends StatelessWidget {
                                     children: [
                                       RoleBadge(
                                         isSeller: isSeller,
+                                        isTopBidder: isTopBidder,
+                                        isOpponentTopBidder: isOpponentTopBidder,
+                                        isExpired: isExpired,
                                         fontSize: tagFontSize,
                                       ),
                                       SizedBox(width: tagSpacing),

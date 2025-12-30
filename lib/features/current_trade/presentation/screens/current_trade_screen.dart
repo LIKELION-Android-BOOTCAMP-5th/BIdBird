@@ -188,18 +188,28 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   Widget _buildUnifiedHistoryList() {
     return Selector<
       CurrentTradeViewModel,
-      (List<({bool isSeller, bool isHighlighted, dynamic item})>, bool)
+      ({
+        List<({bool isSeller, bool isHighlighted, dynamic item})> items,
+        bool canLoadMore,
+        bool isInitialized
+      })
     >(
-      selector: (_, vm) => (vm.allItemsPaginated, vm.canLoadMore),
+      selector: (_, vm) => (
+        items: vm.allItemsPaginated,
+        canLoadMore: vm.canLoadMore,
+        isInitialized: vm.isInitialized
+      ),
       builder: (context, data, _) {
-        final (displayedItems, canLoadMore) = data;
+        final displayedItems = data.items;
+        final canLoadMore = data.canLoadMore;
+        final isInitialized = data.isInitialized;
         final horizontalPadding = context.hPadding;
         final verticalPadding = context.vPadding;
 
         // 빈 상태일 때
         if (displayedItems.isEmpty) {
           // 아직 초기화되지 않았다면 빈 화면 (배경)만 표시
-          if (!canLoadMore && !context.read<CurrentTradeViewModel>().isInitialized) {
+          if (!canLoadMore && !isInitialized) {
              return Container();
           }
 

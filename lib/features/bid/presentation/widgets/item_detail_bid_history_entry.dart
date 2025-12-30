@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/item/item_time_utils.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
@@ -193,16 +194,11 @@ class _ItemDetailBidHistoryEntryState
   }
 
   Widget _buildEmptyState() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 80),
-        child: Text(
-          '입찰 내역이 없습니다',
-          style: TextStyle(
-            fontSize: 15,
-            color: Color(0xFF6B7684),
-          ),
-        ),
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 40),
+      child: UnifiedEmptyState(
+        title: '입찰 내역이 없습니다',
+        subtitle: '첫 번째 입찰자가 되어보세요!',
       ),
     );
   }
