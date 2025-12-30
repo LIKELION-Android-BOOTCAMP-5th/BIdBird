@@ -18,11 +18,15 @@ enum OrderByType { newFirst, oldFirst, likesFirst }
 class HomeViewmodel extends ChangeNotifier {
   final HomeRepository _homeRepository;
   StreamSubscription? _loginSubscription;
+
   //키워드 그릇 생성
   List<KeywordType> _keywords = [];
+
   List<KeywordType> get keywords => _keywords;
+
   //Items 그릇 생성
   List<ItemsEntity> _items = [];
+
   List<ItemsEntity> get items => _items;
 
   bool buttonIsWorking = false;
@@ -39,6 +43,7 @@ class HomeViewmodel extends ChangeNotifier {
   //검색 기능 관련
   bool searchButton = false;
   final userInputController = TextEditingController();
+
   // 글씨 지우면 검색모드 꺼지기
   bool isSearching = false;
   String currentSearchText = "";
@@ -62,10 +67,13 @@ class HomeViewmodel extends ChangeNotifier {
 
   //페이징 처리
   int _currentPage = 1;
+
   int get currentPage => _currentPage;
+
   //스크롤 컨트롤러
   Timer? _debounce;
   ScrollController scrollController = ScrollController();
+
   // 정렬/notify 배치 호출용
   Timer? _sortDebounce;
 
@@ -485,27 +493,28 @@ class HomeViewmodel extends ChangeNotifier {
   Future<void> markTutorialAsSeen() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_home_tutorial', false);
-  void _updateItemInList(ItemUpdateEvent event) {
-    bool isChanged = false;
-    for (final item in _items) {
-      if (item.item_id == event.itemId) {
-        if (event.biddingCount != null &&
-            item.auctions.bid_count != event.biddingCount) {
-          item.auctions.bid_count = event.biddingCount!;
-          isChanged = true;
-        }
+    void _updateItemInList(ItemUpdateEvent event) {
+      bool isChanged = false;
+      for (final item in _items) {
+        if (item.item_id == event.itemId) {
+          if (event.biddingCount != null &&
+              item.auctions.bid_count != event.biddingCount) {
+            item.auctions.bid_count = event.biddingCount!;
+            isChanged = true;
+          }
 
-        if (event.currentPrice != null &&
-            item.auctions.current_price != event.currentPrice) {
-          item.auctions.current_price = event.currentPrice!;
-          isChanged = true;
+          if (event.currentPrice != null &&
+              item.auctions.current_price != event.currentPrice) {
+            item.auctions.current_price = event.currentPrice!;
+            isChanged = true;
+          }
+          break;
         }
-        break;
       }
-    }
 
-    if (isChanged) {
-      notifyListeners();
+      if (isChanged) {
+        notifyListeners();
+      }
     }
   }
 }
