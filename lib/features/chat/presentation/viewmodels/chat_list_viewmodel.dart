@@ -162,12 +162,11 @@ class ChatListViewmodel extends ChangeNotifier {
     if (_isFetchingList) return; // 중복 호출 방지
 
     if (forceRefresh) {
-      chattingRoomList.clear();
-      _sellerIdMap.clear();
-      _topBidderMap.clear();
-      _lastBidUserIdMap.clear();
-      _auctionStatusCodeMap.clear();
-      _tradeStatusCodeMap.clear();
+      // 기존: 목록을 비워서 깜빡임 및 스크롤 초기화 문제 발생
+      // 변경: 목록을 비우지 않고 유지한 채로 새로운 데이터를 받아와서 교체
+      // chattingRoomList.clear(); 
+      // _sellerIdMap.clear();
+      // ...
       _currentPage = 1;
       hasMore = true;
     }
@@ -543,8 +542,7 @@ class ChatListViewmodel extends ChangeNotifier {
       if (chattingRoomList[index].count != newUnreadCount) {
         chattingRoomList[index].count = newUnreadCount;
       }
-      final room = chattingRoomList.removeAt(index);
-      chattingRoomList.insert(0, room);
+      _sortRoomListByLastMessage();
       notifyListeners();
       return true;
     }
@@ -587,12 +585,23 @@ class ChatListViewmodel extends ChangeNotifier {
         final bTimeRaw = b.lastMessageSendAt;
 
         // null이면 1970년으로 처리 (가장 뒤로)
-        final aTime = aTimeRaw != null 
+        var aTime = aTimeRaw != null 
             ? DateTime.tryParse(aTimeRaw) ?? DateTime(0) 
             : DateTime(0);
-        final bTime = bTimeRaw != null 
+        var bTime = bTimeRaw != null 
             ? DateTime.tryParse(bTimeRaw) ?? DateTime(0) 
             : DateTime(0);
+
+        final now = DateTime.now();
+        
+        // Timezone Glitch 보정 Logic (화면 표시 로직과 동일하게 적용)
+        // 5분 이상 미래인 경우 9시간을 빼서 보정
+        if (aTime.difference(now).inMinutes > 5) {
+          aTime = aTime.subtract(const Duration(hours: 9));
+        }
+        if (bTime.difference(now).inMinutes > 5) {
+          bTime = bTime.subtract(const Duration(hours: 9));
+        }
             
         return bTime.compareTo(aTime);
       } catch (e) {

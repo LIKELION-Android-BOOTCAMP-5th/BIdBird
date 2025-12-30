@@ -61,7 +61,7 @@ class RoleBadge extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
-          '낙찰자',
+          '낙찰 물품',
           style: TextStyle(
             color: const Color(0xFF856404), // 노란색 텍스트
             fontSize: fontSize ?? 11,

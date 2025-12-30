@@ -11,10 +11,8 @@ import 'package:bidbird/features/item_detail/detail/data/repositories/item_detai
     as data;
 import 'package:bidbird/features/item_detail/detail/data/managers/item_detail_realtime_manager.dart';
 import 'package:bidbird/features/item_detail/detail/domain/usecases/fetch_item_detail_usecase.dart';
-import 'package:bidbird/features/item_detail/detail/domain/usecases/check_is_favorite_usecase.dart';
 import 'package:bidbird/features/item_detail/detail/domain/usecases/toggle_favorite_usecase.dart';
 import 'package:bidbird/features/item_detail/detail/domain/usecases/fetch_bid_history_usecase.dart';
-import 'package:bidbird/features/item_detail/detail/domain/usecases/check_is_my_item_usecase.dart';
 import 'package:bidbird/features/item_detail/detail/domain/usecases/orchestrations/item_detail_flow_usecase.dart';
 
 // BidHistoryItem은 item_detail_entity.dart에 정의되어 있음

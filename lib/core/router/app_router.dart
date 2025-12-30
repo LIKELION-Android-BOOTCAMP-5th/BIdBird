@@ -144,8 +144,8 @@ GoRouter createAppRouter(BuildContext context) {
       ),
 
       // --- 메인 쉘 (바텀 네비게이션 포함) ---
-      ShellRoute(
-        builder: (context, state, child) {
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
           return PopScope(
             canPop: false,
             onPopInvokedWithResult: (didPop, result) async {
@@ -158,188 +158,208 @@ GoRouter createAppRouter(BuildContext context) {
               }
             },
             child: Scaffold(
-              body: child,
-              bottomNavigationBar: const BottomNavBar(),
+              body: navigationShell,
+              bottomNavigationBar: BottomNavBar(navigationShell: navigationShell),
             ),
           );
         },
-        routes: [
-          GoRoute(
-            path: '/home',
-            pageBuilder: (context, state) => buildPage(
-              context: context,
-              state: state,
-              child: const HomeScreen(),
-            ),
+        branches: [
+          // 1. 홈 탭
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'search',
+                path: '/home',
                 pageBuilder: (context, state) => buildPage(
                   context: context,
                   state: state,
-                  child: const LoginScreen(),
-                ),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/bid',
-            pageBuilder: (context, state) => buildPage(
-              context: context,
-              state: state,
-              child: const CurrentTradeScreen(),
-            ),
-            routes: [
-              GoRoute(
-                path: 'filtered',
-                pageBuilder: (context, state) {
-                  final extra = state.extra as Map<String, dynamic>?;
-                  if (extra != null) {
-                    final actionType = extra['actionType'];
-                    final isSeller = extra['isSeller'];
-                    final actionTypes = extra['actionTypes'];
-                    return buildPage(
-                      context: context,
-                      state: state,
-                      child: FilteredTradeListScreen(
-                        actionType: actionType,
-                        isSeller: isSeller,
-                        actionTypes: actionTypes,
-                      ),
-                    );
-                  }
-                  return buildPage(
-                    context: context,
-                    state: state,
-                    child: const CurrentTradeScreen(),
-                  );
-                },
-              ),
-            ],
-          ),
-          GoRoute(
-            path: '/chat',
-            pageBuilder: (context, state) => buildPage(
-              context: context,
-              state: state,
-              child: const ChatScreen(),
-            ),
-          ),
-          GoRoute(
-            path: '/mypage',
-            pageBuilder: (context, state) => buildPage(
-              context: context,
-              state: state,
-              child: const MypageScreen(),
-            ),
-            routes: [
-              GoRoute(
-                path: 'update_info',
-                pageBuilder: (context, state) => buildPage(
-                  context: context,
-                  state: state,
-                  child: const ProfileEditScreen(),
-                ),
-              ),
-              GoRoute(
-                path: 'favorite',
-                pageBuilder: (context, state) => buildPage(
-                  context: context,
-                  state: state,
-                  child: ChangeNotifierProvider(
-                    create: (_) {
-                      final repo = FavoritesRepositoryImpl();
-                      return FavoritesViewModel(
-                        getFavorites: GetFavorites(repo),
-                        addFavorite: AddFavorite(repo),
-                        removeFavorite: RemoveFavorite(repo),
-                      )..loadFavorites();
-                    },
-                    child: const FavoritesScreen(),
-                  ),
-                ),
-              ),
-              GoRoute(
-                path: 'trade',
-                pageBuilder: (context, state) => buildPage(
-                  context: context,
-                  state: state,
-                  child: ChangeNotifierProvider(
-                    create: (_) {
-                      final repo = TradeHistoryRepositoryImpl();
-                      return TradeHistoryViewModel(
-                        getTradeHistory: GetTradeHistory(repo),
-                      )..loadPage(reset: true);
-                    },
-                    child: const TradeHistoryScreen(),
-                  ),
-                ),
-              ),
-              GoRoute(
-                path: 'service_center',
-                pageBuilder: (context, state) => buildPage(
-                  context: context,
-                  state: state,
-                  child: const CsScreen(),
+                  child: const HomeScreen(),
                 ),
                 routes: [
                   GoRoute(
-                    path: 'terms',
+                    path: 'search',
                     pageBuilder: (context, state) => buildPage(
                       context: context,
                       state: state,
-                      child: const TermsScreen(),
+                      child: const LoginScreen(),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // 2. 거래 탭
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/bid',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: const CurrentTradeScreen(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'filtered',
+                    pageBuilder: (context, state) {
+                      final extra = state.extra as Map<String, dynamic>?;
+                      if (extra != null) {
+                        final actionType = extra['actionType'];
+                        final isSeller = extra['isSeller'];
+                        final actionTypes = extra['actionTypes'];
+                        return buildPage(
+                          context: context,
+                          state: state,
+                          child: FilteredTradeListScreen(
+                            actionType: actionType,
+                            isSeller: isSeller,
+                            actionTypes: actionTypes,
+                          ),
+                        );
+                      }
+                      return buildPage(
+                        context: context,
+                        state: state,
+                        child: const CurrentTradeScreen(),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // 3. 채팅 탭
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/chat',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: const ChatScreen(),
+                ),
+              ),
+            ],
+          ),
+          // 4. 마이페이지 탭
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/mypage',
+                pageBuilder: (context, state) => buildPage(
+                  context: context,
+                  state: state,
+                  child: const MypageScreen(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'update_info',
+                    pageBuilder: (context, state) => buildPage(
+                      context: context,
+                      state: state,
+                      child: const ProfileEditScreen(),
                     ),
                   ),
                   GoRoute(
-                    path: 'report_feedback',
+                    path: 'favorite',
                     pageBuilder: (context, state) => buildPage(
                       context: context,
                       state: state,
                       child: ChangeNotifierProvider(
                         create: (_) {
-                          final repo = ReportFeedbackRepositoryImpl();
-                          return ReportFeedbackViewModel(
-                            getReportFeedback: GetReportFeedback(repo),
-                          )..loadReports();
+                          final repo = FavoritesRepositoryImpl();
+                          return FavoritesViewModel(
+                            getFavorites: GetFavorites(repo),
+                            addFavorite: AddFavorite(repo),
+                            removeFavorite: RemoveFavorite(repo),
+                          )..loadFavorites();
                         },
-                        child: const ReportFeedbackScreen(),
+                        child: const FavoritesScreen(),
                       ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'trade',
+                    pageBuilder: (context, state) => buildPage(
+                      context: context,
+                      state: state,
+                      child: ChangeNotifierProvider(
+                        create: (_) {
+                          final repo = TradeHistoryRepositoryImpl();
+                          return TradeHistoryViewModel(
+                            getTradeHistory: GetTradeHistory(repo),
+                          )..loadPage(reset: true);
+                        },
+                        child: const TradeHistoryScreen(),
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'service_center',
+                    pageBuilder: (context, state) => buildPage(
+                      context: context,
+                      state: state,
+                      child: const CsScreen(),
                     ),
                     routes: [
                       GoRoute(
-                        path: ':feedbackId',
+                        path: 'terms',
                         pageBuilder: (context, state) => buildPage(
                           context: context,
                           state: state,
-                          child: ReportFeedbackDetailScreen(
-                            feedbackId:
-                                state.pathParameters["feedbackId"] ?? "",
-                            report: state.extra as ReportFeedbackEntity?,
+                          child: const TermsScreen(),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'report_feedback',
+                        pageBuilder: (context, state) => buildPage(
+                          context: context,
+                          state: state,
+                          child: ChangeNotifierProvider(
+                            create: (_) {
+                              final repo = ReportFeedbackRepositoryImpl();
+                              return ReportFeedbackViewModel(
+                                getReportFeedback: GetReportFeedback(repo),
+                              )..loadReports();
+                            },
+                            child: const ReportFeedbackScreen(),
                           ),
                         ),
+                        routes: [
+                          GoRoute(
+                            path: ':feedbackId',
+                            pageBuilder: (context, state) => buildPage(
+                              context: context,
+                              state: state,
+                              child: ReportFeedbackDetailScreen(
+                                feedbackId:
+                                    state.pathParameters["feedbackId"] ?? "",
+                                report: state.extra as ReportFeedbackEntity?,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-              GoRoute(
-                path: 'black_list',
-                pageBuilder: (context, state) => buildPage(
-                  context: context,
-                  state: state,
-                  child: ChangeNotifierProvider(
-                    create: (_) {
-                      final repo = BlacklistRepositoryImpl();
-                      return BlacklistViewModel(
-                        getBlacklist: GetBlacklist(repo),
-                        blockUser: BlockUser(repo),
-                        unblockUser: UnblockUser(repo),
-                      )..loadBlacklist();
-                    },
-                    child: const BlacklistScreen(),
+                  GoRoute(
+                    path: 'black_list',
+                    pageBuilder: (context, state) => buildPage(
+                      context: context,
+                      state: state,
+                      child: ChangeNotifierProvider(
+                        create: (_) {
+                          final repo = BlacklistRepositoryImpl();
+                          return BlacklistViewModel(
+                            getBlacklist: GetBlacklist(repo),
+                            blockUser: BlockUser(repo),
+                            unblockUser: UnblockUser(repo),
+                          )..loadBlacklist();
+                        },
+                        child: const BlacklistScreen(),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

@@ -49,123 +49,126 @@ class ItemBidResultBody extends StatelessWidget {
         final contentSpacing = isCompact ? spacing * 0.75 : spacing;
         final thumbnailAspect = isCompact ? 4 / 3 : 1.0;
 
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: onClose,
-              ),
-            ),
-            SizedBox(height: smallSpacing),
-            Icon(icon, size: iconSize, color: iconColor),
-            SizedBox(height: contentSpacing),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: titleFontSize,
-                fontWeight: FontWeight.w800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: smallSpacing),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: subtitleFontSize,
-                color: iconColor,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: contentSpacing),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: contentPadding),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: isCompact ? 280 : 320,
-                ),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: chatItemCardBackground,
-                    borderRadius: defaultBorder,
-                    boxShadow: [
-                      BoxShadow(
-                        color: shadowHigh,
-                        offset: const Offset(0, 4),
-                        blurRadius: 12,
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      FixedRatioThumbnail(
-                        imageUrl: item.images.isNotEmpty && item.images.first.isNotEmpty
-                            ? item.images.first
-                            : null,
-                        aspectRatio: thumbnailAspect,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(defaultRadius),
-                          topRight: Radius.circular(defaultRadius),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          contentPadding,
-                          smallSpacing,
-                          contentPadding,
-                          contentPadding,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: itemTitleFontSize,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(height: smallSpacing * 0.6),
-                            Text(
-                              priceLabel ?? '낙찰가',
-                              style: TextStyle(
-                                fontSize: priceLabelFontSize,
-                                color: iconColor,
-                              ),
-                            ),
-                            SizedBox(height: smallSpacing * 0.2),
-                            Text(
-                              '${formatPrice(item.winPrice)}원',
-                              style: TextStyle(
-                                fontSize: priceFontSize,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: onClose,
                 ),
               ),
-            ),
-            SizedBox(height: contentSpacing),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                contentPadding,
-                0,
-                contentPadding,
-                verticalPadding,
+              SizedBox(height: smallSpacing),
+              Icon(icon, size: iconSize, color: iconColor),
+              SizedBox(height: contentSpacing),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: titleFontSize,
+                  fontWeight: FontWeight.w800,
+                ),
+                textAlign: TextAlign.center,
               ),
-              child: Column(children: actions),
-            ),
-          ],
+              SizedBox(height: smallSpacing),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: subtitleFontSize,
+                  color: iconColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: contentSpacing),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: contentPadding),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: isCompact ? 280 : 320,
+                  ),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: chatItemCardBackground,
+                      borderRadius: defaultBorder,
+                      boxShadow: [
+                        BoxShadow(
+                          color: shadowHigh,
+                          offset: const Offset(0, 4),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FixedRatioThumbnail(
+                          imageUrl: item.images.isNotEmpty && item.images.first.isNotEmpty
+                              ? item.images.first
+                              : null,
+                          aspectRatio: thumbnailAspect,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(defaultRadius),
+                            topRight: Radius.circular(defaultRadius),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            contentPadding,
+                            smallSpacing,
+                            contentPadding,
+                            contentPadding,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: itemTitleFontSize,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(height: smallSpacing * 0.6),
+                              Text(
+                                priceLabel ?? '낙찰가',
+                                style: TextStyle(
+                                  fontSize: priceLabelFontSize,
+                                  color: iconColor,
+                                ),
+                              ),
+                              SizedBox(height: smallSpacing * 0.2),
+                              Text(
+                                '${formatPrice(item.winPrice)}원',
+                                style: TextStyle(
+                                  fontSize: priceFontSize,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: contentSpacing),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  contentPadding,
+                  0,
+                  contentPadding,
+                  verticalPadding,
+                ),
+                child: Column(children: actions),
+              ),
+            ],
+          ),
         );
       },
     );
