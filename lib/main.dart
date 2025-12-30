@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:bidbird/core/utils/app_platform/app_platform.dart';
 
 import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:bidbird/core/router/app_router.dart';
@@ -32,7 +33,6 @@ void main() async {
       AppInitializer.startPostInitTasks();
     }),
   );
-
 
   runApp(
     MultiProvider(
@@ -210,4 +210,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-

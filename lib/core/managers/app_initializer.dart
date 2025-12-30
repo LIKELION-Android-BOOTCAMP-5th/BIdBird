@@ -1,8 +1,6 @@
 import 'package:bidbird/core/config/supabase_config.dart';
 import 'package:bidbird/core/config/firebase_config.dart';
 
-
-
 import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
@@ -30,7 +28,6 @@ class AppInitializer {
   static Future<void> _initialize() async {
     CloudinaryObject.fromCloudName(cloudName: 'dn12so6sm');
 
-
     await Supabase.initialize(
       url: SupabaseConfig.url,
       anonKey: SupabaseConfig.anonKey,
@@ -38,7 +35,6 @@ class AppInitializer {
         localStorage: SecureLocalStorage(),
       ),
     );
-
 
     // Firebase 설정 로드
     await FirebaseConfig.initialize();
@@ -55,7 +51,6 @@ class AppInitializer {
     _firebaseInitFuture ??= Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-
 
     unawaited(
       _firebaseInitFuture!.catchError((e) {
