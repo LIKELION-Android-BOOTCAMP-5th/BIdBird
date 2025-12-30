@@ -9,9 +9,11 @@ import 'package:provider/provider.dart';
 
 /// 카드 3: 상세·확인
 class DetailConfirmCard extends StatelessWidget {
-  const DetailConfirmCard({super.key, required this.viewModel});
+  const DetailConfirmCard({super.key, required this.viewModel, this.addContentKey, this.addPDFKey});
 
   final ItemAddViewModel viewModel;
+  final GlobalKey? addContentKey;
+  final GlobalKey? addPDFKey;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +24,7 @@ class DetailConfirmCard extends StatelessWidget {
     final spacingSmall = context.spacingSmall;
     final fontSizeSmall = context.fontSizeSmall;
 
+
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       physics: const ClampingScrollPhysics(),
@@ -31,6 +34,7 @@ class DetailConfirmCard extends StatelessWidget {
         children: [
           // 상품 설명 입력
           ContentInputSection(
+            key: addContentKey,
             label: '상품 설명',
             controller: viewModel.descriptionController,
             hintText: '상품에 대한 상세한 설명을 입력하세요',
@@ -45,6 +49,7 @@ class DetailConfirmCard extends StatelessWidget {
           Consumer<ItemAddViewModel>(
             builder: (context, vm, _) {
               return Container(
+                key: addPDFKey,
                 width: double.infinity,
                 padding: EdgeInsets.all(spacingSmall),
                 decoration: BoxDecoration(

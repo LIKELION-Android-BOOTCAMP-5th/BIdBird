@@ -16,6 +16,7 @@ class CategorySelectorField extends StatelessWidget {
     required this.isLoading,
     this.hasError = false,
     this.onErrorCleared,
+    this.categoryKey,
   });
 
   /// 카테고리 목록 (id와 title 속성을 가진 객체 리스트)
@@ -35,6 +36,8 @@ class CategorySelectorField extends StatelessWidget {
 
   /// 에러 제거 콜백 (선택 사항)
   final VoidCallback? onErrorCleared;
+
+  final GlobalKey? categoryKey;
 
   String _getSelectedCategoryTitle() {
     if (selectedCategoryId == null) {
@@ -72,6 +75,7 @@ class CategorySelectorField extends StatelessWidget {
 
     if (isLoading) {
       return Container(
+        key: categoryKey,
         height: 48,
         alignment: Alignment.centerLeft,
         padding: EdgeInsets.symmetric(horizontal: inputPadding),

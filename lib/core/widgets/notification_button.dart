@@ -5,11 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class NotificationButton extends StatelessWidget {
-  const NotificationButton({super.key});
+  final GlobalKey? notificationKey;
+
+  const NotificationButton({super.key, this.notificationKey});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      key: notificationKey,
       onTap: () {
         context.push('/notifications');
       },

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:provider/provider.dart';
 
 import '../../../../core/utils/extension/money_extension.dart';
@@ -10,10 +9,20 @@ import '../viewmodel/home_viewmodel.dart';
 import 'home_timer_section.dart';
 
 class ItemCard extends StatelessWidget {
-  const ItemCard({super.key, required this.item, required this.title});
-
   final ItemsEntity item;
   final String title;
+  final GlobalKey? currentPriceKey;
+  final GlobalKey? biddingCountKey;
+  final GlobalKey? finishTimeKey;
+
+  const ItemCard({
+    super.key,
+    required this.item,
+    required this.title,
+    this.currentPriceKey,
+    this.biddingCountKey,
+    this.finishTimeKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +60,14 @@ class ItemCard extends StatelessWidget {
                       FixedRatioThumbnail(
                         imageUrl: item.thumbnail_image,
                         aspectRatio: 1.25,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
                       ),
 
                       if (!DateTime.now().isAfter(item.finishTime))
                         Positioned(
+                          key: finishTimeKey,
                           top: 6,
                           right: 6,
                           child: HomeTimerSection(finishTime: item.finishTime),
@@ -65,10 +77,10 @@ class ItemCard extends StatelessWidget {
                         Positioned.fill(
                           child: Container(
                             color: Colors.black.withOpacity(0.4), // 시각적 무게 조절
-                            child: const Center(
+                            child: Center(
                               child: Text(
                                 "종료된 상품",
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -90,6 +102,7 @@ class ItemCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
+                              key: currentPriceKey,
                               child: Text(
                                 "${item.auctions.current_price.toCommaString()}원",
                                 style: const TextStyle(
@@ -102,6 +115,7 @@ class ItemCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Row(
+                              key: biddingCountKey,
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(

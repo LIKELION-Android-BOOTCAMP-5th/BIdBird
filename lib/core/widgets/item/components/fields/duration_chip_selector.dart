@@ -12,6 +12,7 @@ class DurationChipSelector extends StatelessWidget {
     required this.selectedDuration,
     required this.onDurationSelected,
     this.onErrorCleared,
+    this.bidScheduleKey,
   });
 
   /// 선택 가능한 경매 기간 목록
@@ -26,6 +27,8 @@ class DurationChipSelector extends StatelessWidget {
   /// 에러 제거 콜백 (선택 사항)
   final VoidCallback? onErrorCleared;
 
+  final GlobalKey? bidScheduleKey;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -38,6 +41,7 @@ class DurationChipSelector extends StatelessWidget {
         final chipWidth = (availableWidth - (spacing * 3)) / 4; // 4개 배치: 간격 3개
 
         return Wrap(
+          key: bidScheduleKey,
           spacing: spacing,
           runSpacing: spacing,
           children: durations.map((duration) {
