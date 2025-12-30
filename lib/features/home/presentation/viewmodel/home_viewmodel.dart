@@ -5,6 +5,7 @@ import 'package:bidbird/core/utils/event_bus/item_event_bus.dart';
 import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
 import 'package:bidbird/main.dart';
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/items_entity.dart';
@@ -479,6 +480,16 @@ class HomeViewmodel extends ChangeNotifier {
     super.notifyListeners();
   }
 
+  // 튜토리얼을 봤는지 확인하는 함수
+  Future<bool> shouldShowTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('has_seen_home_tutorial') ?? true;
+  }
+
+  // 튜토리얼을 완료했음을 저장하는 함수
+  Future<void> markTutorialAsSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_home_tutorial', false);
   void _updateItemInList(ItemUpdateEvent event) {
     bool isChanged = false;
     for (final item in _items) {

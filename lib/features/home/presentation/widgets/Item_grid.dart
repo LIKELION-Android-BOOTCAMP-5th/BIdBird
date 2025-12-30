@@ -5,7 +5,15 @@ import '../viewmodel/home_viewmodel.dart';
 import 'item_card.dart';
 
 class ItemGrid extends StatelessWidget {
-  const ItemGrid({super.key});
+  final GlobalKey? currentPriceKey;
+  final GlobalKey? biddingCountKey;
+  final GlobalKey? finishTimeKey;
+  const ItemGrid({
+    super.key,
+    this.currentPriceKey,
+    this.biddingCountKey,
+    this.finishTimeKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +51,13 @@ class ItemGrid extends StatelessWidget {
                 final item = items[index];
                 final title = item.title;
 
-                return ItemCard(item: item, title: title);
+                return ItemCard(
+                  item: item,
+                  title: title,
+                  currentPriceKey: index == 0 ? currentPriceKey : null,
+                  biddingCountKey: index == 0 ? biddingCountKey : null,
+                  finishTimeKey: index == 0 ? finishTimeKey : null,
+                );
               },
               childCount: itemsLength,
               addAutomaticKeepAlives: false,

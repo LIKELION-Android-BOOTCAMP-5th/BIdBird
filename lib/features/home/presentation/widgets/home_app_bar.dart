@@ -6,11 +6,16 @@ import 'package:provider/provider.dart';
 import '../viewmodel/home_viewmodel.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const HomeAppBar({super.key});
+  final GlobalKey? searchKey;
+  final GlobalKey? notificationKey;
+
+  const HomeAppBar({super.key, this.searchKey, this.notificationKey});
 
   @override
   Widget build(BuildContext context) {
-    final bool searchMode = context.select<HomeViewmodel, bool>((vm) => vm.searchButton);
+    final bool searchMode = context.select<HomeViewmodel, bool>(
+      (vm) => vm.searchButton,
+    );
     return AppBar(
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -40,6 +45,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           Row(
             children: [
               GestureDetector(
+                key: searchKey,
                 onTap: () {
                   final vm = context.read<HomeViewmodel>();
                   vm.workSearchBar();
@@ -52,7 +58,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               const SizedBox(width: 25),
-              const NotificationButton(),
+              NotificationButton(notificationKey: notificationKey),
             ],
           ),
         ],
