@@ -134,55 +134,6 @@ class FirebaseManager {
       playSound: true,
     );
 
-    const commentChannel = AndroidNotificationChannel(
-      'comment_channel',
-      '댓글 알림',
-      description: '댓글이 달렸을 때 알림을 받습니다.',
-      importance: Importance.high,
-      playSound: true,
-    );
-
-    const likeChannel = AndroidNotificationChannel(
-      'like_channel',
-      '좋아요 알림',
-      description: '좋아요를 받았을 때 알림을 받습니다.',
-      importance: Importance.defaultImportance,
-      playSound: true,
-    );
-
-    const announcementChannel = AndroidNotificationChannel(
-      'announcement_channel',
-      '공지사항',
-      description: '중요한 공지사항을 받습니다.',
-      importance: Importance.max,
-      playSound: true,
-      enableVibration: true,
-    );
-
-    const followChannel = AndroidNotificationChannel(
-      'follow_channel',
-      '팔로우 알림',
-      description: '새로운 팔로워 알림을 받습니다.',
-      importance: Importance.defaultImportance,
-      playSound: true,
-    );
-
-    const postChannel = AndroidNotificationChannel(
-      'post_channel',
-      '게시글 알림',
-      description: '게시글 관련 알림을 받습니다.',
-      importance: Importance.defaultImportance,
-      playSound: true,
-    );
-
-    const messageChannel = AndroidNotificationChannel(
-      'message_channel',
-      '메시지 알림',
-      description: '메시지 알림을 받습니다.',
-      importance: Importance.high,
-      playSound: true,
-    );
-
     const AndroidNotificationChannel fcmChannel = AndroidNotificationChannel(
       'fcm_notification_channel',
       '일반 알림',
@@ -192,40 +143,7 @@ class FirebaseManager {
     );
 
     await androidPlugin.createNotificationChannel(generalChannel);
-    await androidPlugin.createNotificationChannel(commentChannel);
-    await androidPlugin.createNotificationChannel(likeChannel);
-    await androidPlugin.createNotificationChannel(announcementChannel);
-    await androidPlugin.createNotificationChannel(followChannel);
-    await androidPlugin.createNotificationChannel(postChannel);
-    await androidPlugin.createNotificationChannel(messageChannel);
     await androidPlugin.createNotificationChannel(fcmChannel);
-  }
-
-  // 동적 체널 생성자(채팅방)
-  static Future<String> createChatRoomChannel(String roomId) async {
-    if (!Platform.isAndroid) return 'chat_room_$roomId';
-
-    final androidPlugin = _localNotifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-
-    if (androidPlugin == null) return 'chat_room_$roomId';
-
-    final channelId = 'chat_room_$roomId';
-
-    final channel = AndroidNotificationChannel(
-      channelId,
-      '채팅 알림',
-      description: '채팅방 메시지 알림을 받습니다.',
-      importance: Importance.high,
-      playSound: true,
-      enableVibration: true,
-      showBadge: true,
-    );
-
-    await androidPlugin.createNotificationChannel(channel);
-    return channelId;
   }
 
   // 모르겠음 이건 뭐지......
