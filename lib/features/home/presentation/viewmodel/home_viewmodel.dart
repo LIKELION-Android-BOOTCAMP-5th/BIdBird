@@ -84,6 +84,9 @@ class HomeViewmodel extends ChangeNotifier {
   //ios fetch문제 잡기
   bool _isDisposed = false;
 
+  //리프래시 시 종료된 상품 안보이게
+  bool _isRefreshing = false;
+
   ///시작할 때 작동
   HomeViewmodel(this._homeRepository) {
     getKeywordList();
@@ -119,16 +122,16 @@ class HomeViewmodel extends ChangeNotifier {
     // 다시 업로드
     // 스크롤 fetch 설정 부분, 여기서 기본적인 fetch도 이루어짐
     scrollController.addListener(() {
-      if (isSearching == true) return;
+      if (_isRefreshing || isSearching) return;
+      if (!_hasMore || _items.isEmpty) return;
 
-      // 마지막에 도달하면 다음 페이지 로드
       if (scrollController.position.pixels >=
           scrollController.position.maxScrollExtent - 200) {
         fetchNextItems();
       }
     });
     if (_isDisposed) return;
-    fetchItems();
+    // fetchItems();
     //리얼 타임
     setupRealtimeSubscription();
   }
@@ -217,24 +220,29 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> handleRefresh() async {
-    String orderBy = setOrderBy(type);
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+
     _currentPage = 1;
     _items = [];
     _hasMore = true;
     _isFetching = false; // 캐시된 fetch 플래그 초기화
     notifyListeners();
-    _items = await _homeRepository.fetchItems(
-      orderBy,
-      currentIndex: _currentPage,
+
+    final result = await _homeRepository.fetchItems(
+      setOrderBy(type),
+      currentIndex: 1,
       keywordType: selectedKeywordId,
-      forceRefresh: true, // 강제 새로고침 - 캐시 무시
+      forceRefresh: true,
     );
-    // sortItemsByFinishTime();
+
+    _items = result;
+    _isRefreshing = false;
     notifyListeners();
   }
 
   Future<void> fetchNextItems() async {
-    if (_isFetching || !_hasMore) return;
+    if (_isFetching || _isRefreshing || !_hasMore) return;
 
     _isFetching = true;
 

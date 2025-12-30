@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    context.read<HomeViewmodel>().fetchItems();
     //  화면이 다 그려진 후 튜토리얼 실행
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final viewmodel = context.read<HomeViewmodel>();
