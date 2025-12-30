@@ -197,6 +197,11 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
         // 빈 상태일 때
         if (displayedItems.isEmpty) {
+          // 아직 초기화되지 않았다면 빈 화면 (배경)만 표시
+          if (!canLoadMore && !context.read<CurrentTradeViewModel>().isInitialized) {
+             return Container();
+          }
+
           return TransparentRefreshIndicator(
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
             child: Center(
