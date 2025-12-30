@@ -90,7 +90,6 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                       height: double.infinity,
                       fit: BoxFit.cover,
                       cacheWidth: targetPx,
-                      cacheHeight: targetPx,
                       gaplessPlayback: true,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
