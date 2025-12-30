@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
@@ -70,43 +71,39 @@ class TradeHistoryScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: TransparentRefreshIndicator(
-                  onRefresh: vm.refresh,
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: (n) => _onScrollNotification(n, vm),
-                    child: vm.items.isEmpty && vm.isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : vm.items.isEmpty
-                        ? Center(
-                            child: Text(
-                              '표시할 거래가 없습니다.',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: BorderColor,
+                child: vm.items.isEmpty && vm.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : vm.items.isEmpty
+                        ? UnifiedEmptyState(
+                            title: '표시할 거래가 없습니다.',
+                            subtitle: '거래 내역이 쌓이면 이곳에서 확인할 수 있습니다.',
+                            onRefresh: vm.refresh,
+                          )
+                        : TransparentRefreshIndicator(
+                            onRefresh: vm.refresh,
+                            child: NotificationListener<ScrollNotification>(
+                              onNotification: (n) => _onScrollNotification(n, vm),
+                              child: ListView.separated(
+                                itemCount: vm.items.length + (vm.hasMore ? 1 : 0),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  if (index >= vm.items.length) {
+                                    return const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 8),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final item = vm.items[index];
+                                  return _HistoryItem(item: item);
+                                },
                               ),
                             ),
-                          )
-                        : ListView.separated(
-                            itemCount: vm.items.length + (vm.hasMore ? 1 : 0),
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              if (index >= vm.items.length) {
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 8),
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                );
-                              }
-                              final item = vm.items[index];
-                              return _HistoryItem(item: item);
-                            },
                           ),
-                  ),
-                ),
               ),
             ],
           ),

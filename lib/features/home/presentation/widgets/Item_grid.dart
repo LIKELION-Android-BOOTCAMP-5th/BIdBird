@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,6 +24,23 @@ class ItemGrid extends StatelessWidget {
         builder: (context, viewModel, _) {
           final items = viewModel.items;
           final itemsLength = items.length;
+
+          if (viewModel.isLoading && items.isEmpty) {
+            return const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (items.isEmpty) {
+            return const SliverFillRemaining(
+              hasScrollBody: false,
+              child: UnifiedEmptyState(
+                title: '등록된 경매가 없습니다',
+                subtitle: '가장 먼저 상품을 등록해보세요!',
+              ),
+            );
+          }
 
           final double width = MediaQuery.of(context).size.width;
           int crossAxisCount = 2;
