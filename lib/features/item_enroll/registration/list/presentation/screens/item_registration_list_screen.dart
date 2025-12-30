@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
@@ -58,21 +59,10 @@ class ItemRegistrationListScreen extends StatelessWidget {
     }
 
     if (data.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inventory_2_outlined, size: 64, color: iconColor),
-            SizedBox(height: context.spacingMedium),
-            Text(
-              '등록할 매물이 없습니다.',
-              style: TextStyle(
-                fontSize: context.fontSizeMedium,
-                color: TextSecondary,
-              ),
-            ),
-          ],
-        ),
+      return UnifiedEmptyState(
+        title: '등록할 매물이 없습니다.',
+        subtitle: '새로운 상품을 등록해보세요!',
+        onRefresh: () async => context.read<ItemRegistrationListViewModel>().loadPendingItems(),
       );
     }
 

@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
@@ -202,30 +203,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
              return Container();
           }
 
-          return TransparentRefreshIndicator(
+          return UnifiedEmptyState(
+            title: '현재 거래내역이 없습니다',
+            subtitle: '새로운 상품을 등록하거나 입찰에 참여해보세요!',
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '현재 거래내역이 없습니다',
-                    style: TextStyle(
-                      fontSize: context.fontSizeMedium,
-                      color: TextSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '새로운 상품을 등록하거나 입찰에 참여해보세요!',
-                    style: TextStyle(
-                      fontSize: context.fontSizeSmall,
-                      color: TextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           );
         }
 

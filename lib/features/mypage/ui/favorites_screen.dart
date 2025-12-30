@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/extension/money_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
@@ -35,7 +36,11 @@ class FavoritesScreen extends StatelessWidget {
         ),
       );
     } else if (items.isEmpty) {
-      body = const Center(child: Text('관심 등록한 상품이 없습니다.'));
+      body = UnifiedEmptyState(
+        title: '관심 등록한 상품이 없습니다.',
+        subtitle: '마음에 드는 상품에 하트를 눌러보세요!',
+        onRefresh: vm.loadFavorites,
+      );
     } else {
       body = TransparentRefreshIndicator(
         onRefresh: vm.loadFavorites,
