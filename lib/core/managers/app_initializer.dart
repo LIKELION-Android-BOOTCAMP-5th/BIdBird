@@ -9,6 +9,7 @@ import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
 import 'package:cloudinary_flutter/cloudinary_object.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
@@ -41,6 +42,12 @@ class AppInitializer {
 
     // Firebase 설정 로드
     await FirebaseConfig.initialize();
+
+    // 카카오 로그인 초기화
+    KakaoSdk.init(
+      nativeAppKey: FirebaseConfig.kakaoNativeAppKey,
+      javaScriptAppKey: FirebaseConfig.kakaoJavaScriptAppKey,
+    );
 
     // Nhost & GraphQL Hive 초기화
     await initHiveForFlutter();
