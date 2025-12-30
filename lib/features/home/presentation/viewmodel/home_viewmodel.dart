@@ -439,6 +439,61 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   void setupRealtimeSubscription() {
+    // 기존 채널 정리
+    if (_actionRealtime != null) {
+      SupabaseManager.shared.supabase.removeChannel(_actionRealtime!);
+    }
+
+    _actionRealtime = SupabaseManager.shared.supabase
+        .channel('public:auctions')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'auctions',
+          callback: (payload) {
+            final newRecord = payload.newRecord;
+            final itemId = newRecord['item_id'] as String?;
+            if (itemId == null) return;
+
+            // 리스트에서 해당 아이템 찾기
+            final index = _items.indexWhere((e) => e.item_id == itemId);
+            if (index != -1) {
+              final item = _items[index];
+              bool isChanged = false;
+
+              final newBidCount = newRecord['bid_count'] as int?;
+              final newPrice = newRecord['current_price'] as int?;
+              final statusCode = newRecord['auction_status_code'] as int?;
+              final lastBidUserId = newRecord['last_bid_user_id'] as String?;
+
+              if (newBidCount != null && item.auctions.bid_count != newBidCount) {
+                item.auctions.bid_count = newBidCount;
+                isChanged = true;
+              }
+
+              if (newPrice != null && item.auctions.current_price != newPrice) {
+                item.auctions.current_price = newPrice;
+                isChanged = true;
+              }
+              
+              if (statusCode != null && item.auctions.auction_status_code != statusCode) {
+                item.auctions.auction_status_code = statusCode;
+                isChanged = true;
+              }
+
+              if (lastBidUserId != null && item.auctions.last_bid_user_id != lastBidUserId) {
+                item.auctions.last_bid_user_id = lastBidUserId;
+                isChanged = true;
+              }
+              
+              if (isChanged) {
+                notifyListeners();
+              }
+            }
+          },
+        )
+        .subscribe();
+
     // 폴링 시작 (6초마다 아이템 정렬 상태 확인)
     _startPolling();
   }
