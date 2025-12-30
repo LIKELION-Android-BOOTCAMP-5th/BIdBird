@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
@@ -146,12 +147,10 @@ class _NotificationScreenState extends State<NotificationScreen>
     return TransparentRefreshIndicator(
       onRefresh: viewModel.fetchNotify,
       child: viewModel.notifyList.isEmpty
-          ? SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.8,
-                child: const Center(child: Text('알림이 없습니다.')),
-              ),
+          ? UnifiedEmptyState(
+              title: '알림이 없습니다.',
+              subtitle: '새로운 소식이 도착하면 알려드릴게요!',
+              onRefresh: viewModel.fetchNotify,
             )
           : SlidableAutoCloseBehavior(
               child: ListView.separated(
