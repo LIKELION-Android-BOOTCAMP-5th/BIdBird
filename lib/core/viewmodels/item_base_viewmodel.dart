@@ -35,18 +35,19 @@ abstract class ItemBaseViewModel extends ChangeNotifier {
 
   /// 캐시 무효화
   void invalidateCache() {
-    _lastFetchTime = null;
+    // _lastFetchTime = null;
   }
 
   /// 캐시가 유효한지 확인
   bool isCacheValid(Duration cacheDuration) {
-    if (_lastFetchTime == null) return false;
-    return DateTime.now().difference(_lastFetchTime!) < cacheDuration;
+    // if (_lastFetchTime == null) return false;
+    // return DateTime.now().difference(_lastFetchTime!) < cacheDuration;
+    return false;
   }
 
   /// 캐시 타임스탬프 업데이트
   void updateCacheTime() {
-    _lastFetchTime = DateTime.now();
+    // _lastFetchTime = DateTime.now();
   }
 
   /// 로딩 시작 (에러 초기화 포함)

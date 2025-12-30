@@ -22,8 +22,8 @@ class FixedRatioThumbnail extends StatelessWidget {
   /// 이미지 URL
   final String? imageUrl;
 
-  /// 썸네일 비율 (기본값: 1:1)
-  final double aspectRatio;
+  /// 썸네일 비율 (기본값: 1:1, null이면 원본 비율 유지)
+  final double? aspectRatio;
 
   /// 모서리 둥글기
   final BorderRadius? borderRadius;
@@ -86,18 +86,11 @@ class FixedRatioThumbnail extends StatelessWidget {
                       return CachedNetworkImage(
                         imageUrl: transformedUrl,
                         cacheManager: ItemImageCacheManager.instance,
-                        fit: BoxFit.cover, // center crop
+                        fit: BoxFit.contain, // center crop
                         memCacheWidth: memWidth > 0 ? memWidth : null,
                         memCacheHeight: memHeight > 0 ? memHeight : null,
-                        placeholder: (context, url) => Container(color: shadowHigh),
-                        errorWidget: (context, url, error) => Container(
-                          color: ImageBackgroundColor,
-                          child: const Icon(
-                            Icons.image_outlined,
-                            color: iconColor,
-                            size: 32,
-                          ),
-                        ),
+                        placeholder: (context, url) => Container(),
+                        errorWidget: (context, url, error) => Container(),
                       );
                     },
                   ),
@@ -126,14 +119,7 @@ class FixedRatioThumbnail extends StatelessWidget {
                 if (overlay != null) Positioned.fill(child: overlay!),
               ],
             )
-          : Container(
-              color: ImageBackgroundColor,
-              child: const Icon(
-                Icons.image_outlined,
-                color: iconColor,
-                size: 32,
-              ),
-            ),
+          : Container(),
     );
 
     // 크기 지정
@@ -143,18 +129,18 @@ class FixedRatioThumbnail extends StatelessWidget {
       final w = width!;
       imageWidget = SizedBox(
         width: w,
-        height: w / aspectRatio,
+        height: aspectRatio != null ? w / aspectRatio! : null,
         child: imageWidget,
       );
     } else if (height != null) {
       final h = height!;
       imageWidget = SizedBox(
-        width: h * aspectRatio,
+        width: aspectRatio != null ? h * aspectRatio! : null,
         height: h,
         child: imageWidget,
       );
-    } else {
-      imageWidget = AspectRatio(aspectRatio: aspectRatio, child: imageWidget);
+    } else if (aspectRatio != null) {
+      imageWidget = AspectRatio(aspectRatio: aspectRatio!, child: imageWidget);
     }
 
     // 탭 핸들러

@@ -41,11 +41,11 @@ class UserProfileDatasource {
   
   // 캐시 무효화
   static void invalidateCache(String? userId) {
-    if (userId == null) {
-      _profileCache.clear();
-    } else {
-      _profileCache.remove(userId);
-    }
+    // if (userId == null) {
+    //   _profileCache.clear();
+    // } else {
+    //   _profileCache.remove(userId);
+    // }
   }
 
   Future<UserProfile> fetchUserProfile(String userId) async {

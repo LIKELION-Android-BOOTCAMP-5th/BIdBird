@@ -4,13 +4,17 @@
 import 'package:bidbird/features/notification/data/datasources/supabase_notification_datasource.dart';
 import 'package:bidbird/features/notification/domain/entities/notification_entity.dart';
 import 'package:bidbird/features/notification/domain/repositories/notification_repository.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationRepositoryImpl implements NotificationRepository {
   final SupabaseNotificationDatasource _supabaseNotificationDatasource =
       SupabaseNotificationDatasource();
   @override
   Future<List<NotificationEntity>> fetchNotify() async {
-    return await _supabaseNotificationDatasource.fetchNotify();
+    debugPrint('📦 Repository fetchNotifications 호출');
+    final result = await _supabaseNotificationDatasource.fetchNotify();
+    debugPrint('📦 Repository fetch 완료: ${result.length}');
+    return result;
   }
 
   @override

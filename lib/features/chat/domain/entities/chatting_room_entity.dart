@@ -5,8 +5,9 @@ class ChattingRoomEntity {
   final String? profileImage;
   final String? userNickname;
   String lastMessage;
-  String lastMessageSendAt;
+  String? lastMessageSendAt;
   final String itemTitle;
+  final int? auctionStatusCode;
   int? count;
   ChattingRoomEntity({
     required this.id,
@@ -17,6 +18,7 @@ class ChattingRoomEntity {
     required this.lastMessage,
     required this.lastMessageSendAt,
     required this.itemTitle,
+    this.auctionStatusCode,
     required this.count,
   });
   factory ChattingRoomEntity.fromJson(Map<String, dynamic> json) {
@@ -27,8 +29,9 @@ class ChattingRoomEntity {
       profileImage: json['profile_image'] as String?,
       userNickname: json['user_nickname'] as String? ?? "사용자",
       lastMessage: json['last_message'] as String,
-      lastMessageSendAt: json['last_message_send_at'] as String,
+      lastMessageSendAt: json['last_message_send_at'] as String?,
       itemTitle: json['item_title'] as String,
+      auctionStatusCode: json['auction_status_code'] as int?,
       count: int.tryParse(json['count'].toString()) ?? 0,
     );
   }
