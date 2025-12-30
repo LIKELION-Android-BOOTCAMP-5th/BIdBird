@@ -25,13 +25,6 @@ class ItemGrid extends StatelessWidget {
           final items = viewModel.items;
           final itemsLength = items.length;
 
-          if (viewModel.isLoading && items.isEmpty) {
-            return const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-
           if (items.isEmpty) {
             return const SliverFillRemaining(
               hasScrollBody: false,
