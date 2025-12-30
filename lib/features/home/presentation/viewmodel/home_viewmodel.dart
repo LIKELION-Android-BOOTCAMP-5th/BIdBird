@@ -110,6 +110,12 @@ class HomeViewmodel extends ChangeNotifier {
         setupRealtimeSubscription();
       }
     });
+
+    // 아이템 업데이트 이벤트 리스닝
+    eventBus.on<ItemUpdateEvent>().listen((event) {
+      _updateItemInList(event);
+    });
+
     // 다시 업로드
     // 스크롤 fetch 설정 부분, 여기서 기본적인 fetch도 이루어짐
     scrollController.addListener(() {
@@ -483,6 +489,30 @@ class HomeViewmodel extends ChangeNotifier {
     super.notifyListeners();
   }
 
+  void _updateItemInList(ItemUpdateEvent event) {
+    bool isChanged = false;
+    for (final item in _items) {
+      if (item.item_id == event.itemId) {
+        if (event.biddingCount != null &&
+            item.auctions.bid_count != event.biddingCount) {
+          item.auctions.bid_count = event.biddingCount!;
+          isChanged = true;
+        }
+
+        if (event.currentPrice != null &&
+            item.auctions.current_price != event.currentPrice) {
+          item.auctions.current_price = event.currentPrice!;
+          isChanged = true;
+        }
+        break;
+      }
+    }
+
+    if (isChanged) {
+      notifyListeners();
+    }
+  }
+
   // 튜토리얼을 봤는지 확인하는 함수
   Future<bool> shouldShowTutorial() async {
     final prefs = await SharedPreferences.getInstance();
@@ -493,28 +523,5 @@ class HomeViewmodel extends ChangeNotifier {
   Future<void> markTutorialAsSeen() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('has_seen_home_tutorial', false);
-    void _updateItemInList(ItemUpdateEvent event) {
-      bool isChanged = false;
-      for (final item in _items) {
-        if (item.item_id == event.itemId) {
-          if (event.biddingCount != null &&
-              item.auctions.bid_count != event.biddingCount) {
-            item.auctions.bid_count = event.biddingCount!;
-            isChanged = true;
-          }
-
-          if (event.currentPrice != null &&
-              item.auctions.current_price != event.currentPrice) {
-            item.auctions.current_price = event.currentPrice!;
-            isChanged = true;
-          }
-          break;
-        }
-      }
-
-      if (isChanged) {
-        notifyListeners();
-      }
-    }
   }
 }
