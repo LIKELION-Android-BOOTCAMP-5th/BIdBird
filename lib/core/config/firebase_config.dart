@@ -69,7 +69,7 @@ class FirebaseConfig {
     try {
       final supabase = SupabaseManager.shared.supabase;
       final response = await supabase.functions.invoke(
-        'firebase-config',
+        'FirebaseConfig',
         method: HttpMethod.get,
       );
 
