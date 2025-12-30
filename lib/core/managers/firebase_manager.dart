@@ -424,7 +424,7 @@ class FirebaseManager {
 
         //alarm_id, post_id, friend_id 등의 정보를 포함한 최종 라우트 생성
         //안드로이드에서 로컬푸시생성시 반드시 고유한 아이디가 필요해서 alarm테이블의 기본키를 사용할것
-        _markAlarmCheckedIfNeeded(fcmData);
+        await _markAlarmCheckedIfNeeded(fcmData);
         final String targetRoute = _generateRoute(alarmType, fcmData);
 
         if (alarmType == "WIN") {
@@ -462,7 +462,7 @@ class FirebaseManager {
     final String alarmType = fcmData['alarm_type']?.toString() ?? 'UNKNOWN';
 
     // _generateRoute 함수를 사용하여 알림 타입과 데이터에 맞는 라우팅 경로 생성
-    _markAlarmCheckedIfNeeded(fcmData);
+    await _markAlarmCheckedIfNeeded(fcmData);
     final String targetRoute = _generateRoute(alarmType, fcmData);
     if (alarmType == "WIN") {
       final String? itemId = fcmData['item_id'] as String;
