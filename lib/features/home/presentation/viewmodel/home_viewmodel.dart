@@ -102,12 +102,7 @@ class HomeViewmodel extends ChangeNotifier {
         setupRealtimeSubscription();
       }
     });
-
-    // 아이템 업데이트 이벤트 리스닝
-    eventBus.on<ItemUpdateEvent>().listen((event) {
-      _updateItemInList(event);
-    });
-
+    // 다시 업로드
     // 스크롤 fetch 설정 부분, 여기서 기본적인 fetch도 이루어짐
     scrollController.addListener(() {
       if (isSearching == true) return;
