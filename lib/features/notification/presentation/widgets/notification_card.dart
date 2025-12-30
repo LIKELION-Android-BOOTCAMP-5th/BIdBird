@@ -124,7 +124,7 @@ class NotificationCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: is_checked ? opponentMessageBubbleColor : Colors.white,
           borderRadius: defaultBorder,
           boxShadow: const [
             BoxShadow(color: shadowHigh, blurRadius: 10, offset: Offset(0, 4)),
@@ -211,26 +211,6 @@ class NotificationCard extends StatelessWidget {
                                       textAlign: TextAlign.left,
                                     ),
                                   ),
-                                  if (!is_checked)
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                        left: context.spacingSmall,
-                                      ),
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: context.spacingSmall,
-                                          vertical: 4,
-                                        ),
-                                        height: 10,
-                                        width: 10,
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius: BorderRadius.circular(
-                                            15,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
                                 ],
                               ),
                             ),
