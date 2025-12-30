@@ -9,9 +9,11 @@ import 'package:provider/provider.dart';
 
 /// 카드 3: 상세·확인
 class DetailConfirmCard extends StatelessWidget {
-  const DetailConfirmCard({super.key, required this.viewModel});
+  const DetailConfirmCard({super.key, required this.viewModel, this.addContentKey, this.addPDFKey});
 
   final ItemAddViewModel viewModel;
+  final GlobalKey? addContentKey;
+  final GlobalKey? addPDFKey;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +24,9 @@ class DetailConfirmCard extends StatelessWidget {
     final spacingSmall = context.spacingSmall;
     final fontSizeSmall = context.fontSizeSmall;
 
+
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
@@ -30,6 +34,7 @@ class DetailConfirmCard extends StatelessWidget {
         children: [
           // 상품 설명 입력
           ContentInputSection(
+            key: addContentKey,
             label: '상품 설명',
             controller: viewModel.descriptionController,
             hintText: '상품에 대한 상세한 설명을 입력하세요',
@@ -44,6 +49,7 @@ class DetailConfirmCard extends StatelessWidget {
           Consumer<ItemAddViewModel>(
             builder: (context, vm, _) {
               return Container(
+                key: addPDFKey,
                 width: double.infinity,
                 padding: EdgeInsets.all(spacingSmall),
                 decoration: BoxDecoration(
@@ -63,8 +69,11 @@ class DetailConfirmCard extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.file_present_outlined,
-                                  color: iconColor, size: 20),
+                              Icon(
+                                Icons.file_present_outlined,
+                                color: iconColor,
+                                size: 20,
+                              ),
                               SizedBox(width: spacingSmall),
                               Text(
                                 'PDF 보증서를 업로드하세요',
@@ -82,8 +91,9 @@ class DetailConfirmCard extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          ...List.generate(vm.selectedDocuments.length,
-                              (index) {
+                          ...List.generate(vm.selectedDocuments.length, (
+                            index,
+                          ) {
                             final doc = vm.selectedDocuments[index];
                             final fileName = doc.originalName;
                             return Container(
@@ -95,13 +105,17 @@ class DetailConfirmCard extends StatelessWidget {
                                 color: BackgroundColor,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                    color: BorderColor.withOpacity(0.3)),
+                                  color: BorderColor.withOpacity(0.3),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.description_outlined,
-                                      size: 14, color: blueColor),
+                                  Icon(
+                                    Icons.description_outlined,
+                                    size: 14,
+                                    color: blueColor,
+                                  ),
                                   const SizedBox(width: 4),
                                   Flexible(
                                     child: Text(
@@ -117,8 +131,11 @@ class DetailConfirmCard extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   GestureDetector(
                                     onTap: () => vm.removeDocumentAt(index),
-                                    child: Icon(Icons.close,
-                                        size: 14, color: iconColor),
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 14,
+                                      color: iconColor,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -133,8 +150,11 @@ class DetailConfirmCard extends StatelessWidget {
                                   color: blueColor.withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child:
-                                    Icon(Icons.add, size: 16, color: blueColor),
+                                child: Icon(
+                                  Icons.add,
+                                  size: 16,
+                                  color: blueColor,
+                                ),
                               ),
                             ),
                         ],

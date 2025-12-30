@@ -5,23 +5,39 @@ import '../viewmodel/home_viewmodel.dart';
 import 'item_card.dart';
 
 class ItemGrid extends StatelessWidget {
-  const ItemGrid({super.key});
+  final GlobalKey? currentPriceKey;
+  final GlobalKey? biddingCountKey;
+  final GlobalKey? finishTimeKey;
+  const ItemGrid({
+    super.key,
+    this.currentPriceKey,
+    this.biddingCountKey,
+    this.finishTimeKey,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 15),
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 20, top: 10),
       sliver: Consumer<HomeViewmodel>(
         builder: (context, viewModel, _) {
           final items = viewModel.items;
           final itemsLength = items.length;
 
+          final double width = MediaQuery.of(context).size.width;
+          int crossAxisCount = 2;
+          if (width >= 900) {
+            crossAxisCount = 4;
+          } else if (width >= 600) {
+            crossAxisCount = 3;
+          }
+
           return SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.85,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: 0.9, // 오버플로우 해결을 위해 비율 조정
+              mainAxisSpacing: 5, // 간격 늘리기
+              crossAxisSpacing: 12,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -35,7 +51,13 @@ class ItemGrid extends StatelessWidget {
                 final item = items[index];
                 final title = item.title;
 
-                return ItemCard(item: item, title: title);
+                return ItemCard(
+                  item: item,
+                  title: title,
+                  currentPriceKey: index == 0 ? currentPriceKey : null,
+                  biddingCountKey: index == 0 ? biddingCountKey : null,
+                  finishTimeKey: index == 0 ? finishTimeKey : null,
+                );
               },
               childCount: itemsLength,
               addAutomaticKeepAlives: false,

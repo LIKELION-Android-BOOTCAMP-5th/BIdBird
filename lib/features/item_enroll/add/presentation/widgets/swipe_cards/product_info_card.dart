@@ -17,11 +17,15 @@ class ProductInfoCard extends StatefulWidget {
     required this.viewModel,
     required this.onImageSourceTap,
     required this.inputDecoration,
+    this.addPhotoKey,
+    this.addTitleKey,
   });
 
   final ItemAddViewModel viewModel;
   final VoidCallback onImageSourceTap;
   final InputDecoration Function(String hint) inputDecoration;
+  final GlobalKey? addPhotoKey;
+  final GlobalKey? addTitleKey;
 
   @override
   State<ProductInfoCard> createState() => ProductInfoCardState();
@@ -70,6 +74,7 @@ class ProductInfoCardState extends State<ProductInfoCard>
     final fontSizeSmall = context.fontSizeSmall;
 
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
@@ -80,6 +85,7 @@ class ProductInfoCardState extends State<ProductInfoCard>
           Consumer<ItemAddViewModel>(
             builder: (context, vm, _) {
               return SquareImageUploadSection(
+                key: widget.addPhotoKey,
                 images: vm.selectedImages,
                 onImageSourceTap: widget.onImageSourceTap,
                 onImageTap: (index) => vm.setPrimaryImage(index),
@@ -109,6 +115,7 @@ class ProductInfoCardState extends State<ProductInfoCard>
               FormLabel(text: '제목'),
               RepaintBoundary(
                 child: TextField(
+                  key: widget.addTitleKey,
                   controller: widget.viewModel.titleController,
                   maxLength: ItemTextLimits.maxTitleLength,
                   decoration: widget

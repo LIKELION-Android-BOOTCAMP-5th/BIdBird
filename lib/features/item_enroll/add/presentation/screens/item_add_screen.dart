@@ -1,9 +1,9 @@
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart'
     show parseFormattedPrice;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
@@ -13,10 +13,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/item_add_viewmodel.dart';
+import '../widgets/coach_mark/item-add_tutorial_controller.dart';
 import '../widgets/step_indicator.dart';
-import '../widgets/swipe_cards/product_info_card.dart';
-import '../widgets/swipe_cards/price_auction_card.dart';
 import '../widgets/swipe_cards/detail_confirm_card.dart';
+import '../widgets/swipe_cards/price_auction_card.dart';
+import '../widgets/swipe_cards/product_info_card.dart';
 
 class ItemAddScreen extends StatefulWidget {
   const ItemAddScreen({super.key});
@@ -26,6 +27,20 @@ class ItemAddScreen extends StatefulWidget {
 }
 
 class _ItemAddScreenState extends State<ItemAddScreen> {
+  late final ItemAddTutorialController _tutorialController;
+
+  //스탭 0
+  final GlobalKey _cycleKey = GlobalKey();
+  final GlobalKey _addPhotoKey = GlobalKey();
+  final GlobalKey _addTitleKey = GlobalKey();
+  //스탭 1
+  final GlobalKey _startPriceKey = GlobalKey();
+  final GlobalKey _bidScheduleKey = GlobalKey();
+  final GlobalKey _categoryKey = GlobalKey();
+  //스탭 2
+  final GlobalKey _addContentKey = GlobalKey();
+  final GlobalKey _addPDFKey = GlobalKey();
+
   final PageController _pageController = PageController();
   int _currentStep = 0;
 
@@ -108,6 +123,27 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   }
 
   void _handlePageChange(int index, ItemAddViewModel viewModel) {
+    // UI 안정화 후 튜토리얼 표시
+    setState(() => _currentStep = index);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!mounted) return;
+
+      _tutorialController.show(
+        context: context,
+        step: index,
+        cycleKey: _cycleKey,
+        addPhotoKey: _addPhotoKey,
+        addTitleKey: _addTitleKey,
+        startPriceKey: _startPriceKey,
+        bidScheduleKey: _bidScheduleKey,
+        categoryKey: _categoryKey,
+        addContentKey: _addContentKey,
+        addPDFKey: _addPDFKey,
+      );
+    });
     // 이전 페이지로 돌아가는 경우는 검증하지 않음
     if (index <= _currentStep) {
       setState(() {
@@ -189,10 +225,73 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
 
   Widget _buildDualButtonBar(ItemAddViewModel viewModel) {
     if (_currentStep == 0) {
-      // 첫 번째 단계에서는 제목 변경을 감지
       return ValueListenableBuilder<TextEditingValue>(
         valueListenable: viewModel.titleController,
         builder: (context, titleValue, _) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: SecondaryButton(
+                  text: '이전',
+                  onPressed: () => _goToStep(_currentStep - 1),
+                  width: null,
+                ),
+              ),
+              SizedBox(width: context.spacingSmall),
+              Expanded(
+                child: PrimaryButton(
+                  text: _getNextButtonText(),
+                  onPressed: () => _handleNextButtonPress(viewModel),
+                  isEnabled:
+                      _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+                  width: null,
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } else if (_currentStep == 1) {
+      // Step 1: Price/Auction checks startPrice, duration, and category
+      return ValueListenableBuilder<TextEditingValue>(
+        valueListenable: viewModel.startPriceController,
+        builder: (context, priceValue, _) {
+          return Selector<ItemAddViewModel, ({String? duration, int? keywordId})>(
+            selector: (_, vm) => (
+              duration: vm.selectedDuration,
+              keywordId: vm.selectedKeywordTypeId,
+            ),
+            builder: (context, data, _) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: SecondaryButton(
+                      text: '이전',
+                      onPressed: () => _goToStep(_currentStep - 1),
+                      width: null,
+                    ),
+                  ),
+                  SizedBox(width: context.spacingSmall),
+                  Expanded(
+                    child: PrimaryButton(
+                      text: _getNextButtonText(),
+                      onPressed: () => _handleNextButtonPress(viewModel),
+                      isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+                      width: null,
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } else if (_currentStep == 2) {
+      return ValueListenableBuilder<TextEditingValue>(
+        valueListenable: viewModel.descriptionController,
+        builder: (context, descValue, _) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -217,7 +316,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
         },
       );
     } else {
-      // 다른 단계에서는 제목 감지하지 않음
+      // Others
       return Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -275,6 +374,28 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     super.initState();
     _viewModel = context.read<ItemAddViewModel>();
     _decorationCache = {};
+
+    _tutorialController = ItemAddTutorialController();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      bool isFirstTutorial = await _viewModel.shouldShowTutorial();
+
+      if (isFirstTutorial) {
+        _tutorialController.show(
+          context: context,
+          step: 0,
+          cycleKey: _cycleKey,
+          addPhotoKey: _addPhotoKey,
+          addTitleKey: _addTitleKey,
+          startPriceKey: _startPriceKey,
+          bidScheduleKey: _bidScheduleKey,
+          categoryKey: _categoryKey,
+          addContentKey: _addContentKey,
+          addPDFKey: _addPDFKey,
+        );
+        await _viewModel.markTutorialAsSeen();
+      }
+    });
   }
 
   @override
@@ -287,14 +408,9 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   Widget build(BuildContext context) {
     // 이미지 개수, 제출 상태를 감지하여 버튼 활성화 상태 업데이트
     // 제목은 별도로 감지하여 불필요한 재빌드 방지
-    return Selector<
-      ItemAddViewModel,
-      ({int imageCount, bool isSubmitting})
-    >(
-      selector: (_, vm) => (
-        imageCount: vm.selectedImages.length,
-        isSubmitting: vm.isSubmitting,
-      ),
+    return Selector<ItemAddViewModel, ({int imageCount, bool isSubmitting})>(
+      selector: (_, vm) =>
+          (imageCount: vm.selectedImages.length, isSubmitting: vm.isSubmitting),
       builder: (context, data, _) {
         final viewModel = _viewModel;
 
@@ -317,6 +433,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                 children: [
                   // 스텝 인디케이터
                   StepIndicator(
+                    key: _cycleKey,
                     currentStep: _currentStep,
                     totalSteps: 3,
                     stepLabels: _stepLabels,
@@ -331,6 +448,8 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                       children: [
                         // 카드 1: 상품 정보
                         ProductInfoCard(
+                          addPhotoKey: _addPhotoKey,
+                          addTitleKey: _addTitleKey,
                           viewModel: viewModel,
                           onImageSourceTap: () =>
                               _showImageSourceSheet(context, viewModel),
@@ -338,11 +457,18 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                         ),
                         // 카드 2: 가격·경매
                         PriceAuctionCard(
+                          startPriceKey: _startPriceKey,
+                          bidScheduleKey: _bidScheduleKey,
+                          categoryKey: _categoryKey,
                           viewModel: viewModel,
                           inputDecoration: (hint) => _inputDecoration(hint),
                         ),
                         // 카드 3: 상세·확인
-                        DetailConfirmCard(viewModel: viewModel),
+                        DetailConfirmCard(
+                          addContentKey: _addContentKey,
+                          addPDFKey: _addPDFKey,
+                          viewModel: viewModel,
+                        ),
                       ],
                     ),
                   ),

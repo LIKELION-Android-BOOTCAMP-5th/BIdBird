@@ -2,36 +2,35 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
-
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/managers/item_image_cache_manager.dart';
+import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
+import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
+import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart'
     show parseFormattedPrice, formatNumber;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_validator.dart';
-import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
-
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/features/item_enroll/add/data/repositories/edit_item_repository.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/item_add_repository.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/keyword_repository.dart';
-import 'package:bidbird/features/item_enroll/add/data/repositories/edit_item_repository.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_validator.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/add_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_edit_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_keyword_types_usecase.dart';
-import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/orchestrations/item_enroll_flow_usecase.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
-import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
-import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
+import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PickedDocument {
   final File file;
@@ -70,8 +69,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
   final TextEditingController descriptionController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
-
-
 
   List<XFile> selectedImages = <XFile>[];
   List<PickedDocument> selectedDocuments = <PickedDocument>[]; // PDF 보증서 목록
@@ -201,7 +198,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
           return PickedDocument(
             file: File(file.path!),
             originalName: file.name,
-            size: file.size ?? 0,
+            size: file.size,
           );
         }).toList();
         
@@ -291,7 +288,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
       try {
         await Future.wait([
           loadExistingImages(editItem.imageUrls),
-          loadExistingDocuments(editItem.documentUrls, editItem.documentNames, editItem.documentSizes),
+          loadExistingDocuments(
+            editItem.documentUrls,
+            editItem.documentNames,
+            editItem.documentSizes,
+          ),
         ]);
       } catch (e) {
         // 에러는 로그에만 남기고 사용자에게는 알리지 않음
@@ -326,8 +327,13 @@ class ItemAddViewModel extends ItemBaseViewModel {
       notifyListeners(); // 실패 시에도 UI 업데이트 필요
     }
   }
+
   /// 수정 모드에서 기존 문서를 불러와 selectedDocuments에 채웁니다.
-  Future<void> loadExistingDocuments(List<String> documentUrls, List<String>? documentNames, List<int>? documentSizes) async {
+  Future<void> loadExistingDocuments(
+    List<String> documentUrls,
+    List<String>? documentNames,
+    List<int>? documentSizes,
+  ) async {
     if (documentUrls.isEmpty) return;
 
     _dio ??= Dio();
@@ -338,9 +344,18 @@ class ItemAddViewModel extends ItemBaseViewModel {
         documentUrls.asMap().entries.map((entry) {
           final idx = entry.key;
           final url = entry.value;
-          final name = (documentNames != null && documentNames.length > idx) ? documentNames[idx] : null;
-          final size = (documentSizes != null && documentSizes.length > idx) ? documentSizes[idx] : 0;
-          return _downloadSingleDocument(dio, url, originalName: name, originalSize: size);
+          final name = (documentNames != null && documentNames.length > idx)
+              ? documentNames[idx]
+              : null;
+          final size = (documentSizes != null && documentSizes.length > idx)
+              ? documentSizes[idx]
+              : 0;
+          return _downloadSingleDocument(
+            dio,
+            url,
+            originalName: name,
+            originalSize: size,
+          );
         }),
         eagerError: false,
       );
@@ -356,7 +371,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
   }
 
   Future<PickedDocument?> _downloadSingleDocument(
-    Dio dio, 
+    Dio dio,
     String url, {
     String? originalName,
     int? originalSize,
@@ -369,11 +384,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
 
       final fileName = originalName ?? url.split('/').last;
       final size = originalSize ?? (response.data?.length ?? 0);
-      
-      final tempPath = '${Directory.systemTemp.path}/${url.split('/').last}'; // Keep UUID for temp file system
+
+      final tempPath =
+          '${Directory.systemTemp.path}/${url.split('/').last}'; // Keep UUID for temp file system
       final file = File(tempPath);
       await file.writeAsBytes(response.data ?? <int>[]);
-      
+
       return PickedDocument(file: file, originalName: fileName, size: size);
     } catch (e) {
       return null;
@@ -520,8 +536,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
         return;
       }
 
-      final List<String> documentOriginalNames = selectedDocuments.map((doc) => doc.originalName).toList();
-      final List<int> documentSizes = selectedDocuments.map((doc) => doc.size).toList();
+      final List<String> documentOriginalNames = selectedDocuments
+          .map((doc) => doc.originalName)
+          .toList();
+      final List<int> documentSizes = selectedDocuments
+          .map((doc) => doc.size)
+          .toList();
 
       final (success, failure) = await _itemEnrollFlowUseCase.enroll(
         itemData: itemData,
@@ -675,5 +695,17 @@ class ItemAddViewModel extends ItemBaseViewModel {
     if (isOpen && navigator.canPop()) {
       navigator.pop();
     }
+  }
+
+  // 튜토리얼을 봤는지 확인하는 함수
+  Future<bool> shouldShowTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('has_seen_item_add_tutorial') ?? true;
+  }
+
+  // 튜토리얼을 완료했음을 저장하는 함수
+  Future<void> markTutorialAsSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_item_add_tutorial', false);
   }
 }

@@ -88,7 +88,7 @@ class ItemDetailSummarySection extends StatelessWidget {
         children: [
           const SizedBox(height: 32),
           Text(
-            '현재 입찰가',
+            item.itemTitle,
             style: TextStyle(
               fontSize: labelFontSize,
               color: const Color(0xFF6B7684),

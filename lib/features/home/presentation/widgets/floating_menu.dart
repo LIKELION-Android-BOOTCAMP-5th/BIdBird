@@ -1,11 +1,14 @@
+import 'package:bidbird/core/managers/nhost_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:bidbird/core/managers/nhost_manager.dart';
+
 import '../../../../core/utils/ui_set/colors_style.dart';
 import 'floating_item.dart';
 
 class FloatingMenu extends StatefulWidget {
-  const FloatingMenu({super.key});
+  final GlobalKey? fabKey; // 1. 키를 받을 변수 추가
+
+  const FloatingMenu({super.key, this.fabKey}); // 2. 생성자에 추가
 
   @override
   State<FloatingMenu> createState() => _FloatingMenuState();
@@ -15,9 +18,6 @@ class _FloatingMenuState extends State<FloatingMenu> {
   bool _open = false;
 
   Future<void> _verifiedPush(String route) async {
-    // TODO: 사업자 인증 후 아래 주석 해제
-    // final verified = await ensureIdentityVerified(context);
-    // if (!verified) return;
     context.push(route);
   }
 
@@ -25,7 +25,6 @@ class _FloatingMenuState extends State<FloatingMenu> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 펼쳐진 메뉴
         if (_open)
           Positioned(
             bottom: 90,
@@ -37,21 +36,9 @@ class _FloatingMenuState extends State<FloatingMenu> {
                   icon: Icons.edit_outlined,
                   onTap: () async {
                     setState(() => _open = false);
-                    
-                    // Nhost 동적 초기화 (백그라운드/지연 초기화)
                     if (!NhostManager.shared.isInitialized) {
-                      try {
-                        await NhostManager.shared.initialize();
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('서버 설정을 불러오는데 실패했습니다.')),
-                          );
-                        }
-                        return;
-                      }
+                      await NhostManager.shared.initialize();
                     }
-                    
                     _verifiedPush('/add_item');
                   },
                 ),
@@ -61,21 +48,9 @@ class _FloatingMenuState extends State<FloatingMenu> {
                   icon: Icons.check_circle_outline,
                   onTap: () async {
                     setState(() => _open = false);
-                    
-                    // 매물 등록 목록 확인 시에도 Nhost 초기화 필요할 수 있음
                     if (!NhostManager.shared.isInitialized) {
-                      try {
-                        await NhostManager.shared.initialize();
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('서버 설정을 불러오는데 실패했습니다.')),
-                          );
-                        }
-                        return;
-                      }
+                      await NhostManager.shared.initialize();
                     }
-                    
                     _verifiedPush('/add_item/item_registration_list');
                   },
                 ),
@@ -83,14 +58,19 @@ class _FloatingMenuState extends State<FloatingMenu> {
             ),
           ),
 
-        // FAB 버튼
+        // FAB 버튼 (Requirement 8 & 9: Static but opaque)
         Positioned(
           bottom: 16,
           right: 16,
-          child: FloatingActionButton(
-            backgroundColor: blueColor,
-            onPressed: () => setState(() => _open = !_open),
-            child: Icon(_open ? Icons.close : Icons.add, color: Colors.white),
+          child: Transform.scale(
+            scale: 0.9,
+            child: FloatingActionButton(
+              key: widget.fabKey,
+              shape: const CircleBorder(),
+              backgroundColor: blueColor,
+              onPressed: () => setState(() => _open = !_open),
+              child: Icon(_open ? Icons.close : Icons.add, color: Colors.white),
+            ),
           ),
         ),
       ],

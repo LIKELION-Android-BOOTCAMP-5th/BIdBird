@@ -10,9 +10,9 @@ class FavoritesViewModel extends ChangeNotifier {
     required GetFavorites getFavorites,
     required AddFavorite addFavorite,
     required RemoveFavorite removeFavorite,
-  })  : _getFavorites = getFavorites,
-        _addFavorite = addFavorite,
-        _removeFavorite = removeFavorite;
+  }) : _getFavorites = getFavorites,
+       _addFavorite = addFavorite,
+       _removeFavorite = removeFavorite;
 
   final GetFavorites _getFavorites;
   final AddFavorite _addFavorite;

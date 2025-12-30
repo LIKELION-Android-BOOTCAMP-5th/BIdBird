@@ -47,6 +47,4 @@ app.*.map.json
 pubspec.lock
 Podfile.lock
 devtools_options.yaml
-.env
-.env.*
-!.env.example
+ios/Podfile.lock

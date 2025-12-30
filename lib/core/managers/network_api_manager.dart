@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'package:bidbird/core/config/supabase_config.dart';
+import 'package:bidbird/core/config/ssl_pinning_config.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:dio/io.dart';
+import 'package:flutter/foundation.dart';
 
 class NetworkApiManager {
   static final NetworkApiManager _shared = NetworkApiManager();
@@ -8,21 +12,35 @@ class NetworkApiManager {
   static NetworkApiManager get shared => _shared;
   final dio = Dio();
 
-  NetworkApiManager();
-
-  //위에것은 걍 정의하는 것임
-  static final String supabaseUrl =
-      (dotenv.env['SUPABASE_API_URL']?.isNotEmpty ?? false)
-          ? (dotenv.env['SUPABASE_API_URL'] ?? '')
-          : _deriveRestBase(dotenv.env['SUPABASE_URL']);
-  static final String apiKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-
-  static String _deriveRestBase(String? supabaseUrl) {
-    final base = (supabaseUrl ?? '').trim();
-    if (base.isEmpty) return '';
-    final normalized = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
-    return '$normalized/rest/v1';
+  NetworkApiManager() {
+    _configureSslPinning();
   }
+
+  void _configureSslPinning() {
+    if (dio.httpClientAdapter is! IOHttpClientAdapter) {
+      debugPrint('[SSL Pinning] Not IOHttpClientAdapter, skipping');
+      return;
+    }
+
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) {
+        return SslPinningConfig.validateCertificate(cert, host);
+      };
+      
+      return client;
+    };
+    
+    debugPrint('[SSL Pinning] Certificate Fingerprint Pinning configured');
+    debugPrint('[SSL Pinning] Protected domain: ${SslPinningConfig.supabaseDomain}');
+  }
+
+  static final String supabaseUrl = '${SupabaseConfig.url}/rest/v1';
+  static final String apiKey = SupabaseConfig.anonKey;
+
+
+
 
   static final Map<String, String> headers = {
     'apikey': apiKey,

@@ -7,6 +7,7 @@ import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_
 import 'package:bidbird/features/mypage/domain/entities/trade_history_entity.dart';
 import 'package:bidbird/features/mypage/viewmodel/trade_history_viewmodel.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -28,19 +29,20 @@ class TradeHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final vm = context.read<TradeHistoryViewModel>();
+    final vm = context
+        .watch<
+          TradeHistoryViewModel
+        >(); //read로해놨었는데로딩인디케이터만보이는현상있어서watch해보니까돼서그냥이렇게하기로함
     final role = context.select<TradeHistoryViewModel, TradeRole>(
       (vm) => vm.role,
     );
-    final statusFilter = context.select<TradeHistoryViewModel, int?>(
-      (vm) => vm.statusFilter,
+    final statusFilter = context.select<TradeHistoryViewModel, List<int>?>(
+      (vm) => vm.statusFilters,
     );
 
-    final statusOptions =
-        (role == TradeRole.seller ? _sellerFilterCodes : _buyerFilterCodes)
-            .map(_statusInfoText)
-            .whereType<_StatusInfo>()
-            .toList();
+    final statusOptions = role == TradeRole.seller
+        ? _sellerFilterGroups
+        : _buyerFilterGroups;
 
     return Scaffold(
       backgroundColor: BackgroundColor,
@@ -172,6 +174,13 @@ class _StatusInfo {
   final Color color;
 }
 
+class _StatusFilterGroup {
+  const _StatusFilterGroup({required this.label, required this.codes});
+
+  final String label;
+  final List<int> codes;
+}
+
 //favorites처럼이부분도repository로빼는게맞겠음
 // 즉시구매자는일단last_bid_user_id에바로기록되고즉시구매에실패하면이전의상위입찰자가last_bid_user_id가되는방식임
 //판매자는 500번대>>300번대
@@ -190,13 +199,13 @@ _StatusInfo? _statusInfoText(int code) {
     case 321:
       return const _StatusInfo(
         code: 321,
-        label: '경매종료(낙찰)',
+        label: '낙찰종료',
         color: tradeSaleDoneColor,
       );
     case 322:
       return const _StatusInfo(
         code: 322,
-        label: '경매종료(즉시구매)',
+        label: '즉시구매종료',
         color: tradeSaleDoneColor,
       );
     case 323:
@@ -272,36 +281,22 @@ _StatusInfo? _statusInfoText(int code) {
   }
 }
 
-const List<int> _sellerFilterCodes = [
-  // 300,
-  310,
-  311,
-  321,
-  322,
-  323,
-  510,
-  520,
-  530,
-  540,
-  550,
+const List<_StatusFilterGroup> _sellerFilterGroups = [
+  _StatusFilterGroup(label: '진행중', codes: [310, 311]),
+  _StatusFilterGroup(label: '종료', codes: [321, 322]),
+  _StatusFilterGroup(label: '유찰', codes: [323]),
+  _StatusFilterGroup(label: '결제중', codes: [510, 520, 530]),
+  _StatusFilterGroup(label: '거래완료', codes: [550]),
+  _StatusFilterGroup(label: '거래취소', codes: [540]),
 ];
 
-const List<int> _buyerFilterCodes = [
-  // 400,
-  410,
-  411,
-  420,
-  421,
-  422,
-  430,
-  431,
-  432,
-  433,
-  510,
-  520,
-  530,
-  540,
-  550,
+const List<_StatusFilterGroup> _buyerFilterGroups = [
+  _StatusFilterGroup(label: '진행중', codes: [410, 411, 420, 421, 422]),
+  _StatusFilterGroup(label: '종료', codes: [430, 431]),
+  _StatusFilterGroup(label: '패찰', codes: [432, 433]),
+  _StatusFilterGroup(label: '결제중', codes: [510, 520, 530]),
+  _StatusFilterGroup(label: '거래완료', codes: [550]),
+  _StatusFilterGroup(label: '거래취소', codes: [540]),
 ];
 
 class _Filters extends StatelessWidget {
@@ -311,9 +306,9 @@ class _Filters extends StatelessWidget {
     required this.onSelected,
   });
 
-  final List<_StatusInfo> options;
-  final int? selected;
-  final ValueChanged<int?> onSelected;
+  final List<_StatusFilterGroup> options;
+  final List<int>? selected;
+  final ValueChanged<List<int>> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -322,22 +317,21 @@ class _Filters extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: options.map((option) {
+          final isSelected = listEquals(selected, option.codes);
           return Padding(
             padding: const EdgeInsets.only(right: 4),
             child: ChoiceChip(
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               label: Text(option.label),
-              selected: selected == option.code,
-              onSelected: (_) => onSelected(option.code),
+              selected: isSelected,
+              onSelected: (_) => onSelected(option.codes),
               showCheckmark: false,
               selectedColor: blueColor.withValues(alpha: 0.1),
-              labelStyle: TextStyle(
-                color: selected == option.code ? blueColor : textColor,
-              ),
+              labelStyle: TextStyle(color: isSelected ? blueColor : textColor),
               backgroundColor: Colors.white,
               shape: StadiumBorder(
                 side: BorderSide(
-                  color: selected == option.code
+                  color: isSelected
                       ? blueColor.withValues(alpha: 0.5)
                       : BorderColor.withValues(alpha: 0.5),
                 ),

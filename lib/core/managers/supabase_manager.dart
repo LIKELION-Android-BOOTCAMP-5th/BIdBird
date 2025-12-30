@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bidbird/core/config/firebase_config.dart';
+
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -32,15 +33,15 @@ class SupabaseManager {
   }
 
   Future<void> googleSignIn() async {
-    final webClientId = dotenv.env['GOOGLE_SIGN_IN_WEB_CLIENT_ID'];
-
-    final iosClientId = dotenv.env['GOOGLE_SIGN_IN_IOS_CLIENT_ID'];
+    final webClientId = FirebaseConfig.googleWebClientId;
+    final iosClientId = FirebaseConfig.googleIosClientId;
 
     final GoogleSignIn signIn = GoogleSignIn.instance;
 
     unawaited(
       signIn.initialize(clientId: iosClientId, serverClientId: webClientId),
     );
+
 
     // Perform the sign in
     final googleAccount = await signIn.authenticate();
@@ -63,29 +64,54 @@ class SupabaseManager {
 
   /// Performs Apple sign in on iOS or macOS
   Future<AuthResponse> signInWithApple() async {
-    final rawNonce = supabase.auth.generateRawNonce();
-    final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+    try {
+      final rawNonce = supabase.auth.generateRawNonce();
+      final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
 
-    final credential = await SignInWithApple.getAppleIDCredential(
-      scopes: [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: hashedNonce,
-    );
-
-    final idToken = credential.identityToken;
-    if (idToken == null) {
-      throw const AuthException(
-        'Could not find ID Token from generated credential.',
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
       );
-    }
 
-    return supabase.auth.signInWithIdToken(
-      provider: OAuthProvider.apple,
-      idToken: idToken,
-      nonce: rawNonce,
-    );
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw const AuthException(
+          'Could not find ID Token from generated credential.',
+        );
+      }
+
+      return supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      debugPrint('Apple Sign In Authorization 오류: ${e.code} - ${e.message}');
+      
+      // 에러 코드에 따른 처리
+      if (e.code.toString().contains('1000') || e.code.toString().contains('unknown')) {
+        throw const AuthException(
+          'Apple Sign In은 실제 기기에서만 사용할 수 있습니다. 시뮬레이터에서는 다른 로그인 방법을 사용해주세요.',
+        );
+      } else if (e.code.toString().contains('1001')) {
+        // 사용자가 취소한 경우
+        throw const AuthException('Apple 로그인이 취소되었습니다.');
+      } else {
+        throw AuthException('Apple 로그인 중 오류가 발생했습니다: ${e.message}');
+      }
+    } catch (e) {
+      debugPrint('Apple Sign In 오류: $e');
+      // 시뮬레이터나 개발 환경에서 발생하는 오류 처리
+      if (e.toString().contains('1000') || e.toString().contains('unknown')) {
+        throw const AuthException(
+          'Apple Sign In은 실제 기기에서만 사용할 수 있습니다. 시뮬레이터에서는 다른 로그인 방법을 사용해주세요.',
+        );
+      }
+      rethrow;
+    }
   }
 
   Future<void> signInWithKakao() async {

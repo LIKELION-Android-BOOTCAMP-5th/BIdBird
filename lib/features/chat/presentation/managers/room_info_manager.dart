@@ -134,10 +134,10 @@ class RoomInfoManager {
   
   /// RoomInfo 캐시 무효화
   void invalidateCache() {
-    _cachedRoomInfo = null;
-    _cachedRoomId = null;
-    _cachedItemId = null;
-    _lastFetchTime = null;
+    // _cachedRoomInfo = null;
+    // _cachedRoomId = null;
+    // _cachedItemId = null;
+    // _lastFetchTime = null;
   }
 
   /// 배송 정보 입력 여부 확인

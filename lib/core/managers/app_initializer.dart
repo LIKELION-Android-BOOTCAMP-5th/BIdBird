@@ -1,16 +1,21 @@
-import 'package:flutter/foundation.dart';
+import 'package:bidbird/core/config/supabase_config.dart';
+import 'package:bidbird/core/config/firebase_config.dart';
+
+
+
 import 'dart:async';
 
 import 'package:bidbird/core/managers/firebase_manager.dart';
 import 'package:bidbird/core/managers/firebase_options.dart';
-import 'package:bidbird/core/managers/network_api_manager.dart';
 import 'package:cloudinary_flutter/cloudinary_object.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:bidbird/core/utils/secure_local_storage.dart';
 
 class AppInitializer {
   static Future<void>? _initFuture;
@@ -23,14 +28,25 @@ class AppInitializer {
   }
 
   static Future<void> _initialize() async {
-    await dotenv.load(fileName: '.env');
-    NetworkApiManager.shared.checkEnv();
-
     CloudinaryObject.fromCloudName(cloudName: 'dn12so6sm');
 
+
     await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL'] ?? '',
-      anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+      authOptions: const FlutterAuthClientOptions(
+        localStorage: SecureLocalStorage(),
+      ),
+    );
+
+
+    // Firebase 설정 로드
+    await FirebaseConfig.initialize();
+
+    // 카카오 로그인 초기화
+    KakaoSdk.init(
+      nativeAppKey: FirebaseConfig.kakaoNativeAppKey,
+      javaScriptAppKey: FirebaseConfig.kakaoJavaScriptAppKey,
     );
 
     // Nhost & GraphQL Hive 초기화
@@ -39,6 +55,7 @@ class AppInitializer {
     _firebaseInitFuture ??= Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
 
     unawaited(
       _firebaseInitFuture!.catchError((e) {

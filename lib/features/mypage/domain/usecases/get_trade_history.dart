@@ -8,13 +8,13 @@ class GetTradeHistory {
 
   Future<TradeHistoryPageEntity> call({
     required TradeRole role,
-    int? statusCode,
+    List<int>? statusCodes,
     required int page,
     required int pageSize,
   }) {
     return _repository.fetchHistory(
       role: role,
-      statusCode: statusCode,
+      statusCodes: statusCodes,
       page: page,
       pageSize: pageSize,
     );

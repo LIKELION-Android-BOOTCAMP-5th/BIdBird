@@ -159,6 +159,18 @@ class NotificationViewmodel extends ChangeNotifier {
     });
   }
 
+  void updateNotificationByRealtimeChannel(String targetId, bool isChecked) {
+    final int index = notifyList.indexWhere((e) => e.id == targetId);
+    // 못 찾으면 -1
+    if (index == -1) {
+      // not found 처리
+      return;
+    }
+    notifyList[index].is_checked = isChecked;
+    sortNotifyList();
+    notifyListeners();
+  }
+
   Future<void> fetchNotify() async {
     if (_isFetching) return; // 중복 호출 방지
 
@@ -230,6 +242,7 @@ class NotificationViewmodel extends ChangeNotifier {
   void setupRealtimeSubscription() {
     _notificationListRealtimeSubscriptionManager.setupRealtimeSubscription(
       updateNotification: updateNotification,
+      onUpdateChecked: updateNotificationByRealtimeChannel,
     );
   }
 

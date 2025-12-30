@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.bidbird</string>
+	<string>com.bidbird.app</string>
 	<key>PROJECT_ID</key>
 	<string>bidbird-5164d</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:784088242608:ios:681c31c88488c8d9c6de75</string>
+	<string>1:784088242608:ios:c7fea2550939ab01c6de75</string>
 </dict>
 </plist>

@@ -52,7 +52,7 @@ class RoleBadge extends StatelessWidget {
       );
     }
     
-    // 내가 구매자이고 낙찰자인 경우: "낙찰 물품" (노란색)
+    // 내가 구매자이고 낙찰자인 경우: "낙찰자" (노란색)
     if (!isSeller && isTopBidder) {
       return Container(
         padding: padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
