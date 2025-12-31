@@ -360,7 +360,8 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                 : null,
                             onTradeResultTap:
                                 viewModel.isTopBidder &&
-                                        (tradeStatusCode != 550)
+                                        (tradeStatusCode != 550) &&
+                                        viewModel.messages.isNotEmpty
                                     ? () {
                                         // 거래 결과 (완료/취소) 선택 바텀시트
                                         _showTradeActionBottomSheet(

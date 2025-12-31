@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bidbird/core/utils/item/item_price_utils.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
@@ -35,6 +36,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   late int _bidUnit;
   ItemDetailViewModel? _itemDetailViewModel;
   final ScrollController _scrollController = ScrollController();
+  Timer? _expirationTimer;
 
   static const List<BidPresetAction> _presetActions = [
     BidPresetAction('+1호가', 1, BidPresetActionType.adjust),
@@ -51,6 +53,34 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
     _currentPrice = widget.currentPrice;
     _bidUnit = widget.bidUnit;
     _bidAmount = _currentPrice + _bidUnit;
+    
+    // 마감 시간 체크를 위한 타이머 설정
+    _startExpirationTimer();
+  }
+
+  void _startExpirationTimer() {
+    _expirationTimer?.cancel();
+    
+    final item = _itemDetailViewModel?.itemDetail;
+    if (item == null) return;
+
+    final remaining = item.finishTime.difference(DateTime.now());
+    if (remaining.isNegative) {
+      // 이미 시간이 지났으면 즉시 닫기
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.pop(context);
+      });
+      return;
+    }
+
+    _expirationTimer = Timer(remaining, () {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('경매 시간이 종료되었습니다.')),
+        );
+      }
+    });
   }
 
   @override
@@ -67,6 +97,9 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
       _itemDetailViewModel?.removeListener(_handlePriceUpdate);
       _itemDetailViewModel = newViewModel;
       _itemDetailViewModel?.addListener(_handlePriceUpdate);
+      
+      // ViewModel이 연결된 후 타이머 재설정
+      _startExpirationTimer();
     }
   }
 
@@ -74,6 +107,7 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
   void dispose() {
     _itemDetailViewModel?.removeListener(_handlePriceUpdate);
     _scrollController.dispose();
+    _expirationTimer?.cancel();
     super.dispose();
   }
 
@@ -82,6 +116,16 @@ class _BidBottomSheetState extends State<BidBottomSheet> {
 
     final newCurrentPrice = _itemDetailViewModel!.itemDetail!.currentPrice;
     final newBidPrice = _itemDetailViewModel!.itemDetail!.bidPrice;
+    final statusCode = _itemDetailViewModel!.itemDetail!.statusCode;
+    
+    // 경매 종료 상태 체크 (321: 낙찰, 322: 즉시구매 완료, 323: 유찰)
+    if (statusCode == 321 || statusCode == 322 || statusCode == 323) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('경매가 종료되었습니다.')),
+      );
+      return;
+    }
 
     if (newCurrentPrice != _currentPrice || newBidPrice != _bidUnit) {
       setState(() {

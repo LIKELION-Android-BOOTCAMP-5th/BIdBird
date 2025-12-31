@@ -122,7 +122,7 @@ class ActionHub extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '지금 처리해야 할 거래 $totalCount건',
+                        '지금 처리해야 할 거래 ${totalCount}건',
                         style: TextStyle(
                           fontSize: context.fontSizeMedium,
                           fontWeight: FontWeight.w600,
@@ -180,4 +180,3 @@ class ActionHub extends StatelessWidget {
     );
   }
 }
-

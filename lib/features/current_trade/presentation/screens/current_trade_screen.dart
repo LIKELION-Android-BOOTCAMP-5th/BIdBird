@@ -8,6 +8,7 @@ import 'package:bidbird/features/current_trade/presentation/viewmodels/current_t
 import 'package:bidbird/features/current_trade/presentation/widgets/action_hub.dart';
 import 'package:bidbird/features/current_trade/presentation/widgets/trade_history_card.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
@@ -139,6 +140,39 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
     );
   }
 
+  Widget _buildTradeHistoryFooter() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          GestureDetector(
+            onTap: () => context.go('/mypage/trade'),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '거래내역 전체보기',
+                  style: TextStyle(
+                    fontSize: context.fontSizeSmall,
+                    color: TextSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: TextSecondary,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildContent() {
     // 로딩 상태와 에러 상태 체크
     return Selector<CurrentTradeViewModel, ({bool isLoading, String? error})>(
@@ -230,28 +264,32 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               horizontal: horizontalPadding,
               vertical: verticalPadding,
             ),
-            itemCount: displayedItems.length + (canLoadMore ? 1 : 0),
+            itemCount: displayedItems.length + 1,
             addAutomaticKeepAlives: false,
             addRepaintBoundaries: true,
             itemBuilder: (context, index) {
-              // 로딩 인디케이터 (자동으로 더 불러옴)
+              // 최하단 아이템 (더 보기 로딩 또는 전체보기 링크)
               if (index == displayedItems.length) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  final vm = context.read<CurrentTradeViewModel>();
-                  if (vm.canLoadMore) {
-                    vm.loadMoreItems();
-                  }
-                });
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: SizedBox(
-                      height: 40,
-                      width: 40,
-                      child: CircularProgressIndicator(),
+                if (canLoadMore) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final vm = context.read<CurrentTradeViewModel>();
+                    if (vm.canLoadMore) {
+                      vm.loadMoreItems();
+                    }
+                  });
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: CircularProgressIndicator(),
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  return _buildTradeHistoryFooter();
+                }
               }
 
               // 일반 아이템
