@@ -294,8 +294,8 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
       notifyListeners();
 
     } finally {
-      stopLoading();
       _isInitialized = true;
+      stopLoading();
     }
   }
 

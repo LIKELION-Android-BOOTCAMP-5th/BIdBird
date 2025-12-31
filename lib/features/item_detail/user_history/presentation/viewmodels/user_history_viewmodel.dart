@@ -11,12 +11,21 @@ class UserHistoryViewModel extends ChangeNotifier {
   final FetchUserTradesUseCase _fetchUserTradesUseCase;
 
   List<UserTradeSummary> _trades = [];
+  bool _isLoading = false;
 
   List<UserTradeSummary> get trades => _trades;
+  bool get isLoading => _isLoading;
 
   Future<void> loadTrades(String userId) async {
-    _trades = await _fetchUserTradesUseCase(userId);
+    _isLoading = true;
     notifyListeners();
+    
+    try {
+      _trades = await _fetchUserTradesUseCase(userId);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
 

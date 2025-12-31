@@ -628,98 +628,60 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
 
     // 경매 낙찰(321) 상태이고, 결제가 이미 완료(520)된 경우:
     // 좌측: 결제 내역 보기(결제 상세 화면) / 우측: 판매자와 연락하기 버튼 노출
-    // 낙찰자 판단(isTopBidder)이 불안정한 경우가 있어, 결제 완료 상태에서는 항상 연락 버튼 노출
     if (statusCode == 321 && isTradePaid) {
-      return Row(
-        children: [
-          Expanded(
-            child: ViewPaymentsButton(itemId: widget.item.itemId),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ContactSellerButton(
-              itemId: widget.item.itemId,
-              itemTitle: widget.item.itemTitle,
-              sellerId: widget.item.sellerId,
-              sellerName: widget.item.sellerTitle,
-              currentPrice: widget.item.currentPrice,
+      if (isTopBidder) {
+        return Row(
+          children: [
+            Expanded(
+              child: ViewPaymentsButton(itemId: widget.item.itemId),
             ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ContactSellerButton(
+                itemId: widget.item.itemId,
+                itemTitle: widget.item.itemTitle,
+                sellerId: widget.item.sellerId,
+                sellerName: widget.item.sellerTitle,
+                currentPrice: widget.item.currentPrice,
+              ),
+            ),
+          ],
+        );
+      } else {
+        return ModernStatusContainer(
+          text: '경매가 종료되었습니다.',
+          icon: Icon(
+            Icons.check_circle_outline,
+            size: context.iconSizeSmall,
+            color: const Color(0xFF6B7280),
           ),
-        ],
-      );
+        );
+      }
     }
 
     // 경매 낙찰(321) 상태에서, 아직 결제가 완료되지 않은 경우: 판매자 연락하기 노출
-    // (isTopBidder 여부가 즉시 반영되지 않는 케이스가 있어 조건을 완화)
     if (statusCode == 321 && !isTradePaid) {
-      // TODO: 사업자 인증 후 아래 주석 해제
-      // final bidWinEntity = ItemBidWinEntity.fromItemDetail(widget.item);
-      //
-      // return PrimaryButton(
-      //   text: '결제하러 가기',
-      //   onPressed: () async {
-      //     final authVM = context.read<AuthViewModel>();
-      //     final String buyerTel = authVM.user?.phone_number ?? '';
-      //     const appScheme = 'bidbird';
-      //
-      //     final request = ItemPaymentRequest(
-      //       itemId: widget.item.itemId,
-      //       itemTitle: widget.item.itemTitle,
-      //       amount: widget.item.currentPrice,
-      //       buyerTel: buyerTel,
-      //       appScheme: appScheme,
-      //     );
-      //
-      //     final result = await Navigator.push<bool>(
-      //       context,
-      //       MaterialPageRoute(
-      //         builder: (_) => PortonePaymentScreen(request: request),
-      //       ),
-      //     );
-      //
-      //     if (!mounted) return;
-      //
-      //     if (result == true) {
-      //       // 결제 성공 시 결제 완료 화면으로 이동
-      //       Navigator.push(
-      //         context,
-      //         MaterialPageRoute(
-      //           builder: (_) => PaymentCompleteScreen(item: bidWinEntity),
-      //         ),
-      //       );
-      //     } else if (result == false) {
-      //       showDialog<void>(
-      //         context: context,
-      //         barrierDismissible: true,
-      //         builder: (dialogContext) {
-      //           return AskPopup(
-      //             content: '결제가 취소되었거나 실패했습니다.\n다시 시도하시겠습니까?',
-      //             noText: '닫기',
-      //             yesText: '확인',
-      //             yesLogic: () async {
-      //               Navigator.of(dialogContext).pop();
-      //             },
-      //           );
-      //         },
-      //       );
-      //     }
-      //   },
-      //   width: double.infinity,
-      // );
-
-      // 임시: 판매자 연락 버튼 → 채팅방 이동
-      return ContactSellerButton(
-        itemId: widget.item.itemId,
-        itemTitle: widget.item.itemTitle,
-        sellerId: widget.item.sellerId,
-        sellerName: widget.item.sellerTitle,
-        currentPrice: widget.item.currentPrice,
-      );
+      if (isTopBidder) {
+        // 임시: 판매자 연락 버튼 → 채팅방 이동
+        return ContactSellerButton(
+          itemId: widget.item.itemId,
+          itemTitle: widget.item.itemTitle,
+          sellerId: widget.item.sellerId,
+          sellerName: widget.item.sellerTitle,
+          currentPrice: widget.item.currentPrice,
+        );
+      } else {
+        return ModernStatusContainer(
+          text: '경매가 종료되었습니다.',
+          icon: Icon(
+            Icons.check_circle_outline,
+            size: context.iconSizeSmall,
+            color: const Color(0xFF6B7280),
+          ),
+        );
+      }
     }
 
-    // 즉시 구매 진행 중(1006)인 경우
-    // - 즉시 구매를 건 사용자(현재 최고 입찰자)는 '결제하러 가기' 버튼 노출
-    // - 그 외 사용자는 안내 문구만 노출
     if (isBuyNowInProgress && !isBuyNowCompleted) {
       if (isTopBidder) {
         // TODO: 사업자 인증 후 아래 주석 해제
