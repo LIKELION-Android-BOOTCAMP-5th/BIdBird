@@ -668,9 +668,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (result.isFirstMessage && result.roomId != null) {
       // 첫 메시지 전송 성공
       roomId = result.roomId;
-      messageController.text = "";
-      images.clear();
-      type = MessageType.text;
       _uploadProgressSub?.cancel();
       uploadProgress.clear();
       notifyListeners();
@@ -681,9 +678,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     } else if (currentRoomId != null) {
       // 기존 채팅방에서 메시지 전송 성공
       // Realtime subscription이 실제 메시지를 추가하면 임시 메시지가 자동으로 교체됨
-      messageController.text = "";
-      images.clear();
-      type = MessageType.text;
       isSending = false;
       _uploadProgressSub?.cancel();
       uploadProgress.clear();
@@ -747,6 +741,10 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     }
 
     if (images.isNotEmpty || messageText.trim().isNotEmpty) {
+      messageController.text = "";
+      images.clear();
+      type = MessageType.text;
+      
       notifyListeners();
       scrollToBottom(force: true);
     }
