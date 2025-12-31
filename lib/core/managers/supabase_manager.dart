@@ -97,7 +97,7 @@ class SupabaseManager {
       if (e.code.toString().contains('1000') ||
           e.code.toString().contains('unknown')) {
         throw const AuthException(
-          'Apple Sign In은 실제 기기에서만 사용할 수 있습니다. 시뮬레이터에서는 다른 로그인 방법을 사용해주세요.',
+          'Apple 로그인 중 오류가 발생했습니다. Apple ID 설정을 확인하거나 잠시 후 다시 시도해 주세요. (에러 코드: 1000)',
         );
       } else if (e.code.toString().contains('1001')) {
         // 사용자가 취소한 경우
@@ -110,7 +110,7 @@ class SupabaseManager {
       // 시뮬레이터나 개발 환경에서 발생하는 오류 처리
       if (e.toString().contains('1000') || e.toString().contains('unknown')) {
         throw const AuthException(
-          'Apple Sign In은 실제 기기에서만 사용할 수 있습니다. 시뮬레이터에서는 다른 로그인 방법을 사용해주세요.',
+          'Apple 로그인 중 오류가 발생했습니다. Apple ID 설정을 확인하거나 잠시 후 다시 시도해 주세요. (에러 코드: 1000)',
         );
       }
       rethrow;
