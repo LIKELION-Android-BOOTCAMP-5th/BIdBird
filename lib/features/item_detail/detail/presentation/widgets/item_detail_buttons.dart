@@ -85,6 +85,7 @@ class ContactBuyerButton extends StatelessWidget {
               sellerUserId: sellerId,
               sellerName: sellerName,
               itemPrice: currentPrice,
+              isSellerMode: true,
             ),
           ),
         );

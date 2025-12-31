@@ -49,6 +49,12 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
+  void clearProfile() {
+    profile = null;
+    errorMessage = null;
+    notifyListeners();
+  } //굳이할필요는없다
+
   @override
   void dispose() {
     _loginSubscription?.cancel();

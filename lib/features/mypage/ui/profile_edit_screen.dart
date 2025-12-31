@@ -227,6 +227,9 @@ class _UnregisterLink extends StatelessWidget {
         }
 
         final errorMessage = vm.errorMessage;
+        if (errorMessage == null) {
+          context.read<ProfileViewModel>().clearProfile(); //굳이할필요는없다
+        }
         final content = errorMessage ?? '회원탈퇴가 완료되었습니다.';
 
         await showDialog(

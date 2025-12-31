@@ -8,24 +8,21 @@ import 'package:provider/provider.dart';
 import '../utils/ui_set/colors_style.dart';
 
 class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({super.key});
+  const BottomNavBar({
+    super.key,
+    required this.navigationShell,
+  });
+
+  final StatefulNavigationShell navigationShell;
 
   @override
   Widget build(BuildContext context) {
-    final String location = GoRouterState.of(context).uri.toString();
-
-    int currentIndex = 0;
-    if (location.startsWith('/home')) currentIndex = 0;
-    if (location.startsWith('/bid')) currentIndex = 1;
-    if (location.startsWith('/chat')) currentIndex = 2;
-    if (location.startsWith('/mypage')) currentIndex = 3;
-
     return BottomNavigationBar(
       // showSelectedLabels: false,
       // showUnselectedLabels: false,
       backgroundColor: Colors.white,
       unselectedItemColor: iconColor,
-      currentIndex: currentIndex,
+      currentIndex: navigationShell.currentIndex,
       selectedLabelStyle: const TextStyle(
         color: Colors.black,
         fontWeight: FontWeight.w700,
@@ -33,20 +30,10 @@ class BottomNavBar extends StatelessWidget {
       selectedItemColor: Colors.black,
       type: BottomNavigationBarType.fixed,
       onTap: (index) {
-        switch (index) {
-          case 0:
-            context.go('/home');
-            break;
-          case 1:
-            context.go('/bid');
-            break;
-          case 2:
-            context.go('/chat');
-            break;
-          case 3:
-            context.go('/mypage');
-            break;
-        }
+        navigationShell.goBranch(
+          index,
+          initialLocation: index == navigationShell.currentIndex,
+        );
       },
       items: [
         BottomNavigationBarItem(

@@ -1,8 +1,10 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/core/utils/ui_set/visible_item_calculator.dart';
 import 'package:bidbird/core/widgets/components/default_profile_avatar.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
@@ -21,7 +23,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen>
-    with RouteAware, WidgetsBindingObserver {
+    with RouteAware, WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   late ChatListViewmodel? _viewModel;
   bool _isViewModelInitialized = false;
   final ScrollController _scrollController = ScrollController();
@@ -59,13 +61,15 @@ class _ChatScreenState extends State<ChatScreen>
     super.didChangeDependencies();
     routeObserver.subscribe(this, ModalRoute.of(context)!);
     _viewModel = context.read<ChatListViewmodel>();
-    if (!_isViewModelInitialized) {
-      // 화면 크기에 맞는 개수 계산 (코어 유틸리티 사용)
-      final loadCount = VisibleItemCalculator.calculateChatListVisibleCount(
-        context,
-      );
 
+    // 화면 크기에 맞는 개수 계산 (코어 유틸리티 사용)
+    final loadCount = VisibleItemCalculator.calculateChatListVisibleCount(
+      context,
+    );
+
+    if (!_isViewModelInitialized) {
       context.read<ChatListViewmodel>().setPageSize(loadCount);
+      _viewModel!.fetchChattingRoomList(visibleItemCount: loadCount);
       _isViewModelInitialized = true;
     }
 
@@ -101,6 +105,9 @@ class _ChatScreenState extends State<ChatScreen>
   /// 실시간 구독이 자동으로 처리하지만, 읽음 처리 후 즉시 반영을 위해 새로고침
   @override
   void didPopNext() {
+    // 스크롤 초기화 방지를 위해 자동 새로고침 제거
+    // Socket 연결이 유지되어 있다면 실시간으로 업데이트됨
+    /*
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted && _viewModel != null) {
         // 화면 크기에 맞는 개수만 다시 로드 (코어 유틸리티 사용)
@@ -116,10 +123,15 @@ class _ChatScreenState extends State<ChatScreen>
         }
       }
     });
+    */
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     if (!_isViewModelInitialized) {
       return const Scaffold(body: SizedBox.shrink());
     }
@@ -137,6 +149,7 @@ class _ChatScreenState extends State<ChatScreen>
             bool isSeller,
             bool isTopBidder,
             bool isOpponentTopBidder,
+            bool isTradeComplete,
           })
         >
         itemStatusMap,
@@ -176,6 +189,7 @@ class _ChatScreenState extends State<ChatScreen>
           bool isSeller,
           bool isTopBidder,
           bool isOpponentTopBidder,
+          bool isTradeComplete,
         })
       >
       itemStatusMap,
@@ -183,7 +197,14 @@ class _ChatScreenState extends State<ChatScreen>
     data,
   ) {
     if (data.chattingRoomList.isEmpty) {
-      return const Center(child: Text('채팅방이 없습니다.'));
+      if (data.isLoading) {
+        return const SizedBox.shrink();
+      }
+      return UnifiedEmptyState(
+        title: '채팅방이 없습니다',
+        subtitle: '새로운 상품을 등록하거나 입찰에 참여해보세요!',
+        onRefresh: () => context.read<ChatListViewmodel>().reloadList(forceRefresh: true),
+      );
     }
 
     // ViewModel 참조 (메서드 호출용)
@@ -199,18 +220,21 @@ class _ChatScreenState extends State<ChatScreen>
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        child: ListView.separated(
-          controller: _scrollController,
-          padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: verticalPadding,
-          ),
-          itemCount:
-              data.chattingRoomList.length + (data.isLoadingMore ? 1 : 0),
-          separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
-          addAutomaticKeepAlives: false,
-          addRepaintBoundaries: true,
-          itemBuilder: (context, index) {
+        child: TransparentRefreshIndicator(
+          onRefresh: () => viewModel.reloadList(forceRefresh: true),
+          child: ListView.separated(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: verticalPadding,
+            ),
+            itemCount:
+                data.chattingRoomList.length + (data.isLoadingMore ? 1 : 0),
+            separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
+            addAutomaticKeepAlives: false,
+            addRepaintBoundaries: true,
+            itemBuilder: (context, index) {
             // 로딩 인디케이터 표시
             if (index == data.chattingRoomList.length) {
               return const SizedBox.shrink();
@@ -224,13 +248,18 @@ class _ChatScreenState extends State<ChatScreen>
             final isSeller = status?.isSeller ?? false;
             final isTopBidder = status?.isTopBidder ?? false;
             final isOpponentTopBidder = status?.isOpponentTopBidder ?? false;
+            final isTradeComplete = status?.isTradeComplete ?? false;
 
-            // 낙찰 물품/낙찰자는 거래 완료(550)여도 노란색 유지
-            final isBidderRole =
-                (!isSeller && isTopBidder) || (isSeller && isOpponentTopBidder);
+            // 1. 거래 완료(550)인 경우 모두 노란색
+            // 2. 경매 종료(230 등)인 경우에만 낙찰자(및 판매자에게 보이는 낙찰자) 노란색
+            // 진행 중(310)인 경우에는 낙찰자라도 노란색 아님 (파란색/녹색)
+            final isBidderRole = isTradeComplete ||
+                (isExpired &&
+                    ((!isSeller && isTopBidder) ||
+                        (isSeller && isOpponentTopBidder)));
 
-            // 만료된 거래만 회색으로 표시 (낙찰 물품/낙찰자 거래 완료는 제외)
-            final shouldShowGray = isExpired;
+            // 만료된 거래만 회색으로 표시 (노란색 대상 제외)
+            final shouldShowGray = isExpired && !isBidderRole;
 
             return GestureDetector(
               onTap: () {
@@ -332,9 +361,9 @@ class _ChatScreenState extends State<ChatScreen>
                                                 ),
                                                 child: RoleBadge(
                                                   isSeller: isSeller,
-                                                  isTopBidder: isTopBidder,
+                                                  isTopBidder: isTopBidder && isExpired,
                                                   isOpponentTopBidder:
-                                                      isOpponentTopBidder,
+                                                      isOpponentTopBidder && isExpired,
                                                   isExpired: shouldShowGray,
                                                 ),
                                               ),
@@ -355,8 +384,12 @@ class _ChatScreenState extends State<ChatScreen>
                                           ),
                                         ),
                                         Text(
-                                          chattingRoom.lastMessageSendAt
-                                              .toTimesAgo(),
+                                          (chattingRoom.lastMessageSendAt != null &&
+                                                  chattingRoom
+                                                      .lastMessageSendAt!.isNotEmpty)
+                                              ? chattingRoom.lastMessageSendAt!
+                                                  .toTimesAgo()
+                                              : '',
                                           style: TextStyle(
                                             color: iconColor,
                                             fontSize: context.fontSizeSmall,
@@ -440,6 +473,7 @@ class _ChatScreenState extends State<ChatScreen>
           },
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -47,10 +47,15 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
   int _pendingActionCount = 0;
   int _acknowledgedPendingCount = 0;
 
+  // Initial Data Load Status
+  bool _isInitialized = false;
+
   int get displayedItemCount => (_currentPage + 1) * _itemsPerPage;
 
   /// 자동 로드 가능 여부
   bool get canLoadMore => displayedItemCount < allItems.length;
+
+  bool get isInitialized => _isInitialized;
 
   CurrentTradeViewModel({
     FetchMyBidHistoryUseCase? fetchMyBidHistoryUseCase,
@@ -289,6 +294,7 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
       notifyListeners();
 
     } finally {
+      _isInitialized = true;
       stopLoading();
     }
   }
@@ -339,8 +345,9 @@ class CurrentTradeViewModel extends ItemBaseViewModel {
     _saleHistory = [];
     _pendingActionCount = 0;
     _acknowledgedPendingCount = 0;
+    _isInitialized = false;
     _invalidateFilterCache();
-    invalidateCache(); // 캐시 시간 초기화
+    // invalidateCache(); // 캐시 시간 초기화
     // notifyListeners()는 한 번만 호출
     notifyListeners();
   }

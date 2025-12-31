@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:bidbird/core/router/app_router.dart';
@@ -17,7 +16,6 @@ import 'package:bidbird/features/splash/ui/splash_screen.dart';
 import 'package:event_bus/event_bus.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:provider/provider.dart';
 
 import 'core/services/time_ticker.dart';
@@ -28,19 +26,10 @@ void main() async {
   // 1. 초기화는 한 번만!
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Platform.isAndroid) {
-    await _printKakaoKeyHash();
-  }
-
   unawaited(
     AppInitializer.ensureInitialized().then((_) {
       AppInitializer.startPostInitTasks();
     }),
-  );
-  // 카카오 로그인
-  KakaoSdk.init(
-    nativeAppKey: '832c37d41a36556fc1dc064fe80f65a6',
-    javaScriptAppKey: 'd82acf5401f94e4ea5967489eed37bd5',
   );
 
   runApp(
@@ -60,11 +49,7 @@ void main() async {
             return ProfileViewModel(GetProfile(repo));
           },
         ),
-        // 프로필정보가 필요한 곳에서 다음과 같이 사용하세요
-        // final profileVm = context.watch<ProfileViewModel>();
-        // final profile = profileVm.profile;
-        // final nickName = profile?.nickName ?? '';
-        // final profileImageUrl = profile?.profileImageUrl;
+
         Provider(create: (context) => HomeRepositoryImpl()),
         // HomeViewModel을 전역으로 등록하여 탭 전환 시 재생성 방지
         ChangeNotifierProvider(
@@ -217,14 +202,5 @@ class _MyAppState extends State<MyApp> {
         );
       },
     );
-  }
-}
-
-Future<void> _printKakaoKeyHash() async {
-  try {
-    String keyHash = await KakaoSdk.origin;
-    print('현재 앱의 Kakao Key Hash: $keyHash'); // Logger를 사용하여 출력
-  } catch (e) {
-    print('Kakao Key Hash를 가져오는 중 오류 발생: $e'); // 오류 발생 시 로그 출력
   }
 }

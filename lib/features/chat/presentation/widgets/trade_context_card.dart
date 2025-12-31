@@ -17,8 +17,7 @@ class TradeContextCard extends StatelessWidget {
     required this.hasShippingInfo,
     this.onItemTap,
     this.onTradeStatusTap,
-    this.onTradeComplete,
-    this.onTradeCancel,
+    this.onTradeResultTap,
   });
 
   final String itemTitle;
@@ -30,26 +29,21 @@ class TradeContextCard extends StatelessWidget {
   final bool hasShippingInfo;
   final VoidCallback? onItemTap;
   final VoidCallback? onTradeStatusTap;
-  final VoidCallback? onTradeComplete;
-  final VoidCallback? onTradeCancel;
+  final VoidCallback? onTradeResultTap; // 거래 결과 버튼 콜백
 
-  /// 거래 액션 버튼 표시 여부
-  bool get _shouldShowTradeActions {
-    if (tradeStatusCode == null) return false;
-    if (tradeStatusCode == 550) return false; // 거래 완료 상태에서는 숨김
-    if (tradeStatusCode == 540) return false; // 이미 취소된 거래에서는 숨김
-    return onTradeComplete != null || onTradeCancel != null;
-  }
+  /// 거래 액션 버튼 표시 여부 (하단 버튼 제거로 인해 항상 false 또는 로직 삭제)
+  bool get _shouldShowTradeActions => false; // 하단 버튼 제거
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      // ... existing decoration ...
       margin: const EdgeInsets.only(bottom: 1),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FA), // 거래 컨텍스트 카드 배경
+        color: const Color(0xFFF7F8FA),
         border: Border(
           bottom: BorderSide(
-            color: const Color(0xFFE1E4E8), // 카드 하단 divider
+            color: const Color(0xFFE1E4E8),
             width: 1,
           ),
         ),
@@ -83,7 +77,7 @@ class TradeContextCard extends StatelessWidget {
                       imageUrl: itemThumbnail,
                       width: 48,
                       height: 48,
-                      aspectRatio: 1.0,
+                      aspectRatio: null,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     const SizedBox(width: 12),
@@ -98,7 +92,7 @@ class TradeContextCard extends StatelessWidget {
                             itemTitle,
                             style: const TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w500, // Medium
+                              fontWeight: FontWeight.w500,
                               color: Color(0xFF111111),
                             ),
                             maxLines: 1,
@@ -111,7 +105,7 @@ class TradeContextCard extends StatelessWidget {
                               "${formatPrice(itemPrice)}원",
                               style: const TextStyle(
                                 fontSize: 15,
-                                fontWeight: FontWeight.w700, // Bold
+                                fontWeight: FontWeight.w700,
                                 color: Color(0xFF111111),
                               ),
                             ),
@@ -125,12 +119,45 @@ class TradeContextCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // 거래 현황 보기 / 거래 평가 버튼
-                        if (onTradeStatusTap != null)
+                        // 거래 결과 버튼 (낙찰자용)
+                        if (onTradeResultTap != null)
                           GestureDetector(
-                            onTap: () {
-                              // 버튼 탭 이벤트가 카드 탭 이벤트로 전파되지 않도록
-                            },
+                            onTap: () {},
+                            child: TextButton(
+                              onPressed: onTradeResultTap,
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    '거래 확정',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: blueColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 12,
+                                    color: blueColor,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        // 거래 현황 보기 / 거래 평가 버튼 (기존)
+                        else if (onTradeStatusTap != null)
+                          GestureDetector(
+                            onTap: () {},
                             child: TextButton(
                               onPressed: onTradeStatusTap,
                               style: TextButton.styleFrom(
@@ -145,7 +172,6 @@ class TradeContextCard extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    // 거래 완료 상태(550)일 때는 "거래 평가", 그 외에는 "거래 현황 보기"
                                     tradeStatusCode == 550
                                         ? '거래 평가'
                                         : '거래 현황 보기',
@@ -171,57 +197,6 @@ class TradeContextCard extends StatelessWidget {
                 ),
               ),
             ),
-            // 거래 관리 버튼 영역 (카드 내부에 포함)
-            if (_shouldShowTradeActions)
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: onTradeCancel,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: const BorderSide(color: RedColor, width: 1.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          '거래 취소',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: RedColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: onTradeComplete,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          backgroundColor: blueColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          '거래 완료',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),

@@ -11,6 +11,7 @@ class NotificationListRealtimeSubscriptionManager {
 
   void setupRealtimeSubscription({
     required void Function(NotificationEntity notify) updateNotification,
+    required void Function(String alarmId, bool isChecked) onUpdateChecked,
   }) {
     final currentId = SupabaseManager.shared.supabase.auth.currentUser?.id;
     if (currentId == null) return;
@@ -31,6 +32,33 @@ class NotificationListRealtimeSubscriptionManager {
             final NotificationEntity newNotification =
                 NotificationEntity.fromJson(newNotify);
             updateNotification(newNotification);
+          },
+        )
+        // ✅ UPDATE: is_checked 변경만 반영
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'alarm',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: currentId,
+          ),
+          callback: (payload) {
+            final newRec = payload.newRecord;
+            final oldRec = payload.oldRecord;
+
+            final String? id = newRec['id']?.toString();
+            if (id == null || id.isEmpty) return;
+
+            final bool? newChecked = newRec['is_checked'] as bool?;
+            final bool? oldChecked = oldRec['is_checked'] as bool?;
+
+            // is_checked 변화 없으면 무시
+            if (newChecked == null) return;
+            if (oldChecked != null && newChecked == oldChecked) return;
+
+            onUpdateChecked(id, newChecked);
           },
         )
         .subscribe((status, error) {

@@ -24,6 +24,7 @@ class ChattingRoomScreen extends StatefulWidget {
   final String? sellerImage; // 판매자 이미지
   final int? itemPrice; // 상품 가격
   final String? sellerUserId; // 판매자 ID
+  final bool isSellerMode; // 판매자 모드 여부 (판매자가 구매자에게 연락할 때 true)
 
   const ChattingRoomScreen({
     super.key,
@@ -34,6 +35,7 @@ class ChattingRoomScreen extends StatefulWidget {
     this.sellerName,
     this.sellerImage,
     this.itemPrice,
+    this.isSellerMode = false,
   });
 
   @override
@@ -81,8 +83,10 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     if (widget.itemTitle != null) {
       // 현재 사용자 기준으로 상대방 이름을 낙관적으로 결정
       final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-      final isCurrentUserSeller =
-          currentUserId != null && widget.sellerUserId != null && widget.sellerUserId == currentUserId;
+      
+      // isSellerMode가 true이거나, sellerId가 내 ID와 같으면 판매자로 간주
+      final isCurrentUserSeller = widget.isSellerMode ||
+          (currentUserId != null && widget.sellerUserId != null && widget.sellerUserId == currentUserId);
 
       viewModel.setInitialItemInfo(
         itemTitle: widget.itemTitle!,
@@ -161,6 +165,101 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     }
   }
 
+  bool _hasAutoShownTradeCompleteDialog = false;
+
+  void _checkAndShowAutoTradeCompleteDialog() {
+    // 이미 보여줬으면 스킵
+    if (_hasAutoShownTradeCompleteDialog) return;
+
+    // 1. 내가 낙찰자인지 확인
+    if (!viewModel.isTopBidder) return;
+
+    // 2. 거래가 완료되지 않았는지 확인 (550: 완료)
+    // tradeInfo가 null이면 아직 거래 전이거나 로딩 중이므로 완료되지 않은 것으로 간주
+    if (viewModel.tradeInfo != null && viewModel.tradeInfo!.tradeStatusCode == 550) return;
+
+    // 3. 내가 채팅을 했는지 확인 (내가 보낸 메시지가 하나라도 있는지)
+    // 현재 사용자의 ID
+    final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+    if (currentUserId == null) return;
+
+    final hasSentMessage = viewModel.messages.any((msg) => msg.senderId == currentUserId);
+    
+    // 조건 만족 시 다이얼로그 표시
+    if (hasSentMessage) {
+      _hasAutoShownTradeCompleteDialog = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showTradeActionBottomSheet(context, viewModel);
+        }
+      });
+    }
+  }
+
+  /// 거래 상태 변경 선택 바텀시트 (자동 팝업용)
+  void _showTradeActionBottomSheet(
+    BuildContext context,
+    ChattingRoomViewmodel viewModel,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                '거래 상태 변경',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '원하는 작업을 선택해주세요.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+                title: const Text('거래 완료'),
+                subtitle: const Text('물품을 수령했고 거래를 완료합니다.'),
+                onTap: () {
+                  Navigator.pop(sheetContext); // 시트 닫기
+                  _showTradeCompleteDialog(context, viewModel);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.cancel_outlined, color: Colors.red),
+                title: const Text('거래 취소'),
+                subtitle: const Text('사유를 선택하고 거래를 취소합니다.'),
+                onTap: () {
+                  Navigator.pop(sheetContext); // 시트 닫기
+                  _showTradeCancelWithReason(context, viewModel);
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -199,10 +298,13 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                 (viewModel.itemInfo == null && widget.sellerUserId != null && widget.sellerUserId == currentUserId)
                               );
 
+                          // 거래 상태 코드 결정 (tradeInfo가 우선, 없으면 auctionInfo)
+                          int? tradeStatusCode = viewModel.tradeInfo?.tradeStatusCode ?? viewModel.auctionInfo?.tradeStatusCode;
+
                           // 거래 상태 텍스트 결정
                           String tradeStatusText = '거래 중';
-                          if (viewModel.tradeInfo != null) {
-                            switch (viewModel.tradeInfo!.tradeStatusCode) {
+                          if (tradeStatusCode != null) {
+                            switch (tradeStatusCode) {
                               case 510:
                                 tradeStatusText = '결제 대기';
                                 break;
@@ -215,26 +317,14 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                               default:
                                 tradeStatusText = '거래 중';
                             }
-                          } else if (viewModel.itemInfo != null) {
-                            // tradeInfo가 없으면 auctionInfo 기반으로 판단
-                            tradeStatusText = '거래 중';
                           }
 
-                          // 거래 취소는 구매자(낙찰자)만 가능, 거래 완료/취소 상태에서는 불가
-                          final canShowTradeCancel =
-                              viewModel.tradeInfo != null &&
-                              viewModel.tradeInfo!.tradeStatusCode != 550 &&
-                              viewModel.tradeInfo!.tradeStatusCode !=
-                                  540 && // 이미 취소된 거래는 불가
-                              viewModel.isTopBidder; // 구매자(낙찰자)만 가능
-
-                          // 거래 현황 보기 / 거래 평가 버튼 표시 조건: 낙찰자 또는 판매자만, 그리고 tradeInfo가 있어야 함
-                          // 거래 완료 상태(550)일 때는 평가를 작성하지 않았을 때만 표시
+                          // 거래 현황 보기 / 거래 평가 버튼 표시 조건: 낙찰자 또는 판매자만
+                          // 거래 완료 상태(550)일 때만 평가 버튼 표시 (일반 거래 현황 보기는 숨김)
                           final canShowTradeStatus =
-                              viewModel.tradeInfo != null &&
                               (viewModel.isTopBidder || isSeller) &&
-                              !(viewModel.tradeInfo?.tradeStatusCode == 550 &&
-                                  viewModel.hasSubmittedReview);
+                              tradeStatusCode == 550 &&
+                              !viewModel.hasSubmittedReview;
 
                           return TradeContextCard(
                             itemTitle: viewModel.itemInfo?.title ?? widget.itemTitle ?? "",
@@ -242,8 +332,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                             itemPrice: viewModel.auctionInfo?.currentPrice ?? widget.itemPrice ?? 0,
                             isSeller: isSeller,
                             tradeStatus: tradeStatusText,
-                            tradeStatusCode:
-                                viewModel.tradeInfo?.tradeStatusCode,
+                            tradeStatusCode: tradeStatusCode,
                             hasShippingInfo: viewModel.hasShippingInfo,
                             onItemTap: () {
                               if (viewModel.itemId.isNotEmpty) {
@@ -254,10 +343,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                 ? () {
                                     // 거래 완료 상태(550)일 때는 거래 평가 팝업 표시, 그 외에는 거래 현황 화면으로 이동
                                     if (viewModel.itemId.isNotEmpty) {
-                                      if (viewModel
-                                              .tradeInfo
-                                              ?.tradeStatusCode ==
-                                          550) {
+                                      if (tradeStatusCode == 550) {
                                         // 거래 평가 팝업 표시
                                         _showTradeReviewPopup(
                                           context,
@@ -272,30 +358,18 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
                                     }
                                   }
                                 : null,
-                            onTradeComplete:
-                                viewModel.tradeInfo != null &&
-                                        viewModel
-                                                .tradeInfo!.tradeStatusCode !=
-                                            550 &&
-                                        viewModel.isTopBidder
+                            onTradeResultTap:
+                                viewModel.isTopBidder &&
+                                        (tradeStatusCode != 550) &&
+                                        viewModel.messages.isNotEmpty
                                     ? () {
-                                        // 거래 완료 액션
-                                        _showTradeCompleteDialog(
+                                        // 거래 결과 (완료/취소) 선택 바텀시트
+                                        _showTradeActionBottomSheet(
                                           context,
                                           viewModel,
                                         );
                                       }
                                     : null,
-                            onTradeCancel:
-                                canShowTradeCancel
-                                ? () {
-                                    // 거래 취소 액션 (사유 선택 포함)
-                                    _showTradeCancelWithReason(
-                                      context,
-                                      viewModel,
-                                    );
-                                  }
-                                : null,
                           );
                         },
                       ),
@@ -334,14 +408,17 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
       confirmText: '완료',
       cancelText: '취소',
       onConfirm: () async {
+        debugPrint('[ChattingRoomScreen] User confirmed trade completion');
         // 로딩 표시
         if (!context.mounted) return;
+        debugPrint('[ChattingRoomScreen] Showing snackbar');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('거래 완료 처리 중...'),
             duration: Duration(seconds: 1),
           ),
         );
+        debugPrint('[ChattingRoomScreen] SnackBar shown, calling completeTrade');
 
         try {
           // 거래 완료 API 호출
@@ -360,12 +437,18 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
           // 뷰모델 새로고침하여 UI 업데이트
           await viewModel.fetchRoomInfo();
         } catch (e) {
+          debugPrint('[ChattingRoomScreen] completeTrade caught error: $e');
           if (!context.mounted) return;
+
+          String errorMessage = '거래 완료 처리 중 오류가 발생했습니다: ${e.toString()}';
+          if (e.toString().contains('Cannot complete') || e.toString().contains('already')) {
+             errorMessage = '이미 완료되었거나 취소된 거래입니다.';
+          }
 
           // 에러 메시지
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('거래 완료 처리 중 오류가 발생했습니다: ${e.toString()}'),
+              content: Text(errorMessage),
               backgroundColor: RedColor,
             ),
           );
@@ -418,6 +501,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     String reasonCode,
     bool isSellerFault,
   ) async {
+    debugPrint('[ChattingRoomScreen] _processTradeCancel called reason=$reasonCode fault=$isSellerFault');
     // 로딩 표시
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -446,10 +530,15 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     } catch (e) {
       if (!context.mounted) return;
 
+      String errorMessage = '거래 취소 처리 중 오류가 발생했습니다: ${e.toString()}';
+      if (e.toString().contains('Cannot cancel completed trade')) {
+         errorMessage = '이미 완료된 거래입니다.';
+      }
+
       // 에러 메시지
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('거래 취소 처리 중 오류가 발생했습니다: ${e.toString()}'),
+          content: Text(errorMessage),
           backgroundColor: RedColor,
         ),
       );

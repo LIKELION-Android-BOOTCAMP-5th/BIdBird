@@ -50,6 +50,13 @@
                 <!-- Accepts URIs that begin with packageID, oauth -->
                 <data android:scheme="com.bidbird.app" android:host="oauth"/>
             </intent-filter>
+            <!-- Deep link for com.bidbird.app://item -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.bidbird.app" android:host="item" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

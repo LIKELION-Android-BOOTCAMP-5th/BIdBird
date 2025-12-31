@@ -21,6 +21,7 @@ class SquareImageUploadSection extends StatefulWidget {
     required this.onRemoveImage,
     required this.primaryImageIndex,
     this.width,
+    this.addPhotoKey,
   });
 
   final List<XFile> images;
@@ -29,6 +30,7 @@ class SquareImageUploadSection extends StatefulWidget {
   final Function(int index) onRemoveImage;
   final int? primaryImageIndex;
   final double? width;
+  final GlobalKey? addPhotoKey;
 
   @override
   State<SquareImageUploadSection> createState() =>
@@ -88,7 +90,6 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                       height: double.infinity,
                       fit: BoxFit.cover,
                       cacheWidth: targetPx,
-                      cacheHeight: targetPx,
                       gaplessPlayback: true,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
@@ -167,7 +168,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
     final iconSizeMedium = context.iconSizeMedium;
     final spacingSmall = context.spacingSmall;
     final fontSizeSmall = context.fontSizeSmall;
-    
+
     return GestureDetector(
       onTap: widget.onImageSourceTap,
       behavior: HitTestBehavior.opaque,
@@ -296,6 +297,7 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                   right: inputPadding * SpacingRatios.imageOverlayPadding,
                   bottom: inputPadding * SpacingRatios.imageOverlayPadding,
                   child: GestureDetector(
+                    key: widget.addPhotoKey,
                     onTap: canAddMore ? widget.onImageSourceTap : null,
                     child: Container(
                       width: iconSizeMedium,

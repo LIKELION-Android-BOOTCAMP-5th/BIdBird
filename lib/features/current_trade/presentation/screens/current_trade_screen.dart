@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
@@ -7,6 +8,7 @@ import 'package:bidbird/features/current_trade/presentation/viewmodels/current_t
 import 'package:bidbird/features/current_trade/presentation/widgets/action_hub.dart';
 import 'package:bidbird/features/current_trade/presentation/widgets/trade_history_card.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class CurrentTradeScreen extends StatefulWidget {
@@ -121,10 +123,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
         child: Column(
           children: [
             // Layer 2: 액션 허브 - 로딩/에러 상태만 Selector
-            Selector<CurrentTradeViewModel, ({bool isLoading, String? error})>(
-              selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error),
+            Selector<CurrentTradeViewModel, ({bool isLoading, String? error, bool isInitialized})>(
+              selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error, isInitialized: vm.isInitialized),
               builder: (context, data, _) {
-                if (!data.isLoading && data.error == null) {
+                if (data.isInitialized && !data.isLoading && data.error == null) {
                   return const _ActionHubSection();
                 }
                 return const SizedBox.shrink();
@@ -138,13 +140,46 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
     );
   }
 
+  Widget _buildTradeHistoryFooter() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          GestureDetector(
+            onTap: () => context.go('/mypage/trade'),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '거래내역 전체보기',
+                  style: TextStyle(
+                    fontSize: context.fontSizeSmall,
+                    color: TextSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: TextSecondary,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildContent() {
     // 로딩 상태와 에러 상태 체크
-    return Selector<CurrentTradeViewModel, ({bool isLoading, String? error})>(
-      selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error),
+    return Selector<CurrentTradeViewModel, ({bool isLoading, String? error, bool isInitialized})>(
+      selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error, isInitialized: vm.isInitialized),
       builder: (context, state, _) {
-        // 로딩 중일 때 빈 배경만 표시
-        if (state.isLoading) {
+        // 로딩 중이거나 아직 초기화되지 않았을 때 빈 배경만 표시
+        if (state.isLoading || !state.isInitialized) {
           return Container();
         }
 
@@ -187,40 +222,35 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
   Widget _buildUnifiedHistoryList() {
     return Selector<
       CurrentTradeViewModel,
-      (List<({bool isSeller, bool isHighlighted, dynamic item})>, bool)
+      ({
+        List<({bool isSeller, bool isHighlighted, dynamic item})> items,
+        bool canLoadMore,
+        bool isInitialized
+      })
     >(
-      selector: (_, vm) => (vm.allItemsPaginated, vm.canLoadMore),
+      selector: (_, vm) => (
+        items: vm.allItemsPaginated,
+        canLoadMore: vm.canLoadMore,
+        isInitialized: vm.isInitialized
+      ),
       builder: (context, data, _) {
-        final (displayedItems, canLoadMore) = data;
+        final displayedItems = data.items;
+        final canLoadMore = data.canLoadMore;
+        final isInitialized = data.isInitialized;
         final horizontalPadding = context.hPadding;
         final verticalPadding = context.vPadding;
 
         // 빈 상태일 때
         if (displayedItems.isEmpty) {
-          return TransparentRefreshIndicator(
+          // 아직 초기화되지 않았다면 빈 화면 (배경)만 표시
+          if (!canLoadMore && !isInitialized) {
+             return Container();
+          }
+
+          return UnifiedEmptyState(
+            title: '현재 거래내역이 없습니다',
+            subtitle: '새로운 상품을 등록하거나 입찰에 참여해보세요!',
             onRefresh: () => context.read<CurrentTradeViewModel>().refresh(),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '현재 거래내역이 없습니다',
-                    style: TextStyle(
-                      fontSize: context.fontSizeMedium,
-                      color: TextSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '새로운 상품을 등록하거나 입찰에 참여해보세요!',
-                    style: TextStyle(
-                      fontSize: context.fontSizeSmall,
-                      color: TextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           );
         }
 
@@ -234,28 +264,32 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
               horizontal: horizontalPadding,
               vertical: verticalPadding,
             ),
-            itemCount: displayedItems.length + (canLoadMore ? 1 : 0),
+            itemCount: displayedItems.length + 1,
             addAutomaticKeepAlives: false,
             addRepaintBoundaries: true,
             itemBuilder: (context, index) {
-              // 로딩 인디케이터 (자동으로 더 불러옴)
+              // 최하단 아이템 (더 보기 로딩 또는 전체보기 링크)
               if (index == displayedItems.length) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  final vm = context.read<CurrentTradeViewModel>();
-                  if (vm.canLoadMore) {
-                    vm.loadMoreItems();
-                  }
-                });
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(
-                    child: SizedBox(
-                      height: 40,
-                      width: 40,
-                      child: CircularProgressIndicator(),
+                if (canLoadMore) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final vm = context.read<CurrentTradeViewModel>();
+                    if (vm.canLoadMore) {
+                      vm.loadMoreItems();
+                    }
+                  });
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: SizedBox(
+                        height: 40,
+                        width: 40,
+                        child: CircularProgressIndicator(),
+                      ),
                     ),
-                  ),
-                );
+                  );
+                } else {
+                  return _buildTradeHistoryFooter();
+                }
               }
 
               // 일반 아이템

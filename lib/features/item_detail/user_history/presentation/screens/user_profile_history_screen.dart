@@ -1,9 +1,7 @@
-import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-
+import 'package:bidbird/features/current_trade/presentation/widgets/trade_history_card.dart';
 import 'package:bidbird/features/item_detail/user_history/presentation/viewmodels/user_history_viewmodel.dart';
-import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/trade_status_chip.dart';
-import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,66 +20,46 @@ class UserProfileHistoryScreen extends StatelessWidget {
         body: SafeArea(
           child: Consumer<UserHistoryViewModel>(
             builder: (context, viewModel, _) {
+              if (viewModel.isLoading) {
+                return const SizedBox.shrink();
+              }
+              
               if (viewModel.trades.isEmpty) {
-                return const Center(
-                  child: Text(
-                    '거래 내역이 없습니다.',
-                    style: TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
+                return const UnifiedEmptyState(
+                  title: '거래 내역이 없습니다',
+                  subtitle: '아직 거래 기록이 존재하지 않습니다.',
                 );
               }
 
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: viewModel.trades.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final trade = viewModel.trades[index];
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: BackgroundColor,
-                      borderRadius: defaultBorder,
-                    ),
-                    child: Row(
-                      children: [
-                        FixedRatioThumbnail(
-                          imageUrl: trade.thumbnailUrl,
-                          width: 48,
-                          height: 48,
-                          aspectRatio: 1.0,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                trade.title,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${trade.price}  ·  ${trade.date}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: BorderColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        TradeStatusChip(
-                          label: trade.statusLabel,
-                          color: trade.statusColor,
-                        ),
-                      ],
-                    ),
+                  final label = trade.statusLabel;
+                  
+                  // 뱃지 상태 결정 로직
+                  final isWon = label.contains('낙찰');
+                  final isExpired = label.contains('만료') || label.contains('유찰') || label.contains('취소') || label.contains('패찰');
+
+                  // 가격 문자열 파싱 (예: "10,000원" -> 10000)
+                  final priceInt = int.tryParse(trade.price.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+
+                  // 반응형 여부
+                  final useResponsive = MediaQuery.of(context).size.width >= 360;
+
+                  return TradeHistoryCard(
+                    title: trade.title,
+                    thumbnailUrl: trade.thumbnailUrl,
+                    status: label,
+                    price: priceInt,
+                    itemId: trade.itemId ?? '',
+                    isSeller: trade.isSeller,
+                    useResponsive: useResponsive,
+                    isTopBidder: !trade.isSeller && isWon,
+                    isOpponentTopBidder: trade.isSeller && isWon,
+                    isExpired: isExpired,
                   );
                 },
               );
@@ -92,6 +70,3 @@ class UserProfileHistoryScreen extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -27,6 +27,10 @@ class FirebaseConfig {
   static String? _googleWebClientId;
   static String? _googleIosClientId;
 
+  // Kakao
+  static String? _kakaoNativeAppKey;
+  static String? _kakaoJavaScriptAppKey;
+
   static String get projectId => _require(_projectId, 'projectId');
   static String get messagingSenderId => _require(_messagingSenderId, 'messagingSenderId');
   static String get storageBucket => _require(_storageBucket, 'storageBucket');
@@ -47,6 +51,9 @@ class FirebaseConfig {
 
   static String? get googleWebClientId => _googleWebClientId;
   static String? get googleIosClientId => _googleIosClientId;
+
+  static String get kakaoNativeAppKey => _require(_kakaoNativeAppKey, 'kakaoNativeAppKey');
+  static String get kakaoJavaScriptAppKey => _require(_kakaoJavaScriptAppKey, 'kakaoJavaScriptAppKey');
 
 
   static String _require(String? value, String name) {
@@ -102,6 +109,12 @@ class FirebaseConfig {
         if (googleData != null) {
           _googleWebClientId = googleData['webClientId'] as String?;
           _googleIosClientId = googleData['iosClientId'] as String?;
+        }
+
+        final kakaoData = configData['kakao'] as Map?;
+        if (kakaoData != null) {
+          _kakaoNativeAppKey = kakaoData['nativeAppKey'] as String?;
+          _kakaoJavaScriptAppKey = kakaoData['javaScriptAppKey'] as String?;
         }
 
         if (_projectId == null || _messagingSenderId == null || _storageBucket == null) {

@@ -20,10 +20,18 @@ class PriceAuctionCard extends StatefulWidget {
     super.key,
     required this.viewModel,
     required this.inputDecoration,
+    this.startPriceKey,
+    this.bidScheduleKey,
+    this.categoryKey,
+    this.scrollController,
   });
 
   final ItemAddViewModel viewModel;
   final InputDecoration Function(String hint) inputDecoration;
+  final GlobalKey? startPriceKey;
+  final GlobalKey? bidScheduleKey;
+  final GlobalKey? categoryKey;
+  final ScrollController? scrollController;
 
   @override
   State<PriceAuctionCard> createState() => PriceAuctionCardState();
@@ -103,7 +111,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
     final vPadding = context.vPadding;
 
     return SingleChildScrollView(
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      controller: widget.scrollController,
       physics: const ClampingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
       child: Column(
@@ -115,6 +123,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
             children: [
               FormLabel(text: '시작가 (원)'),
               RepaintBoundary(
+                key: widget.startPriceKey,
                 child: TextField(
                   controller: widget.viewModel.startPriceController,
                   keyboardType: TextInputType.number,
@@ -197,6 +206,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
                 selector: (_, vm) => vm.selectedDuration,
                 builder: (context, selectedDuration, _) {
                   return DurationChipSelector(
+                    key: widget.bidScheduleKey,
                     durations: widget.viewModel.durations,
                     selectedDuration: selectedDuration,
                     onDurationSelected: (duration) {
@@ -233,6 +243,7 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
                 ),
                 builder: (context, data, _) {
                   return CategorySelectorField(
+                    key: widget.categoryKey,
                     categories: data.keywordTypes,
                     selectedCategoryId: data.selectedKeywordTypeId,
                     onCategorySelected: (id) {

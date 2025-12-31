@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ItemDetailAppBarSection extends StatelessWidget
     implements PreferredSizeWidget {
@@ -150,11 +152,42 @@ class ItemDetailAppBarSection extends StatelessWidget
   }
 
   Future<void> _handleShare(BuildContext context) async {
-    final shareText = '${item.itemTitle}\n현재 입찰가: ${item.currentPrice}원';
+    final String deepLink = 'com.bidbird.app://item/${item.itemId}';
+    final String shareText =
+        '${item.itemTitle}\n현재 입찰가: ${item.currentPrice}원\n$deepLink';
+
+    // 1. 이미지가 없는 경우 텍스트만 공유
+    if (item.itemImages.isEmpty) {
+      await _shareTextOnly(context, shareText);
+      return;
+    }
+
+    // 2. 이미지가 있는 경우 이미지 다운로드 후 공유
     try {
-      await Share.share(shareText);
+      final String imageUrl = item.itemImages.first;
+      final tempDir = await getTemporaryDirectory();
+      final String fileName = 'share_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String filePath = '${tempDir.path}/$fileName';
+
+      await Dio().download(imageUrl, filePath);
+      
+      final xFile = XFile(filePath);
+      await Share.shareXFiles(
+        [xFile],
+        text: shareText,
+      );
     } catch (e) {
-      await Clipboard.setData(ClipboardData(text: shareText));
+      // 이미지 다운로드/공유 실패 시 텍스트만 공유 시도
+      debugPrint('Image share failed: $e');
+      await _shareTextOnly(context, shareText);
+    }
+  }
+
+  Future<void> _shareTextOnly(BuildContext context, String text) async {
+    try {
+      await Share.share(text);
+    } catch (e) {
+      await Clipboard.setData(ClipboardData(text: text));
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

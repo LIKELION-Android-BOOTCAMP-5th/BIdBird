@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bidbird/core/utils/app_platform/app_platform.dart';
+
+import 'package:bidbird/core/config/firebase_config.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/services/datasource_manager.dart';
@@ -9,10 +12,8 @@ import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:bidbird/core/config/firebase_config.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
-
 
 class FirebaseManager {
   static final FirebaseManager _shared = FirebaseManager();
@@ -31,7 +32,6 @@ class FirebaseManager {
     if (!kIsWeb) return null;
     return FirebaseConfig.webVapidKey;
   }
-
 
   Future<String?> getFcmToken() async {
     final fcmToken = await FirebaseMessaging.instance.getToken(
@@ -99,7 +99,8 @@ class FirebaseManager {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    if (Platform.isAndroid) {
+    // if (Platform.isAndroid) {
+    if (isAndroidPlatform) {
       const AndroidNotificationChannel defaultChannel =
           AndroidNotificationChannel(
             'high_importance_channel',
@@ -119,7 +120,8 @@ class FirebaseManager {
   //========================================= 채널 관련 시작=================================================
   // 알림 채널 설정(안드로이드만인가??)
   static Future<void> _createStaticChannels() async {
-    if (!Platform.isAndroid) return;
+    if (!isAndroidPlatform) return;
+    // if (!Platform.isAndroid) return;
 
     final androidPlugin = _localNotifications
         .resolvePlatformSpecificImplementation<
@@ -136,55 +138,6 @@ class FirebaseManager {
       playSound: true,
     );
 
-    const commentChannel = AndroidNotificationChannel(
-      'comment_channel',
-      '댓글 알림',
-      description: '댓글이 달렸을 때 알림을 받습니다.',
-      importance: Importance.high,
-      playSound: true,
-    );
-
-    const likeChannel = AndroidNotificationChannel(
-      'like_channel',
-      '좋아요 알림',
-      description: '좋아요를 받았을 때 알림을 받습니다.',
-      importance: Importance.defaultImportance,
-      playSound: true,
-    );
-
-    const announcementChannel = AndroidNotificationChannel(
-      'announcement_channel',
-      '공지사항',
-      description: '중요한 공지사항을 받습니다.',
-      importance: Importance.max,
-      playSound: true,
-      enableVibration: true,
-    );
-
-    const followChannel = AndroidNotificationChannel(
-      'follow_channel',
-      '팔로우 알림',
-      description: '새로운 팔로워 알림을 받습니다.',
-      importance: Importance.defaultImportance,
-      playSound: true,
-    );
-
-    const postChannel = AndroidNotificationChannel(
-      'post_channel',
-      '게시글 알림',
-      description: '게시글 관련 알림을 받습니다.',
-      importance: Importance.defaultImportance,
-      playSound: true,
-    );
-
-    const messageChannel = AndroidNotificationChannel(
-      'message_channel',
-      '메시지 알림',
-      description: '메시지 알림을 받습니다.',
-      importance: Importance.high,
-      playSound: true,
-    );
-
     const AndroidNotificationChannel fcmChannel = AndroidNotificationChannel(
       'fcm_notification_channel',
       '일반 알림',
@@ -194,45 +147,13 @@ class FirebaseManager {
     );
 
     await androidPlugin.createNotificationChannel(generalChannel);
-    await androidPlugin.createNotificationChannel(commentChannel);
-    await androidPlugin.createNotificationChannel(likeChannel);
-    await androidPlugin.createNotificationChannel(announcementChannel);
-    await androidPlugin.createNotificationChannel(followChannel);
-    await androidPlugin.createNotificationChannel(postChannel);
-    await androidPlugin.createNotificationChannel(messageChannel);
     await androidPlugin.createNotificationChannel(fcmChannel);
-  }
-
-  // 동적 체널 생성자(채팅방)
-  static Future<String> createChatRoomChannel(String roomId) async {
-    if (!Platform.isAndroid) return 'chat_room_$roomId';
-
-    final androidPlugin = _localNotifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-
-    if (androidPlugin == null) return 'chat_room_$roomId';
-
-    final channelId = 'chat_room_$roomId';
-
-    final channel = AndroidNotificationChannel(
-      channelId,
-      '채팅 알림',
-      description: '채팅방 메시지 알림을 받습니다.',
-      importance: Importance.high,
-      playSound: true,
-      enableVibration: true,
-      showBadge: true,
-    );
-
-    await androidPlugin.createNotificationChannel(channel);
-    return channelId;
   }
 
   // 모르겠음 이건 뭐지......
   static Future<void> _setupIOSCategories() async {
-    if (!Platform.isIOS) return;
+    // if (!Platform.isIOS) return;
+    if (!isIOSPlatform) return;
   }
   //========================================= 채널 관련 끝==================================================
 
@@ -240,9 +161,7 @@ class FirebaseManager {
   // FCM 토큰 관련
   static Future<void> _setupFCMToken() async {
     try {
-      String? token = await _fcm.getToken(
-        vapidKey: _webVapidKey(),
-      );
+      String? token = await _fcm.getToken(vapidKey: _webVapidKey());
       if (token != null) {
         // fcm 토큰 supabase에 저장하기
         await saveTokenToSupabase(token);
@@ -259,9 +178,7 @@ class FirebaseManager {
   // 로그인 상태 리스너에 넣어놨음.
   static Future<void> setupFCMTokenAtLogin() async {
     try {
-      String? token = await _fcm.getToken(
-        vapidKey: _webVapidKey(),
-      );
+      String? token = await _fcm.getToken(vapidKey: _webVapidKey());
       if (token != null) {
         // 이전 토큰과 다를 때만 저장 -> 로그인 시에는 강제 저장
         await saveTokenToSupabase(token, force: true);
@@ -281,7 +198,10 @@ class FirebaseManager {
   }
 
   // fcm 토큰 supabase에 저장하기 (토큰 변경 시에만)
-  static Future<void> saveTokenToSupabase(String token, {bool force = false}) async {
+  static Future<void> saveTokenToSupabase(
+    String token, {
+    bool force = false,
+  }) async {
     try {
       // 토큰이 변경되지 않았으면 저장하지 않음 (force가 true면 무시하고 저장)
       if (!force && token == _lastSavedToken) {
@@ -293,12 +213,22 @@ class FirebaseManager {
         return;
       }
 
+      // String platform;
+      // if (kIsWeb) {
+      //   platform = 'web';
+      // } else if (Platform.isIOS) {
+      //   platform = 'ios';
+      // } else if (Platform.isAndroid) {
+      //   platform = 'android';
+      // } else {
+      //   platform = 'unknown';
+      // }
       String platform;
-      if (kIsWeb) {
+      if (isWebPlatform) {
         platform = 'web';
-      } else if (Platform.isIOS) {
+      } else if (isIOSPlatform) {
         platform = 'ios';
-      } else if (Platform.isAndroid) {
+      } else if (isAndroidPlatform) {
         platform = 'android';
       } else {
         platform = 'unknown';
@@ -395,55 +325,22 @@ class FirebaseManager {
     print('로컬알림 발송. 데이터: $payloadString');
   }
 
-  // 앱 접속중에 작동하는 로직 (현재 사용되지 않음 - sendLocalPushFromFCM 사용 중)
-  // static Future<void> _showLocalNotification(RemoteMessage message) async {
-  //   final notification = message.notification;
-  //   if (notification == null) return;
+  static Future<void> _markAlarmCheckedIfNeeded(
+    Map<String, dynamic> data,
+  ) async {
+    final alarmType = data['alarm_type']?.toString() ?? 'UNKNOWN';
 
-  //   //===========플랫폼 별로 채널 작동 로직 시작==============
-  //   AndroidNotificationDetails? androidDetails;
-  //   DarwinNotificationDetails? iosDetails;
+    // 채팅은 알림 테이블 읽음처리 X
+    if (alarmType == 'NEW_CHAT') return;
 
-  //   if (Platform.isAndroid) {
-  //     final channelId =
-  //         message.data['channelId'] ??
-  //         _getChannelFromNotificationType(message.data['type']) ??
-  //         'general_channel';
+    final alarmId = data['alarm_id']?.toString();
+    if (alarmId == null || alarmId.isEmpty) return;
 
-  //     androidDetails = AndroidNotificationDetails(
-  //       channelId,
-  //       _getChannelName(channelId),
-  //       channelDescription: _getChannelDescription(channelId),
-  //       importance: Importance.high,
-  //       priority: Priority.high,
-  //       icon: '@mipmap/ic_launcher',
-  //     );
-  //   }
-
-  //   if (Platform.isIOS) {
-  //     iosDetails = const DarwinNotificationDetails(
-  //       presentAlert: true,
-  //       presentBadge: true,
-  //       presentSound: true,
-  //     );
-  //   }
-  //   //===========플랫폼 별로 채널 작동 로직 끝===============
-  //   //===========앱 안에서 알림 보여주기 ===================
-  //   final details = NotificationDetails(
-  //     android: androidDetails,
-  //     iOS: iosDetails,
-  //   );
-
-  //   await _localNotifications.show(
-  //     notification.hashCode,
-  //     notification.title,
-  //     notification.body,
-  //     details,
-  //     payload: message.data.toString(),
-  //   );
-  // }
-
-
+    await SupabaseManager.shared.supabase
+        .from('alarm')
+        .update({'is_checked': true})
+        .eq('id', alarmId); // ✅ uuid 그대로
+  }
 
   static Future<void> _onNotificationTapped(
     NotificationResponse notificationResponse,
@@ -460,12 +357,14 @@ class FirebaseManager {
 
         //alarm_id, post_id, friend_id 등의 정보를 포함한 최종 라우트 생성
         //안드로이드에서 로컬푸시생성시 반드시 고유한 아이디가 필요해서 alarm테이블의 기본키를 사용할것
+        await _markAlarmCheckedIfNeeded(fcmData);
         final String targetRoute = _generateRoute(alarmType, fcmData);
 
         if (alarmType == "WIN") {
           final String? itemId = fcmData['item_id'] as String;
           if (itemId == null) return;
-          final ItemDetail? item = await DatasourceManager().itemDetail.fetchItemDetail(itemId);
+          final ItemDetail? item = await DatasourceManager().itemDetail
+              .fetchItemDetail(itemId);
           if (item == null) {
             rootNavigatorKey.currentContext?.push(targetRoute);
             return;
@@ -496,11 +395,13 @@ class FirebaseManager {
     final String alarmType = fcmData['alarm_type']?.toString() ?? 'UNKNOWN';
 
     // _generateRoute 함수를 사용하여 알림 타입과 데이터에 맞는 라우팅 경로 생성
+    await _markAlarmCheckedIfNeeded(fcmData);
     final String targetRoute = _generateRoute(alarmType, fcmData);
     if (alarmType == "WIN") {
       final String? itemId = fcmData['item_id'] as String;
       if (itemId == null) return;
-      final ItemDetail? item = await DatasourceManager().itemDetail.fetchItemDetail(itemId);
+      final ItemDetail? item = await DatasourceManager().itemDetail
+          .fetchItemDetail(itemId);
       if (item == null) {
         rootNavigatorKey.currentContext?.push(targetRoute);
         return;
@@ -519,9 +420,7 @@ class FirebaseManager {
 
   static Future<String?> getToken() async {
     try {
-      return await _fcm.getToken(
-        vapidKey: _webVapidKey(),
-      );
+      return await _fcm.getToken(vapidKey: _webVapidKey());
     } catch (e) {
       debugPrint('FCM 토큰 가져오기 실패: $e');
       return null;

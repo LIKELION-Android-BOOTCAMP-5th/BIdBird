@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../domain/entities/trade_history_entity.dart';
@@ -10,7 +11,7 @@ class TradeHistoryViewModel extends ChangeNotifier {
   final GetTradeHistory _getTradeHistory;
 
   TradeRole role = TradeRole.seller;
-  int? statusFilter;
+  List<int>? statusFilters;
   int page = 1;
   final int pageSize = 20;
   bool isLoading = false;
@@ -37,7 +38,7 @@ class TradeHistoryViewModel extends ChangeNotifier {
     try {
       final result = await _getTradeHistory(
         role: role,
-        statusCode: statusFilter,
+        statusCodes: statusFilters,
         page: page,
         pageSize: pageSize,
       );
@@ -55,12 +56,14 @@ class TradeHistoryViewModel extends ChangeNotifier {
   void changeRole(TradeRole newRole) {
     if (role == newRole) return; //반복방지
     role = newRole;
-    statusFilter = null;
+    statusFilters = null;
     loadPage(reset: true);
   }
 
-  void changeFilter(int? code) {
-    statusFilter = statusFilter == code ? null : code;
+  void changeFilter(List<int> codes) {
+    statusFilters = listEquals(statusFilters, codes)
+        ? null
+        : List<int>.from(codes);
     loadPage(reset: true);
   }
 

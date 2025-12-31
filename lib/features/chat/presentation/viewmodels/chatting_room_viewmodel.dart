@@ -9,6 +9,7 @@ import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/item_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/opponent_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/trade_info_entity.dart';
 import 'package:bidbird/features/chat/domain/usecases/get_messages_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/get_room_id_usecase.dart';
@@ -310,6 +311,43 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       tradeInfo = result.tradeInfo;
       _hasShippingInfo = result.hasShippingInfo;
 
+      // [Bug Fix] 서버에서 상대를 '나'로 잘못 리턴하는 경우(특히 판매자가 구매자에게 연락 시),
+      // 클라이언트에서 상대를 '구매자'로 강제 보정
+      if (roomInfo != null) {
+        final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+        // 상대방 ID가 나랑 같다면? (잘못된 상태)
+        if (currentUserId != null && roomInfo!.opponent.userId == currentUserId) {
+          // 내가 판매자인지 확인
+          final isSeller = itemInfo?.sellerId == currentUserId;
+          if (isSeller) {
+            // 진짜 구매자 ID 찾기
+            String? buyerId = tradeInfo?.buyerId;
+            if (buyerId == null || buyerId.isEmpty) {
+              buyerId = auctionInfo?.lastBidUserId;
+            }
+            
+            // roomInfo의 opponent를 교체
+             roomInfo = RoomInfoEntity(
+                item: roomInfo!.item,
+                auction: roomInfo!.auction,
+                opponent: OpponentEntity(
+                    userId: buyerId ?? '', // ID가 없으면 빈 문자열이라도
+                    nickName: '구매자',      // 닉네임 강제 지정
+                    profileImage: null,
+                ),
+                trade: roomInfo!.trade,
+                unreadCount: roomInfo!.unreadCount,
+                lastMessageAt: roomInfo!.lastMessageAt,
+             );
+
+             // 진짜 닉네임 가져오기
+             if (buyerId != null && buyerId.isNotEmpty) {
+               _fetchRealOpponentProfile(buyerId);
+             }
+          }
+        }
+      }
+
       // 평가 작성 여부 확인
       if (itemId.isNotEmpty) {
         _hasSubmittedReview = await _hasSubmittedReviewUseCase(itemId);
@@ -361,6 +399,43 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           tradeInfo = result.tradeInfo;
           _hasShippingInfo = result.hasShippingInfo;
 
+          // [Bug Fix] 서버에서 상대를 '나'로 잘못 리턴하는 경우(특히 판매자가 구매자에게 연락 시),
+          // 클라이언트에서 상대를 '구매자'로 강제 보정
+          if (roomInfo != null) {
+            final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+            // 상대방 ID가 나랑 같다면? (잘못된 상태)
+            if (currentUserId != null && roomInfo!.opponent.userId == currentUserId) {
+              // 내가 판매자인지 확인
+              final isSeller = itemInfo?.sellerId == currentUserId;
+              if (isSeller) {
+                // 진짜 구매자 ID 찾기
+                String? buyerId = tradeInfo?.buyerId;
+                if (buyerId == null || buyerId.isEmpty) {
+                  buyerId = auctionInfo?.lastBidUserId;
+                }
+                
+                // roomInfo의 opponent를 교체
+                 roomInfo = RoomInfoEntity(
+                    item: roomInfo!.item,
+                    auction: roomInfo!.auction,
+                    opponent: OpponentEntity(
+                        userId: buyerId ?? '', 
+                        nickName: '구매자',
+                        profileImage: null,
+                    ),
+                    trade: roomInfo!.trade,
+                    unreadCount: roomInfo!.unreadCount,
+                    lastMessageAt: roomInfo!.lastMessageAt,
+                 );
+
+                 // 진짜 닉네임 가져오기
+                 if (buyerId != null && buyerId.isNotEmpty) {
+                   _fetchRealOpponentProfile(buyerId);
+                 }
+              }
+            }
+          }
+
           // 평가 작성 여부 확인
           if (itemId.isNotEmpty) {
             _hasSubmittedReview = await _hasSubmittedReviewUseCase(itemId);
@@ -375,6 +450,34 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         }
       },
     );
+  }
+
+  // 진짜 상대방 프로필 가져오기 (오류 보정용)
+  Future<void> _fetchRealOpponentProfile(String userId) async {
+    try {
+      final user = await SupabaseManager.shared.fetchUser(userId);
+      // roomInfo가 여전히 존재하고, 보정 대상인 경우에만 업데이트
+      if (user != null && 
+          roomInfo != null && 
+          roomInfo!.opponent.nickName == '구매자') {
+          
+         roomInfo = RoomInfoEntity(
+            item: roomInfo!.item,
+            auction: roomInfo!.auction,
+            opponent: OpponentEntity(
+                userId: userId, 
+                nickName: user.nick_name ?? '구매자',
+                profileImage: user.profile_image,
+            ),
+            trade: roomInfo!.trade,
+            unreadCount: roomInfo!.unreadCount,
+            lastMessageAt: roomInfo!.lastMessageAt,
+         );
+         notifyListeners();
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   // 하단으로 스크롤하는 메서드
@@ -565,9 +668,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (result.isFirstMessage && result.roomId != null) {
       // 첫 메시지 전송 성공
       roomId = result.roomId;
-      messageController.text = "";
-      images.clear();
-      type = MessageType.text;
       _uploadProgressSub?.cancel();
       uploadProgress.clear();
       notifyListeners();
@@ -578,9 +678,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     } else if (currentRoomId != null) {
       // 기존 채팅방에서 메시지 전송 성공
       // Realtime subscription이 실제 메시지를 추가하면 임시 메시지가 자동으로 교체됨
-      messageController.text = "";
-      images.clear();
-      type = MessageType.text;
       isSending = false;
       _uploadProgressSub?.cancel();
       uploadProgress.clear();
@@ -644,6 +741,10 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     }
 
     if (images.isNotEmpty || messageText.trim().isNotEmpty) {
+      messageController.text = "";
+      images.clear();
+      type = MessageType.text;
+      
       notifyListeners();
       scrollToBottom(force: true);
     }
@@ -731,9 +832,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   /// 거래 완료 처리
   Future<void> completeTrade() async {
+    debugPrint('[ChattingRoomViewmodel] completeTrade entry check itemId=$itemId');
     if (itemId.isEmpty) {
       throw Exception('매물 ID가 없습니다.');
     }
+    debugPrint('[ChattingRoomViewmodel] completeTrade called for itemId=$itemId');
 
     await _completeTradeUseCase(itemId);
 
@@ -746,11 +849,12 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (itemId.isEmpty) {
       throw Exception('매물 ID가 없습니다.');
     }
+    debugPrint('[ChattingRoomViewmodel] cancelTrade called for itemId=$itemId reason=$reasonCode');
 
     await _cancelTradeUseCase(itemId, reasonCode, isSellerFault);
 
     // 거래 취소 후 룸 정보 새로고침
-    await fetchRoomInfo();
+    await fetchRoomInfo(forceRefresh: true);
   }
 
   /// 거래 평가 작성 처리
