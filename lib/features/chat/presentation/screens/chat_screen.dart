@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/extension/time_extension.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
@@ -199,7 +200,11 @@ class _ChatScreenState extends State<ChatScreen>
       if (data.isLoading) {
         return const SizedBox.shrink();
       }
-      return const Center(child: Text('채팅방이 없습니다.'));
+      return UnifiedEmptyState(
+        title: '채팅방이 없습니다',
+        subtitle: '새로운 상품을 등록하거나 입찰에 참여해보세요!',
+        onRefresh: () => context.read<ChatListViewmodel>().reloadList(forceRefresh: true),
+      );
     }
 
     // ViewModel 참조 (메서드 호출용)

@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/components/default_profile_avatar.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/features/item_detail/user_profile/domain/entities/user_profile_entity.dart';
@@ -47,25 +48,14 @@ class UserProfileScreen extends StatelessWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              CircleAvatar(
-                                radius: 32,
-                                backgroundColor: BorderColor,
-                                backgroundImage: profile.avatarUrl.isNotEmpty
-                                    ? NetworkImage(profile.avatarUrl)
-                                    : null,
-                                child: profile.avatarUrl.isNotEmpty
-                                    ? null
-                                    : Text(
-                                        profile.nickname.isNotEmpty
-                                            ? profile.nickname[0]
-                                            : '?',
-                                        style: const TextStyle(
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                              ),
+                              profile.avatarUrl.isNotEmpty
+                                  ? CircleAvatar(
+                                      radius: 32,
+                                      backgroundColor: BorderColor,
+                                      backgroundImage:
+                                          NetworkImage(profile.avatarUrl),
+                                    )
+                                  : const DefaultProfileAvatar(radius: 32),
                               const SizedBox(height: 12),
                               Text(
                                 profile.nickname,

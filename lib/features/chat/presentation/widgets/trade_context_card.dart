@@ -137,7 +137,7 @@ class TradeContextCard extends StatelessWidget {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Text(
-                                    '거래 결과',
+                                    '거래 확정',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,

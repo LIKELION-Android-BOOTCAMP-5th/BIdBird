@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
@@ -33,7 +32,6 @@ void main() async {
     }),
   );
 
-
   runApp(
     MultiProvider(
       providers: [
@@ -51,11 +49,7 @@ void main() async {
             return ProfileViewModel(GetProfile(repo));
           },
         ),
-        // 프로필정보가 필요한 곳에서 다음과 같이 사용하세요
-        // final profileVm = context.watch<ProfileViewModel>();
-        // final profile = profileVm.profile;
-        // final nickName = profile?.nickName ?? '';
-        // final profileImageUrl = profile?.profileImageUrl;
+
         Provider(create: (context) => HomeRepositoryImpl()),
         // HomeViewModel을 전역으로 등록하여 탭 전환 시 재생성 방지
         ChangeNotifierProvider(
@@ -210,4 +204,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-

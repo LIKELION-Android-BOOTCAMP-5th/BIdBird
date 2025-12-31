@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:bidbird/core/utils/app_platform/app_platform.dart';
+
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:flutter/foundation.dart';
@@ -52,13 +54,22 @@ class LoginScreen extends StatelessWidget {
                       buttonFontSize: buttonFontSize,
                       buttonLogic: () async {
                         try {
-                          if (!kIsWeb &&
-                              (Platform.isAndroid || Platform.isIOS)) {
+                          if (isMobilePlatform) {
                             await SupabaseManager.shared.googleSignIn();
                           } else {
                             await SupabaseManager.shared.supabase.auth
-                                .signInWithOAuth(OAuthProvider.google);
+                                .signInWithOAuth(
+                                  OAuthProvider.google,
+                                  redirectTo: SupabaseManager.webRedirectUrl,
+                                );
                           }
+                          // if (!kIsWeb &&
+                          //     (Platform.isAndroid || Platform.isIOS)) {
+                          //   await SupabaseManager.shared.googleSignIn();
+                          // } else {
+                          //   await SupabaseManager.shared.supabase.auth
+                          //       .signInWithOAuth(OAuthProvider.google);
+                          // }
                         } catch (e) {
                           return;
                         }
@@ -91,7 +102,9 @@ class LoginScreen extends StatelessWidget {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Apple 로그인에 실패했습니다: ${e.toString()}'),
+                              content: Text(
+                                'Apple 로그인에 실패했습니다: ${e.toString()}',
+                              ),
                               backgroundColor: Colors.red,
                               duration: const Duration(seconds: 3),
                             ),

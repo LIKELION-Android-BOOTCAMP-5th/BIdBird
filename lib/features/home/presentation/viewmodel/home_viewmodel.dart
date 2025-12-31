@@ -38,7 +38,11 @@ class HomeViewmodel extends ChangeNotifier {
 
   //로딩 플래그 개선
   bool _isFetching = false;
+  bool get isLoading => _isFetching;
+
   bool _hasMore = true;
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
 
   //검색 기능 관련
   bool searchButton = false;
@@ -84,6 +88,9 @@ class HomeViewmodel extends ChangeNotifier {
   //ios fetch문제 잡기
   bool _isDisposed = false;
 
+  //리프래시 시 종료된 상품 안보이게
+  bool _isRefreshing = false;
+
   ///시작할 때 작동
   HomeViewmodel(this._homeRepository) {
     getKeywordList();
@@ -119,16 +126,16 @@ class HomeViewmodel extends ChangeNotifier {
     // 다시 업로드
     // 스크롤 fetch 설정 부분, 여기서 기본적인 fetch도 이루어짐
     scrollController.addListener(() {
-      if (isSearching == true) return;
+      if (_isRefreshing || isSearching) return;
+      if (!_hasMore || _items.isEmpty) return;
 
-      // 마지막에 도달하면 다음 페이지 로드
       if (scrollController.position.pixels >=
           scrollController.position.maxScrollExtent - 200) {
         fetchNextItems();
       }
     });
     if (_isDisposed) return;
-    fetchItems();
+    // fetchItems();
     //리얼 타임
     setupRealtimeSubscription();
   }
@@ -204,37 +211,49 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> fetchItems() async {
+    _isFetching = true; // 로딩 시작
+    notifyListeners();
+
     String orderBy = setOrderBy(type);
     _hasMore = true;
-    _items = await _homeRepository.fetchItems(
-      orderBy,
-      currentIndex: _currentPage,
-      keywordType: selectedKeywordId,
-    );
-    if (_isDisposed) return;
-    // sortItemsByFinishTime();
-    notifyListeners();
+    try {
+      _items = await _homeRepository.fetchItems(
+        orderBy,
+        currentIndex: _currentPage,
+        keywordType: selectedKeywordId,
+      );
+    } finally {
+      _isFetching = false;
+      _isInitialized = true; // 초기화 완료
+      if (_isDisposed) return;
+      notifyListeners();
+    }
   }
 
   Future<void> handleRefresh() async {
-    String orderBy = setOrderBy(type);
+    if (_isRefreshing) return;
+    _isRefreshing = true;
+
     _currentPage = 1;
     _items = [];
     _hasMore = true;
     _isFetching = false; // 캐시된 fetch 플래그 초기화
     notifyListeners();
-    _items = await _homeRepository.fetchItems(
-      orderBy,
-      currentIndex: _currentPage,
+
+    final result = await _homeRepository.fetchItems(
+      setOrderBy(type),
+      currentIndex: 1,
       keywordType: selectedKeywordId,
-      forceRefresh: true, // 강제 새로고침 - 캐시 무시
+      forceRefresh: true,
     );
-    // sortItemsByFinishTime();
+
+    _items = result;
+    _isRefreshing = false;
     notifyListeners();
   }
 
   Future<void> fetchNextItems() async {
-    if (_isFetching || !_hasMore) return;
+    if (_isFetching || _isRefreshing || !_hasMore) return;
 
     _isFetching = true;
 
@@ -420,6 +439,61 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   void setupRealtimeSubscription() {
+    // 기존 채널 정리
+    if (_actionRealtime != null) {
+      SupabaseManager.shared.supabase.removeChannel(_actionRealtime!);
+    }
+
+    _actionRealtime = SupabaseManager.shared.supabase
+        .channel('public:auctions')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'auctions',
+          callback: (payload) {
+            final newRecord = payload.newRecord;
+            final itemId = newRecord['item_id'] as String?;
+            if (itemId == null) return;
+
+            // 리스트에서 해당 아이템 찾기
+            final index = _items.indexWhere((e) => e.item_id == itemId);
+            if (index != -1) {
+              final item = _items[index];
+              bool isChanged = false;
+
+              final newBidCount = newRecord['bid_count'] as int?;
+              final newPrice = newRecord['current_price'] as int?;
+              final statusCode = newRecord['auction_status_code'] as int?;
+              final lastBidUserId = newRecord['last_bid_user_id'] as String?;
+
+              if (newBidCount != null && item.auctions.bid_count != newBidCount) {
+                item.auctions.bid_count = newBidCount;
+                isChanged = true;
+              }
+
+              if (newPrice != null && item.auctions.current_price != newPrice) {
+                item.auctions.current_price = newPrice;
+                isChanged = true;
+              }
+              
+              if (statusCode != null && item.auctions.auction_status_code != statusCode) {
+                item.auctions.auction_status_code = statusCode;
+                isChanged = true;
+              }
+
+              if (lastBidUserId != null && item.auctions.last_bid_user_id != lastBidUserId) {
+                item.auctions.last_bid_user_id = lastBidUserId;
+                isChanged = true;
+              }
+              
+              if (isChanged) {
+                notifyListeners();
+              }
+            }
+          },
+        )
+        .subscribe();
+
     // 폴링 시작 (6초마다 아이템 정렬 상태 확인)
     _startPolling();
   }

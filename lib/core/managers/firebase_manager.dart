@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bidbird/core/utils/app_platform/app_platform.dart';
+
 import 'package:bidbird/core/config/firebase_config.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/router/app_router.dart';
@@ -97,7 +99,8 @@ class FirebaseManager {
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
-    if (Platform.isAndroid) {
+    // if (Platform.isAndroid) {
+    if (isAndroidPlatform) {
       const AndroidNotificationChannel defaultChannel =
           AndroidNotificationChannel(
             'high_importance_channel',
@@ -117,7 +120,8 @@ class FirebaseManager {
   //========================================= 채널 관련 시작=================================================
   // 알림 채널 설정(안드로이드만인가??)
   static Future<void> _createStaticChannels() async {
-    if (!Platform.isAndroid) return;
+    if (!isAndroidPlatform) return;
+    // if (!Platform.isAndroid) return;
 
     final androidPlugin = _localNotifications
         .resolvePlatformSpecificImplementation<
@@ -148,7 +152,8 @@ class FirebaseManager {
 
   // 모르겠음 이건 뭐지......
   static Future<void> _setupIOSCategories() async {
-    if (!Platform.isIOS) return;
+    // if (!Platform.isIOS) return;
+    if (!isIOSPlatform) return;
   }
   //========================================= 채널 관련 끝==================================================
 
@@ -208,12 +213,22 @@ class FirebaseManager {
         return;
       }
 
+      // String platform;
+      // if (kIsWeb) {
+      //   platform = 'web';
+      // } else if (Platform.isIOS) {
+      //   platform = 'ios';
+      // } else if (Platform.isAndroid) {
+      //   platform = 'android';
+      // } else {
+      //   platform = 'unknown';
+      // }
       String platform;
-      if (kIsWeb) {
+      if (isWebPlatform) {
         platform = 'web';
-      } else if (Platform.isIOS) {
+      } else if (isIOSPlatform) {
         platform = 'ios';
-      } else if (Platform.isAndroid) {
+      } else if (isAndroidPlatform) {
         platform = 'android';
       } else {
         platform = 'unknown';

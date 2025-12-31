@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 
@@ -66,7 +67,11 @@ class _Blacklist extends StatelessWidget {
     }
 
     if (users.isEmpty) {
-      return const Center(child: Text('차단한 사용자가 없습니다.'));
+      return UnifiedEmptyState(
+        title: '차단한 사용자가 없습니다.',
+        subtitle: '필요 시 사용자를 차단할 수 있습니다.',
+        onRefresh: vm.loadBlacklist,
+      );
     }
 
     //차단토글확인할수있도록//RefreshIndicator

@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 
 
@@ -62,7 +63,11 @@ class _ReportItemList extends StatelessWidget {
     }
 
     if (vm.reports.isEmpty) {
-      return const Center(child: Text('등록된 신고 내역이 없습니다.'));
+      return UnifiedEmptyState(
+        title: '등록된 신고 내역이 없습니다',
+        subtitle: '문제가 발생할 경우 신고할 수 있습니다.',
+        onRefresh: () => vm.loadReports(),
+      );
     }
 
     return ListView.separated(

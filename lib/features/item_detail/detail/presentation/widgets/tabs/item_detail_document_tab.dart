@@ -1,3 +1,4 @@
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
@@ -22,39 +23,11 @@ class ItemDetailDocumentTab extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(context.screenPadding * 2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.description_outlined,
-              size: context.iconSizeMedium * 2,
-              color: const Color(0xFF9CA3AF),
-            ),
-            SizedBox(height: context.spacingMedium),
-            Text(
-              '등록된 보증서가 없습니다',
-              style: TextStyle(
-                fontSize: context.fontSizeLarge,
-                fontWeight: FontWeight.w600,
-                color: TextPrimary,
-                letterSpacing: -0.3,
-              ),
-            ),
-            SizedBox(height: context.spacingSmall),
-            Text(
-              '판매자가 보증서를 업로드하지 않았습니다',
-              style: TextStyle(
-                fontSize: context.fontSizeMedium,
-                color: TextSecondary,
-                letterSpacing: -0.3,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 40),
+      child: UnifiedEmptyState(
+        title: '등록된 보증서가 없습니다',
+        subtitle: '판매자가 보증서를 업로드하지 않았습니다',
       ),
     );
   }
