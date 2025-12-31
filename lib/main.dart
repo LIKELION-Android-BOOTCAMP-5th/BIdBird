@@ -1,6 +1,5 @@
 import 'dart:async';
 
-
 import 'package:bidbird/core/managers/app_initializer.dart';
 import 'package:bidbird/core/router/app_router.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
@@ -32,7 +31,6 @@ void main() async {
       AppInitializer.startPostInitTasks();
     }),
   );
-
 
   runApp(
     MultiProvider(
@@ -210,4 +208,3 @@ class _MyAppState extends State<MyApp> {
     );
   }
 }
-

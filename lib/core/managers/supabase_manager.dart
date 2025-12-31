@@ -14,6 +14,9 @@ import '../models/user_entity.dart';
 class SupabaseManager {
   static final SupabaseManager _shared = SupabaseManager();
 
+  static const String webRedirectUrl =
+      'https://bidbird2025.github.io/bidbird2025/'; //일단여기에넣음
+
   static SupabaseManager get shared => _shared;
 
   // Get a reference your Supabase client
@@ -41,7 +44,6 @@ class SupabaseManager {
     unawaited(
       signIn.initialize(clientId: iosClientId, serverClientId: webClientId),
     );
-
 
     // Perform the sign in
     final googleAccount = await signIn.authenticate();
@@ -90,9 +92,10 @@ class SupabaseManager {
       );
     } on SignInWithAppleAuthorizationException catch (e) {
       debugPrint('Apple Sign In Authorization 오류: ${e.code} - ${e.message}');
-      
+
       // 에러 코드에 따른 처리
-      if (e.code.toString().contains('1000') || e.code.toString().contains('unknown')) {
+      if (e.code.toString().contains('1000') ||
+          e.code.toString().contains('unknown')) {
         throw const AuthException(
           'Apple Sign In은 실제 기기에서만 사용할 수 있습니다. 시뮬레이터에서는 다른 로그인 방법을 사용해주세요.',
         );
