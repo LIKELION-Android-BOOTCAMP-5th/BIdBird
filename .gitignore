@@ -52,3 +52,7 @@ devtools_options.yaml
 .fvm/
 # iOS CocoaPods
 ios/Podfile.lock
+ios/Flutter/Debug.xcconfig
+ios/Flutter/Profile.xcconfig
+ios/Flutter/Release.xcconfig
+ios/Runner.xcodeproj/project.pbxproj
