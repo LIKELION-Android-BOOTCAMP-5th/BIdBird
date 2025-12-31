@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_set_profile_viewmodel.dart';
 import 'package:bidbird/features/auth/presentation/viewmodels/auth_view_model.dart';
+import 'package:bidbird/features/mypage/viewmodel/profile_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -258,6 +259,9 @@ class _SaveButton extends StatelessWidget {
                 await context
                     .read<AuthSetProfileViewmodel>()
                     .loadProfile(); // 마이페이지프로필갱신
+                await context
+                    .read<ProfileViewModel>()
+                    .loadProfile(); // 리얼마이페이지프로필갱신
 
                 if (!context.mounted) return; //await후에다시context쓰려면이렇게해야함
 
