@@ -123,10 +123,10 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
         child: Column(
           children: [
             // Layer 2: 액션 허브 - 로딩/에러 상태만 Selector
-            Selector<CurrentTradeViewModel, ({bool isLoading, String? error})>(
-              selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error),
+            Selector<CurrentTradeViewModel, ({bool isLoading, String? error, bool isInitialized})>(
+              selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error, isInitialized: vm.isInitialized),
               builder: (context, data, _) {
-                if (!data.isLoading && data.error == null) {
+                if (data.isInitialized && !data.isLoading && data.error == null) {
                   return const _ActionHubSection();
                 }
                 return const SizedBox.shrink();
@@ -175,11 +175,11 @@ class _CurrentTradeScreenState extends State<CurrentTradeScreen> {
 
   Widget _buildContent() {
     // 로딩 상태와 에러 상태 체크
-    return Selector<CurrentTradeViewModel, ({bool isLoading, String? error})>(
-      selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error),
+    return Selector<CurrentTradeViewModel, ({bool isLoading, String? error, bool isInitialized})>(
+      selector: (_, vm) => (isLoading: vm.isLoading, error: vm.error, isInitialized: vm.isInitialized),
       builder: (context, state, _) {
-        // 로딩 중일 때 빈 배경만 표시
-        if (state.isLoading) {
+        // 로딩 중이거나 아직 초기화되지 않았을 때 빈 배경만 표시
+        if (state.isLoading || !state.isInitialized) {
           return Container();
         }
 

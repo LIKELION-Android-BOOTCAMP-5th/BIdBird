@@ -20,6 +20,10 @@ class UserProfileHistoryScreen extends StatelessWidget {
         body: SafeArea(
           child: Consumer<UserHistoryViewModel>(
             builder: (context, viewModel, _) {
+              if (viewModel.isLoading) {
+                return const SizedBox.shrink();
+              }
+              
               if (viewModel.trades.isEmpty) {
                 return const UnifiedEmptyState(
                   title: '거래 내역이 없습니다',
