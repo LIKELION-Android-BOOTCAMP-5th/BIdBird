@@ -50,10 +50,8 @@ class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
                   child: Text(
                     viewModel.roomInfo != null
                         ? viewModel.roomInfo?.opponent.nickName ?? "사용자"
-                        : (
-                            viewModel.fallbackOpponentName ??
-                            (isSeller ? '구매자' : '판매자')
-                          ),
+                        : (viewModel.fallbackOpponentName ??
+                              (isSeller ? '구매자' : '판매자')),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -78,61 +76,57 @@ class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
         },
       ),
       actions: [
-        PopupMenuButton(
-          color: BorderColor,
-          iconColor: textColor,
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              onTap: () {
-                Navigator.of(context).pop();
-                if (viewModel.roomInfo != null) {
-                  // 상대방 ID 찾기: itemInfo의 sellerId와 현재 사용자 비교
-                  final currentUserId =
-                      SupabaseManager.shared.supabase.auth.currentUser?.id;
-                  String? targetUserId;
-
-                  if (currentUserId != null && viewModel.itemInfo != null) {
-                    // 현재 사용자가 판매자가 아니면 판매자를, 판매자면 buyer를 찾아야 함
-                    // 일단 판매자를 상대방으로 가정 (채팅방에서는 보통 상대방이 판매자)
-                    if (viewModel.itemInfo!.sellerId != currentUserId) {
-                      targetUserId = viewModel.itemInfo!.sellerId;
-                    } else {
-                      // 현재 사용자가 판매자인 경우, buyer_id를 찾아야 함
-                      // tradeInfo에서 buyerId를 가져올 수 있음
-                      targetUserId = viewModel.tradeInfo?.buyerId;
-                    }
-                  }
-
-                  if (targetUserId != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ReportScreen(
-                          itemId: viewModel.itemId,
-                          itemTitle: viewModel.itemInfo?.title,
-                          targetUserId: targetUserId!,
-                          targetNickname: viewModel.roomInfo!.opponent.nickName,
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text("신고"),
+        if (viewModel.notificationSetting != null)
+          IconButton(
+            onPressed: () {
+              if (viewModel.notificationSetting != null) {
+                viewModel.notificationToggle();
+              }
+            },
+            icon: Icon(
+              viewModel.notificationSetting?.isNotificationOn == true
+                  ? Icons.notifications_none_outlined
+                  : Icons.notifications_off_outlined,
+              color: iconColor,
             ),
-            PopupMenuItem(
-              onTap: () {
-                if (viewModel.notificationSetting != null) {
-                  viewModel.notificationToggle();
+          ),
+        IconButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            if (viewModel.roomInfo != null) {
+              // 상대방 ID 찾기: itemInfo의 sellerId와 현재 사용자 비교
+              final currentUserId =
+                  SupabaseManager.shared.supabase.auth.currentUser?.id;
+              String? targetUserId;
+
+              if (currentUserId != null && viewModel.itemInfo != null) {
+                // 현재 사용자가 판매자가 아니면 판매자를, 판매자면 buyer를 찾아야 함
+                // 일단 판매자를 상대방으로 가정 (채팅방에서는 보통 상대방이 판매자)
+                if (viewModel.itemInfo!.sellerId != currentUserId) {
+                  targetUserId = viewModel.itemInfo!.sellerId;
+                } else {
+                  // 현재 사용자가 판매자인 경우, buyer_id를 찾아야 함
+                  // tradeInfo에서 buyerId를 가져올 수 있음
+                  targetUserId = viewModel.tradeInfo?.buyerId;
                 }
-              },
-              child: Text(
-                viewModel.notificationSetting != null
-                    ? "알림 설정 : ${viewModel.notificationSetting?.isNotificationOn == true ? "ON" : "OFF"}"
-                    : "알림 설정 불가능",
-              ),
-            ),
-          ],
+              }
+
+              if (targetUserId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReportScreen(
+                      itemId: viewModel.itemId,
+                      itemTitle: viewModel.itemInfo?.title,
+                      targetUserId: targetUserId!,
+                      targetNickname: viewModel.roomInfo!.opponent.nickName,
+                    ),
+                  ),
+                );
+              }
+            }
+          },
+          icon: Icon(Icons.warning, color: iconColor),
         ),
       ],
     );

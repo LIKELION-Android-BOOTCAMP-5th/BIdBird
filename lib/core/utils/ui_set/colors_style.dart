@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 const Color blueColor = Color(0xff0064FF);
@@ -49,3 +48,6 @@ const Color rolePurchaseText = Color(0xFF1F3FB8); // 텍스트/아이콘 대비�
 const Color roleSalePrimary = Color(0xFF2FAE8E); // Primary: #2FAE8E
 const Color roleSaleSub = Color(0xFFE6F6F1); // Sub(연한 톤): #E6F6F1
 const Color roleSaleText = Color(0xFF1E7F68); // 텍스트/아이콘 대비용: #1E7F68
+
+// 알림 전체 삭제, 전체 읽음 textButton 색
+const Color notificationAppBarButtonColor = Color(0xff6B7280);

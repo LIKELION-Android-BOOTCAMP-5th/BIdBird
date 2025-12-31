@@ -1,6 +1,7 @@
-import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
+import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/features/bid/domain/entities/item_bid_win_entity.dart';
 import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail_datasource.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
@@ -61,7 +62,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                         viewModel.deleteAllNotification();
                       }
                     : () {},
-                child: Text("전체 삭제"),
+                child: Text("전체 삭제", style: TextStyle(color: TextSecondary)),
               ),
               TextButton(
                 onPressed: viewModel.unCheckedCount > 0
@@ -69,7 +70,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                         viewModel.checkAllNotification();
                       }
                     : () {},
-                child: Text("전체 읽음"),
+                child: Text("전체 읽음", style: TextStyle(color: TextSecondary)),
               ),
             ],
           ),
