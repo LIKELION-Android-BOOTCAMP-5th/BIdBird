@@ -181,24 +181,25 @@ class _MyAppState extends State<MyApp> {
           });
         }
 
-        return GestureDetector(
-          onTap: () {
-            FocusManager.instance.primaryFocus?.unfocus();
-          },
-          behavior: HitTestBehavior.translucent,
-          child: MaterialApp.router(
-            title: widget.title,
-            debugShowCheckedModeBanner: false,
-            color: const Color(0xFFF5F5F5),
-            theme: theme,
-            builder: (context, child) {
-              return ColoredBox(
+        return MaterialApp.router(
+          title: widget.title,
+          debugShowCheckedModeBanner: false,
+          color: const Color(0xFFF5F5F5),
+          theme: theme,
+          // [수정] GestureDetector를 builder 내부로 이동
+          builder: (context, child) {
+            return GestureDetector(
+              onTap: () {
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
+              behavior: HitTestBehavior.translucent,
+              child: ColoredBox(
                 color: const Color(0xFFF5F5F5),
                 child: child ?? const SizedBox.shrink(),
-              );
-            },
-            routerConfig: _router!,
-          ),
+              ),
+            );
+          },
+          routerConfig: _router!,
         );
       },
     );
