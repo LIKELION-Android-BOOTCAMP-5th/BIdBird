@@ -189,14 +189,29 @@ GoRouter createAppRouter(BuildContext context) {
             routes: [
               GoRoute(
                 path: '/home',
-                pageBuilder: (context, state) => buildPage(
-                  context: context,
-                  state: state,
-                  child: const RootTabBackHandler(
-                    isHome: true,
-                    child: HomeScreen(),
-                  ),
-                ),
+                pageBuilder: (context, state) {
+                  final authVM = context.read<AuthViewModel>();
+
+                  // 닉네임이 없으면 아예 HomeScreen을 빌드하지 않고 빈 화면 혹은 스플래시를 반환
+                  if (authVM.user?.nick_name == null) {
+                    return buildPage(
+                      context: context,
+                      state: state,
+                      child: const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  }
+
+                  return buildPage(
+                    context: context,
+                    state: state,
+                    child: const RootTabBackHandler(
+                      isHome: true,
+                      child: HomeScreen(),
+                    ),
+                  );
+                },
                 routes: [
                   GoRoute(
                     path: 'search',
