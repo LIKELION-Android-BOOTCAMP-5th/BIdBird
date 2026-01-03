@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class DoubleBackExitHandler {
   DateTime? _lastPressedAt;
 
-  bool onWillPop(BuildContext context) {
+  void onWillPop(BuildContext context) {
     final now = DateTime.now();
 
     if (_lastPressedAt == null ||
@@ -24,10 +25,8 @@ class DoubleBackExitHandler {
         textColor: Colors.white,
         fontSize: 14,
       );
-
-      return false; // 앱 종료 막음
+      return;
     }
-
-    return true; // 앱 종료 허용
+    SystemNavigator.pop();
   }
 }

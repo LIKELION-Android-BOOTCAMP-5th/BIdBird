@@ -1,3 +1,4 @@
+import 'package:bidbird/core/router/root_tab_back_handler.dart';
 import 'package:bidbird/core/widgets/bottom_nav_bar.dart';
 import 'package:bidbird/core/widgets/item/components/others/double_back_exit_handler.dart';
 import 'package:bidbird/features/auth/presentation/screens/auth_set_profile_screen.dart';
@@ -59,6 +60,12 @@ import 'package:provider/provider.dart';
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+final doubleBackHandler = DoubleBackExitHandler();
+
+final homeNavKey = GlobalKey<NavigatorState>();
+final bidNavKey = GlobalKey<NavigatorState>();
+final chatNavKey = GlobalKey<NavigatorState>();
+final mypageNavKey = GlobalKey<NavigatorState>();
 
 /// [수정 핵심] 플랫폼에 따라 iOS는 CupertinoPage(스와이프 가능), 나머지는 애니메이션 없는 페이지 반환
 Page<T> buildPage<T>({
@@ -75,7 +82,6 @@ Page<T> buildPage<T>({
 
 GoRouter createAppRouter(BuildContext context) {
   final AuthViewModel authVM = context.read<AuthViewModel>();
-  final doubleBackHandler = DoubleBackExitHandler();
 
   return GoRouter(
     observers: [routeObserver],
@@ -145,35 +151,67 @@ GoRouter createAppRouter(BuildContext context) {
 
       // --- 메인 쉘 (바텀 네비게이션 포함) ---
       StatefulShellRoute.indexedStack(
+        // StatefulShellRoute의 builder 부분 수정
         builder: (context, state, navigationShell) {
           return PopScope(
             canPop: false,
-            onPopInvokedWithResult: (didPop, result) async {
+            onPopInvokedWithResult: (didPop, result) {
               if (didPop) return;
-              final location = state.uri.toString();
-              if (location != '/home') {
-                context.go('/home');
+
+              final NavigatorState? currentTabNav = _getCurrentNavigator(
+                navigationShell.currentIndex,
+              );
+
+              // 하위 스택이 있으면 pop
+              if (currentTabNav != null && currentTabNav.canPop()) {
+                currentTabNav.pop();
               } else {
-                doubleBackHandler.onWillPop(context);
+                // 루트 탭이면 홈으로 가거나 종료 핸들러 실행
+                if (navigationShell.currentIndex != 0) {
+                  navigationShell.goBranch(0);
+                } else {
+                  doubleBackHandler.onWillPop(context);
+                }
               }
             },
             child: Scaffold(
               body: navigationShell,
-              bottomNavigationBar: BottomNavBar(navigationShell: navigationShell),
+              bottomNavigationBar: BottomNavBar(
+                navigationShell: navigationShell,
+              ),
             ),
           );
         },
         branches: [
           // 1. 홈 탭
           StatefulShellBranch(
+            navigatorKey: homeNavKey,
             routes: [
               GoRoute(
                 path: '/home',
-                pageBuilder: (context, state) => buildPage(
-                  context: context,
-                  state: state,
-                  child: const HomeScreen(),
-                ),
+                pageBuilder: (context, state) {
+                  final authVM = context.read<AuthViewModel>();
+
+                  // 닉네임이 없으면 아예 HomeScreen을 빌드하지 않고 빈 화면 혹은 스플래시를 반환
+                  if (authVM.user?.nick_name == null) {
+                    return buildPage(
+                      context: context,
+                      state: state,
+                      child: const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  }
+
+                  return buildPage(
+                    context: context,
+                    state: state,
+                    child: const RootTabBackHandler(
+                      isHome: true,
+                      child: HomeScreen(),
+                    ),
+                  );
+                },
                 routes: [
                   GoRoute(
                     path: 'search',
@@ -189,13 +227,17 @@ GoRouter createAppRouter(BuildContext context) {
           ),
           // 2. 거래 탭
           StatefulShellBranch(
+            navigatorKey: bidNavKey,
             routes: [
               GoRoute(
                 path: '/bid',
                 pageBuilder: (context, state) => buildPage(
                   context: context,
                   state: state,
-                  child: const CurrentTradeScreen(),
+                  child: const RootTabBackHandler(
+                    isHome: true,
+                    child: CurrentTradeScreen(),
+                  ),
                 ),
                 routes: [
                   GoRoute(
@@ -229,26 +271,34 @@ GoRouter createAppRouter(BuildContext context) {
           ),
           // 3. 채팅 탭
           StatefulShellBranch(
+            navigatorKey: chatNavKey,
             routes: [
               GoRoute(
                 path: '/chat',
                 pageBuilder: (context, state) => buildPage(
                   context: context,
                   state: state,
-                  child: const ChatScreen(),
+                  child: const RootTabBackHandler(
+                    isHome: true,
+                    child: ChatScreen(),
+                  ),
                 ),
               ),
             ],
           ),
           // 4. 마이페이지 탭
           StatefulShellBranch(
+            navigatorKey: mypageNavKey,
             routes: [
               GoRoute(
                 path: '/mypage',
                 pageBuilder: (context, state) => buildPage(
                   context: context,
                   state: state,
-                  child: const MypageScreen(),
+                  child: const RootTabBackHandler(
+                    isHome: true,
+                    child: MypageScreen(),
+                  ),
                 ),
                 routes: [
                   GoRoute(
@@ -536,3 +586,19 @@ Widget _noTransitionBuilder(
   Animation<double> sa,
   Widget child,
 ) => child;
+
+/// 현재 인덱스에 해당하는 탭의 NavigatorState를 반환하는 함수
+NavigatorState? _getCurrentNavigator(int index) {
+  switch (index) {
+    case 0:
+      return homeNavKey.currentState;
+    case 1:
+      return bidNavKey.currentState;
+    case 2:
+      return chatNavKey.currentState;
+    case 3:
+      return mypageNavKey.currentState;
+    default:
+      return null;
+  }
+}
