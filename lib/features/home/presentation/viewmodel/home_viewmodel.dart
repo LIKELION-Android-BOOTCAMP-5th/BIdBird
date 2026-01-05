@@ -93,8 +93,6 @@ class HomeViewmodel extends ChangeNotifier {
 
   ///시작할 때 작동
   HomeViewmodel(this._homeRepository) {
-    getKeywordList();
-
     _loginSubscription = eventBus.on<LoginEventBus>().listen((event) async {
       if (event.type == LoginEventType.logout) {
         _clearAllData();
@@ -109,12 +107,6 @@ class HomeViewmodel extends ChangeNotifier {
         _isFetching = false;
 
         notifyListeners();
-
-        await getKeywordList();
-        await fetchItems();
-
-        // polling / realtime 다시 시작
-        setupRealtimeSubscription();
       }
     });
 
@@ -156,6 +148,16 @@ class HomeViewmodel extends ChangeNotifier {
     }
 
     super.dispose();
+  }
+
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    await getKeywordList();
+    await fetchItems();
+    setupRealtimeSubscription();
+
+    _isInitialized = true;
   }
 
   Future<void> getKeywordList() async {
@@ -211,6 +213,8 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> fetchItems() async {
+    if (_isFetching) return;
+
     _isFetching = true; // 로딩 시작
     notifyListeners();
 
