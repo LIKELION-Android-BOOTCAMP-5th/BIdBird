@@ -466,7 +466,8 @@ class HomeViewmodel extends ChangeNotifier {
               final statusCode = newRecord['auction_status_code'] as int?;
               final lastBidUserId = newRecord['last_bid_user_id'] as String?;
 
-              if (newBidCount != null && item.auctions.bid_count != newBidCount) {
+              if (newBidCount != null &&
+                  item.auctions.bid_count != newBidCount) {
                 item.auctions.bid_count = newBidCount;
                 isChanged = true;
               }
@@ -475,17 +476,19 @@ class HomeViewmodel extends ChangeNotifier {
                 item.auctions.current_price = newPrice;
                 isChanged = true;
               }
-              
-              if (statusCode != null && item.auctions.auction_status_code != statusCode) {
+
+              if (statusCode != null &&
+                  item.auctions.auction_status_code != statusCode) {
                 item.auctions.auction_status_code = statusCode;
                 isChanged = true;
               }
 
-              if (lastBidUserId != null && item.auctions.last_bid_user_id != lastBidUserId) {
+              if (lastBidUserId != null &&
+                  item.auctions.last_bid_user_id != lastBidUserId) {
                 item.auctions.last_bid_user_id = lastBidUserId;
                 isChanged = true;
               }
-              
+
               if (isChanged) {
                 notifyListeners();
               }
@@ -590,12 +593,13 @@ class HomeViewmodel extends ChangeNotifier {
   // 튜토리얼을 봤는지 확인하는 함수
   Future<bool> shouldShowTutorial() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('has_seen_home_tutorial') ?? true;
+    final hasSeen = prefs.getBool('has_seen_home_tutorial') ?? false;
+    return !hasSeen;
   }
 
   // 튜토리얼을 완료했음을 저장하는 함수
   Future<void> markTutorialAsSeen() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_seen_home_tutorial', false);
+    await prefs.setBool('has_seen_home_tutorial', true);
   }
 }
