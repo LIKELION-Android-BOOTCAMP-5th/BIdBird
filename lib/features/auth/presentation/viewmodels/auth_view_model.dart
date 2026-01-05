@@ -31,25 +31,6 @@ class AuthViewModel extends ChangeNotifier {
   bool _isLoggingOut = false;
   bool get isLoggingOut => _isLoggingOut;
 
-  Future<void> _loadUserAndSetupFCM(String userId) async {
-    try {
-      final fetchedUser = await SupabaseManager.shared
-          .fetchUser(userId)
-          .timeout(const Duration(seconds: 2));
-      _user = fetchedUser;
-    } catch (e) {
-      debugPrint('[AuthVM] fetchUser failed (background): $e');
-    }
-
-    try {
-      await FirebaseManager.setupFCMTokenAtLogin();
-    } catch (e) {
-      debugPrint('[AuthVM] setupFCMTokenAtLogin failed (background): $e');
-    }
-
-    notifyListeners();
-  }
-
   AuthViewModel() {
     // Supabase 인증 상태 구독
     _subscription = SupabaseManager.shared.supabase.auth.onAuthStateChange
@@ -78,6 +59,26 @@ class AuthViewModel extends ChangeNotifier {
 
           unawaited(_loadUserAndSetupFCM(session.user.id));
         });
+  }
+
+  // 사용자 정보 인증 확인
+  Future<void> _loadUserAndSetupFCM(String userId) async {
+    try {
+      final fetchedUser = await SupabaseManager.shared
+          .fetchUser(userId)
+          .timeout(const Duration(seconds: 2));
+      _user = fetchedUser;
+    } catch (e) {
+      debugPrint('[AuthVM] fetchUser failed (background): $e');
+    }
+
+    try {
+      await FirebaseManager.setupFCMTokenAtLogin();
+    } catch (e) {
+      debugPrint('[AuthVM] setupFCMTokenAtLogin failed (background): $e');
+    }
+
+    notifyListeners();
   }
 
   Future<void> logout() async {
@@ -178,7 +179,7 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // splash 앱 시작 시 사용자 정보 관리
+  //사용자 정보 관리
   Future<void> initialize() async {
     _status = AuthStatus.initializing;
     notifyListeners();
