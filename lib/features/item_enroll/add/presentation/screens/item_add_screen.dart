@@ -28,6 +28,8 @@ class ItemAddScreen extends StatefulWidget {
 
 class _ItemAddScreenState extends State<ItemAddScreen> {
   late final ItemAddTutorialController _tutorialController;
+  late final ItemAddViewModel _viewModel;
+  late bool _canShowTutorial;
 
   //스탭 0
   final GlobalKey _cycleKey = GlobalKey();
@@ -126,6 +128,9 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     // UI 안정화 후 튜토리얼 표시
     setState(() => _currentStep = index);
 
+    // 튜토리얼 차단
+    if (!_canShowTutorial) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(milliseconds: 200));
 
@@ -142,6 +147,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
         categoryKey: _categoryKey,
         addContentKey: _addContentKey,
         addPDFKey: _addPDFKey,
+        onSkipAll: _skipAllTutorial,
       );
     });
     // 이전 페이지로 돌아가는 경우는 검증하지 않음
@@ -209,6 +215,16 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     );
   }
 
+  // coach mark 스킵 함수 -> 페이징 때문에 컨트롤러도 중단하는 로직 필요함
+  void _skipAllTutorial() {
+    // 로컬 저장
+    _viewModel.markTutorialAsSeen();
+    // 즉시 스텝 로직 중단
+    _tutorialController.disable();
+    // 화면 내에서도 차단
+    _canShowTutorial = false;
+  }
+
   Widget _buildSingleButtonBar(ItemAddViewModel viewModel) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: viewModel.titleController,
@@ -257,7 +273,10 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
       return ValueListenableBuilder<TextEditingValue>(
         valueListenable: viewModel.startPriceController,
         builder: (context, priceValue, _) {
-          return Selector<ItemAddViewModel, ({String? duration, int? keywordId})>(
+          return Selector<
+            ItemAddViewModel,
+            ({String? duration, int? keywordId})
+          >(
             selector: (_, vm) => (
               duration: vm.selectedDuration,
               keywordId: vm.selectedKeywordTypeId,
@@ -278,7 +297,9 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                     child: PrimaryButton(
                       text: _getNextButtonText(),
                       onPressed: () => _handleNextButtonPress(viewModel),
-                      isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+                      isEnabled:
+                          _canGoToNextStep(viewModel) &&
+                          !viewModel.isSubmitting,
                       width: null,
                     ),
                   ),
@@ -307,7 +328,8 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                 child: PrimaryButton(
                   text: _getNextButtonText(),
                   onPressed: () => _handleNextButtonPress(viewModel),
-                  isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+                  isEnabled:
+                      _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
                   width: null,
                 ),
               ),
@@ -367,34 +389,31 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     );
   }
 
-  late final ItemAddViewModel _viewModel;
-
   @override
   void initState() {
     super.initState();
     _viewModel = context.read<ItemAddViewModel>();
+    _tutorialController = ItemAddTutorialController();
     _decorationCache = {};
 
-    _tutorialController = ItemAddTutorialController();
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      bool isFirstTutorial = await _viewModel.shouldShowTutorial();
+      _canShowTutorial = await _viewModel.shouldShowTutorial();
 
-      if (isFirstTutorial) {
-        _tutorialController.show(
-          context: context,
-          step: 0,
-          cycleKey: _cycleKey,
-          addPhotoKey: _addPhotoKey,
-          addTitleKey: _addTitleKey,
-          startPriceKey: _startPriceKey,
-          bidScheduleKey: _bidScheduleKey,
-          categoryKey: _categoryKey,
-          addContentKey: _addContentKey,
-          addPDFKey: _addPDFKey,
-        );
-        await _viewModel.markTutorialAsSeen();
-      }
+      if (!_canShowTutorial) return;
+
+      _tutorialController.show(
+        context: context,
+        step: 0,
+        cycleKey: _cycleKey,
+        addPhotoKey: _addPhotoKey,
+        addTitleKey: _addTitleKey,
+        startPriceKey: _startPriceKey,
+        bidScheduleKey: _bidScheduleKey,
+        categoryKey: _categoryKey,
+        addContentKey: _addContentKey,
+        addPDFKey: _addPDFKey,
+        onSkipAll: _skipAllTutorial,
+      );
     });
   }
 

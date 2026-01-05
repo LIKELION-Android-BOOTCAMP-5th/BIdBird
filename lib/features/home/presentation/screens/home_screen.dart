@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import '../../../auth/presentation/viewmodels/auth_view_model.dart';
 import '../viewmodel/home_viewmodel.dart';
 import '../widgets/Item_grid.dart';
+import '../widgets/coach_mark/home_tutorial_utils.dart';
 import '../widgets/floating_menu.dart';
 import '../widgets/home_app_bar.dart';
-import '../widgets/home_tutorial_utils.dart';
 import '../widgets/keyword_section.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -45,8 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
           currentPriceKey: _currentPriceKey,
           biddingCountKey: _biddingCountKey,
           finishTimeKey: _finishTimeKey,
+          homeViewmodel: viewmodel,
         );
-        await viewmodel.markTutorialAsSeen();
       }
     });
   }

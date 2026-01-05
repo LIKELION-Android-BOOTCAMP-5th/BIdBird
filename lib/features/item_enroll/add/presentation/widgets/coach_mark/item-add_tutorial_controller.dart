@@ -4,6 +4,11 @@ import 'item_add_tutorial_utils.dart';
 
 class ItemAddTutorialController {
   final Set<int> _shownSteps = {};
+  bool _isDisabled = false;
+
+  void disable() {
+    _isDisabled = true;
+  }
 
   void show({
     required BuildContext context,
@@ -16,20 +21,24 @@ class ItemAddTutorialController {
     required GlobalKey categoryKey,
     required GlobalKey addContentKey,
     required GlobalKey addPDFKey,
+    required VoidCallback onSkipAll,
   }) {
+    if (_isDisabled) return;
+
     if (_shownSteps.contains(step)) return;
     _shownSteps.add(step);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
+      if (!context.mounted || _isDisabled) return;
 
       switch (step) {
         case 0:
           itemAddTutorialStep0(
-            context: context,
             cycleKey: cycleKey,
+            context: context,
             addPhotoKey: addPhotoKey,
             addTitleKey: addTitleKey,
+            onSkipALl: onSkipAll,
           );
           break;
 
@@ -39,6 +48,7 @@ class ItemAddTutorialController {
             startPriceKey: startPriceKey,
             bidScheduleKey: bidScheduleKey,
             categoryKey: categoryKey,
+            onSkipAll: onSkipAll,
           );
           break;
 
@@ -47,6 +57,7 @@ class ItemAddTutorialController {
             context: context,
             addContentKey: addContentKey,
             addPDFKey: addPDFKey,
+            onSkipALl: onSkipAll,
           );
           break;
       }
