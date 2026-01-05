@@ -106,7 +106,7 @@ GoRouter createAppRouter(BuildContext context) {
       }
 
       if (location == '/login' || location == '/splash') {
-        return '/home';
+        if (user != null || user?.nick_name != null) return '/home';
       }
 
       return null;
