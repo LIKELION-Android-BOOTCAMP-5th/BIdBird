@@ -194,14 +194,17 @@ class ItemAddViewModel extends ItemBaseViewModel {
       );
 
       if (result != null) {
-        final List<PickedDocument> newDocs = result.files.where((file) => file.path != null).map((file) {
-          return PickedDocument(
-            file: File(file.path!),
-            originalName: file.name,
-            size: file.size,
-          );
-        }).toList();
-        
+        final List<PickedDocument> newDocs = result.files
+            .where((file) => file.path != null)
+            .map((file) {
+              return PickedDocument(
+                file: File(file.path!),
+                originalName: file.name,
+                size: file.size,
+              );
+            })
+            .toList();
+
         // 최대 5개 제한 (필요 시 조정)
         if (selectedDocuments.length + newDocs.length > 5) {
           // 5개까지만 추가
@@ -700,12 +703,13 @@ class ItemAddViewModel extends ItemBaseViewModel {
   // 튜토리얼을 봤는지 확인하는 함수
   Future<bool> shouldShowTutorial() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('has_seen_item_add_tutorial') ?? true;
+    final hasSeen = prefs.getBool('has_seen_item_add_tutorial') ?? false;
+    return !hasSeen;
   }
 
   // 튜토리얼을 완료했음을 저장하는 함수
   Future<void> markTutorialAsSeen() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('has_seen_item_add_tutorial', false);
+    await prefs.setBool('has_seen_item_add_tutorial', true);
   }
 }
