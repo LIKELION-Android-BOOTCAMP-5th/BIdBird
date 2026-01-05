@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/core/utils/event_bus/login_event_bus.dart';
+import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/chat/data/managers/chat_list_realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
-import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_room_entity.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_chatting_room_list_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/fetch_new_chatting_room_usecase.dart';
@@ -94,6 +94,11 @@ class ChatListViewmodel extends ChangeNotifier {
     });
   }
 
+  Future<void> initialize() async {
+    await fetchChattingRoomList(visibleItemCount: _pageSize);
+    _setupRealtimeSubscription();
+  }
+
   void setPageSize(int initialLoadCount) {
     _pageSize = initialLoadCount;
   }
@@ -146,6 +151,7 @@ class ChatListViewmodel extends ChangeNotifier {
       hasMore = true;
     }
     _pageSize = visibleItemCount ?? _pageSize;
+
     await _loadChattingRoomList(
       forceRefresh: forceRefresh,
       showLoading: true,
@@ -164,7 +170,7 @@ class ChatListViewmodel extends ChangeNotifier {
     if (forceRefresh) {
       // 기존: 목록을 비워서 깜빡임 및 스크롤 초기화 문제 발생
       // 변경: 목록을 비우지 않고 유지한 채로 새로운 데이터를 받아와서 교체
-      // chattingRoomList.clear(); 
+      // chattingRoomList.clear();
       // _sellerIdMap.clear();
       // ...
       _currentPage = 1;
@@ -243,7 +249,7 @@ class ChatListViewmodel extends ChangeNotifier {
       hasMore = newList.length >= limit;
 
       _sortRoomListByLastMessage();
-      
+
       // 아이템 상태 정보 로드
       await _loadItemStatuses(chattingRoomList);
     } catch (e) {
@@ -258,12 +264,17 @@ class ChatListViewmodel extends ChangeNotifier {
   }
 
   /// 채팅방 목록의 아이템 상태 정보 로드
-  Future<void> _loadItemStatuses(List<ChattingRoomEntity> chattingRoomList) async {
+  Future<void> _loadItemStatuses(
+    List<ChattingRoomEntity> chattingRoomList,
+  ) async {
     final supabase = SupabaseManager.shared.supabase;
     final currentUserId = supabase.auth.currentUser?.id;
     if (currentUserId == null || chattingRoomList.isEmpty) return;
 
-    final itemIds = chattingRoomList.map((room) => room.itemId).toSet().toList();
+    final itemIds = chattingRoomList
+        .map((room) => room.itemId)
+        .toSet()
+        .toList();
 
     // 기존 데이터 클리어
     for (final itemId in itemIds) {
@@ -298,7 +309,7 @@ class ChatListViewmodel extends ChangeNotifier {
       for (final row in auctionResponse) {
         final itemId = row['item_id'] as String?;
         final lastBidUserId = row['last_bid_user_id'] as String?;
-        
+
         if (itemId != null) {
           _lastBidUserIdMap[itemId] = lastBidUserId;
           // 현재 유저가 낙찰자인지 확인
@@ -343,8 +354,7 @@ class ChatListViewmodel extends ChangeNotifier {
           }
         }
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   /// 특정 itemId에 대해 현재 사용자가 판매자인지 확인
@@ -403,20 +413,24 @@ class ChatListViewmodel extends ChangeNotifier {
 
     for (final room in chattingRoomList) {
       final itemId = room.itemId;
-      final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      final currentUserId =
+          SupabaseManager.shared.supabase.auth.currentUser?.id;
       final isSeller = _sellerIdMap[itemId] == currentUserId;
       final isTopBidder = _topBidderMap[itemId] ?? false;
       final lastBidUserId = _lastBidUserIdMap[itemId];
-      final isOpponentTopBidder = lastBidUserId != null && lastBidUserId != currentUserId;
-      final auctionStatusCode = room.auctionStatusCode ?? _auctionStatusCodeMap[itemId];
+      final isOpponentTopBidder =
+          lastBidUserId != null && lastBidUserId != currentUserId;
+      final auctionStatusCode =
+          room.auctionStatusCode ?? _auctionStatusCodeMap[itemId];
       final tradeStatusCode = _tradeStatusCodeMap[itemId];
       final isTradeComplete = tradeStatusCode == 550;
-      final isAuctionEnded = auctionStatusCode == 230 || 
-          auctionStatusCode == AuctionStatusCode.bidWon || 
-          auctionStatusCode == AuctionStatusCode.instantBuyCompleted || 
+      final isAuctionEnded =
+          auctionStatusCode == 230 ||
+          auctionStatusCode == AuctionStatusCode.bidWon ||
+          auctionStatusCode == AuctionStatusCode.instantBuyCompleted ||
           auctionStatusCode == AuctionStatusCode.failed;
       final isExpired = isTradeComplete || isAuctionEnded; // 거래 완료 또는 경매 종료
-      
+
       statusMap[itemId] = (
         isExpired: isExpired,
         isSeller: isSeller,
@@ -585,15 +599,15 @@ class ChatListViewmodel extends ChangeNotifier {
         final bTimeRaw = b.lastMessageSendAt;
 
         // null이면 1970년으로 처리 (가장 뒤로)
-        var aTime = aTimeRaw != null 
-            ? DateTime.tryParse(aTimeRaw) ?? DateTime(0) 
+        var aTime = aTimeRaw != null
+            ? DateTime.tryParse(aTimeRaw) ?? DateTime(0)
             : DateTime(0);
-        var bTime = bTimeRaw != null 
-            ? DateTime.tryParse(bTimeRaw) ?? DateTime(0) 
+        var bTime = bTimeRaw != null
+            ? DateTime.tryParse(bTimeRaw) ?? DateTime(0)
             : DateTime(0);
 
         final now = DateTime.now();
-        
+
         // Timezone Glitch 보정 Logic (화면 표시 로직과 동일하게 적용)
         // 5분 이상 미래인 경우 9시간을 빼서 보정
         if (aTime.difference(now).inMinutes > 5) {
@@ -602,7 +616,7 @@ class ChatListViewmodel extends ChangeNotifier {
         if (bTime.difference(now).inMinutes > 5) {
           bTime = bTime.subtract(const Duration(hours: 9));
         }
-            
+
         return bTime.compareTo(aTime);
       } catch (e) {
         return 0;
