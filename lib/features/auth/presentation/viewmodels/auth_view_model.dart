@@ -12,7 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 //사용자 상태 관리
 enum AuthStatus {
   initializing, // 앱 시작 직후, 아직 로그인 여부 판단 중
-  unauthenticated, // 앱 실행했는데 정보 X
+  unauthenticated, // 로그인 X
   authenticated, // 앱 실행했는데 정보 O
 }
 
@@ -84,7 +84,7 @@ class AuthViewModel extends ChangeNotifier {
     if (_isLoggingOut) return;
 
     _isLoggingOut = true;
-    notifyListeners(); // 🔄 인디케이터 표시
+    notifyListeners();
 
     try {
       await _performLogoutTasks();

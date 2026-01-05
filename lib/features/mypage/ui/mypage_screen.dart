@@ -143,13 +143,13 @@ class _MypageItemList extends StatelessWidget {
             context.go('/mypage/service_center');
           },
         ),
-        _Item(
-          icon: Icons.block,
-          title: '차단목록',
-          onTap: () {
-            context.go('/mypage/black_list');
-          },
-        ),
+        // _Item(
+        //   icon: Icons.block,
+        //   title: '차단목록',
+        //   onTap: () {
+        //     context.go('/mypage/black_list');
+        //   },
+        // ),
         const SizedBox(height: 24),
       ],
     );

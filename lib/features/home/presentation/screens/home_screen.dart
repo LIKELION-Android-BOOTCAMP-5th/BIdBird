@@ -2,11 +2,12 @@ import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../auth/presentation/viewmodels/auth_view_model.dart';
 import '../viewmodel/home_viewmodel.dart';
 import '../widgets/Item_grid.dart';
+import '../widgets/coach_mark/home_tutorial_utils.dart';
 import '../widgets/floating_menu.dart';
 import '../widgets/home_app_bar.dart';
-import '../widgets/home_tutorial_utils.dart';
 import '../widgets/keyword_section.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -44,14 +45,19 @@ class _HomeScreenState extends State<HomeScreen> {
           currentPriceKey: _currentPriceKey,
           biddingCountKey: _biddingCountKey,
           finishTimeKey: _finishTimeKey,
+          homeViewmodel: viewmodel,
         );
-        await viewmodel.markTutorialAsSeen();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final authVM = context.watch<AuthViewModel>();
+
+    if (authVM.user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     // ViewModel은 main.dart에서 전역으로 생성되므로 여기서는 Consumer없이 필요한 부분만 접근
     return MediaQuery(
       //휴대폰 글씨크기 무시, 글씨 고정

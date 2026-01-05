@@ -22,7 +22,7 @@ class ProfileEditScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final profile = context.read<ProfileViewModel>().profile;
+    final profile = context.watch<ProfileViewModel>().profile; //read에서변경함//
 
     return ChangeNotifierProvider<ProfileEditViewModel>(
       create: (_) {
@@ -35,7 +35,7 @@ class ProfileEditScreen extends StatelessWidget {
       },
       child: Builder(
         builder: (context) {
-          final vm = context.read<ProfileEditViewModel>();
+          final vm = context.watch<ProfileEditViewModel>(); //read에서변경함//watch
           final hasChanges = context.select<ProfileEditViewModel, bool>(
             (vm) => vm.hasChanges,
           );
@@ -120,8 +120,8 @@ class ProfileEditScreen extends StatelessWidget {
                                             const SizedBox(height: 36),
                                             _ProfileForm(vm: vm),
                                             const SizedBox(
-                                              height: 150,
-                                            ), //키보드가올라오는높이에따라가변적으로하면더확실해질듯함//아니면아래칼럼을패딩으로감싸고그쪽을가변적으로
+                                              height: 80,
+                                            ), //키보드가올라오는높이에따라가변적으로하면더확실해질듯함//아니면아래칼럼을패딩으로감싸고그쪽을가변적으로//150에서짤리는현상보고로80으로변경
                                           ],
                                         ),
                                         //Column부분은키보드가올라오면가려짐
@@ -439,7 +439,7 @@ class _SaveButton extends StatelessWidget {
                 // 변화가 없을 때는 바로 마이페이지로 이동
                 await context
                     .read<ProfileViewModel>()
-                    .loadProfile(); // 마이페이지프로필갱신
+                    .loadProfile(); // 마이페이지프로필갱신//watch하면위젯트리밖에서변경임
 
                 if (!context.mounted) return; //await후에다시context쓰려면이렇게해야함
 

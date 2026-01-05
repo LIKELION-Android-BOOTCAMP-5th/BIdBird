@@ -1,10 +1,12 @@
+import 'package:bidbird/features/home/presentation/viewmodel/home_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
-import '../../../../core/utils/coch_mark/tutorial.dart';
+import '../../../../../core/utils/coch_mark/tutorial.dart';
 
 void homeTutorial({
   required BuildContext context,
+  required HomeViewmodel homeViewmodel,
   required GlobalKey fabKey,
   required GlobalKey searchKey,
   required GlobalKey notificationKey,
@@ -27,9 +29,13 @@ void homeTutorial({
     alignSkip: Alignment.bottomLeft,
     paddingFocus: 0,
     opacityShadow: 0.8,
-    onFinish: () => print("홈 튜토리얼 끝"),
+    onFinish: () {
+      print("홈 튜토리얼 끝");
+      homeViewmodel.markTutorialAsSeen();
+    },
     onSkip: () {
-      print("건너뜀");
+      print("홈 튜토리얼 스킵");
+      homeViewmodel.markTutorialAsSeen();
       return true;
     },
   ).show(context: context);

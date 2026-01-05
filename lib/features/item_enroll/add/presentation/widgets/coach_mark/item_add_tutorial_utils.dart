@@ -8,6 +8,7 @@ void itemAddTutorialStep0({
   required GlobalKey cycleKey,
   required GlobalKey addPhotoKey,
   required GlobalKey addTitleKey,
+  required VoidCallback onSkipALl,
 }) {
   TutorialCoachMark(
     targets: [
@@ -44,6 +45,7 @@ void itemAddTutorialStep0({
     onFinish: () => debugPrint("Step 0 튜토리얼 종료"),
     onSkip: () {
       debugPrint("Step 0 튜토리얼 스킵");
+      onSkipALl();
       return true;
     },
   ).show(context: context);
@@ -54,6 +56,7 @@ void itemAddTutorialStep1({
   required GlobalKey startPriceKey,
   required GlobalKey bidScheduleKey,
   required GlobalKey categoryKey,
+  required VoidCallback onSkipAll,
 }) {
   TutorialCoachMark(
     targets: [
@@ -90,6 +93,7 @@ void itemAddTutorialStep1({
     onFinish: () => debugPrint("Step 1 튜토리얼 종료"),
     onSkip: () {
       debugPrint("Step 1 튜토리얼 스킵");
+      onSkipAll();
       return true;
     },
   ).show(context: context);
@@ -99,6 +103,7 @@ void itemAddTutorialStep2({
   required BuildContext context,
   required GlobalKey addContentKey,
   required GlobalKey addPDFKey,
+  required VoidCallback onSkipALl,
 }) {
   TutorialCoachMark(
     targets: [
@@ -125,9 +130,13 @@ void itemAddTutorialStep2({
     paddingFocus: 0,
     textSkip: "건너뛰기",
     alignSkip: Alignment.bottomLeft,
-    onFinish: () => debugPrint("Step 2 튜토리얼 종료"),
+    onFinish: () {
+      debugPrint("Step 2 튜토리얼 종료");
+      onSkipALl();
+    },
     onSkip: () {
       debugPrint("Step 2 튜토리얼 스킵");
+      onSkipALl();
       return true;
     },
   ).show(context: context);
