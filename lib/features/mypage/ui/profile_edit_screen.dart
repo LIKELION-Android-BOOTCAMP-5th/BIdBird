@@ -22,7 +22,7 @@ class ProfileEditScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final profile = context.watch<ProfileViewModel>().profile; //read에서변경함
+    final profile = context.watch<ProfileViewModel>().profile; //read에서변경함//
 
     return ChangeNotifierProvider<ProfileEditViewModel>(
       create: (_) {
@@ -35,7 +35,7 @@ class ProfileEditScreen extends StatelessWidget {
       },
       child: Builder(
         builder: (context) {
-          final vm = context.watch<ProfileEditViewModel>(); //read에서변경함
+          final vm = context.watch<ProfileEditViewModel>(); //read에서변경함//watch
           final hasChanges = context.select<ProfileEditViewModel, bool>(
             (vm) => vm.hasChanges,
           );
@@ -438,8 +438,8 @@ class _SaveButton extends StatelessWidget {
 
                 // 변화가 없을 때는 바로 마이페이지로 이동
                 await context
-                    .watch<ProfileViewModel>() //read에서변경함
-                    .loadProfile(); // 마이페이지프로필갱신
+                    .read<ProfileViewModel>()
+                    .loadProfile(); // 마이페이지프로필갱신//watch하면위젯트리밖에서변경임
 
                 if (!context.mounted) return; //await후에다시context쓰려면이렇게해야함
 
