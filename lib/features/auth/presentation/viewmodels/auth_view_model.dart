@@ -84,7 +84,7 @@ class AuthViewModel extends ChangeNotifier {
     if (_isLoggingOut) return;
 
     _isLoggingOut = true;
-    notifyListeners(); // 🔄 인디케이터 표시
+    notifyListeners();
 
     try {
       await _performLogoutTasks();

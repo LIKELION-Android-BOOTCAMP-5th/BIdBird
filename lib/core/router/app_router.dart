@@ -95,18 +95,23 @@ GoRouter createAppRouter(BuildContext context) {
       if (authVM.status == AuthStatus.initializing) {
         return location == '/splash' ? null : '/splash';
       }
+
       if (authVM.status == AuthStatus.unauthenticated) {
         return location.startsWith('/login') ? null : '/login';
       }
+
       final user = authVM.user;
       if (user != null && user.nick_name == null) {
         return location.startsWith('/login/ToS') ? null : '/login/ToS';
       }
+
       if (location == '/login' || location == '/splash') {
         return '/home';
       }
+
       return null;
     },
+
     routes: [
       // --- 스플래시 및 로그인 ---
       GoRoute(
@@ -190,18 +195,18 @@ GoRouter createAppRouter(BuildContext context) {
               GoRoute(
                 path: '/home',
                 pageBuilder: (context, state) {
-                  final authVM = context.read<AuthViewModel>();
-
-                  // 닉네임이 없으면 아예 HomeScreen을 빌드하지 않고 빈 화면 혹은 스플래시를 반환
-                  if (authVM.user?.nick_name == null) {
-                    return buildPage(
-                      context: context,
-                      state: state,
-                      child: const Scaffold(
-                        body: Center(child: CircularProgressIndicator()),
-                      ),
-                    );
-                  }
+                  // final authVM = context.read<AuthViewModel>();
+                  //
+                  // // 닉네임이 없으면 아예 HomeScreen을 빌드하지 않고 빈 화면 혹은 스플래시를 반환
+                  // if (authVM.user?.nick_name == null) {
+                  //   return buildPage(
+                  //     context: context,
+                  //     state: state,
+                  //     child: const Scaffold(
+                  //       body: Center(child: CircularProgressIndicator()),
+                  //     ),
+                  //   );
+                  // }
 
                   return buildPage(
                     context: context,
