@@ -107,6 +107,8 @@ class HomeViewmodel extends ChangeNotifier {
         _isFetching = false;
 
         notifyListeners();
+
+        await initialize();
       }
     });
 
@@ -554,6 +556,7 @@ class HomeViewmodel extends ChangeNotifier {
     _currentPage = 1;
     _hasMore = true;
     _isFetching = false;
+    _isInitialized = false;
     searchButton = false;
     isSearching = false;
     currentSearchText = "";
