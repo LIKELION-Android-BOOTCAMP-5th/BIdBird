@@ -59,22 +59,26 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    routeObserver.subscribe(this, ModalRoute.of(context)!);
+
     _viewModel = context.read<ChatListViewmodel>();
 
-    // 화면 크기에 맞는 개수 계산 (코어 유틸리티 사용)
-    final loadCount = VisibleItemCalculator.calculateChatListVisibleCount(
-      context,
-    );
-
     if (!_isViewModelInitialized) {
-      context.read<ChatListViewmodel>().setPageSize(loadCount);
-      // _viewModel!.fetchChattingRoomList(visibleItemCount: loadCount);
+      final loadCount = VisibleItemCalculator.calculateChatListVisibleCount(
+        context,
+      );
+
+      _viewModel!.setPageSize(loadCount);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _viewModel!.fetchChattingRoomList(visibleItemCount: loadCount);
+        }
+      });
+
       _isViewModelInitialized = true;
     }
 
-    // 스크롤 리스너 추가 (한 번만)
-    if (!_isListenerAttached && _viewModel != null) {
+    if (!_isListenerAttached) {
       _scrollController.addListener(_scrollListener);
       _isListenerAttached = true;
     }
