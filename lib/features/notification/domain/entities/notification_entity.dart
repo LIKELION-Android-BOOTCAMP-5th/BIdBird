@@ -8,6 +8,7 @@ class NotificationEntity {
   final String body;
   bool is_checked;
   final String created_at;
+  String? deleted_at;
 
   NotificationEntity({
     required this.id,
@@ -19,6 +20,7 @@ class NotificationEntity {
     required this.body,
     required this.is_checked,
     required this.created_at,
+    required this.deleted_at,
   });
 
   factory NotificationEntity.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class NotificationEntity {
       body: json["body"] as String,
       is_checked: json["is_checked"] as bool,
       created_at: json["created_at"] as String,
+      deleted_at: json["deleted_at"] as String?,
     );
   }
 }
