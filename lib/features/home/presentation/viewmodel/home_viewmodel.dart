@@ -364,7 +364,7 @@ class HomeViewmodel extends ChangeNotifier {
   Future<void> search(String userInput) async {
     final requestId = ++_searchRequestId;
 
-    // 🔥 빈 문자열 방어
+    // 빈 문자열 방어
     if (userInput.isEmpty) return;
 
     isSearching = true;
@@ -410,18 +410,10 @@ class HomeViewmodel extends ChangeNotifier {
 
       // 검색 버튼이 열려 있을 때만 반응
       if (!searchButton) return;
+
       // 검색어 삭제 → 검색 종료
       if (text.isEmpty) {
-        if (!searchButton) return;
-
-        isSearching = false;
-        currentSearchText = "";
-        _currentPage = 1;
-        _items = [];
-        _hasMore = true;
-        notifyListeners();
-        // 기본 리스트 다시 로드
-        // await fetchItems();
+        closeSearchManually();
         return;
       }
 
@@ -461,6 +453,20 @@ class HomeViewmodel extends ChangeNotifier {
     // sortItemsByFinishTime();
 
     _isFetching = false;
+    notifyListeners();
+  }
+
+  void closeSearchManually() {
+    searchButton = false;
+    isSearching = false;
+    currentSearchText = "";
+    userInputController.clear();
+
+    _currentPage = 1;
+    _items = [];
+    _hasMore = true;
+
+    fetchItems();
     notifyListeners();
   }
 
