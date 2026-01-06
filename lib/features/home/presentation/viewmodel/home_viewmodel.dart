@@ -156,7 +156,12 @@ class HomeViewmodel extends ChangeNotifier {
     if (_isInitialized) return;
 
     await getKeywordList();
-    await fetchItems();
+
+    // 검색 중이면 기존 상태 유지
+    if (!isSearching) {
+      await fetchItems();
+    }
+
     setupRealtimeSubscription();
 
     _isInitialized = true;
@@ -215,22 +220,23 @@ class HomeViewmodel extends ChangeNotifier {
   }
 
   Future<void> fetchItems() async {
+    if (isSearching) return;
     if (_isFetching) return;
 
     _isFetching = true; // 로딩 시작
     notifyListeners();
 
-    String orderBy = setOrderBy(type);
-    _hasMore = true;
+    // _hasMore = true;
+
     try {
       _items = await _homeRepository.fetchItems(
-        orderBy,
+        setOrderBy(type),
         currentIndex: _currentPage,
         keywordType: selectedKeywordId,
       );
     } finally {
       _isFetching = false;
-      _isInitialized = true; // 초기화 완료
+      // _isInitialized = true; // 초기화 완료
       if (_isDisposed) return;
       notifyListeners();
     }
@@ -246,12 +252,23 @@ class HomeViewmodel extends ChangeNotifier {
     _isFetching = false; // 캐시된 fetch 플래그 초기화
     notifyListeners();
 
-    final result = await _homeRepository.fetchItems(
-      setOrderBy(type),
-      currentIndex: 1,
-      keywordType: selectedKeywordId,
-      forceRefresh: true,
-    );
+    List<ItemsEntity> result;
+
+    if (isSearching && currentSearchText.isNotEmpty) {
+      result = await _homeRepository.fetchSearchResult(
+        setOrderBy(type),
+        currentIndex: 1,
+        keywordType: selectedKeywordId,
+        userInputSearchText: currentSearchText,
+      );
+    } else {
+      result = await _homeRepository.fetchItems(
+        setOrderBy(type),
+        currentIndex: 1,
+        keywordType: selectedKeywordId,
+        forceRefresh: true,
+      );
+    }
 
     _items = result;
     _isRefreshing = false;
@@ -391,17 +408,20 @@ class HomeViewmodel extends ChangeNotifier {
     _searchDebounce = Timer(const Duration(milliseconds: 350), () async {
       if (_isDisposed) return;
 
+      // 검색 버튼이 열려 있을 때만 반응
+      if (!searchButton) return;
       // 검색어 삭제 → 검색 종료
       if (text.isEmpty) {
+        if (!searchButton) return;
+
         isSearching = false;
         currentSearchText = "";
         _currentPage = 1;
         _items = [];
         _hasMore = true;
         notifyListeners();
-
         // 기본 리스트 다시 로드
-        await fetchItems();
+        // await fetchItems();
         return;
       }
 
