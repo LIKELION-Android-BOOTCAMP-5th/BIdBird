@@ -85,7 +85,14 @@ class ProfileRemoteDataSource {
 
       final reason = (data is Map) ? data['reason'] : null;
 
+      //TRADE_STATUS_EXISTS로 오던것이 메세지가 변해서 SELLER_AUCTION_IN_PROGRESS로 와서 탈퇴가 안되는 오류가 나서 그냥 다 추가함
       if (reason == 'TRADE_STATUS_EXISTS') {
+        throw Exception('진행 중인 경매가 있을 때는 탈퇴할 수 없습니다.');
+      }
+      if (reason == 'SELLER_AUCTION_IN_PROGRESS') {
+        throw Exception('진행 중인 경매가 있을 때는 탈퇴할 수 없습니다.');
+      }
+      if (reason == 'BUYER_AUCTION_IN_PROGRESS') {
         throw Exception('진행 중인 경매가 있을 때는 탈퇴할 수 없습니다.');
       }
       if (reason == 'PUBLIC_USER_ROW_NOT_FOUND') {
@@ -101,6 +108,12 @@ class ProfileRemoteDataSource {
           final reason = details['reason'];
 
           if (reason == 'TRADE_STATUS_EXISTS') {
+            throw Exception('진행 중인 경매가 있을 때는 탈퇴할 수 없습니다.');
+          }
+          if (reason == 'SELLER_AUCTION_IN_PROGRESS') {
+            throw Exception('진행 중인 경매가 있을 때는 탈퇴할 수 없습니다.');
+          }
+          if (reason == 'BUYER_AUCTION_IN_PROGRESS') {
             throw Exception('진행 중인 경매가 있을 때는 탈퇴할 수 없습니다.');
           }
           if (reason == 'PUBLIC_USER_ROW_NOT_FOUND') {

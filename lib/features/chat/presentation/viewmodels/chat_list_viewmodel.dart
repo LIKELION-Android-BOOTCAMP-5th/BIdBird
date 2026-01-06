@@ -90,6 +90,11 @@ class ChatListViewmodel extends ChangeNotifier {
     });
   }
 
+  Future<void> initialize() async {
+    await fetchChattingRoomList(visibleItemCount: _pageSize);
+    _setupRealtimeSubscription();
+  }
+
   void setPageSize(int initialLoadCount) {
     _pageSize = initialLoadCount;
   }
