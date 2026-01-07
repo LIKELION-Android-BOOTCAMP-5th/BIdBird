@@ -1,7 +1,6 @@
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -33,7 +32,7 @@ class MypageScreen extends StatelessWidget {
             children: [
               _MypageProfile(),
               const SizedBox(height: 12),
-              Expanded(child: _MypageItemList()),
+              _MypageItemList(),
             ],
           ),
         ),
@@ -120,38 +119,52 @@ class _MypageProfile extends StatelessWidget {
 class _MypageItemList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _Item(
-          icon: Icons.favorite_border,
-          title: '관심목록',
-          onTap: () {
-            context.go('/mypage/favorite');
-          },
-        ),
-        _Item(
-          icon: Icons.receipt_long,
-          title: '거래내역',
-          onTap: () {
-            context.go('/mypage/trade');
-          },
-        ),
-        _Item(
-          icon: Icons.support_agent,
-          title: '고객센터',
-          onTap: () {
-            context.go('/mypage/service_center');
-          },
-        ),
-        // _Item(
-        //   icon: Icons.block,
-        //   title: '차단목록',
-        //   onTap: () {
-        //     context.go('/mypage/black_list');
-        //   },
-        // ),
-        const SizedBox(height: 24),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: iconColor.withValues(alpha: 0.2), width: 1),
+        borderRadius: defaultBorder,
+        boxShadow: const [
+          BoxShadow(color: shadowHigh, blurRadius: 10, offset: Offset(0, 4)),
+          BoxShadow(color: shadowLow, blurRadius: 4, offset: Offset(0, 1)),
+        ],
+      ),
+      child: Column(
+        children: [
+          _Item(
+            icon: Icons.favorite_border,
+            title: '관심목록',
+            onTap: () {
+              context.go('/mypage/favorite');
+            },
+          ),
+          // Divider(color: Colors.grey, height: 3),
+          _Item(
+            icon: Icons.receipt_long,
+            title: '거래내역',
+            onTap: () {
+              context.go('/mypage/trade');
+            },
+          ),
+
+          // Divider(color: Colors.grey, height: 3),
+          _Item(
+            icon: Icons.support_agent,
+            title: '고객센터',
+            onTap: () {
+              context.go('/mypage/service_center');
+            },
+          ),
+          // _Item(
+          //   icon: Icons.block,
+          //   title: '차단목록',
+          //   onTap: () {
+          //     context.go('/mypage/black_list');
+          //   },
+          // ),
+        ],
+      ),
     );
   }
 }
@@ -168,9 +181,9 @@ class _Item extends StatelessWidget {
     return Column(
       children: [
         ListTile(
-          leading: Icon(icon, color: iconColor),
-          title: Text(title),
-          trailing: const Icon(Icons.chevron_right, color: iconColor),
+          leading: Icon(icon, color: Colors.black),
+          title: Text(title, style: TextStyle(fontWeight: FontWeight.w500)),
+          trailing: const Icon(Icons.chevron_right, color: Colors.black),
           onTap: onTap,
         ),
         //const Divider(height: 0),

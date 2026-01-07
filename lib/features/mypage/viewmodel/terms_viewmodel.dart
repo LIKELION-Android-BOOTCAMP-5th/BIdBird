@@ -25,9 +25,7 @@ class TermsViewModel extends ChangeNotifier {
     try {
       final content = await _getTermsContent();
 
-      termsContent = [
-        TermsSectionEntity(title: '서비스 이용약관', body: content),
-      ];
+      termsContent = [TermsSectionEntity(title: '서비스 이용약관', body: content)];
     } catch (e) {
       errorMessage = e.toString();
       termsContent = [];
