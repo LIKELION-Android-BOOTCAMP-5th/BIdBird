@@ -5,6 +5,7 @@ class ChatMessageEntity {
   final String messageType;
   final String? text;
   final String? imageUrl;
+  final String? videoUrl;
   final String? thumbnailUrl;
   final String createdAt;
 
@@ -15,6 +16,7 @@ class ChatMessageEntity {
     required this.messageType,
     required this.text,
     required this.imageUrl,
+    required this.videoUrl,
     required this.thumbnailUrl,
     required this.createdAt,
   });
@@ -27,6 +29,9 @@ class ChatMessageEntity {
       messageType: json['message_type'] as String,
       text: json['text'] as String?,
       imageUrl: json['image_url'] as String?,
+      videoUrl:
+          json['video_url'
+              ''],
       thumbnailUrl: json['thumbnail_url'] as String?,
       createdAt: json['created_at'] as String,
     );

@@ -17,17 +17,11 @@ class ChatSupabaseDatasource {
 
   final SupabaseClient _supabase;
 
-  Future<List<ChatMessageEntity>> getMessages(
-    String chattingRoomId,
-  ) async {
+  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId) async {
     try {
       final response = await _supabase.rpc(
         'get_messages_v2',
-        params: {
-          '_room_id': chattingRoomId,
-          '_page': 1,
-          '_limit': 20,
-        },
+        params: {'_room_id': chattingRoomId, '_page': 1, '_limit': 20},
       );
 
       if (response is Map && response.containsKey('error')) {
@@ -113,28 +107,28 @@ class ChatSupabaseDatasource {
         'text': message,
       });
 
-      // chatting_room 업데이트
-      await _supabase.from('chatting_room').update({
-        'last_message': message,
-        'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', roomId);
-
-      // 상대방의 unread_count 증가
-      final roomData = await _supabase.from('chatting_room').select('seller_id, buyer_id').eq('id', roomId).single();
-      final opponentId = roomData['seller_id'] == currentUserId ? roomData['buyer_id'] : roomData['seller_id'];
-      final userRoomData = await _supabase.from('chatting_room_users').select('unread_count').eq('room_id', roomId).eq('user_id', opponentId).single();
-      final currentUnread = (userRoomData['unread_count'] as int?) ?? 0;
-      await _supabase.from('chatting_room_users').update({
-        'unread_count': currentUnread + 1,
-        'last_message': message,
-        'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('room_id', roomId).eq('user_id', opponentId);
-
-      // 내 row도 업데이트 (unread는 그대로, 마지막 메시지만 업데이트)
-      await _supabase.from('chatting_room_users').update({
-        'last_message': message,
-        'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('room_id', roomId).eq('user_id', currentUserId);
+      // // chatting_room 업데이트
+      // await _supabase.from('chatting_room').update({
+      //   'last_message': message,
+      //   'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
+      // }).eq('id', roomId);
+      //
+      // // 상대방의 unread_count 증가
+      // final roomData = await _supabase.from('chatting_room').select('seller_id, buyer_id').eq('id', roomId).single();
+      // final opponentId = roomData['seller_id'] == currentUserId ? roomData['buyer_id'] : roomData['seller_id'];
+      // final userRoomData = await _supabase.from('chatting_room_users').select('unread_count').eq('room_id', roomId).eq('user_id', opponentId).single();
+      // final currentUnread = (userRoomData['unread_count'] as int?) ?? 0;
+      // await _supabase.from('chatting_room_users').update({
+      //   'unread_count': currentUnread + 1,
+      //   'last_message': message,
+      //   'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
+      // }).eq('room_id', roomId).eq('user_id', opponentId);
+      //
+      // // 내 row도 업데이트 (unread는 그대로, 마지막 메시지만 업데이트)
+      // await _supabase.from('chatting_room_users').update({
+      //   'last_message': message,
+      //   'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
+      // }).eq('room_id', roomId).eq('user_id', currentUserId);
     } catch (e) {
       // 메시지 전송 실패 시 무시
     }
@@ -152,28 +146,28 @@ class ChatSupabaseDatasource {
         'image_url': imageUrl,
       });
 
-      // chatting_room 업데이트
-      await _supabase.from('chatting_room').update({
-        'last_message': '사진',
-        'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', roomId);
-
-      // 상대방의 unread_count 증가
-      final roomData = await _supabase.from('chatting_room').select('seller_id, buyer_id').eq('id', roomId).single();
-      final opponentId = roomData['seller_id'] == currentUserId ? roomData['buyer_id'] : roomData['seller_id'];
-      final userRoomData = await _supabase.from('chatting_room_users').select('unread_count').eq('room_id', roomId).eq('user_id', opponentId).single();
-      final currentUnread = (userRoomData['unread_count'] as int?) ?? 0;
-      await _supabase.from('chatting_room_users').update({
-        'unread_count': currentUnread + 1,
-        'last_message': '사진',
-        'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('room_id', roomId).eq('user_id', opponentId);
-
-      // 내 row도 업데이트
-      await _supabase.from('chatting_room_users').update({
-        'last_message': '사진',
-        'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('room_id', roomId).eq('user_id', currentUserId);
+      // // chatting_room 업데이트
+      // await _supabase.from('chatting_room').update({
+      //   'last_message': '사진',
+      //   'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
+      // }).eq('id', roomId);
+      //
+      // // 상대방의 unread_count 증가
+      // final roomData = await _supabase.from('chatting_room').select('seller_id, buyer_id').eq('id', roomId).single();
+      // final opponentId = roomData['seller_id'] == currentUserId ? roomData['buyer_id'] : roomData['seller_id'];
+      // final userRoomData = await _supabase.from('chatting_room_users').select('unread_count').eq('room_id', roomId).eq('user_id', opponentId).single();
+      // final currentUnread = (userRoomData['unread_count'] as int?) ?? 0;
+      // await _supabase.from('chatting_room_users').update({
+      //   'unread_count': currentUnread + 1,
+      //   'last_message': '사진',
+      //   'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
+      // }).eq('room_id', roomId).eq('user_id', opponentId);
+      //
+      // // 내 row도 업데이트
+      // await _supabase.from('chatting_room_users').update({
+      //   'last_message': '사진',
+      //   'last_message_send_at': DateTime.now().toUtc().toIso8601String(),
+      // }).eq('room_id', roomId).eq('user_id', currentUserId);
     } catch (e) {
       // 메시지 전송 실패 시 무시
     }
@@ -243,10 +237,7 @@ class ChatSupabaseDatasource {
     try {
       final response = await _supabase.rpc(
         'get_chat_list_v2',
-        params: {
-          '_page': page,
-          '_limit': limit,
-        },
+        params: {'_page': page, '_limit': limit},
       );
 
       if (response is Map && response.containsKey('error')) {
@@ -256,10 +247,10 @@ class ChatSupabaseDatasource {
       if (response is List) {
         final List<ChattingRoomEntity> results = response.map((json) {
           try {
-             return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
+            return ChattingRoomEntity.fromJson(json as Map<String, dynamic>);
           } catch (e) {
-             // 파싱 에러 발생 시 해당 아이템은 건너뛰거나 로그 처리
-             rethrow; 
+            // 파싱 에러 발생 시 해당 아이템은 건너뛰거나 로그 처리
+            rethrow;
           }
         }).toList();
         return results;
@@ -282,7 +273,9 @@ class ChatSupabaseDatasource {
         return null;
       }
 
-      final result = ChattingRoomEntity.fromJson(response as Map<String, dynamic>);
+      final result = ChattingRoomEntity.fromJson(
+        response as Map<String, dynamic>,
+      );
       return result;
     } catch (e) {
       return null;
@@ -330,8 +323,11 @@ class ChatSupabaseDatasource {
     String? message,
     required String messageType,
     String? imageUrl,
+    String? videoUrl,
   }) async {
-    if (messageType != "text" && messageType != "image") {
+    if (messageType != "text" &&
+        messageType != "image" &&
+        messageType != "video") {
       return null;
     }
 
@@ -345,6 +341,8 @@ class ChatSupabaseDatasource {
         params['_message'] = message;
       } else if (messageType == "image" && imageUrl != null) {
         params['_image_url'] = imageUrl;
+      } else if (messageType == "video" && videoUrl != null) {
+        params['_video_url'] = videoUrl;
       }
 
       final response = await _supabase.rpc(
@@ -368,10 +366,7 @@ class ChatSupabaseDatasource {
 
   Future<void> leaveChatRoom(String roomId) async {
     try {
-      await _supabase.rpc(
-        'leave_chat_room_v2',
-        params: {'_room_id': roomId},
-      );
+      await _supabase.rpc('leave_chat_room_v2', params: {'_room_id': roomId});
     } catch (e) {
       // 채팅방 나가기 실패 시 무시
     }
@@ -379,7 +374,9 @@ class ChatSupabaseDatasource {
 
   /// 거래 완료 API 호출 (임시)
   Future<void> completeTrade(String itemId) async {
-    debugPrint('[ChatSupabaseDatasource] completeTrade calling temporary_completeTrade itemId=$itemId');
+    debugPrint(
+      '[ChatSupabaseDatasource] completeTrade calling temporary_completeTrade itemId=$itemId',
+    );
     try {
       await SupabaseManager.shared.supabase.functions.invoke(
         'temporary_completeTrade',
@@ -398,7 +395,9 @@ class ChatSupabaseDatasource {
     String reasonCode,
     bool isSellerFault,
   ) async {
-    debugPrint('[ChatSupabaseDatasource] cancelTrade calling temporary_cancelTrade itemId=$itemId reason=$reasonCode fault=$isSellerFault');
+    debugPrint(
+      '[ChatSupabaseDatasource] cancelTrade calling temporary_cancelTrade itemId=$itemId reason=$reasonCode fault=$isSellerFault',
+    );
     try {
       await SupabaseManager.shared.supabase.functions.invoke(
         'temporary_cancelTrade',
