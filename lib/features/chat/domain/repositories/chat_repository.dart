@@ -11,9 +11,7 @@ abstract class ChatRepository {
     int limit = 20,
   });
   Future<ChattingRoomEntity?> fetchNewChattingRoom(String roomId);
-  Future<List<ChatMessageEntity>> getMessages(
-    String chattingRoomId,
-  );
+  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId);
   Future<List<ChatMessageEntity>> getOlderMessages(
     String chattingRoomId,
     String beforeCreatedAtIso, {
@@ -27,6 +25,7 @@ abstract class ChatRepository {
     String? message,
     required MessageType messageType,
     String? imageUrl,
+    String? videoUrl,
   });
   Future<RoomInfoEntity?> fetchRoomInfo(String itemId);
   Future<RoomInfoEntity?> fetchRoomInfoWithRoomId(String roomId);

@@ -3,36 +3,36 @@ import 'dart:async';
 import 'package:bidbird/core/managers/chatting_room_service.dart';
 import 'package:bidbird/core/managers/heartbeat_manager.dart';
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
+import 'package:bidbird/core/utils/item/trade_status_codes.dart';
+import 'package:bidbird/features/chat/data/managers/realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/data/repositories/chat_repository.dart';
 import 'package:bidbird/features/chat/domain/entities/auction_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chat_message_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/chatting_notification_set_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/item_info_entity.dart';
-import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/opponent_entity.dart';
+import 'package:bidbird/features/chat/domain/entities/room_info_entity.dart';
 import 'package:bidbird/features/chat/domain/entities/trade_info_entity.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_messages_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_room_id_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/get_older_messages_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/has_submitted_review_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/complete_trade_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/cancel_trade_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/submit_trade_review_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/complete_trade_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/get_messages_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/get_older_messages_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/get_room_id_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/get_room_notification_setting_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/has_submitted_review_usecase.dart';
+import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
 import 'package:bidbird/features/chat/domain/usecases/notification_off_usecase.dart';
 import 'package:bidbird/features/chat/domain/usecases/notification_on_usecase.dart';
-import 'package:bidbird/features/chat/domain/usecases/message_type.dart';
+import 'package:bidbird/features/chat/domain/usecases/submit_trade_review_usecase.dart';
 import 'package:bidbird/features/chat/presentation/managers/image_picker_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/message_send_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/read_status_manager.dart';
-import 'package:bidbird/features/chat/data/managers/realtime_subscription_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/room_info_manager.dart';
 import 'package:bidbird/features/chat/presentation/managers/scroll_manager.dart';
 import 'package:bidbird/features/chat/presentation/viewmodels/chat_list_viewmodel.dart';
-import 'package:bidbird/core/utils/item/trade_status_codes.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 
 class ChattingRoomViewmodel extends ChangeNotifier {
   String? roomId;
@@ -89,7 +89,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
     // 경매가 종료되고 낙찰된 경우에만 낙찰자로 인정
     // auction_status_code가 bidWon이고, 내가 최고 입찰자인 경우
-    final isAuctionWon = auctionInfo!.auctionStatusCode == AuctionStatusCode.bidWon;
+    final isAuctionWon =
+        auctionInfo!.auctionStatusCode == AuctionStatusCode.bidWon;
     final isLastBidder = auctionInfo!.lastBidUserId == currentUserId;
 
     return isAuctionWon && isLastBidder;
@@ -100,9 +101,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (auctionInfo == null) return false;
 
     // 경매가 종료되고 낙찰된 경우에만 true
-    final isAuctionWon = auctionInfo!.auctionStatusCode == AuctionStatusCode.bidWon;
-    final hasLastBidder = auctionInfo!.lastBidUserId != null &&
-                          auctionInfo!.lastBidUserId!.isNotEmpty;
+    final isAuctionWon =
+        auctionInfo!.auctionStatusCode == AuctionStatusCode.bidWon;
+    final hasLastBidder =
+        auctionInfo!.lastBidUserId != null &&
+        auctionInfo!.lastBidUserId!.isNotEmpty;
 
     return isAuctionWon && hasLastBidder;
   }
@@ -137,24 +140,32 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     MessageSendManager? messageSendManager,
     RoomInfoManager? roomInfoManager,
     ImagePickerManager? imagePickerManager,
-  })  : _getMessagesUseCase =
-            getMessagesUseCase ?? GetMessagesUseCase(ChatRepositoryImpl()),
-        _getRoomIdUseCase = getRoomIdUseCase ?? GetRoomIdUseCase(ChatRepositoryImpl()),
-        _getOlderMessagesUseCase =
-            getOlderMessagesUseCase ?? GetOlderMessagesUseCase(ChatRepositoryImpl()),
-        _hasSubmittedReviewUseCase =
-            hasSubmittedReviewUseCase ?? HasSubmittedReviewUseCase(ChatRepositoryImpl()),
-        _completeTradeUseCase =
-            completeTradeUseCase ?? CompleteTradeUseCase(ChatRepositoryImpl()),
-        _cancelTradeUseCase = cancelTradeUseCase ?? CancelTradeUseCase(ChatRepositoryImpl()),
-        _submitTradeReviewUseCase =
-            submitTradeReviewUseCase ?? SubmitTradeReviewUseCase(ChatRepositoryImpl()),
-        _getRoomNotificationSettingUseCase = getRoomNotificationSettingUseCase ??
-            GetRoomNotificationSettingUseCase(ChatRepositoryImpl()),
-        _notificationOffUseCase =
-            notificationOffUseCase ?? NotificationOffUseCase(ChatRepositoryImpl()),
-        _notificationOnUseCase =
-            notificationOnUseCase ?? NotificationOnUseCase(ChatRepositoryImpl()) {
+  }) : _getMessagesUseCase =
+           getMessagesUseCase ?? GetMessagesUseCase(ChatRepositoryImpl()),
+       _getRoomIdUseCase =
+           getRoomIdUseCase ?? GetRoomIdUseCase(ChatRepositoryImpl()),
+       _getOlderMessagesUseCase =
+           getOlderMessagesUseCase ??
+           GetOlderMessagesUseCase(ChatRepositoryImpl()),
+       _hasSubmittedReviewUseCase =
+           hasSubmittedReviewUseCase ??
+           HasSubmittedReviewUseCase(ChatRepositoryImpl()),
+       _completeTradeUseCase =
+           completeTradeUseCase ?? CompleteTradeUseCase(ChatRepositoryImpl()),
+       _cancelTradeUseCase =
+           cancelTradeUseCase ?? CancelTradeUseCase(ChatRepositoryImpl()),
+       _submitTradeReviewUseCase =
+           submitTradeReviewUseCase ??
+           SubmitTradeReviewUseCase(ChatRepositoryImpl()),
+       _getRoomNotificationSettingUseCase =
+           getRoomNotificationSettingUseCase ??
+           GetRoomNotificationSettingUseCase(ChatRepositoryImpl()),
+       _notificationOffUseCase =
+           notificationOffUseCase ??
+           NotificationOffUseCase(ChatRepositoryImpl()),
+       _notificationOnUseCase =
+           notificationOnUseCase ??
+           NotificationOnUseCase(ChatRepositoryImpl()) {
     // Manager 클래스 초기화
     _scrollManager = scrollManager ?? ScrollManager(ScrollController());
     _subscriptionManager = subscriptionManager ?? RealtimeSubscriptionManager();
@@ -163,7 +174,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     _roomInfoManager = roomInfoManager ?? RoomInfoManager();
     _imagePickerManager = imagePickerManager ?? ImagePickerManager();
 
-    print('[LEAK] ChattingRoomViewmodel created hash=$hashCode itemId=$itemId roomId=$roomId');
+    print(
+      '[LEAK] ChattingRoomViewmodel created hash=$hashCode itemId=$itemId roomId=$roomId',
+    );
 
     // 더 많은 메시지 로드 리스너 설정
     _scrollManager.setupLoadMoreListener(() {
@@ -178,11 +191,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   /// roomInfo가 준비되기 전, 판매자 입장에서는 구매자 닉네임을 낙관적으로 채워준다.
   /// - 우선 trade_status에서 buyer_id를 찾고, 없으면 auctions.last_bid_user_id를 조회한다.
   /// - buyerId가 확인되면 users 테이블에서 nick_name을 조회하여 헤더에 표시한다.
-  Future<void> fetchFallbackOpponentNameIfNeeded({required bool isCurrentUserSeller}) async {
+  Future<void> fetchFallbackOpponentNameIfNeeded({
+    required bool isCurrentUserSeller,
+  }) async {
     if (!isCurrentUserSeller) return; // 구매자일 때는 판매자명 이미 전달됨
     if (roomInfo != null) return; // 방 정보가 있으면 필요 없음
     // 이미 구체적인 이름이 설정되어 있다면 스킵 ('구매자'는 대체 대상)
-    if (_fallbackOpponentName != null && _fallbackOpponentName!.isNotEmpty && _fallbackOpponentName != '구매자') {
+    if (_fallbackOpponentName != null &&
+        _fallbackOpponentName!.isNotEmpty &&
+        _fallbackOpponentName != '구매자') {
       return;
     }
 
@@ -211,7 +228,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
               .eq('item_id', itemId)
               .eq('round', 1)
               .maybeSingle();
-          buyerId = auction != null ? (auction['last_bid_user_id'] as String?) : null;
+          buyerId = auction != null
+              ? (auction['last_bid_user_id'] as String?)
+              : null;
         } catch (_) {}
       }
 
@@ -236,7 +255,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     String? sellerImage,
     int? itemPrice,
   }) {
-    debugPrint('[setInitialItemInfo] Setting item info: title=$itemTitle, seller=$sellerName');
+    debugPrint(
+      '[setInitialItemInfo] Setting item info: title=$itemTitle, seller=$sellerName',
+    );
 
     // itemInfo가 아직 로드되지 않았다면 임시 데이터 설정
     if (itemInfo == null) {
@@ -250,7 +271,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       notifyListeners();
     }
     // 헤더에서 사용할 임시 상대방 이름
-    if (_fallbackOpponentName == null && sellerName != null && sellerName.isNotEmpty) {
+    if (_fallbackOpponentName == null &&
+        sellerName != null &&
+        sellerName.isNotEmpty) {
       _fallbackOpponentName = sellerName;
       notifyListeners();
     }
@@ -267,7 +290,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       // roomId가 없으면 itemId로 roomId를 먼저 가져오기 시도
       String? currentRoomId = roomId;
       if (currentRoomId == null && itemId.isNotEmpty) {
-        debugPrint('[fetchRoomInfo] roomId is null, fetching from itemId=$itemId');
+        debugPrint(
+          '[fetchRoomInfo] roomId is null, fetching from itemId=$itemId',
+        );
         try {
           currentRoomId = await _getRoomIdUseCase(itemId);
           if (currentRoomId != null) {
@@ -290,19 +315,22 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
       // fetchRoomInfo 호출 중이므로 fetchRoomInfoDebounced를 호출하지 않도록 플래그 전달
       if (messages.isNotEmpty) {
-        _markMessagesAsReadUpToLastViewed(newUnreadCount, skipFetchRoomInfo: true);
+        _markMessagesAsReadUpToLastViewed(
+          newUnreadCount,
+          skipFetchRoomInfo: true,
+        );
       }
 
-    // unreadCount 변경 감지: 이전에 읽지 않은 메시지가 있었는데 지금 0이 되면 하단으로 스크롤
-    // 단, 사용자가 수동으로 스크롤 중이 아니고, 초기 로드가 아닐 때만
-    if (previousUnreadCount != null &&
-        previousUnreadCount! > 0 &&
-        newUnreadCount == 0 &&
-        !isUserScrolling &&
-        !isInitialLoad) {
-      // 강제로 하단으로 스크롤
-      scrollToBottom(force: true);
-    }
+      // unreadCount 변경 감지: 이전에 읽지 않은 메시지가 있었는데 지금 0이 되면 하단으로 스크롤
+      // 단, 사용자가 수동으로 스크롤 중이 아니고, 초기 로드가 아닐 때만
+      if (previousUnreadCount != null &&
+          previousUnreadCount! > 0 &&
+          newUnreadCount == 0 &&
+          !isUserScrolling &&
+          !isInitialLoad) {
+        // 강제로 하단으로 스크롤
+        scrollToBottom(force: true);
+      }
 
       previousUnreadCount = newUnreadCount;
       roomInfo = result.roomInfo;
@@ -314,9 +342,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       // [Bug Fix] 서버에서 상대를 '나'로 잘못 리턴하는 경우(특히 판매자가 구매자에게 연락 시),
       // 클라이언트에서 상대를 '구매자'로 강제 보정
       if (roomInfo != null) {
-        final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+        final currentUserId =
+            SupabaseManager.shared.supabase.auth.currentUser?.id;
         // 상대방 ID가 나랑 같다면? (잘못된 상태)
-        if (currentUserId != null && roomInfo!.opponent.userId == currentUserId) {
+        if (currentUserId != null &&
+            roomInfo!.opponent.userId == currentUserId) {
           // 내가 판매자인지 확인
           final isSeller = itemInfo?.sellerId == currentUserId;
           if (isSeller) {
@@ -325,25 +355,25 @@ class ChattingRoomViewmodel extends ChangeNotifier {
             if (buyerId == null || buyerId.isEmpty) {
               buyerId = auctionInfo?.lastBidUserId;
             }
-            
-            // roomInfo의 opponent를 교체
-             roomInfo = RoomInfoEntity(
-                item: roomInfo!.item,
-                auction: roomInfo!.auction,
-                opponent: OpponentEntity(
-                    userId: buyerId ?? '', // ID가 없으면 빈 문자열이라도
-                    nickName: '구매자',      // 닉네임 강제 지정
-                    profileImage: null,
-                ),
-                trade: roomInfo!.trade,
-                unreadCount: roomInfo!.unreadCount,
-                lastMessageAt: roomInfo!.lastMessageAt,
-             );
 
-             // 진짜 닉네임 가져오기
-             if (buyerId != null && buyerId.isNotEmpty) {
-               _fetchRealOpponentProfile(buyerId);
-             }
+            // roomInfo의 opponent를 교체
+            roomInfo = RoomInfoEntity(
+              item: roomInfo!.item,
+              auction: roomInfo!.auction,
+              opponent: OpponentEntity(
+                userId: buyerId ?? '', // ID가 없으면 빈 문자열이라도
+                nickName: '구매자', // 닉네임 강제 지정
+                profileImage: null,
+              ),
+              trade: roomInfo!.trade,
+              unreadCount: roomInfo!.unreadCount,
+              lastMessageAt: roomInfo!.lastMessageAt,
+            );
+
+            // 진짜 닉네임 가져오기
+            if (buyerId != null && buyerId.isNotEmpty) {
+              _fetchRealOpponentProfile(buyerId);
+            }
           }
         }
       }
@@ -380,17 +410,20 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
           // fetchRoomInfoDebounced 호출 중이므로 fetchRoomInfoDebounced를 호출하지 않도록 플래그 전달
           if (messages.isNotEmpty) {
-            _markMessagesAsReadUpToLastViewed(newUnreadCount, skipFetchRoomInfo: true);
+            _markMessagesAsReadUpToLastViewed(
+              newUnreadCount,
+              skipFetchRoomInfo: true,
+            );
           }
 
-        // unreadCount 변경 감지
-        if (previousUnreadCount != null &&
-            previousUnreadCount! > 0 &&
-            newUnreadCount == 0 &&
-            !isUserScrolling &&
-            !isInitialLoad) {
-          scrollToBottom(force: true);
-        }
+          // unreadCount 변경 감지
+          if (previousUnreadCount != null &&
+              previousUnreadCount! > 0 &&
+              newUnreadCount == 0 &&
+              !isUserScrolling &&
+              !isInitialLoad) {
+            scrollToBottom(force: true);
+          }
 
           previousUnreadCount = newUnreadCount;
           roomInfo = result.roomInfo;
@@ -402,9 +435,11 @@ class ChattingRoomViewmodel extends ChangeNotifier {
           // [Bug Fix] 서버에서 상대를 '나'로 잘못 리턴하는 경우(특히 판매자가 구매자에게 연락 시),
           // 클라이언트에서 상대를 '구매자'로 강제 보정
           if (roomInfo != null) {
-            final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+            final currentUserId =
+                SupabaseManager.shared.supabase.auth.currentUser?.id;
             // 상대방 ID가 나랑 같다면? (잘못된 상태)
-            if (currentUserId != null && roomInfo!.opponent.userId == currentUserId) {
+            if (currentUserId != null &&
+                roomInfo!.opponent.userId == currentUserId) {
               // 내가 판매자인지 확인
               final isSeller = itemInfo?.sellerId == currentUserId;
               if (isSeller) {
@@ -413,25 +448,25 @@ class ChattingRoomViewmodel extends ChangeNotifier {
                 if (buyerId == null || buyerId.isEmpty) {
                   buyerId = auctionInfo?.lastBidUserId;
                 }
-                
-                // roomInfo의 opponent를 교체
-                 roomInfo = RoomInfoEntity(
-                    item: roomInfo!.item,
-                    auction: roomInfo!.auction,
-                    opponent: OpponentEntity(
-                        userId: buyerId ?? '', 
-                        nickName: '구매자',
-                        profileImage: null,
-                    ),
-                    trade: roomInfo!.trade,
-                    unreadCount: roomInfo!.unreadCount,
-                    lastMessageAt: roomInfo!.lastMessageAt,
-                 );
 
-                 // 진짜 닉네임 가져오기
-                 if (buyerId != null && buyerId.isNotEmpty) {
-                   _fetchRealOpponentProfile(buyerId);
-                 }
+                // roomInfo의 opponent를 교체
+                roomInfo = RoomInfoEntity(
+                  item: roomInfo!.item,
+                  auction: roomInfo!.auction,
+                  opponent: OpponentEntity(
+                    userId: buyerId ?? '',
+                    nickName: '구매자',
+                    profileImage: null,
+                  ),
+                  trade: roomInfo!.trade,
+                  unreadCount: roomInfo!.unreadCount,
+                  lastMessageAt: roomInfo!.lastMessageAt,
+                );
+
+                // 진짜 닉네임 가져오기
+                if (buyerId != null && buyerId.isNotEmpty) {
+                  _fetchRealOpponentProfile(buyerId);
+                }
               }
             }
           }
@@ -457,23 +492,22 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     try {
       final user = await SupabaseManager.shared.fetchUser(userId);
       // roomInfo가 여전히 존재하고, 보정 대상인 경우에만 업데이트
-      if (user != null && 
-          roomInfo != null && 
+      if (user != null &&
+          roomInfo != null &&
           roomInfo!.opponent.nickName == '구매자') {
-          
-         roomInfo = RoomInfoEntity(
-            item: roomInfo!.item,
-            auction: roomInfo!.auction,
-            opponent: OpponentEntity(
-                userId: userId, 
-                nickName: user.nick_name ?? '구매자',
-                profileImage: user.profile_image,
-            ),
-            trade: roomInfo!.trade,
-            unreadCount: roomInfo!.unreadCount,
-            lastMessageAt: roomInfo!.lastMessageAt,
-         );
-         notifyListeners();
+        roomInfo = RoomInfoEntity(
+          item: roomInfo!.item,
+          auction: roomInfo!.auction,
+          opponent: OpponentEntity(
+            userId: userId,
+            nickName: user.nick_name ?? '구매자',
+            profileImage: user.profile_image,
+          ),
+          trade: roomInfo!.trade,
+          unreadCount: roomInfo!.unreadCount,
+          lastMessageAt: roomInfo!.lastMessageAt,
+        );
+        notifyListeners();
       }
     } catch (e) {
       // ignore
@@ -489,7 +523,10 @@ class ChattingRoomViewmodel extends ChangeNotifier {
   }
 
   // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
-  void _markMessagesAsReadUpToLastViewed(int unreadCount, {bool skipFetchRoomInfo = false}) {
+  void _markMessagesAsReadUpToLastViewed(
+    int unreadCount, {
+    bool skipFetchRoomInfo = false,
+  }) {
     _readStatusManager.markMessagesAsReadUpToLastViewed(
       messages,
       unreadCount,
@@ -498,7 +535,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         // 실제 읽음 처리는 서버에서 처리되므로 여기서는 로그만 남김
       },
     );
-
   }
 
   // 읽지 않은 메시지가 있는지 확인하고 첫 번째 읽지 않은 메시지의 인덱스를 반환
@@ -588,7 +624,6 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     ChatListViewmodel.instance?.moveRoomToTop(roomId);
   }
 
-
   // 첫 메시지 전송 후 처리 헬퍼 메서드
   Future<void> _handleFirstMessageSent() async {
     try {
@@ -662,6 +697,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       uploadProgress.clear();
       notifyListeners();
       return;
+    } else {
+      images.clear();
     }
 
     // 전송 성공 후 상태 업데이트
@@ -714,6 +751,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         messageType: 'text',
         text: messageText,
         imageUrl: null,
+        videoUrl: null,
         thumbnailUrl: null,
         createdAt: now,
       );
@@ -723,7 +761,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
     // 이미지 메시지 추가
     for (final image in images) {
-      final isVideo = image.path.toLowerCase().endsWith('.mp4') ||
+      final isVideo =
+          image.path.toLowerCase().endsWith('.mp4') ||
           image.path.toLowerCase().endsWith('.mov') ||
           image.path.toLowerCase().endsWith('.avi');
 
@@ -734,6 +773,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         messageType: isVideo ? 'video' : 'image',
         text: null,
         imageUrl: image.path, // 임시로 로컬 경로 사용
+        videoUrl: isVideo ? image.path : null,
         thumbnailUrl: null,
         createdAt: now,
       );
@@ -742,9 +782,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
     if (images.isNotEmpty || messageText.trim().isNotEmpty) {
       messageController.text = "";
-      images.clear();
+      // images.clear();
       type = MessageType.text;
-      
+
       notifyListeners();
       scrollToBottom(force: true);
     }
@@ -832,11 +872,15 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   /// 거래 완료 처리
   Future<void> completeTrade() async {
-    debugPrint('[ChattingRoomViewmodel] completeTrade entry check itemId=$itemId');
+    debugPrint(
+      '[ChattingRoomViewmodel] completeTrade entry check itemId=$itemId',
+    );
     if (itemId.isEmpty) {
       throw Exception('매물 ID가 없습니다.');
     }
-    debugPrint('[ChattingRoomViewmodel] completeTrade called for itemId=$itemId');
+    debugPrint(
+      '[ChattingRoomViewmodel] completeTrade called for itemId=$itemId',
+    );
 
     await _completeTradeUseCase(itemId);
 
@@ -849,7 +893,9 @@ class ChattingRoomViewmodel extends ChangeNotifier {
     if (itemId.isEmpty) {
       throw Exception('매물 ID가 없습니다.');
     }
-    debugPrint('[ChattingRoomViewmodel] cancelTrade called for itemId=$itemId reason=$reasonCode');
+    debugPrint(
+      '[ChattingRoomViewmodel] cancelTrade called for itemId=$itemId reason=$reasonCode',
+    );
 
     await _cancelTradeUseCase(itemId, reasonCode, isSellerFault);
 
@@ -965,7 +1011,10 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         // unread_count를 기반으로 마지막으로 본 메시지까지 읽음 처리
         // 실시간 구독에서 호출되므로 fetchRoomInfoDebounced를 호출하지 않도록 플래그 전달
         if (messages.isNotEmpty) {
-          _markMessagesAsReadUpToLastViewed(newUnreadCount, skipFetchRoomInfo: true);
+          _markMessagesAsReadUpToLastViewed(
+            newUnreadCount,
+            skipFetchRoomInfo: true,
+          );
         }
 
         // 이전에 읽지 않은 메시지가 있었는데 지금 0이 되면 하단으로 스크롤
@@ -989,39 +1038,40 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       return;
     }
 
-    _subscriptionManager.subscribeToMessages(
-      currentRoomId,
-      (newChattingMessage) {
-        // 이미 존재하는 메시지인지 확인 (중복 방지)
-        final existingMessageIndex = messages.indexWhere((msg) => msg.id == newChattingMessage.id);
-        if (existingMessageIndex != -1) {
-          // 이미 존재하는 메시지면 업데이트만 하고 리턴
-          messages[existingMessageIndex] = newChattingMessage;
-          notifyListeners();
-          return;
-        }
-
-        // 임시 메시지가 있으면 제거하고 실제 메시지로 교체
-        final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-        final isMyMessage = userId != null && newChattingMessage.senderId == userId;
-
-        if (isMyMessage) {
-          // 본인이 보낸 메시지인 경우, 임시 메시지와 매칭하여 교체
-          _replaceOptimisticMessage(newChattingMessage);
-        } else {
-          // 다른 사람이 보낸 메시지는 추가
-          messages.add(newChattingMessage);
-        }
-
+    _subscriptionManager.subscribeToMessages(currentRoomId, (
+      newChattingMessage,
+    ) {
+      // 이미 존재하는 메시지인지 확인 (중복 방지)
+      final existingMessageIndex = messages.indexWhere(
+        (msg) => msg.id == newChattingMessage.id,
+      );
+      if (existingMessageIndex != -1) {
+        // 이미 존재하는 메시지면 업데이트만 하고 리턴
+        messages[existingMessageIndex] = newChattingMessage;
         notifyListeners();
+        return;
+      }
 
-        // 새 메시지가 오면 하단으로 스크롤 (더 많은 메시지를 로드 중이 아닐 때만)
-        if (!isLoadingMore) {
-          scrollToBottom(force: true);
-        }
-      },
-      notifyListeners,
-    );
+      // 임시 메시지가 있으면 제거하고 실제 메시지로 교체
+      final userId = SupabaseManager.shared.supabase.auth.currentUser?.id;
+      final isMyMessage =
+          userId != null && newChattingMessage.senderId == userId;
+
+      if (isMyMessage) {
+        // 본인이 보낸 메시지인 경우, 임시 메시지와 매칭하여 교체
+        _replaceOptimisticMessage(newChattingMessage);
+      } else {
+        // 다른 사람이 보낸 메시지는 추가
+        messages.add(newChattingMessage);
+      }
+
+      notifyListeners();
+
+      // 새 메시지가 오면 하단으로 스크롤 (더 많은 메시지를 로드 중이 아닐 때만)
+      if (!isLoadingMore) {
+        scrollToBottom(force: true);
+      }
+    }, notifyListeners);
   }
 
   /// 임시 메시지를 실제 메시지로 교체
@@ -1044,7 +1094,8 @@ class ChattingRoomViewmodel extends ChangeNotifier {
         }
 
         // 이미지/비디오 메시지 매칭 (내용이 같고 최근 5초 이내)
-        if ((realMessage.messageType == 'image' || realMessage.messageType == 'video') &&
+        if ((realMessage.messageType == 'image' ||
+                realMessage.messageType == 'video') &&
             (msg.messageType == 'image' || msg.messageType == 'video')) {
           // 임시 메시지가 있고 같은 타입이면 교체
           // 첫 번째 매칭되는 임시 메시지를 교체
@@ -1065,13 +1116,14 @@ class ChattingRoomViewmodel extends ChangeNotifier {
 
   @override
   void dispose() {
-    print('[LEAK] ChattingRoomViewmodel dispose hash=$hashCode itemId=$itemId roomId=$roomId');
+    print(
+      '[LEAK] ChattingRoomViewmodel dispose hash=$hashCode itemId=$itemId roomId=$roomId',
+    );
     // 채팅방을 나갈 때 읽음 처리를 위해 disposeViewModel 호출
     if (roomId != null && isActive) {
       // disposeViewModel은 비동기이므로 await 없이 호출
       // dispose는 동기 메서드이므로 Future를 기다릴 수 없음
-      disposeViewModel().catchError((e) {
-      });
+      disposeViewModel().catchError((e) {});
     }
 
     messageController.dispose();
