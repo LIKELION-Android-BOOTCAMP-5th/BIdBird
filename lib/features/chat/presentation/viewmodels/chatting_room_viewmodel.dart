@@ -707,6 +707,7 @@ class ChattingRoomViewmodel extends ChangeNotifier {
       roomId = result.roomId;
       _uploadProgressSub?.cancel();
       uploadProgress.clear();
+      messageController.clear();
       notifyListeners();
       await _handleFirstMessageSent();
 
