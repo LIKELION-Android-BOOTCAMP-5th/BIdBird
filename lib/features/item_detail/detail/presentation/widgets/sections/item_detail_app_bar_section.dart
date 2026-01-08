@@ -1,14 +1,14 @@
+import 'package:bidbird/core/utils/ui_set/colors_style.dart';
+import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/viewmodels/item_detail_viewmodel.dart';
 import 'package:bidbird/features/report/presentation/screens/report_screen.dart';
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
 
 class ItemDetailAppBarSection extends StatelessWidget
     implements PreferredSizeWidget {
@@ -141,11 +141,17 @@ class ItemDetailAppBarSection extends StatelessWidget
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: Icon(
-            Icons.warning,
+          child: Image.asset(
+            'assets/icons/report_icon.png',
             color: chatItemCardBackground,
-            size: context.iconSizeSmall,
+            height: 20,
+            width: 20,
           ),
+          // Icon(
+          //   Icons.warning,
+          //   color: chatItemCardBackground,
+          //   size: context.iconSizeSmall,
+          // ),
         ),
       ),
     );
@@ -166,16 +172,14 @@ class ItemDetailAppBarSection extends StatelessWidget
     try {
       final String imageUrl = item.itemImages.first;
       final tempDir = await getTemporaryDirectory();
-      final String fileName = 'share_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String fileName =
+          'share_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String filePath = '${tempDir.path}/$fileName';
 
       await Dio().download(imageUrl, filePath);
-      
+
       final xFile = XFile(filePath);
-      await Share.shareXFiles(
-        [xFile],
-        text: shareText,
-      );
+      await Share.shareXFiles([xFile], text: shareText);
     } catch (e) {
       // 이미지 다운로드/공유 실패 시 텍스트만 공유 시도
       debugPrint('Image share failed: $e');

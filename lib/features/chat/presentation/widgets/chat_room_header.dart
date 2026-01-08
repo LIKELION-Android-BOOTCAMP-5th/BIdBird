@@ -126,7 +126,11 @@ class ChatRoomHeader extends StatelessWidget implements PreferredSizeWidget {
               }
             }
           },
-          icon: Icon(Icons.warning, color: iconColor),
+          icon: Image.asset(
+            'assets/icons/report_icon.png',
+            height: 22,
+            width: 22,
+          ),
         ),
       ],
     );

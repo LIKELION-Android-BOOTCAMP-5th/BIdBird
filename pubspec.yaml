@@ -105,6 +105,7 @@ flutter:
     - assets/icons/bid_select_icon.png
     - assets/icons/profile_icon.png
     - assets/icons/profile_select_icon.png
+    - assets/icons/report_icon.png
     - assets/logos/bidbird_logo.png
     - assets/logos/bidbird_text_logo.png
     - assets/logos/bidbird_image_text_logo.png

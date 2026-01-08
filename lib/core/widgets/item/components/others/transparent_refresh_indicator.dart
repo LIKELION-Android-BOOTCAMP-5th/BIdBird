@@ -23,8 +23,8 @@ class TransparentRefreshIndicator extends StatelessWidget {
       },
       child: RefreshIndicator(
         onRefresh: onRefresh,
-        color: blueColor,
-        backgroundColor: Colors.transparent,
+        color: Colors.white,
+        backgroundColor: blueColor,
         displacement: 0,
         strokeWidth: 2.0,
         child: SizedBox.expand(child: child),
@@ -32,4 +32,3 @@ class TransparentRefreshIndicator extends StatelessWidget {
     );
   }
 }
-
