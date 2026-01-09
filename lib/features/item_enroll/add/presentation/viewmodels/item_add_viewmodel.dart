@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/upload/progress/upload_progress_bus.dart';
 import 'package:bidbird/core/upload/repositories/image_upload_repository.dart';
 import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
@@ -151,7 +149,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
         .where((e) => !e.path.startsWith('http'))
         .map((e) => e.path)
         .toSet();
-    
+
     final List<XFile> uniqueNewImages = images
         .where((e) => !existingLocalPaths.contains(e.path))
         .toList();
@@ -180,7 +178,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
         .where((e) => !e.path.startsWith('http'))
         .map((e) => e.path)
         .toSet();
-    
+
     if (existingLocalPaths.contains(image.path)) return;
 
     selectedImages = <XFile>[...selectedImages, image];
@@ -374,15 +372,17 @@ class ItemAddViewModel extends ItemBaseViewModel {
         final size = (documentSizes != null && documentSizes.length > i)
             ? int.tryParse(documentSizes[i]) ?? 0
             : 0;
-        
+
         // URL을 파일 경로로 사용 (원격 파일임을 나타냄)
-        docs.add(PickedDocument(
-          file: File(url), // URL을 경로로 사용
-          originalName: name,
-          size: size,
-        ));
+        docs.add(
+          PickedDocument(
+            file: File(url), // URL을 경로로 사용
+            originalName: name,
+            size: size,
+          ),
+        );
       }
-      
+
       if (docs.isNotEmpty) {
         selectedDocuments = docs;
         notifyListeners();
@@ -391,7 +391,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
       debugPrint('Error loading existing documents: $e');
     }
   }
-
 
   String? validate() {
     final int startPrice = parseFormattedPrice(startPriceController.text);
@@ -535,24 +534,34 @@ class ItemAddViewModel extends ItemBaseViewModel {
             initialData: 0.0,
             builder: (context, snapshot) {
               final p = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(
-                    value: p,
-                    valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+              return Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        value: p,
+                        valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+                      ),
+                      SizedBox(height: spacing),
+                      Text(
+                        '업로드 중 ${(p * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                          // decoration: TextDecoration.none,
+                          // decorationThickness: 0,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: spacing),
-                  Text(
-                    '업로드 중 ${(p * 100).toStringAsFixed(0)}%',
-                    style: TextStyle(
-                      fontSize: fontSize,
-                      color: Colors.white,
-                      decoration: TextDecoration.none,
-                      decorationThickness: 0,
-                    ),
-                  ),
-                ],
+                ),
               );
             },
           ),
