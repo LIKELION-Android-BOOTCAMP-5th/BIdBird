@@ -276,4 +276,25 @@ class ItemDetailDatasource {
       return false;
     }
   }
+
+  /// 특정 문서의 최신 URL을 Supabase에서 직접 조회
+  /// PDF 뷰어를 열 때 캐시된 데이터가 아닌 최신 URL을 가져오기 위해 사용
+  Future<String?> fetchDocumentUrl(String itemId, String documentId) async {
+    try {
+      final List<dynamic> rows = await _supabase
+          .from('item_documents')
+          .select('document_url')
+          .eq('item_id', itemId)
+          .eq('id', documentId)
+          .limit(1);
+
+      if (rows.isNotEmpty) {
+        return rows.first['document_url'] as String?;
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

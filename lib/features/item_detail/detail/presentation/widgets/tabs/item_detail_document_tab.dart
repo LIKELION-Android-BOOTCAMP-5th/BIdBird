@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
+import 'package:bidbird/features/item_detail/detail/data/datasources/item_detail_datasource.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/screens/pdf_viewer_screen.dart';
 
 class ItemDetailDocumentTab extends StatelessWidget {
@@ -50,17 +51,35 @@ class ItemDetailDocumentTab extends StatelessWidget {
 
   Widget _buildDocumentItem(BuildContext context, ItemDocument document) {
     return InkWell(
-      onTap: () {
+      onTap: () async {
         if (document.fileType.toLowerCase() == 'pdf') {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => PDFViewerScreen(
-                title: document.documentName,
-                url: document.documentUrl,
+          // Supabase에서 최신 URL 조회
+          try {
+            final datasource = ItemDetailDatasource();
+            final latestUrl = await datasource.fetchDocumentUrl(
+              item.itemId,
+              document.documentId,
+            );
+            
+            final urlToUse = latestUrl ?? document.documentUrl;
+            
+            if (!context.mounted) return;
+            
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PDFViewerScreen(
+                  title: document.documentName,
+                  url: urlToUse,
+                ),
+                fullscreenDialog: true,
               ),
-              fullscreenDialog: true,
-            ),
-          );
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('PDF를 불러오는데 실패했습니다.')),
+            );
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('현재 PDF 형식만 미리보기가 가능합니다.')),
