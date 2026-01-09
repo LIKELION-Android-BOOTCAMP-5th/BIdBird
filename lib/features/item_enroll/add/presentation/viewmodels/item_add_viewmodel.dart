@@ -209,8 +209,13 @@ class ItemAddViewModel extends ItemBaseViewModel {
     notifyListeners(); // 비디오 추가 시 UI 업데이트 필요
   }
 
+  bool _isPickingDocuments = false;
+
   /// PDF 보증서 선택
   Future<void> pickDocuments() async {
+    if (_isPickingDocuments) return;
+    _isPickingDocuments = true;
+
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -230,9 +235,17 @@ class ItemAddViewModel extends ItemBaseViewModel {
             })
             .toList();
 
-        // 최대 5개 제한 (필요 시 조정)
-        if (selectedDocuments.length + newDocs.length > 5) {
-          // 5개까지만 추가
+        // 중복 제거: 같은 파일명이 있으면 기존 것을 제거 (로컬 파일이든 원격 URL이든)
+        // 이렇게 하면 수정 모드에서 같은 이름의 PDF를 교체할 때 이전 파일이 완전히 제거됨
+        for (final newDoc in newDocs) {
+          selectedDocuments.removeWhere(
+            (existingDoc) => existingDoc.originalName == newDoc.originalName,
+          );
+        }
+
+        // 최대 5개 제한
+        final totalAfterAdd = selectedDocuments.length + newDocs.length;
+        if (totalAfterAdd > 5) {
           final remaining = 5 - selectedDocuments.length;
           if (remaining > 0) {
             selectedDocuments.addAll(newDocs.take(remaining));
@@ -244,6 +257,8 @@ class ItemAddViewModel extends ItemBaseViewModel {
       }
     } catch (e) {
       debugPrint('Error picking documents: $e');
+    } finally {
+      _isPickingDocuments = false;
     }
   }
 
@@ -319,7 +334,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
           loadExistingDocuments(
             editItem.documentUrls,
             editItem.documentNames,
-            editItem.documentSizes,
+            editItem.documentSizes?.map((e) => e.toString()).toList(),
           ),
         ]);
       } catch (e) {
@@ -341,70 +356,39 @@ class ItemAddViewModel extends ItemBaseViewModel {
   }
 
   /// 수정 모드에서 기존 문서를 불러와 selectedDocuments에 채웁니다.
+  /// 원격 URL을 직접 사용하여 불필요한 재업로드를 방지합니다.
   Future<void> loadExistingDocuments(
     List<String> documentUrls,
     List<String>? documentNames,
-    List<int>? documentSizes,
+    List<String>? documentSizes,
   ) async {
     if (documentUrls.isEmpty) return;
 
-    _dio ??= Dio();
-    final dio = _dio!;
-
     try {
-      final results = await Future.wait(
-        documentUrls.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final url = entry.value;
-          final name = (documentNames != null && documentNames.length > idx)
-              ? documentNames[idx]
-              : null;
-          final size = (documentSizes != null && documentSizes.length > idx)
-              ? documentSizes[idx]
-              : 0;
-          return _downloadSingleDocument(
-            dio,
-            url,
-            originalName: name,
-            originalSize: size,
-          );
-        }),
-        eagerError: false,
-      );
-
-      final docs = results.whereType<PickedDocument>().toList();
+      final List<PickedDocument> docs = [];
+      for (int i = 0; i < documentUrls.length; i++) {
+        final url = documentUrls[i];
+        final name = (documentNames != null && documentNames.length > i)
+            ? documentNames[i]
+            : url.split('/').last;
+        final size = (documentSizes != null && documentSizes.length > i)
+            ? int.tryParse(documentSizes[i]) ?? 0
+            : 0;
+        
+        // URL을 파일 경로로 사용 (원격 파일임을 나타냄)
+        docs.add(PickedDocument(
+          file: File(url), // URL을 경로로 사용
+          originalName: name,
+          size: size,
+        ));
+      }
+      
       if (docs.isNotEmpty) {
         selectedDocuments = docs;
         notifyListeners();
       }
     } catch (e) {
       debugPrint('Error loading existing documents: $e');
-    }
-  }
-
-  Future<PickedDocument?> _downloadSingleDocument(
-    Dio dio,
-    String url, {
-    String? originalName,
-    int? originalSize,
-  }) async {
-    try {
-      final response = await dio.get<List<int>>(
-        url,
-        options: Options(responseType: ResponseType.bytes),
-      );
-
-      final fileName = originalName ?? url.split('/').last;
-      final size = originalSize ?? (response.data?.length ?? 0);
-
-      final tempPath =
-          '${Directory.systemTemp.path}/${url.split('/').last}'; // Keep UUID for temp file system
-      final file = File(tempPath);
-      await file.writeAsBytes(response.data ?? <int>[]);
-
-      return PickedDocument(file: file, originalName: fileName, size: size);
-    } catch (e) {
-      return null;
     }
   }
 

@@ -70,9 +70,12 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
       );
 
       final tempDir = await getTemporaryDirectory();
-      final fileName = widget.url.split('/').last;
-      final filePath = '${tempDir.path}/$fileName.pdf';
+      // URL 해시와 타임스탬프를 사용하여 고유한 파일명 생성
+      final urlHash = widget.url.hashCode.abs().toString();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filePath = '${tempDir.path}/pdf_${urlHash}_$timestamp.pdf';
       final file = File(filePath);
+      
       await file.writeAsBytes(response.data);
 
       setState(() {
