@@ -53,9 +53,11 @@ class ItemRegistrationDetailScreen extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, color: TextSecondary),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    context.push('/add_item', extra: item.id);
+                  onPressed: () async {
+                    final result = await context.push('/add_item', extra: item.id);
+                    if (result == true && context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
                   },
                 ),
               ],

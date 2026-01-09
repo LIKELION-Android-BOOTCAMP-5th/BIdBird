@@ -39,7 +39,7 @@ class FavoritesRemoteDataSource {
           )
         ''')
         .eq('user_id', user.id)
-        .eq('item.auctions.round', 1)
+        .order('round', referencedTable: 'item.auctions', ascending: false)
         .order('created_at', ascending: false);
 
     return rows.whereType<Map<String, dynamic>>().toList();

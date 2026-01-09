@@ -131,10 +131,12 @@ class SupabaseItemAddDatasource {
     }
 
     final List<Map<String, dynamic>> imageRows = <Map<String, dynamic>>[];
-    for (int i = 0; i < imageUrls.length && i < ItemImageLimits.maxImageCount; i++) {
+    // 중복 제거된 이미지 URL 목록 사용
+    final distinctImageUrls = imageUrls.toSet().toList();
+    for (int i = 0; i < distinctImageUrls.length && i < ItemImageLimits.maxImageCount; i++) {
       imageRows.add(<String, dynamic>{
         'item_id': itemId,
-        'image_url': imageUrls[i],
+        'image_url': distinctImageUrls[i],
         'sort_order': i + 1,
       });
     }

@@ -3,8 +3,11 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
 import 'package:bidbird/core/widgets/notification_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../viewmodel/profile_viewmodel.dart';
 
@@ -149,6 +152,34 @@ class _MypageItemList extends StatelessWidget {
           ),
 
           // Divider(color: Colors.grey, height: 3),
+          _Item(
+            icon: Icons.mail_outline,
+            title: '문의하기',
+            onTap: () async {
+              final Uri emailLaunchUri = Uri(
+                scheme: 'mailto',
+                path: 'bidbird0001@gmail.com',
+                queryParameters: {
+                  'subject': '[BidBird] 문의사항',
+                },
+              );
+              if (await canLaunchUrl(emailLaunchUri)) {
+                await launchUrl(emailLaunchUri);
+              } else {
+                // 이메일 앱을 열 수 없는 경우 클립보드 복사 및 토스트 표시
+                await Clipboard.setData(
+                  const ClipboardData(text: 'bidbird0001@gmail.com'),
+                );
+                Fluttertoast.showToast(
+                  msg: "이메일 주소가 복사되었습니다.",
+                  toastLength: Toast.LENGTH_SHORT,
+                  gravity: ToastGravity.BOTTOM,
+                  backgroundColor: Colors.black87,
+                  textColor: Colors.white,
+                );
+              }
+            },
+          ),
           _Item(
             icon: Icons.support_agent,
             title: '고객센터',

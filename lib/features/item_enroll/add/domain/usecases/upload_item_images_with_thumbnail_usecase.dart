@@ -40,31 +40,36 @@ class UploadItemImagesWithThumbnailUseCase {
       try {
         final primaryImage = images[primaryImageIndex];
         
-        // 로컬에서 썸네일 생성
-        final thumbnailFile = await MediaResizer.createThumbnail(primaryImage);
-        
-        if (thumbnailFile != null) {
-          // 썸네일 파일 크기 확인
-          final fileLength = await thumbnailFile.length();
-          if (fileLength > 0) {
-            // 썸네일을 별도로 업로드
-            final thumbnailUrls = await _imageUploadGateway.uploadImages([thumbnailFile]);
-            if (thumbnailUrls.isNotEmpty) {
-              thumbnailUrl = thumbnailUrls.first;
+        // 원격 이미지인 경우 로컬에서 썸네일을 생성할 수 없으므로 원본 URL을 그대로 사용
+        if (primaryImage.path.startsWith('http')) {
+          thumbnailUrl = primaryImage.path;
+        } else {
+          // 로컬에서 썸네일 생성
+          final thumbnailFile = await MediaResizer.createThumbnail(primaryImage);
+
+          if (thumbnailFile != null) {
+            // 썸네일 파일 크기 확인
+            final fileLength = await thumbnailFile.length();
+            if (fileLength > 0) {
+              // 썸네일을 별도로 업로드
+              final thumbnailUrls = await _imageUploadGateway.uploadImages([thumbnailFile]);
+              if (thumbnailUrls.isNotEmpty) {
+                thumbnailUrl = thumbnailUrls.first;
+              } else {
+                // 썸네일 업로드 실패 시 primaryImageIndex의 이미지 URL 사용
+                final index = primaryImageIndex < imageUrls.length ? primaryImageIndex : 0;
+                thumbnailUrl = imageUrls[index];
+              }
             } else {
-              // 썸네일 업로드 실패 시 primaryImageIndex의 이미지 URL 사용
+              // 썸네일 파일이 비어있으면 primaryImageIndex의 이미지 URL 사용
               final index = primaryImageIndex < imageUrls.length ? primaryImageIndex : 0;
               thumbnailUrl = imageUrls[index];
             }
           } else {
-            // 썸네일 파일이 비어있으면 primaryImageIndex의 이미지 URL 사용
+            // 썸네일 생성 실패 시 primaryImageIndex의 이미지 URL 사용
             final index = primaryImageIndex < imageUrls.length ? primaryImageIndex : 0;
             thumbnailUrl = imageUrls[index];
           }
-        } else {
-          // 썸네일 생성 실패 시 primaryImageIndex의 이미지 URL 사용
-          final index = primaryImageIndex < imageUrls.length ? primaryImageIndex : 0;
-          thumbnailUrl = imageUrls[index];
         }
       } catch (e) {
         // 썸네일 생성/업로드 실패 시 primaryImageIndex의 이미지 URL 사용

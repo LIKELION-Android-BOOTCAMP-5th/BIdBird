@@ -109,7 +109,10 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
               yesLogic: () async {
                 Navigator.of(dialogContext).pop();
                 if (!context.mounted) return;
-                context.push('/add_item', extra: widget.item.itemId);
+                final result = await context.push('/add_item', extra: widget.item.itemId);
+                if (result == true && context.mounted) {
+                  context.read<ItemDetailViewModel?>()?.loadItemDetail(forceRefresh: true);
+                }
               },
             );
           },
@@ -268,8 +271,11 @@ class _ItemBottomActionBarState extends State<ItemBottomActionBar> {
                   child: ModernBidButton(
                     text: '재등록하기',
 
-                    onPressed: () {
-                      context.push('/add_item', extra: widget.item.itemId);
+                    onPressed: () async {
+                      final result = await context.push('/add_item', extra: widget.item.itemId);
+                      if (result == true && context.mounted) {
+                        context.read<ItemDetailViewModel?>()?.loadItemDetail(forceRefresh: true);
+                      }
                     },
                     icon: Icon(
                       Icons.refresh,

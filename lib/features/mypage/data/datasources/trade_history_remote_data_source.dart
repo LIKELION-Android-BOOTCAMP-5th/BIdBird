@@ -30,7 +30,7 @@ class TradeHistoryRemoteDataSource {
           )
         ''')
         .eq('seller_id', userId)
-        .eq('auctions.round', 1)
+        .order('round', referencedTable: 'auctions', ascending: false)
         .order('created_at', ascending: false);
   }
 
@@ -68,7 +68,7 @@ class TradeHistoryRemoteDataSource {
           )
         ''') //trade_status는 left join
         .eq('user_id', userId)
-        .eq('auctions.round', 1)
+        .order('round', referencedTable: 'auctions', ascending: false)
         .order('created_at', ascending: false);
   }
 

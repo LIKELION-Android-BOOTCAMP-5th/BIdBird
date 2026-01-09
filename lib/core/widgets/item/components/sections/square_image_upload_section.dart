@@ -19,6 +19,7 @@ class SquareImageUploadSection extends StatefulWidget {
     required this.onImageSourceTap,
     required this.onImageTap,
     required this.onRemoveImage,
+    required this.onRemoveAllImages,
     required this.primaryImageIndex,
     this.width,
     this.addPhotoKey,
@@ -28,6 +29,7 @@ class SquareImageUploadSection extends StatefulWidget {
   final VoidCallback onImageSourceTap;
   final Function(int index) onImageTap;
   final Function(int index) onRemoveImage;
+  final VoidCallback onRemoveAllImages;
   final int? primaryImageIndex;
   final double? width;
   final GlobalKey? addPhotoKey;
@@ -83,21 +85,52 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                       showControls: true,
                       fit: BoxFit.cover,
                     )
-                  : Image.file(
-                      File(image.path),
-                      key: ValueKey('img_${image.path}'),
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      cacheWidth: targetPx,
-                      gaplessPlayback: true,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: BackgroundColor,
-                          child: Icon(Icons.broken_image, color: iconColor),
-                        );
-                      },
-                    ),
+                  : image.path.startsWith('http')
+                      ? Image.network(
+                          image.path,
+                          key: ValueKey('img_net_${image.path}'),
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          gaplessPlayback: true,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: BackgroundColor,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  strokeWidth: 2,
+                                  color: blueColor.withOpacity(0.5),
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: BackgroundColor,
+                              child: Icon(Icons.broken_image, color: iconColor),
+                            );
+                          },
+                        )
+                      : Image.file(
+                          File(image.path),
+                          key: ValueKey('img_file_${image.path}'),
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          cacheWidth: targetPx,
+                          gaplessPlayback: true,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: BackgroundColor,
+                              child: Icon(Icons.broken_image, color: iconColor),
+                            );
+                          },
+                        ),
             ),
             // 삭제 버튼
             Positioned(
@@ -221,41 +254,79 @@ class _SquareImageUploadSectionState extends State<SquareImageUploadSection> {
                   _buildEmptyState(context)
                 // 이미지가 있을 때
                 else
-                  widget.images.length == 1
-                      ? // 이미지가 1개일 때: 전체 영역을 꽉 채움
-                        _buildSingleImage(
-                          context,
-                          widget.images[0],
-                          widget.primaryImageIndex == 0,
-                          0,
-                          availableWidth,
-                        )
-                      : // 이미지가 여러 개일 때: 스와이프로 볼 수 있게
-                        PageView.builder(
-                          key: const PageStorageKey(
-                            'square_image_upload_pageview',
-                          ),
-                          controller: _pageController,
-                          itemCount: widget.images.length,
-                          physics: const PageScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            final image = widget.images[index];
-                            final bool isPrimary =
-                                widget.primaryImageIndex != null &&
-                                widget.primaryImageIndex == index;
+                  ...[
+                    widget.images.length == 1
+                        ? // 이미지가 1개일 때: 전체 영역을 꽉 채움
+                          _buildSingleImage(
+                            context,
+                            widget.images[0],
+                            widget.primaryImageIndex == 0,
+                            0,
+                            availableWidth,
+                          )
+                        : // 이미지가 여러 개일 때: 스와이프로 볼 수 있게
+                          PageView.builder(
+                            key: const PageStorageKey(
+                              'square_image_upload_pageview',
+                            ),
+                            controller: _pageController,
+                            itemCount: widget.images.length,
+                            physics: const PageScrollPhysics(),
+                            itemBuilder: (context, index) {
+                              final image = widget.images[index];
+                              final bool isPrimary =
+                                  widget.primaryImageIndex != null &&
+                                  widget.primaryImageIndex == index;
 
-                            return KeyedSubtree(
-                              key: ValueKey('page_${image.path}'),
-                              child: _buildSingleImage(
-                                context,
-                                image,
-                                isPrimary,
-                                index,
-                                availableWidth,
+                              return KeyedSubtree(
+                                key: ValueKey('page_${image.path}'),
+                                child: _buildSingleImage(
+                                  context,
+                                  image,
+                                  isPrimary,
+                                  index,
+                                  availableWidth,
+                                ),
+                              );
+                            },
+                          ),
+                    // 전체 삭제 버튼
+                    Positioned(
+                      top: inputPadding * SpacingRatios.imageOverlayPadding,
+                      left: inputPadding * SpacingRatios.imageOverlayPadding,
+                      child: GestureDetector(
+                        onTap: widget.onRemoveAllImages,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.delete_outline,
+                                color: Colors.white,
+                                size: 12,
                               ),
-                            );
-                          },
+                              const SizedBox(width: 2),
+                              Text(
+                                '전체 삭제',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: context.fontSizeSmall * 0.8,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      ),
+                    ),
+                  ],
                 // 왼쪽 하단: 이미지 개수 표시
                 Positioned(
                   left: inputPadding * SpacingRatios.imageOverlayPadding,
