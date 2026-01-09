@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:bidbird/core/managers/nhost_manager.dart';
 import 'package:bidbird/core/upload/gateways/nhost_storage_manager.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
@@ -99,6 +100,23 @@ class ItemEnrollFlowUseCase {
           null,
           ItemEnrollFlowFailure(message: '상품 등록에 실패했습니다.')
         );
+      }
+
+      // Step 4: nhost 함수 호출하여 PDF 문서를 DB에 저장
+      if (docUrls.isNotEmpty) {
+        onProgress(0.95);
+        try {
+          await NhostManager.shared.invokeFunction(
+            'update-item-v2',
+            body: {
+              'itemId': itemId,
+              'documentUrls': docUrls,
+              'documentNames': docNames,
+            },
+          );
+        } catch (e) {
+          // PDF 동기화 실패해도 상품 등록은 성공으로 처리
+        }
       }
 
       onProgress(1.0);
