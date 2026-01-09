@@ -146,14 +146,25 @@ class ItemAddViewModel extends ItemBaseViewModel {
       return;
     }
 
-    // 리사이징은 upload datasource에서 처리
-    final List<XFile> all = <XFile>[...selectedImages, ...images];
+    // 로컬 파일 경로만 중복 체크 (원격 URL은 제외)
+    final Set<String> existingLocalPaths = selectedImages
+        .where((e) => !e.path.startsWith('http'))
+        .map((e) => e.path)
+        .toSet();
+    
+    final List<XFile> uniqueNewImages = images
+        .where((e) => !existingLocalPaths.contains(e.path))
+        .toList();
+
+    if (uniqueNewImages.isEmpty) return;
+
+    final List<XFile> all = <XFile>[...selectedImages, ...uniqueNewImages];
     if (all.length > ItemImageLimits.maxImageCount) {
       selectedImages = all.take(ItemImageLimits.maxImageCount).toList();
     } else {
       selectedImages = all;
     }
-    notifyListeners(); // 이미지 추가 시 UI 업데이트 필요
+    notifyListeners();
   }
 
   Future<void> pickImageFromCamera() async {
@@ -164,9 +175,23 @@ class ItemAddViewModel extends ItemBaseViewModel {
       return;
     }
 
-    // 리사이징은 upload datasource에서 처리
+    // 로컬 파일끼리만 중복 체크 (원격 URL은 제외)
+    final existingLocalPaths = selectedImages
+        .where((e) => !e.path.startsWith('http'))
+        .map((e) => e.path)
+        .toSet();
+    
+    if (existingLocalPaths.contains(image.path)) return;
+
     selectedImages = <XFile>[...selectedImages, image];
-    notifyListeners(); // 이미지 추가 시 UI 업데이트 필요
+    notifyListeners();
+  }
+
+  /// 모든 이미지를 삭제합니다.
+  void clearAllImages() {
+    selectedImages = [];
+    primaryImageIndex = 0;
+    notifyListeners();
   }
 
   Future<void> pickVideoFromGallery() async {
@@ -308,27 +333,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
   Dio? _dio;
 
   /// 수정 모드에서 기존 이미지를 불러와 selectedImages에 채웁니다.
+  /// 원격 URL을 직접 사용하여 로딩 속도를 높이고 불필요한 재업로드를 방지합니다.
   Future<void> loadExistingImages(List<String> imageUrls) async {
     if (imageUrls.isEmpty) return;
-
-    _dio ??= Dio();
-    final dio = _dio!;
-
-    try {
-      final files = await _downloadImagesInParallel(dio, imageUrls);
-
-      if (files.isEmpty) {
-        // 다운로드 실패 시에도 네트워크 URL을 직접 표시하도록 폴백
-        selectedImages = imageUrls.map((u) => XFile(u)).toList();
-      } else {
-        selectedImages = files;
-      }
-      notifyListeners(); // 이미지 로드 시 UI 업데이트 필요
-    } catch (e) {
-      // 완전 실패 시에도 네트워크 URL로 폴백
-      selectedImages = imageUrls.map((u) => XFile(u)).toList();
-      notifyListeners(); // 실패 시에도 UI 업데이트 필요
-    }
+    selectedImages = imageUrls.map((u) => XFile(u)).toList();
+    notifyListeners();
   }
 
   /// 수정 모드에서 기존 문서를 불러와 selectedDocuments에 채웁니다.
@@ -399,64 +408,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
     }
   }
 
-  /// 병렬로 이미지를 다운로드합니다.
-  Future<List<XFile>> _downloadImagesInParallel(
-    Dio dio,
-    List<String> imageUrls,
-  ) async {
-    final results = await Future.wait(
-      imageUrls.map((url) => _downloadSingleImage(dio, url)),
-      eagerError: false,
-    );
-
-    return results.whereType<XFile>().toList();
-  }
-
-  /// 단일 이미지를 다운로드합니다.
-  /// 캐시를 먼저 확인하고, 없으면 다운로드합니다.
-  Future<XFile?> _downloadSingleImage(Dio dio, String url) async {
-    try {
-      // 캐시에서 먼저 확인
-      final cacheManager = ItemImageCacheManager.instance;
-      final cachedFile = await cacheManager.getSingleFile(url);
-
-      if (await cachedFile.exists()) {
-        // 캐시된 파일이 있으면 사용
-        return XFile(cachedFile.path);
-      }
-
-      // 캐시에 없으면 다운로드
-      final response = await dio.get<List<int>>(
-        url,
-        options: Options(responseType: ResponseType.bytes),
-      );
-
-      final fileName = _generateTempFileName();
-      final tempPath = '${Directory.systemTemp.path}/$fileName';
-      final file = File(tempPath);
-      await file.writeAsBytes(response.data ?? <int>[]);
-
-      // 다운로드한 파일을 캐시에 저장
-      try {
-        final bytes = response.data;
-        if (bytes != null) {
-          await cacheManager.putFile(url, Uint8List.fromList(bytes));
-        }
-      } catch (e) {
-        // 캐시 저장 실패해도 파일은 반환
-      }
-
-      return XFile(file.path);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// 임시 파일명을 생성합니다.
-  String _generateTempFileName() {
-    final timestamp = DateTime.now();
-    return '${timestamp.millisecondsSinceEpoch}_${timestamp.microsecondsSinceEpoch}.jpg';
-  }
 
   String? validate() {
     final int startPrice = parseFormattedPrice(startPriceController.text);
@@ -660,6 +611,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
     BuildContext context,
     NavigatorState navigator,
   ) async {
+    final bool isEdit = editingItemId != null;
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -669,15 +621,21 @@ class ItemAddViewModel extends ItemBaseViewModel {
           // Pop is prevented by canPop: false
         },
         child: AskPopup(
-          content: '매물 등록 확인 화면으로 이동하여\n최종 등록을 진행해 주세요.',
-          yesText: '이동하기',
+          content: isEdit
+              ? '매물 수정이 완료되었습니다.'
+              : '매물 등록 확인 화면으로 이동하여\n최종 등록을 진행해 주세요.',
+          yesText: isEdit ? '확인' : '이동하기',
           yesLogic: () async {
             navigator.pop();
             if (!context.mounted) return;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!context.mounted) return;
-              context.go('/add_item/item_registration_list');
-            });
+            if (isEdit) {
+              Navigator.of(context).pop(true);
+            } else {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!context.mounted) return;
+                context.go('/add_item/item_registration_list');
+              });
+            }
           },
         ),
       ),
