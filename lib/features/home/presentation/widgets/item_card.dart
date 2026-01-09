@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../../core/utils/extension/money_extension.dart';
 import '../../../../core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import '../../domain/entities/items_entity.dart';
-import '../viewmodel/home_viewmodel.dart';
 import 'home_timer_section.dart';
 
 class ItemCard extends StatelessWidget {
@@ -29,11 +27,11 @@ class ItemCard extends StatelessWidget {
     return RepaintBoundary(
       child: GestureDetector(
         onTap: () {
-          final homeVm = context.read<HomeViewmodel>();
+          // final homeVm = context.read<HomeViewmodel>();
           // 검색 모드일 경우 검색 모드 종료 (자동 꺼짐)
-          if (homeVm.searchButton) {
-            homeVm.workSearchBar();
-          }
+          // if (homeVm.searchButton) {
+          //   homeVm.workSearchBar();
+          // }
           context.push('/item/${item.item_id}');
         },
         child: Column(

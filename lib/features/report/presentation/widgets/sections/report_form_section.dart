@@ -13,7 +13,7 @@ import 'package:bidbird/features/report/presentation/widgets/swipe_cards/report_
 import 'package:flutter/material.dart';
 
 /// Report Form Section - 다단계 신고 폼 조립
-/// 
+///
 /// PageView를 이용한 3단계 신고 프로세스:
 /// 1️⃣ 신고 대상 및 사유 선택
 /// 2️⃣ 상세 내용 입력
@@ -47,11 +47,7 @@ class _ReportFormSectionState extends State<ReportFormSection> {
 
   int _currentStep = 0;
 
-  static const List<String> _stepLabels = [
-    '신고 사유',
-    '상세 내용',
-    '사진 첨부',
-  ];
+  static const List<String> _stepLabels = ['신고 사유', '상세 내용', '사진 첨부'];
 
   @override
   void dispose() {
@@ -129,21 +125,25 @@ class _ReportFormSectionState extends State<ReportFormSection> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(PrimaryBlue),
+        child: Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(PrimaryBlue),
+                ),
+                SizedBox(height: 16),
+                Text('로딩중', style: TextStyle(fontSize: 14, color: TextPrimary)),
+              ],
             ),
-            SizedBox(height: 16),
-            Text(
-              '로딩중',
-              style: TextStyle(
-                fontSize: 14,
-                color: TextPrimary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -177,8 +177,7 @@ class _ReportFormSectionState extends State<ReportFormSection> {
       showDialog(
         context: context,
         builder: (dialogContext) => AskPopup(
-          content: widget.viewModel.error ??
-              '신고 제출에 실패했습니다.\n다시 시도해주세요.',
+          content: widget.viewModel.error ?? '신고 제출에 실패했습니다.\n다시 시도해주세요.',
           yesText: '확인',
           yesLogic: () async {
             Navigator.of(dialogContext).pop();
@@ -291,9 +290,7 @@ class _ReportFormSectionState extends State<ReportFormSection> {
             ),
           ],
         ),
-        child: _currentStep == 0
-            ? _buildSingleButton()
-            : _buildDoubleButtons(),
+        child: _currentStep == 0 ? _buildSingleButton() : _buildDoubleButtons(),
       ),
     );
   }

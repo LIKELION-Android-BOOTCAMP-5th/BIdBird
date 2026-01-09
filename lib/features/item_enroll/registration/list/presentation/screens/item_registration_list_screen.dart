@@ -66,34 +66,38 @@ class ItemRegistrationListScreen extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
-      padding: EdgeInsets.fromLTRB(
-        context.screenPadding,
-        context.spacingSmall,
-        context.screenPadding,
-        context.spacingSmall,
+    return RefreshIndicator(
+      onRefresh: () async => viewModel.loadPendingItems(),
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(), // 리스트가 짧아도 스크롤 가능하게 함
+        padding: EdgeInsets.fromLTRB(
+          context.screenPadding,
+          context.spacingSmall,
+          context.screenPadding,
+          context.spacingSmall,
+        ),
+        itemCount: data.items.length,
+        separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
+        itemBuilder: (context, index) {
+          final item = data.items[index];
+          return AuctionItemCard(
+            title: item.title,
+            thumbnailUrl: item.thumbnailUrl,
+            price: item.startPrice,
+            auctionDurationHours: item.auctionDurationHours,
+            useResponsive: true,
+            onTap: () async {
+              final result = await context.push(
+                '/add_item/item_registration_detail',
+                extra: item,
+              );
+              if (result == true) {
+                viewModel.loadPendingItems();
+              }
+            },
+          );
+        },
       ),
-      itemCount: data.items.length,
-      separatorBuilder: (_, __) => SizedBox(height: context.spacingSmall),
-      itemBuilder: (context, index) {
-        final item = data.items[index];
-        return AuctionItemCard(
-          title: item.title,
-          thumbnailUrl: item.thumbnailUrl,
-          price: item.startPrice,
-          auctionDurationHours: item.auctionDurationHours,
-          useResponsive: true,
-          onTap: () async {
-            final result = await context.push(
-              '/add_item/item_registration_detail',
-              extra: item,
-            );
-            if (result == true) {
-              viewModel.loadPendingItems();
-            }
-          },
-        );
-      },
     );
   }
 }

@@ -25,12 +25,8 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<List<ChatMessageEntity>> getMessages(
-    String chattingRoomId,
-  ) async {
-    return await _chatDatasource.getMessages(
-      chattingRoomId,
-    );
+  Future<List<ChatMessageEntity>> getMessages(String chattingRoomId) async {
+    return await _chatDatasource.getMessages(chattingRoomId);
   }
 
   @override
@@ -67,6 +63,7 @@ class ChatRepositoryImpl implements ChatRepository {
     String? message,
     required MessageType messageType,
     String? imageUrl,
+    String? videoUrl,
   }) async {
     switch (messageType) {
       case MessageType.text:
@@ -84,8 +81,8 @@ class ChatRepositoryImpl implements ChatRepository {
       case MessageType.video:
         return await _chatDatasource.firstMessage(
           itemId: itemId,
-          messageType: "image",
-          imageUrl: imageUrl,
+          messageType: "video",
+          videoUrl: videoUrl,
         );
     }
   }

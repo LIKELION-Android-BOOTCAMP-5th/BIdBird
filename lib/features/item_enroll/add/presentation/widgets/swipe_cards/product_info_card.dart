@@ -90,6 +90,7 @@ class ProductInfoCardState extends State<ProductInfoCard>
                 onImageSourceTap: widget.onImageSourceTap,
                 onImageTap: (index) => vm.setPrimaryImage(index),
                 onRemoveImage: (index) => vm.removeImageAt(index),
+                onRemoveAllImages: () => vm.clearAllImages(),
                 primaryImageIndex: vm.primaryImageIndex,
               );
             },

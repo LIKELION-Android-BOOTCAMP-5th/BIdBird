@@ -19,6 +19,7 @@ class SupabaseNotificationDatasource {
           .from('alarm')
           .select()
           .eq('user_id', currentUserId)
+          .isFilter('deleted_at', null) // ✅ deleted_at IS NULL
           .order('created_at', ascending: false);
 
       if (data.length == 0) return List.empty();
@@ -66,7 +67,10 @@ class SupabaseNotificationDatasource {
 
   Future<void> deleteNotification(String id) async {
     try {
-      await _client.from('alarm').delete().eq('id', id);
+      await _client
+          .from('alarm')
+          .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('id', id);
       debugPrint("알림 삭제 처리 되었습니다.");
     } catch (e) {
       debugPrint("알림 삭제에 실패했습니다 : $e");
@@ -80,7 +84,10 @@ class SupabaseNotificationDatasource {
       return;
     }
     try {
-      await _client.from('alarm').delete().eq('user_id', currentUserId);
+      await _client
+          .from('alarm')
+          .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('user_id', currentUserId);
       debugPrint("전체 알림 삭제 처리 되었습니다.");
     } catch (e) {
       debugPrint("전체 알림 삭제에 실패했습니다 : $e");

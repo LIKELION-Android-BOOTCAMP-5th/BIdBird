@@ -51,14 +51,19 @@ class NotificationListRealtimeSubscriptionManager {
             final String? id = newRec['id']?.toString();
             if (id == null || id.isEmpty) return;
 
-            final bool? newChecked = newRec['is_checked'] as bool?;
-            final bool? oldChecked = oldRec['is_checked'] as bool?;
+            final String? deletedAt = newRec['deleted_at']?.toString();
+            if (deletedAt != null) {
+              return;
+            } else {
+              final bool? newChecked = newRec['is_checked'] as bool?;
+              final bool? oldChecked = oldRec['is_checked'] as bool?;
 
-            // is_checked 변화 없으면 무시
-            if (newChecked == null) return;
-            if (oldChecked != null && newChecked == oldChecked) return;
+              // is_checked 변화 없으면 무시
+              if (newChecked == null) return;
+              if (oldChecked != null && newChecked == oldChecked) return;
 
-            onUpdateChecked(id, newChecked);
+              onUpdateChecked(id, newChecked);
+            }
           },
         )
         .subscribe((status, error) {

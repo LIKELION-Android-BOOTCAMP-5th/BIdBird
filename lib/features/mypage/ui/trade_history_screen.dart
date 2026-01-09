@@ -96,12 +96,14 @@ class TradeHistoryScreen extends StatelessWidget {
                                         .contains(code)) {
                                       isTopBidder = true; // "낙찰 물품" (노란색)
                                     } else if ([
-                                      422,
-                                      432,
-                                      433,
-                                      530,
-                                      540,
-                                    ].contains(code)) {
+                                          422,
+                                          432,
+                                          433,
+                                          530,
+                                          540,
+                                        ].contains(code) ||
+                                        (item.endAt != null &&
+                                            item.endAt!.isBefore(DateTime.now()))) {
                                       isExpired = true; // "만료/패찰" (회색)
                                     }
                                   } else {
@@ -109,7 +111,11 @@ class TradeHistoryScreen extends StatelessWidget {
                                     if ([321, 322, 510, 520, 550]
                                         .contains(code)) {
                                       isOpponentTopBidder = true; // "낙찰자" 존재 (노란색)
-                                    } else if ([323, 530, 540].contains(code)) {
+                                    } else if ([323, 530, 540].contains(code) ||
+                                        (item.endAt != null &&
+                                            item.endAt!.isBefore(DateTime.now()) &&
+                                            ![321, 322, 510, 520, 550]
+                                                .contains(code))) {
                                       isExpired = true; // "유찰/취소" (회색)
                                     }
                                   }

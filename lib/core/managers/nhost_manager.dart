@@ -1,7 +1,8 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:nhost_flutter_auth/nhost_flutter_auth.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:nhost_flutter_auth/nhost_flutter_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NhostManager {
@@ -92,4 +93,47 @@ class NhostManager {
   bool get isAuthenticated => _nhostClient?.auth.currentUser != null;
   String? get userId => _nhostClient?.auth.currentUser?.id;
   String? get accessToken => _nhostClient?.auth.accessToken;
+
+  /// nhost 함수 호출
+  /// [functionName]: 호출할 함수 이름 (예: 'update-item-v2')
+  /// [body]: 함수에 전달할 데이터
+  Future<Map<String, dynamic>> invokeFunction(
+    String functionName, {
+    Map<String, dynamic>? body,
+  }) async {
+    if (!_isInitialized || _nhostClient == null) {
+      throw StateError('NhostManager not initialized. Call initialize() first.');
+    }
+
+    try {
+      final subdomain = _nhostClient!.subdomain!.subdomain;
+      final region = _nhostClient!.subdomain!.region;
+      final url = 'https://$subdomain.functions.$region.nhost.run/v1/$functionName';
+
+      final dio = Dio();
+      final response = await dio.post(
+        url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+          },
+        ),
+        data: body,
+      );
+
+      if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+        debugPrint('[NhostManager] Function $functionName invoked successfully');
+        if (response.data != null && response.data is Map<String, dynamic>) {
+          return response.data as Map<String, dynamic>;
+        }
+        return {'success': true};
+      } else {
+        throw Exception('Function call failed: ${response.statusCode} - ${response.data}');
+      }
+    } catch (e) {
+      debugPrint('[NhostManager] Function $functionName failed: $e');
+      rethrow;
+    }
+  }
 }

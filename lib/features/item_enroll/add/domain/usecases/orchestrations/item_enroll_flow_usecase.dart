@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:bidbird/core/managers/nhost_manager.dart';
 import 'package:bidbird/core/upload/gateways/nhost_storage_manager.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
@@ -67,18 +68,47 @@ class ItemEnrollFlowUseCase {
       }
 
       // Step 2: PDF 보증서 업로드 (Nhost Storage)
+      // 원격 URL은 그대로 유지하고, 로컬 파일만 업로드
       onProgress(0.70);
       List<String> docUrls = [];
       List<String> docNames = [];
       List<int> docSizes = [];
-      if (documents.isNotEmpty) {
-        final uploadedDocs = await NhostStorageManager.shared.uploadFileList(
-          documents,
-          originalNames: documentOriginalNames,
-        );
-        docUrls = uploadedDocs.map((e) => e['url']!).toList();
-        docNames = uploadedDocs.map((e) => e['name']!).toList();
-        docSizes = uploadedDocs.map((e) => int.tryParse(e['size'] ?? '0') ?? 0).toList();
+      
+      for (int i = 0; i < documents.length; i++) {
+        final file = documents[i];
+        final filePath = file.path;
+        
+        // URL인지 확인 (http:// 또는 https://로 시작)
+        final isRemoteUrl = filePath.startsWith('http://') || filePath.startsWith('https://');
+        
+        if (isRemoteUrl) {
+          docUrls.add(filePath);
+          docNames.add(
+            (documentOriginalNames != null && documentOriginalNames.length > i)
+                ? documentOriginalNames[i]
+                : filePath.split('/').last,
+          );
+          docSizes.add(
+            (documentSizes != null && documentSizes.length > i)
+                ? documentSizes[i]
+                : 0,
+          );
+        } else {
+          // 로컬 파일은 업로드
+          final originalName = (documentOriginalNames != null && documentOriginalNames.length > i)
+              ? documentOriginalNames[i]
+              : null;
+          final uploadedDoc = await NhostStorageManager.shared.uploadFile(
+            file,
+            originalName: originalName,
+          );
+          
+          if (uploadedDoc != null) {
+            docUrls.add(uploadedDoc['url']!);
+            docNames.add(uploadedDoc['name']!);
+            docSizes.add(int.tryParse(uploadedDoc['size'] ?? '0') ?? 0);
+          }
+        }
       }
 
       // Step 3: 상품 정보 저장
@@ -99,6 +129,23 @@ class ItemEnrollFlowUseCase {
           null,
           ItemEnrollFlowFailure(message: '상품 등록에 실패했습니다.')
         );
+      }
+
+      // Step 4: nhost 함수 호출하여 PDF 문서를 DB에 저장
+      if (docUrls.isNotEmpty) {
+        onProgress(0.95);
+        try {
+          await NhostManager.shared.invokeFunction(
+            'update-item-v2',
+            body: {
+              'itemId': itemId,
+              'documentUrls': docUrls,
+              'documentNames': docNames,
+            },
+          );
+        } catch (e) {
+          // PDF 동기화 실패해도 상품 등록은 성공으로 처리
+        }
       }
 
       onProgress(1.0);
