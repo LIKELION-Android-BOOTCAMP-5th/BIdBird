@@ -14,15 +14,14 @@ class ItemRegistrationListDatasource {
     try {
       final userId = ItemSecurityUtils.requireAuth(_supabase);
 
-      // Edge Function 호출로 매물 등록 대기 리스트를 조회
-      final response = await _supabase.functions.invoke(
-        'get-register-list-item',
-        body: <String, dynamic>{
-          'userId': userId,
+      // RPC 함수 호출로 매물 등록 대기 리스트를 조회
+      final data = await _supabase.rpc(
+        'get_register_list_items',
+        params: <String, dynamic>{
+          'p_user_id': userId,
         },
       );
 
-      final dynamic data = response.data;
       if (data is! List) {
         throw Exception('잘못된 응답 형식입니다.');
       }
