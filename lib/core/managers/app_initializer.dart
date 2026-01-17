@@ -12,7 +12,6 @@ import 'package:flutter/widgets.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:bidbird/core/utils/secure_local_storage.dart';
 
 class AppInitializer {
@@ -38,15 +37,6 @@ class AppInitializer {
 
     // Firebase 설정 로드
     await FirebaseConfig.initialize();
-
-    // 카카오 로그인 초기화
-    KakaoSdk.init(
-      nativeAppKey: FirebaseConfig.kakaoNativeAppKey,
-      javaScriptAppKey: FirebaseConfig.kakaoJavaScriptAppKey,
-    );
-
-    // Nhost & GraphQL Hive 초기화
-    await initHiveForFlutter();
 
     _firebaseInitFuture ??= Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

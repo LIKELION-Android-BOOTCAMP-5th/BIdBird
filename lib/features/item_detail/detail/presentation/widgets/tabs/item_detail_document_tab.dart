@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
@@ -53,7 +54,23 @@ class ItemDetailDocumentTab extends StatelessWidget {
     return InkWell(
       onTap: () async {
         if (document.fileType.toLowerCase() == 'pdf') {
-          // Supabase에서 최신 URL 조회
+          // 로컬 파일 확인 (http로 시작하지 않으면 로컬 경로로 간주)
+          if (!document.documentUrl.startsWith('http')) {
+             if (!context.mounted) return;
+             Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PDFViewerScreen(
+                  title: document.documentName,
+                  filePath: document.documentUrl, // 로컬 파일 경로 전달
+                  url: '', // 로컬 파일일 경우 url은 빈 값 또는 무시됨 (PDFViewerScreen 수정 필요할 수 있음)
+                ),
+                fullscreenDialog: true,
+              ),
+            );
+            return;
+          }
+
+          // Supabase에서 최신 URL 조회 (기존 로직)
           try {
             final datasource = ItemDetailDatasource();
             final latestUrl = await datasource.fetchDocumentUrl(

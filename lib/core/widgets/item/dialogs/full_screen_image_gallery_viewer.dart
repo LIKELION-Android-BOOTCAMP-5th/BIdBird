@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/utils/item/item_media_utils.dart';
 import 'package:bidbird/core/widgets/full_screen_video_viewer.dart';
@@ -85,6 +86,7 @@ class _FullScreenImageGalleryViewerState
                 itemCount: widget.imageUrls.length,
                 itemBuilder: (context, index) {
                   final imageUrl = widget.imageUrls[index];
+                  final bool isLocal = !imageUrl.startsWith('http');
                   final bool isVideo = isVideoFile(imageUrl);
                   final displayUrl = isVideo
                       ? getVideoThumbnailUrl(imageUrl)
@@ -98,27 +100,43 @@ class _FullScreenImageGalleryViewerState
                       child: Stack(
                         children: [
                           Center(
-                            child: CachedNetworkImage(
-                              imageUrl: displayUrl,
-                              cacheManager: ItemImageCacheManager.instance,
-                              fit: BoxFit.contain,
-                              memCacheWidth: 1200,
-                              memCacheHeight: 1200,
-                              placeholder: (context, url) => const Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  const Center(
-                                    child: Icon(
-                                      Icons.broken_image_outlined,
-                                      color: Colors.white,
-                                      size: 48,
+                            child: isLocal
+                                ? Image.file(
+                                    File(displayUrl),
+                                    fit: BoxFit.contain,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Center(
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        color: Colors.white,
+                                        size: 48,
+                                      ),
+                                    ),
+                                  )
+                                : CachedNetworkImage(
+                                    imageUrl: displayUrl,
+                                    cacheManager:
+                                        ItemImageCacheManager.instance,
+                                    fit: BoxFit.contain,
+                                    memCacheWidth: 1200,
+                                    memCacheHeight: 1200,
+                                    placeholder: (context, url) =>
+                                        const Center(
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        const Center(
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        color: Colors.white,
+                                        size: 48,
+                                      ),
                                     ),
                                   ),
-                            ),
                           ),
                           Positioned.fill(
                             child: Container(
@@ -141,26 +159,40 @@ class _FullScreenImageGalleryViewerState
                     child: InteractiveViewer(
                       minScale: 0.5,
                       maxScale: 4.0,
-                      child: CachedNetworkImage(
-                        imageUrl: displayUrl,
-                        cacheManager: ItemImageCacheManager.instance,
-                        fit: BoxFit.contain,
-                        memCacheWidth: 1200,
-                        memCacheHeight: 1200,
-                        placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => const Center(
-                          child: Icon(
-                            Icons.broken_image_outlined,
-                            color: Colors.white,
-                            size: 48,
-                          ),
-                        ),
-                      ),
+                      child: isLocal
+                          ? Image.file(
+                              File(displayUrl),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                              ),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: displayUrl,
+                              cacheManager: ItemImageCacheManager.instance,
+                              fit: BoxFit.contain,
+                              memCacheWidth: 1200,
+                              memCacheHeight: 1200,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  const Center(
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                              ),
+                            ),
                     ),
                   );
                 },

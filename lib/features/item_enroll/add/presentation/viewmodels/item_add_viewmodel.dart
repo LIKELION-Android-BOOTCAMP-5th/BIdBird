@@ -10,25 +10,27 @@ import 'package:bidbird/core/utils/item/item_registration_constants.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/edit_item_repository.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/item_add_repository.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/keyword_repository.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_validator.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_data.dart';
+import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
+import 'package:bidbird/core/utils/item/item_registration_validator.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/add_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_edit_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/get_keyword_types_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/orchestrations/item_enroll_flow_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
+import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
 
 class PickedDocument {
   final File file;
@@ -60,6 +62,49 @@ class ItemAddViewModel extends ItemBaseViewModel {
   final GetKeywordTypesUseCase _getKeywordTypesUseCase;
   final GetEditItemUseCase _getEditItemUseCase;
   final ItemEnrollFlowUseCase _itemEnrollFlowUseCase;
+
+  // ... (existing fields)
+
+  /// 현재 입력된 데이터로 미리보기용 ItemDetail 엔티티 생성
+  ItemDetail toPreviewEntity() {
+    final int startPrice = parseFormattedPrice(startPriceController.text);
+    final int instantPrice = useInstantPrice
+        ? parseFormattedPrice(instantPriceController.text)
+        : 0;
+    
+    // 경매 종료 시간 계산
+    final int auctionHours = selectedDuration != null 
+        ? parseAuctionDuration(selectedDuration!) 
+        : 24;
+    final now = DateTime.now();
+    final finishTime = now.add(Duration(hours: auctionHours));
+
+    return ItemDetail(
+      itemId: 'preview', // 임시 ID
+      sellerId: 'me', // 내 ID (표시용)
+      itemTitle: titleController.text,
+      itemImages: selectedImages.map((e) => e.path).toList(), // 로컬 경로 사용
+      finishTime: finishTime,
+      sellerTitle: '나', // 사용자 닉네임 (실제로는 UserProvider 등에서 가져와야 함)
+      buyNowPrice: instantPrice,
+      biddingCount: 0,
+      itemContent: descriptionController.text,
+      currentPrice: startPrice,
+      bidPrice: startPrice,
+      sellerRating: 0.0, // 신규
+      sellerReviewCount: 0, // 신규
+      statusCode: 310, // 경매 진행 중 상태 (미리보기)
+      tradeStatusCode: null,
+      itemDocuments: selectedDocuments.map((doc) => ItemDocument(
+        documentId: 'preview_${doc.originalName}',
+        documentName: doc.originalName,
+        documentUrl: doc.path, // 로컬 경로
+        fileSize: doc.size,
+        fileType: 'pdf',
+        uploadedAt: now,
+      )).toList(),
+    );
+  }
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController startPriceController = TextEditingController();
@@ -210,7 +255,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
   bool _isPickingDocuments = false;
 
   /// PDF 보증서 선택
-  Future<void> pickDocuments() async {
+  Future<void> pickDocument() async {
     if (_isPickingDocuments) return;
     _isPickingDocuments = true;
 
@@ -258,6 +303,12 @@ class ItemAddViewModel extends ItemBaseViewModel {
     } finally {
       _isPickingDocuments = false;
     }
+  }
+
+  /// PDF 보증서 삭제
+  void removeDocument(PickedDocument doc) {
+    selectedDocuments.remove(doc);
+    notifyListeners();
   }
 
   void removeImageAt(int index) {
@@ -398,7 +449,7 @@ class ItemAddViewModel extends ItemBaseViewModel {
         ? parseFormattedPrice(instantPriceController.text)
         : null;
 
-    return ItemRegistrationValidator.validateForUI(
+    final String? validatorError = ItemRegistrationValidator.validateForUI(
       title: titleController.text,
       description: descriptionController.text,
       keywordTypeId: selectedKeywordTypeId,
@@ -407,6 +458,16 @@ class ItemAddViewModel extends ItemBaseViewModel {
       useInstantPrice: useInstantPrice,
       images: selectedImages,
     );
+
+    if (validatorError != null) return validatorError;
+
+    if (useInstantPrice && instantPrice != null) {
+      if (instantPrice <= startPrice) {
+        return '즉시 구매가는 시작가보다 높아야 합니다.';
+      }
+    }
+
+    return null;
   }
 
   void setSelectedKeywordTypeId(int? id) {
@@ -488,7 +549,9 @@ class ItemAddViewModel extends ItemBaseViewModel {
         documentSizes: documentSizes,
         primaryImageIndex: primaryImageIndex,
         editingItemId: editingItemId,
-        onProgress: (progress) => _progressController.add(progress),
+        onProgress: (progress) {
+          _progressController.add(progress);
+        },
       );
 
       if (failure != null) {
@@ -497,13 +560,38 @@ class ItemAddViewModel extends ItemBaseViewModel {
         }
         return;
       }
-
+      
+      // 다이얼로그 닫기
       _closeLoadingDialog(navigator, loadingDialogOpen);
       loadingDialogOpen = false;
+      
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false, // 외부 클릭으로 닫기 방지
+          builder: (dialogContext) {
+            return PopScope(
+              canPop: false, // 뒤로가기 버튼 방지
+              child: AskPopup(
+                content: '매물등록이 완료되었습니다.',
+                yesText: '확인',
+                yesLogic: () async {
+                  // 팝업 닫기
+                  Navigator.of(dialogContext).pop();
+                  
+                  // 홈으로 이동
+                  if (context.mounted) {
+                    navigator.popUntil((route) => route.isFirst);
+                    context.go('/home');
+                  }
+                },
+              ),
+            );
+          },
+        );
+      }
 
-      if (!context.mounted) return;
-      await _showSuccessDialog(context, navigator);
-    } catch (e) {
+    } catch (e, st) {
       if (context.mounted) {
         _showError(
           context,
@@ -513,11 +601,11 @@ class ItemAddViewModel extends ItemBaseViewModel {
       }
     } finally {
       _isSubmitting = false;
-      notifyListeners(); // 제출 완료 상태 UI 업데이트 필요
+      notifyListeners();
       await progressSub.cancel();
       _closeLoadingDialog(navigator, loadingDialogOpen);
     }
-  }
+}
 
   // UI Helpers
   void _showLoadingDialog(BuildContext context) {
@@ -534,35 +622,27 @@ class ItemAddViewModel extends ItemBaseViewModel {
             initialData: 0.0,
             builder: (context, snapshot) {
               final p = (snapshot.data ?? 0.0).clamp(0.0, 1.0);
-              return Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
+                return Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CircularProgressIndicator(
                         value: p,
-                        valueColor: AlwaysStoppedAnimation<Color>(blueColor),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                       SizedBox(height: spacing),
                       Text(
                         '업로드 중 ${(p * 100).toStringAsFixed(0)}%',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.black,
-                          // decoration: TextDecoration.none,
-                          // decorationThickness: 0,
+                          color: Colors.white,
+                          decoration: TextDecoration.none,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
-                ),
-              );
+                );
             },
           ),
         );
@@ -597,41 +677,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
       imageUrls: [], // 이미지 URL은 업로드 후 설정
       documentUrls: [], // PDF URL도 업로드 후 설정
       isAgree: agreed,
-    );
-  }
-
-  Future<void> _showSuccessDialog(
-    BuildContext context,
-    NavigatorState navigator,
-  ) async {
-    final bool isEdit = editingItemId != null;
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, result) {
-          // Pop is prevented by canPop: false
-        },
-        child: AskPopup(
-          content: isEdit
-              ? '매물 수정이 완료되었습니다.'
-              : '매물 등록 확인 화면으로 이동하여\n최종 등록을 진행해 주세요.',
-          yesText: isEdit ? '확인' : '이동하기',
-          yesLogic: () async {
-            navigator.pop();
-            if (!context.mounted) return;
-            if (isEdit) {
-              Navigator.of(context).pop(true);
-            } else {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!context.mounted) return;
-                context.go('/add_item/item_registration_list');
-              });
-            }
-          },
-        ),
-      ),
     );
   }
 

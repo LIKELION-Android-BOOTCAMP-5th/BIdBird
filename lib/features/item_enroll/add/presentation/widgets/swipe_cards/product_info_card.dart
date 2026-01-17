@@ -5,7 +5,7 @@ import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
 import 'package:bidbird/core/widgets/item/components/fields/form_label.dart';
 import 'package:bidbird/core/widgets/item/components/sections/square_image_upload_section.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
+import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

@@ -1,11 +1,10 @@
 import 'dart:io';
-import 'package:bidbird/core/managers/nhost_manager.dart';
-import 'package:bidbird/core/upload/gateways/nhost_storage_manager.dart';
+import 'package:bidbird/core/upload/gateways/supabase_storage_manager.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_image_upload_result.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/add_item_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
-import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_data.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// ItemEnroll Flow UseCase - Orchestration Layer
@@ -67,49 +66,13 @@ class ItemEnrollFlowUseCase {
         );
       }
 
-      // Step 2: PDF 보증서 업로드 (Nhost Storage)
-      // 원격 URL은 그대로 유지하고, 로컬 파일만 업로드
+      // Step 2: PDF 보증서 업로드 (Supabase Storage)
       onProgress(0.70);
-      List<String> docUrls = [];
-      List<String> docNames = [];
-      List<int> docSizes = [];
-      
-      for (int i = 0; i < documents.length; i++) {
-        final file = documents[i];
-        final filePath = file.path;
-        
-        // URL인지 확인 (http:// 또는 https://로 시작)
-        final isRemoteUrl = filePath.startsWith('http://') || filePath.startsWith('https://');
-        
-        if (isRemoteUrl) {
-          docUrls.add(filePath);
-          docNames.add(
-            (documentOriginalNames != null && documentOriginalNames.length > i)
-                ? documentOriginalNames[i]
-                : filePath.split('/').last,
-          );
-          docSizes.add(
-            (documentSizes != null && documentSizes.length > i)
-                ? documentSizes[i]
-                : 0,
-          );
-        } else {
-          // 로컬 파일은 업로드
-          final originalName = (documentOriginalNames != null && documentOriginalNames.length > i)
-              ? documentOriginalNames[i]
-              : null;
-          final uploadedDoc = await NhostStorageManager.shared.uploadFile(
-            file,
-            originalName: originalName,
-          );
-          
-          if (uploadedDoc != null) {
-            docUrls.add(uploadedDoc['url']!);
-            docNames.add(uploadedDoc['name']!);
-            docSizes.add(int.tryParse(uploadedDoc['size'] ?? '0') ?? 0);
-          }
-        }
-      }
+      final (docUrls, docNames, docSizes) = await SupabaseStorageManager.shared.uploadDocuments(
+        documents,
+        originalNames: documentOriginalNames,
+        existingSizes: documentSizes,
+      );
 
       // Step 3: 상품 정보 저장
       onProgress(0.85);
@@ -131,22 +94,8 @@ class ItemEnrollFlowUseCase {
         );
       }
 
-      // Step 4: nhost 함수 호출하여 PDF 문서를 DB에 저장
-      if (docUrls.isNotEmpty) {
-        onProgress(0.95);
-        try {
-          await NhostManager.shared.invokeFunction(
-            'update-item-v2',
-            body: {
-              'itemId': itemId,
-              'documentUrls': docUrls,
-              'documentNames': docNames,
-            },
-          );
-        } catch (e) {
-          // PDF 동기화 실패해도 상품 등록은 성공으로 처리
-        }
-      }
+      // Step 4: Removed (Documents are handled in Step 3 via create_and_register_item RPC)
+
 
       onProgress(1.0);
 

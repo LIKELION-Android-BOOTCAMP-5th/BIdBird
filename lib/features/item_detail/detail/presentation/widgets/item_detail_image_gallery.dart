@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:io';
 
 import 'package:bidbird/core/managers/item_image_cache_manager.dart';
 import 'package:bidbird/core/widgets/item/dialogs/full_screen_image_gallery_viewer.dart';
@@ -107,6 +107,7 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
                         itemCount: images.length,
                         itemBuilder: (context, index) {
                           final imageUrl = images[index];
+                          final bool isLocal = !imageUrl.startsWith('http');
                           final bool isVideo = isVideoFile(imageUrl);
                           final thumbnailUrl = isVideo
                               ? getVideoThumbnailUrl(imageUrl)
@@ -139,18 +140,25 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
                               child: Stack(
                                 children: [
                                   Positioned.fill(
-                                    child: CachedNetworkImage(
-                                      imageUrl: thumbnailUrl,
-                                      cacheManager:
-                                          ItemImageCacheManager.instance,
-                                      fit: BoxFit.cover,
-                                      memCacheWidth: 600,
-                                      memCacheHeight: 600,
-                                      placeholder: (context, url) =>
-                                          Container(),
-                                      errorWidget: (context, url, error) =>
-                                          Container(),
-                                    ),
+                                    child: isLocal
+                                        ? Image.file(
+                                            File(thumbnailUrl), // 로컬 파일이면 FileImage
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                Container(color: Colors.grey[200]),
+                                          )
+                                        : CachedNetworkImage(
+                                            imageUrl: thumbnailUrl,
+                                            cacheManager:
+                                                ItemImageCacheManager.instance,
+                                            fit: BoxFit.cover,
+                                            memCacheWidth: 600,
+                                            memCacheHeight: 600,
+                                            placeholder: (context, url) =>
+                                                Container(color: Colors.grey[200]),
+                                            errorWidget: (context, url, error) =>
+                                                Container(color: Colors.grey[200]),
+                                          ),
                                   ),
                                   if (isVideo)
                                     Positioned.fill(
@@ -178,19 +186,21 @@ class _ItemDetailImageGalleryState extends State<ItemDetailImageGallery>
                       ),
               ),
               // 타이머 오버레이 - 좌하단
-              Positioned(
-                bottom: 12,
-                left: 16,
-                child: _RemainingTimeOverlay(
-                  finishTime: widget.item.finishTime,
+              if (widget.item.itemId != 'preview')
+                Positioned(
+                  bottom: 12,
+                  left: 16,
+                  child: _RemainingTimeOverlay(
+                    finishTime: widget.item.finishTime,
+                  ),
                 ),
-              ),
               // 입찰 카운트 오버레이 - 우하단 (왼쪽)
-              Positioned(
-                bottom: 12,
-                right: 70,
-                child: _BidCountOverlay(bidCount: widget.item.biddingCount),
-              ),
+              if (widget.item.itemId != 'preview')
+                Positioned(
+                  bottom: 12,
+                  right: 70,
+                  child: _BidCountOverlay(bidCount: widget.item.biddingCount),
+                ),
               // 이미지 개수 표시 오버레이 - 우하단 (오른쪽)
               if (hasImages && images.isNotEmpty)
                 Positioned(

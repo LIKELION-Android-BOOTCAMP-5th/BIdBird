@@ -24,8 +24,8 @@ class StepIndicator extends StatelessWidget {
 
   static const double _circleSize = 32;
   static const double _lineHeight = 2;
-  static const double _gap = 16;
-  static const double _lineWidth = 50.0;
+  static const double _gap = 10;
+  static const double _lineWidth = 44.0;
 
   @override
   Widget build(BuildContext context) {
@@ -38,15 +38,8 @@ class StepIndicator extends StatelessWidget {
         horizontal: hPadding,
         vertical: spacingMedium,
       ),
-      decoration: BoxDecoration(
-        color: chatItemCardBackground,
-        boxShadow: [
-          BoxShadow(
-            color: shadowLow,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: Colors.white,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -110,17 +103,18 @@ class StepIndicator extends StatelessWidget {
                       ),
               ),
               const SizedBox(height: 4),
-              Text(
-                stepLabels[index],
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize:
-                      context.fontSizeSmall * SpacingRatios.mediumFontSize,
-                  color: labelColor,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  stepLabels[index],
+                  textAlign: TextAlign.center,
+                  maxLines: 1, // 한 줄 고정
+                  softWrap: false, // 줄바꿈 금지
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: labelColor,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                  ),
                 ),
               ),
             ],

@@ -34,6 +34,9 @@ class _HomeScreenState extends State<HomeScreen> {
       //최초 로딩
       if (!viewmodel.isInitialized) {
         await viewmodel.initialize();
+      } else {
+        // 화면 재진입 시 자동 새로고침 (등록 후 돌아왔을 때)
+        await viewmodel.handleRefresh();
       }
 
       // 튜토리얼 캐시 확인

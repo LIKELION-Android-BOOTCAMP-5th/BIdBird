@@ -7,7 +7,7 @@ import 'package:bidbird/core/widgets/item/components/fields/category_selector_fi
 import 'package:bidbird/core/widgets/item/components/fields/duration_chip_selector.dart';
 import 'package:bidbird/core/widgets/item/components/fields/error_text.dart';
 import 'package:bidbird/core/widgets/item/components/fields/form_label.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_error_messages.dart';
+import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
 import 'package:flutter/material.dart';
@@ -121,7 +121,23 @@ class PriceAuctionCardState extends State<PriceAuctionCard>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FormLabel(text: '시작가 (원)'),
+              Row(
+                children: [
+                  const FormLabel(text: '시작가 (원)'),
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: EdgeInsets.only(bottom: context.labelBottomPadding),
+                    child: Text(
+                      '(최소 50,000원 최대 5,000,000원)',
+                      style: TextStyle(
+                        fontSize: context.fontSizeSmall,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               RepaintBoundary(
                 key: widget.startPriceKey,
                 child: TextField(
