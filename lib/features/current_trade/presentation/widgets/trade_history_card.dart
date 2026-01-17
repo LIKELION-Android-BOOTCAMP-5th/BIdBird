@@ -7,7 +7,7 @@ import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
-import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_data.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -111,13 +111,9 @@ class TradeHistoryCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       GestureDetector(
-                        onTap: () async {
+                        onTap: () {
                           if (itemId.isEmpty) return;
-                          if (isSeller && status == '경매 대기') {
-                            await _navigateToRegistrationDetail(context);
-                          } else {
-                            context.push('/item/$itemId');
-                          }
+                          context.push('/item/$itemId');
                         },
                         child: Row(
                           // 요청: 썸네일과 텍스트 컬럼을 세로 기준 가운데 정렬
@@ -193,55 +189,7 @@ class TradeHistoryCard extends StatelessWidget {
     );
   }
 
-  Future<void> _navigateToRegistrationDetail(BuildContext context) async {
-    try {
-      final supabase = SupabaseManager.shared.supabase;
-      // items_detail에서 필요한 정보 가져오기
-      final result = await supabase
-          .from('items_detail')
-          .select(
-            'start_price, auction_duration_hours, thumbnail_image, description',
-          )
-          .eq('item_id', itemId)
-          .single();
 
-      // Supabase .single()가 실패시 예외로 처리되므로 null 체크는 불필요
-
-      final startPrice = getIntFromRow(result, 'start_price');
-      final auctionDurationHours = getIntFromRow(
-        result,
-        'auction_duration_hours',
-        24,
-      );
-      final thumbnailUrl = getNullableStringFromRow(result, 'thumbnail_image');
-      // final buyNowPrice = getIntFromRow(result, 'buy_now_price', 0);
-      final description = getStringFromRow(result, 'description');
-
-      // ItemRegistrationData 생성
-      final registrationData = ItemRegistrationData(
-        id: itemId,
-        title: title,
-        description: description,
-        startPrice: startPrice,
-        // instantPrice: buyNowPrice,
-        instantPrice: 0, // 기본값으로 0 설정
-        auctionDurationHours: auctionDurationHours,
-        thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
-        statusText: '승인 완료',
-      );
-
-      if (!context.mounted) return;
-      await context.push(
-        '/add_item/item_registration_detail',
-        extra: registrationData,
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('오류가 발생했습니다: ${e.toString()}')));
-    }
-  }
 
   // 가격 포맷은 공용 포맷터 사용으로 이동
 }

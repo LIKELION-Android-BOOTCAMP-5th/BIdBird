@@ -5,7 +5,8 @@ import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/input_decoration_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/bottom_sheet/image_source_bottom_sheet.dart';
-import 'package:bidbird/core/widgets/components/pop_up/ask_popup.dart';
+import 'package:bidbird/core/utils/item/item_registration_terms.dart';
+import 'package:bidbird/core/widgets/components/pop_up/item_registration_terms_popup.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
 import 'package:bidbird/core/widgets/item/components/buttons/secondary_button.dart';
 import 'package:flutter/material.dart';
@@ -15,9 +16,12 @@ import 'package:provider/provider.dart';
 import '../viewmodels/item_add_viewmodel.dart';
 import '../widgets/coach_mark/item-add_tutorial_controller.dart';
 import '../widgets/step_indicator.dart';
-import '../widgets/swipe_cards/detail_confirm_card.dart';
+
+import '../widgets/swipe_cards/item_detail_entry_card.dart';
 import '../widgets/swipe_cards/price_auction_card.dart';
 import '../widgets/swipe_cards/product_info_card.dart';
+
+import 'package:bidbird/features/item_enroll/add/presentation/widgets/swipe_cards/preview_confirm_card.dart';
 
 class ItemAddScreen extends StatefulWidget {
   const ItemAddScreen({super.key});
@@ -46,7 +50,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
 
-  static const List<String> _stepLabels = ['상품 정보', '가격·경매', '상세·확인'];
+  static const List<String> _stepLabels = ['상품 정보', '가격·경매', '상세 정보', '미리보기'];
 
   // InputDecoration 캐시
   late final Map<String, InputDecoration> _decorationCache;
@@ -74,7 +78,7 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   }
 
   void _goToStep(int step) {
-    if (step >= 0 && step < 3) {
+    if (step >= 0 && step < 4) {
       _pageController.animateToPage(
         step,
         duration: const Duration(milliseconds: 300),
@@ -101,27 +105,24 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
 
         // 즉시 구매가가 체크되어 있으면 그것도 유효해야 함
         bool hasValidInstantPrice = true;
-        // if (viewModel.useInstantPrice) {
-        //   final instantPrice = parseFormattedPrice(viewModel.instantPriceController.text);
-        //   hasValidInstantPrice = instantPrice > 0 &&
-        //       instantPrice >= ItemPriceLimits.minPrice &&
-        //       instantPrice > startPrice;
-        // }
 
         return hasValidStartPrice &&
             hasDuration &&
             hasCategory &&
             hasValidInstantPrice;
       case 2:
-        // 카드 3: 모든 검증 통과
+        // 카드 3: 상세 정보 (검증 로직은 동일)
         return viewModel.validate() == null;
+      case 3:
+        // 카드 4: 미리보기 (등록 버튼은 Card 내부에 있음)
+        return false;
       default:
         return false;
     }
   }
 
   String _getNextButtonText() {
-    return _currentStep == 2 ? '등록하기' : '다음';
+    return '다음';
   }
 
   void _handlePageChange(int index, ItemAddViewModel viewModel) {
@@ -162,14 +163,14 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
     bool validationPassed = false;
 
     if (_currentStep == 0) {
-      // GlobalKey 사용 제거 - 버튼으로만 이동하므로 불필요
       validationPassed = _canGoToNextStep(viewModel);
     } else if (_currentStep == 1) {
+      validationPassed = _canGoToNextStep(viewModel);
+    } else if (_currentStep == 2) {
       validationPassed = _canGoToNextStep(viewModel);
     }
 
     if (!validationPassed) {
-      // 검증 실패 시 즉시 이전 페이지로 돌아감
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _pageController.jumpToPage(_currentStep);
@@ -184,35 +185,28 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
   }
 
   void _handleNextButtonPress(ItemAddViewModel viewModel) {
-    // 가격·경매 카드에서 다음 버튼을 눌렀을 때 검증
     if (_currentStep == 1) {
-      // GlobalKey 사용 제거 - 버튼 클릭시에만 필요하므로 불필요
       if (!_canGoToNextStep(viewModel)) {
+        // 가격/경매 단계에서 필수 입력값 누락 시 메시지 (보통 버튼이 비활성화되지만 만약을 위해)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('필수 입력 항목을 확인해주세요.')),
+        );
+        return;
+      }
+    } else if (_currentStep == 2) {
+      final error = viewModel.validate();
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error)),
+        );
         return;
       }
     }
 
-    if (_currentStep < 2) {
+    if (_currentStep < 3) {
       // 다음 단계로 이동
       _goToStep(_currentStep + 1);
-    } else {
-      // 최종 등록
-      _showSubmitDialog(viewModel);
     }
-  }
-
-  void _showSubmitDialog(ItemAddViewModel viewModel) {
-    showDialog(
-      context: context,
-      builder: (_) => AskPopup(
-        content: '저장하시겠습니까?',
-        noText: '취소',
-        yesLogic: () async {
-          Navigator.of(context).pop();
-          await viewModel.submit(context);
-        },
-      ),
-    );
   }
 
   // coach mark 스킵 함수 -> 페이징 때문에 컨트롤러도 중단하는 로직 필요함
@@ -326,10 +320,9 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
               SizedBox(width: context.spacingSmall),
               Expanded(
                 child: PrimaryButton(
-                  text: _getNextButtonText(),
+                  text: '미리보기',
                   onPressed: () => _handleNextButtonPress(viewModel),
-                  isEnabled:
-                      _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
+                  isEnabled: !viewModel.isSubmitting,
                   width: null,
                 ),
               ),
@@ -339,31 +332,12 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
       );
     } else {
       // Others
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: SecondaryButton(
-              text: '이전',
-              onPressed: () => _goToStep(_currentStep - 1),
-              width: null,
-            ),
-          ),
-          SizedBox(width: context.spacingSmall),
-          Expanded(
-            child: PrimaryButton(
-              text: _getNextButtonText(),
-              onPressed: () => _handleNextButtonPress(viewModel),
-              isEnabled: _canGoToNextStep(viewModel) && !viewModel.isSubmitting,
-              width: null,
-            ),
-          ),
-        ],
-      );
+      return const SizedBox.shrink(); 
     }
   }
 
   Widget _buildBottomNavigationBar(ItemAddViewModel viewModel) {
+    // 미리보기에서도 바텀 네비게이션 바 사용 (위치 통일)
     return SafeArea(
       top: false,
       child: Container(
@@ -382,11 +356,46 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
             ),
           ],
         ),
-        child: _currentStep == 0
-            ? _buildSingleButtonBar(viewModel)
-            : _buildDualButtonBar(viewModel),
+        child: _buildButtonBar(viewModel),
       ),
     );
+  }
+
+  Widget _buildButtonBar(ItemAddViewModel viewModel) {
+    if (_currentStep == 0) {
+      return _buildSingleButtonBar(viewModel);
+    } else if (_currentStep == 1 || _currentStep == 2) {
+      return _buildDualButtonBar(viewModel);
+    } else if (_currentStep == 3) {
+      // Step 3: Preview - Register Button
+      return _buildRegisterButton(viewModel);
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildRegisterButton(ItemAddViewModel viewModel) {
+    return PrimaryButton(
+          text: '등록하기',
+          onPressed: () {
+            // 기존 약관 팝업 사용
+            showDialog(
+              context: context,
+              builder: (dialogContext) => ItemRegistrationTermsPopup(
+                title: ItemRegistrationTerms.popupTitle,
+                sections: ItemRegistrationTerms.sections,
+                checkLabel: ItemRegistrationTerms.checkLabel,
+                onConfirm: (isChecked) {
+                  if (isChecked) {
+                    viewModel.submit(context);
+                  }
+                },
+                onCancel: () {},
+              ),
+            );
+          },
+          isEnabled: !viewModel.isSubmitting,
+          width: double.infinity,
+        );
   }
 
   @override
@@ -437,26 +446,38 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
             if (!didPop) {
-              context.go('/home');
+              if (_currentStep > 0) {
+                 _goToStep(_currentStep - 1);
+              } else {
+                 context.go('/home');
+              }
             }
           },
           child: Scaffold(
             backgroundColor: BackgroundColor,
-            appBar: AppBar(
-              title: const Text('매물 작성'),
-              centerTitle: true,
-              backgroundColor: chatItemCardBackground,
-            ),
+            appBar: _currentStep == 3 
+                ? null // 미리보기에서는 컴포넌트 내부 AppBar 사용 또는 숨김
+                : AppBar(
+                    title: const Text('매물 작성'),
+                    centerTitle: true,
+                    backgroundColor: Colors.white,
+                    elevation: 0,
+                  ),
             body: SafeArea(
+              top: _currentStep != 3, // 미리보기 단계에서는 상태바 영역까지 확장
+              bottom: false, // 미리보기에서 바텀 영역 침범 방지
               child: Column(
                 children: [
-                  // 스텝 인디케이터
-                  StepIndicator(
-                    key: _cycleKey,
-                    currentStep: _currentStep,
-                    totalSteps: 3,
-                    stepLabels: _stepLabels,
-                  ),
+                  // 스텝 인디케이터 (미리보기 제외)
+                  if (_currentStep < 3) ...[
+                    StepIndicator(
+                      key: _cycleKey,
+                      currentStep: _currentStep,
+                      totalSteps: 4,
+                      stepLabels: _stepLabels,
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   // 카드 영역
                   Expanded(
                     child: PageView(
@@ -482,11 +503,17 @@ class _ItemAddScreenState extends State<ItemAddScreen> {
                           viewModel: viewModel,
                           inputDecoration: (hint) => _inputDecoration(hint),
                         ),
-                        // 카드 3: 상세·확인
-                        DetailConfirmCard(
+                        // 카드 3: 상세 정보
+                        ItemDetailEntryCard(
                           addContentKey: _addContentKey,
                           addPDFKey: _addPDFKey,
                           viewModel: viewModel,
+                          inputDecoration: (hint) => _inputDecoration(hint),
+                        ),
+                        // 카드 4: 미리보기
+                        PreviewConfirmCard(
+                          viewModel: viewModel,
+                          onBack: () => _goToStep(_currentStep - 1),
                         ),
                       ],
                     ),

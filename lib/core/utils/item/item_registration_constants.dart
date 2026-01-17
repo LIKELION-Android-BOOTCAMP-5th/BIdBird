@@ -2,7 +2,7 @@
 /// 가격 제한
 class ItemPriceLimits {
   /// 최소 가격 (10,000원)
-  static const int minPrice = 10000;
+  static const int minPrice = 50000;
   
   /// 최대 가격 (5,000,000원)
   static const int maxPrice = 5000000;

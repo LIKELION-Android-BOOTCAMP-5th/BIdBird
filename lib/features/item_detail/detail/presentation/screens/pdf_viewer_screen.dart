@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:bidbird/core/managers/nhost_manager.dart';
+import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -14,7 +14,10 @@ class PDFViewerScreen extends StatefulWidget {
     super.key,
     required this.title,
     required this.url,
+    this.filePath,
   });
+
+  final String? filePath;
 
   @override
   State<PDFViewerScreen> createState() => _PDFViewerScreenState();
@@ -33,10 +36,26 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
 
   Future<void> _loadPdf() async {
     try {
-      final isNhostUrl = widget.url.contains('nhost.run');
+      // 로컬 파일 경로가 있으면 바로 로드
+      if (widget.filePath != null && widget.filePath!.isNotEmpty) {
+        final file = File(widget.filePath!);
+        if (await file.exists()) {
+          setState(() {
+            _localFile = file;
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
+      final isSupabaseUrl = widget.url.contains('supabase.co');
       
-      if (isNhostUrl) {
-        await _downloadWithAuth();
+      if (isSupabaseUrl) {
+        // Supabase public URLs can be loaded directly, but if they are private, 
+        // they might need auth. For now, we assume network loading works or handle it simply.
+        setState(() {
+          _isLoading = false;
+        });
       } else {
         setState(() {
           _isLoading = false;
@@ -50,50 +69,7 @@ class _PDFViewerScreenState extends State<PDFViewerScreen> {
     }
   }
 
-  Future<void> _downloadWithAuth() async {
-    try {
-      final dio = Dio();
-      
-      String? accessToken;
-      if (NhostManager.shared.isInitialized) {
-        accessToken = NhostManager.shared.accessToken;
-      }
-
-      final response = await dio.get(
-        widget.url,
-        options: Options(
-          responseType: ResponseType.bytes,
-          headers: {
-            if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-          },
-        ),
-      );
-
-      final tempDir = await getTemporaryDirectory();
-      // URL 해시와 타임스탬프를 사용하여 고유한 파일명 생성
-      final urlHash = widget.url.hashCode.abs().toString();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final filePath = '${tempDir.path}/pdf_${urlHash}_$timestamp.pdf';
-      final file = File(filePath);
-      
-      await file.writeAsBytes(response.data);
-
-      setState(() {
-        _localFile = file;
-        _isLoading = false;
-      });
-    } on DioException catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = '파일을 찾을 수 없습니다 (${e.response?.statusCode ?? "알 수 없음"})';
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
-      });
-    }
-  }
+  // Removed _downloadWithAuth since we are migrating away from Nhost
 
   @override
   Widget build(BuildContext context) {

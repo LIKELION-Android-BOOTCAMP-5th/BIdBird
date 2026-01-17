@@ -1,6 +1,6 @@
 import 'package:bidbird/core/managers/supabase_manager.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
-import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
+import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_data.dart';
 
 class ItemAddDatasource {
   final _supabase = SupabaseManager.shared.supabase;
@@ -78,7 +78,7 @@ class ItemAddDatasource {
         'p_file_sizes': entity.documentSizes ?? [],
       };
       
-      final result = await _supabase.rpc('create_item_v2', params: params);
+      final result = await _supabase.rpc('create_and_register_item', params: params);
 
       if (result == null) throw Exception('Failed to get itemId from RPC');
       return result.toString();

@@ -35,27 +35,20 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1
   supabase_flutter: ^2.10.1
-  nhost_flutter_auth: ^4.2.1
-  nhost_sdk: ^5.8.0
-  graphql_flutter: ^5.2.1
   go_router: ^16.2.4
   event_bus: ^2.0.1
   fluttertoast: ^9.0.0
   dio: ^5.9.0
   shared_preferences: ^2.5.3
-  modal_bottom_sheet: ^3.0.0
   google_sign_in: ^7.2.0
   firebase_core: ^4.2.1
   firebase_messaging: ^16.0.4
   flutter_local_notifications: ^18.0.1
   image_picker: ^1.1.2
   cloudinary_flutter: ^1.3.0
-  cloudinary_url_gen: ^1.8.0
   sign_in_with_apple: ^7.0.1
   # intl -> 가격 표시 단위 설정할 때 필요한 것
-  intl: ^0.20.2
-  portone_flutter: ^0.12.0
-  portone_flutter_v2: ^1.0.0
+  intl: ^0.20.20
   cached_network_image: ^3.3.1
   flutter_cache_manager: ^3.3.2
   video_player: ^2.8.2

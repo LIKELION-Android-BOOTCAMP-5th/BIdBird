@@ -18,9 +18,6 @@ import 'package:bidbird/features/item_detail/user_history/presentation/screens/u
 import 'package:bidbird/features/item_detail/user_profile/presentation/screens/user_profile_screen.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/screens/item_add_screen.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
-import 'package:bidbird/features/item_enroll/registration/detail/presentation/screens/item_registration_detail_screen.dart';
-import 'package:bidbird/features/item_enroll/registration/list/domain/entities/item_registration_entity.dart';
-import 'package:bidbird/features/item_enroll/registration/list/presentation/screens/item_registration_list_screen.dart';
 import 'package:bidbird/features/item_enroll/relist/presentation/screens/item_relist_screen.dart';
 import 'package:bidbird/features/item_trade/trade_status/presentation/screens/trade_status_screen.dart';
 import 'package:bidbird/features/mypage/data/repositories/blacklist_repository_impl.dart';
@@ -520,26 +517,6 @@ GoRouter createAppRouter(BuildContext context) {
             ),
           );
         },
-        routes: [
-          GoRoute(
-            path: 'item_registration_list',
-            pageBuilder: (context, state) => buildPage(
-              context: context,
-              state: state,
-              child: const ItemRegistrationListScreen(),
-            ),
-          ),
-          GoRoute(
-            path: 'item_registration_detail',
-            pageBuilder: (context, state) => buildPage(
-              context: context,
-              state: state,
-              child: ItemRegistrationDetailScreen(
-                item: state.extra as ItemRegistrationData,
-              ),
-            ),
-          ),
-        ],
       ),
       GoRoute(
         path: '/user/:userId',
