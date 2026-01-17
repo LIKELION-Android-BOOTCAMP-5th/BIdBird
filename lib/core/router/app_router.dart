@@ -18,7 +18,7 @@ import 'package:bidbird/features/item_detail/user_history/presentation/screens/u
 import 'package:bidbird/features/item_detail/user_profile/presentation/screens/user_profile_screen.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/screens/item_add_screen.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
-import 'package:bidbird/features/item_enroll/relist/presentation/screens/item_relist_screen.dart';
+
 import 'package:bidbird/features/item_trade/trade_status/presentation/screens/trade_status_screen.dart';
 import 'package:bidbird/features/mypage/data/repositories/blacklist_repository_impl.dart';
 import 'package:bidbird/features/mypage/data/repositories/favorites_repository_impl.dart';
@@ -469,14 +469,7 @@ GoRouter createAppRouter(BuildContext context) {
           child: ItemDetailScreen(itemId: state.pathParameters["id"] ?? ""),
         ),
       ),
-      GoRoute(
-        path: '/item/:itemId/relist',
-        pageBuilder: (context, state) => buildPage(
-          context: context,
-          state: state,
-          child: ItemRelistScreen(itemId: state.pathParameters['itemId'] ?? ''),
-        ),
-      ),
+
       GoRoute(
         path: '/item_bid_win',
         pageBuilder: (context, state) {

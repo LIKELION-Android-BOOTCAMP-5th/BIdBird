@@ -5,7 +5,7 @@ import 'package:bidbird/features/chat/presentation/viewmodels/chatting_room_view
 import 'package:bidbird/features/chat/presentation/widgets/message_bubble.dart';
 import 'package:bidbird/features/chat/presentation/widgets/message_read_status_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:bidbird/core/utils/formatters/time_formatter.dart';
 
 /// 채팅 메시지 리스트 위젯
 /// 메시지 목록을 표시하고 스크롤을 관리
@@ -266,7 +266,7 @@ class _ChatDateSeparator extends StatelessWidget {
             Text(
               isToday
                   ? '오늘'
-                  : DateFormat('yyyy년 M월 d일').format(date),
+                  : formatDateKorean(date),
               style: TextStyle(
                 color: isToday
                     ? const Color(0xFF3C4043) // 오늘 날짜 텍스트

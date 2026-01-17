@@ -7,7 +7,7 @@ import 'package:bidbird/features/item_trade/trade_status/presentation/viewmodels
 import 'package:bidbird/features/item_trade/trade_status/presentation/widgets/trade_status_item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:bidbird/core/utils/formatters/time_formatter.dart';
 import 'package:provider/provider.dart';
 
 /// 거래 현황 화면
@@ -551,8 +551,7 @@ class _TradeStatusScreenContent extends StatelessWidget {
   }
 
   Widget _buildHistoryItem(TradeHistoryEvent event, bool isLast) {
-    final dateFormat = DateFormat('MM.dd HH:mm');
-    final timeText = dateFormat.format(event.timestamp);
+    final timeText = formatMonthDayTime(event.timestamp);
 
     // 거래 기록 영역에서는 색상 절제 - 모든 이벤트를 회색으로 표시
     const dotColor = Color(0xFFDADCE0); // 회색 점
