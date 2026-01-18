@@ -165,36 +165,7 @@ class _ChattingRoomScreenState extends State<ChattingRoomScreen>
     }
   }
 
-  bool _hasAutoShownTradeCompleteDialog = false;
 
-  void _checkAndShowAutoTradeCompleteDialog() {
-    // 이미 보여줬으면 스킵
-    if (_hasAutoShownTradeCompleteDialog) return;
-
-    // 1. 내가 낙찰자인지 확인
-    if (!viewModel.isTopBidder) return;
-
-    // 2. 거래가 완료되지 않았는지 확인 (550: 완료)
-    // tradeInfo가 null이면 아직 거래 전이거나 로딩 중이므로 완료되지 않은 것으로 간주
-    if (viewModel.tradeInfo != null && viewModel.tradeInfo!.tradeStatusCode == 550) return;
-
-    // 3. 내가 채팅을 했는지 확인 (내가 보낸 메시지가 하나라도 있는지)
-    // 현재 사용자의 ID
-    final currentUserId = SupabaseManager.shared.supabase.auth.currentUser?.id;
-    if (currentUserId == null) return;
-
-    final hasSentMessage = viewModel.messages.any((msg) => msg.senderId == currentUserId);
-    
-    // 조건 만족 시 다이얼로그 표시
-    if (hasSentMessage) {
-      _hasAutoShownTradeCompleteDialog = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _showTradeActionBottomSheet(context, viewModel);
-        }
-      });
-    }
-  }
 
   /// 거래 상태 변경 선택 바텀시트 (자동 팝업용)
   void _showTradeActionBottomSheet(

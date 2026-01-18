@@ -1,5 +1,3 @@
-import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:bidbird/core/utils/item/item_data_conversion_utils.dart';
 import 'package:bidbird/core/utils/formatters/price_formatter.dart';
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
@@ -7,7 +5,6 @@ import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/components/role_badge.dart';
 import 'package:bidbird/core/widgets/item/components/thumbnail/fixed_ratio_thumbnail.dart';
 import 'package:bidbird/features/current_trade/domain/entities/current_trade_entity.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_data.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:flutter/material.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';

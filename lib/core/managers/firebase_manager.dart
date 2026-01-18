@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:bidbird/core/utils/app_platform/app_platform.dart';
 

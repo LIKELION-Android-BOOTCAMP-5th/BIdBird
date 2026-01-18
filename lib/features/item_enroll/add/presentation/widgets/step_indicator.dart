@@ -1,6 +1,5 @@
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
-import 'package:bidbird/core/utils/ui_set/spacing_ratios.dart';
 import 'package:flutter/material.dart';
 
 /// 스텝 인디케이터 위젯

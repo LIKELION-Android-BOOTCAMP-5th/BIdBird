@@ -1,8 +1,5 @@
 import 'dart:io';
-import 'package:bidbird/core/managers/supabase_manager.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 
