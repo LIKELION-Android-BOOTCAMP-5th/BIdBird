@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 import '../domain/entities/trade_history_entity.dart';
 import '../domain/usecases/get_trade_history.dart';

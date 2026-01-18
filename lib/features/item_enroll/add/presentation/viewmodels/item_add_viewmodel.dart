@@ -7,14 +7,12 @@ import 'package:bidbird/core/utils/item/item_auction_duration_utils.dart';
 import 'package:bidbird/core/utils/item/item_price_utils.dart'
     show parseFormattedPrice, formatNumber;
 import 'package:bidbird/core/utils/item/item_registration_constants.dart';
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/viewmodels/item_base_viewmodel.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/edit_item_repository.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/item_add_repository.dart';
 import 'package:bidbird/features/item_enroll/add/data/repositories/keyword_repository.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/item_add_entity.dart';
-import 'package:bidbird/features/item_enroll/add/domain/entities/item_registration_data.dart';
 import 'package:bidbird/core/utils/item/item_registration_error_messages.dart';
 import 'package:bidbird/core/utils/item/item_registration_validator.dart';
 import 'package:bidbird/features/item_enroll/add/domain/entities/keyword_type_entity.dart';
@@ -24,7 +22,6 @@ import 'package:bidbird/features/item_enroll/add/domain/usecases/get_keyword_typ
 import 'package:bidbird/features/item_enroll/add/domain/usecases/orchestrations/item_enroll_flow_usecase.dart';
 import 'package:bidbird/features/item_enroll/add/domain/usecases/upload_item_images_with_thumbnail_usecase.dart';
 import 'package:bidbird/features/item_detail/detail/domain/entities/item_detail_entity.dart';
-import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -394,7 +391,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
     }
   }
 
-  Dio? _dio;
 
   /// 수정 모드에서 기존 이미지를 불러와 selectedImages에 채웁니다.
   /// 원격 URL을 직접 사용하여 로딩 속도를 높이고 불필요한 재업로드를 방지합니다.
@@ -614,7 +610,6 @@ class ItemAddViewModel extends ItemBaseViewModel {
       barrierDismissible: false,
       builder: (dialogContext) {
         final spacing = dialogContext.inputPadding;
-        final fontSize = dialogContext.fontSizeMedium;
 
         return Center(
           child: StreamBuilder<double>(

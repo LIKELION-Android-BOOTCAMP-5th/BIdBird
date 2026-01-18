@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/utils/ui_set/colors_style.dart';
-import 'floating_item.dart';
 
 class FloatingMenu extends StatefulWidget {
   final GlobalKey? fabKey; // 1. 키를 받을 변수 추가

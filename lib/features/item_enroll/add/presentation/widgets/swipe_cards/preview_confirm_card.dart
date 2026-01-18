@@ -1,11 +1,6 @@
-import 'package:bidbird/core/utils/ui_set/colors_style.dart';
-import 'package:bidbird/core/widgets/item/components/buttons/primary_button.dart';
 import 'package:bidbird/features/item_detail/detail/presentation/widgets/blocks/item_detail_body.dart';
 import 'package:bidbird/features/item_enroll/add/presentation/viewmodels/item_add_viewmodel.dart';
-import 'package:bidbird/core/utils/item/item_registration_terms.dart';
-import 'package:bidbird/core/widgets/components/pop_up/item_registration_terms_popup.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 /// 카드 4: 미리보기 및 최종 등록
 class PreviewConfirmCard extends StatelessWidget {

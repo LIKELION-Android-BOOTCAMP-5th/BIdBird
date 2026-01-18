@@ -2,7 +2,6 @@ import 'package:bidbird/features/mypage/domain/entities/trade_history_entity.dar
 import 'package:bidbird/core/utils/ui_set/border_radius_style.dart';
 import 'package:bidbird/core/utils/ui_set/colors_style.dart';
 import 'package:bidbird/core/utils/ui_set/fonts_style.dart';
-import 'package:bidbird/core/utils/ui_set/responsive_constants.dart';
 import 'package:bidbird/core/widgets/item/components/others/transparent_refresh_indicator.dart';
 import 'package:bidbird/core/widgets/unified_empty_state.dart';
 import 'package:bidbird/features/current_trade/presentation/widgets/trade_history_card.dart';

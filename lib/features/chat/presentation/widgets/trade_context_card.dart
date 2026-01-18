@@ -32,7 +32,6 @@ class TradeContextCard extends StatelessWidget {
   final VoidCallback? onTradeResultTap; // 거래 결과 버튼 콜백
 
   /// 거래 액션 버튼 표시 여부 (하단 버튼 제거로 인해 항상 false 또는 로직 삭제)
-  bool get _shouldShowTradeActions => false; // 하단 버튼 제거
 
   @override
   Widget build(BuildContext context) {
